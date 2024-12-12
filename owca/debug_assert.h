@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#define RCDEBUG_IN_VS
-#define RCDEBUG
+//#define RCDEBUG_IN_VS
+//#define RCDEBUG
 
 #ifndef RCDEBUG_ASSERT
 #ifdef RCDEBUG
