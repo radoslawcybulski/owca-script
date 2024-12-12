@@ -1,0 +1,9 @@
+function main():
+	if $type($int) is not $type: return 1
+	if $type(1) is not $int: return 2
+	if $type(1.0) is not $real: return 3
+	if $type('') is not $str: return 4
+	if $type(true) is not $bool: return 5
+	if $type(false) is not $bool: return 6
+	return 'ok'
++++value 'ok'

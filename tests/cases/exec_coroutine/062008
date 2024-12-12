@@ -1,0 +1,174 @@
+coroutines=[]
+
+class coroutine($coroutine):
+	function $init(*p,**mp):
+		$coroutine.$init(self=self,*p,**mp)
+		coroutines.push_back(self)
+		self._waiting=null
+	function $str():
+		z=$memberget(self,'name',null)
+		return z is null ? $str($id(self)) : z
+		
+class comutex:
+	function $init():
+		self._owner=null
+	function $bool():
+		return self._owner is null
+	function _lock(thr):
+		self._owner=thr
+	function lock(thr=null):
+		if thr is null:
+			thr=copeek()
+		if self._owner is null:
+			self._owner=thr
+#		elif self._owner is not thr:
+		else:
+			$print('lock',thr)
+			$costop(('wait',(self,)))
+	function unlock():
+		self._owner=null
+		$print('unlock',self)
+	function $withenter():
+		self.lock()
+	function $withexit():
+		self.unlock()
+	function $str():
+		return '<comutex '+$str($id(self))+'>'
+		
+function coresume(obj):
+	$costop(('resume',obj))
+
+function costop(obj):
+	$costop()
+
+function copeek():
+	return $copeek()
+
+function coserver():
+	if coroutines:
+		index=-1
+		
+		function check_and_lock(th):
+			waiting=th._waiting
+			$print(th,'checking')
+			if not waiting:
+				return true
+			for w = waiting:
+				if not w: 
+					$print(th,'not ready because of',w)
+					return false
+			for w = waiting:
+				w._lock(th)
+			th._waiting=null
+			$print(th,'ready')
+			return true
+
+		resume=null
+		
+		while true:
+			if resume is null or not check_and_lock(resume):
+				size=coroutines.size()
+				ind: while ind<size:
+					index=(index+1) % size
+					th=coroutines[index]
+					if th is not resume and check_and_lock(th):
+						break
+				else:
+					return false
+				finally:
+					return true
+				resume=th
+
+			$print('resuming',resume,coroutines)
+			ret=$coresume(resume)
+			$print('resuming done',ret)
+			
+			if not resume:
+				index=coroutines.find(resume)
+				coroutines.pop(index)
+				resume=null
+			else:
+				code,value=ret
+				if code=='resume':
+					resume=value
+				elif code=='wait':
+					if resume._waiting:
+						raise $exception()
+					resume._waiting=value
+					resume=null
+		return false			
+	
+result=''
+
+c1=comutex()
+c2=comutex()
+c3=comutex()
+
+function f4(params):
+	c1.lock()
+	
+	while true:
+		c1.lock()
+		$print('running 4')
+		if params:
+			result:=result+params[0]
+			params.pop(0)
+		coresume(r5)
+		
+function f5(params):
+	c2.lock()
+
+	while true:	
+		c2.lock()
+		$print('running 5')
+		if params:
+			result:=result+params[0]
+			params.pop(0)
+		coresume(r6)
+
+function f6(params):
+	c3.lock()
+
+	while true:
+		c3.lock()
+		$print('running 6')
+		if params:
+			result:=result+params[0]
+			params.pop(0)
+		if params:
+			coresume(r4)
+
+r4=coroutine(f4,['1','2','3'])
+r5=coroutine(f5,['4','5','6'])
+r6=coroutine(f6,['7','8','9'])
+r4.name='r4'
+r5.name='r5'
+r6.name='r6'
+
+function main():
+	if not coserver(): return 1
+	
+	loop: for cc,expected = (
+			(c1,'1'),
+			(c2,'14'),
+			(c3,'147'),
+			(c1,'1472'),
+			(c2,'14725'),
+			(c3,'147258'),
+			(c1,'1472583'),
+			(c2,'14725836'),
+			(c3,'147258369'),
+			):
+		cc.unlock()
+		if not coserver(): return 20+loop
+		if result!=expected:
+			$print(result,expected)
+			return 20+loop+0.1
+		cc._lock(1)
+		if not coserver(): return 20+loop+0.2
+		if result!=expected: 
+			$print(result,expected)
+			return 20+loop+0.3	
+		$print(expected,result)
+	return result	
++++value '147258369'

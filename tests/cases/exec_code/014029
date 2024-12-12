@@ -1,0 +1,7 @@
+class T:
+	function $gen():
+		raise $exception()
+function main():
+	for a=T(): pass
+	return 'b'
++++exception YEXCEPTION_USER 3 5

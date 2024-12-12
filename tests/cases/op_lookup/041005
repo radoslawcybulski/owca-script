@@ -1,0 +1,4 @@
+function main():
+	t='abc'
+	t.abc='qwe'
++++exception YEXCEPTION_MISSINGMEMBER 3

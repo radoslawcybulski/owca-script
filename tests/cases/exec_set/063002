@@ -1,0 +1,22 @@
+throw=false
+class T:
+	function $str(): return $str(self.v)
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $eq(v):
+		if throw: raise $exception()
+		return self.v==v.v
+	function $less(v): return self.v<v.v
+function main():
+	s1=$set([T('a'),T('b'),T('c')])
+	$print(s1)
+	s2=$set([T('d'),T('e'),T('a')])
+	$print(s2)
+	s=s1 & s2
+	$print(s)
+	if s!=$set([T('a')]):
+		return 1
+	throw:=true
+	s=s1 & s2
+	return 'ok'
++++exception YEXCEPTION_USER 7 0 20

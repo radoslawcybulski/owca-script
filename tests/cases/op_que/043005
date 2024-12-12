@@ -1,0 +1,8 @@
+function main():
+	function g(): raise $exception()
+	function f():
+		a:=g() ? 'ok' : 'ff'
+	a='123'
+	f()
+	return a
++++exception YEXCEPTION_USER 2 4 6

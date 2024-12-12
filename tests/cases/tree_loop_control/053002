@@ -1,0 +1,6 @@
+function main():
+	for x = ('a','b','c'):
+		pass
+	restart
+	return 'ok'
++++error 4 YERROR_UNEXPECTED_BREAK_CONTINUE_FINALLY_RESTART

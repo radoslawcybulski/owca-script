@@ -1,0 +1,8 @@
+function f():
+	yield 'a'
+	yield 'b'
+	raise $exception()
+function main():
+	a=['abc','def','ghi','jkl']
+	a[2:4]=f()
++++exception YEXCEPTION_USER 4 0 7

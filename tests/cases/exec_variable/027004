@@ -1,0 +1,16 @@
+class T:
+	function f(): pass
+function main():
+	t=T()
+	t.a=1
+	t.a=1
+	t.a=1.0
+	t.a=true
+	t.a=false
+	t.a=null
+	t.a='abc'
+	t.a=main
+	t.a=t.f
+	t.a=t
+	return 'ok'
++++value 'ok'

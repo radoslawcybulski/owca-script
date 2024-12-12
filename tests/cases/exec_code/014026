@@ -1,0 +1,6 @@
+class C:
+	function f(): pass
+	raise $exception()
+function main():
+	return 'ok'
++++compilation_exception YEXCEPTION_USER 3 1

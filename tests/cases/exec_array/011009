@@ -1,0 +1,27 @@
+function main():
+	a=['a','b','c','e']
+	b=['a','b','d','e']
+	if     a==b: return 1
+	if not a!=b: return 2
+	if not a <b: return 3
+	if     a >b: return 4
+	if not a<=b: return 5
+	if     a>=b: return 6
+	a=['a','b','c']
+	b=['a','b','d']
+	if     a==b: return 1
+	if not a!=b: return 2
+	if not a <b: return 3
+	if     a >b: return 4
+	if not a<=b: return 5
+	if     a>=b: return 6
+	a=['a','b','c']
+	b=['a','b','c']
+	if not a==b: return 11
+	if     a!=b: return 12
+	if     a <b: return 13
+	if     a >b: return 14
+	if not a<=b: return 15
+	if not a>=b: return 16
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,19 @@
+class T:
+	function $hash(): return 0
+	function $init(v): self.v=v
+	function $eq(v):
+		return self.v==v.v
+	function $less(v):
+		return self.v<v.v
+function main():
+	m={T(1):T(2),T(3):T(4),T(5):T(6),T(7):T(8)}
+	v=$map((T(1),T(2),T(3),T(4),T(5),T(6),T(7),T(8)))
+	if m!=v: return 1
+	v=$map((T(1),T(3),T(5),T(7)),(T(2),T(4),T(6),T(8)))
+	if m!=v: return 2
+	v=$map((T(1),T(3),T(5),T(7)),*[(T(2),T(4),T(6),T(8))])
+	if m!=v: return 3
+	v=$map(*[(T(1),T(3),T(5),T(7)),(T(2),T(4),T(6),T(8))])
+	if m!=v: return 4
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,9 @@
+function f():
+	yield 'def'
+	yield 'ghi'
+function main():
+	z=''
+	for q = f():
+		z+=q
+	return z
++++value 'defghi'

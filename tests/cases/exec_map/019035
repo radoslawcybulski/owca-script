@@ -1,0 +1,21 @@
+function main():
+	m={'q':'1','w':'2'}
+	z=''
+	for q = m:
+		z+=q
+	if z!='qw' and z!='wq': return 1,z
+	z=''
+	for q = m.keys():
+		z+=q
+	if z!='qw' and z!='wq': return 1,z
+	z=''
+	for q = m.values():
+		z+=q
+	if z!='12' and z!='21': return 1,z
+	z=''
+	for q = m.items():
+		z+=q[0]+q[1]
+	if z!='q1w2' and z!='w2q1': return 4,z
+
+	return 'ok'
++++value 'ok'

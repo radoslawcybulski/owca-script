@@ -1,0 +1,8 @@
+function main():
+	a=['abc','def','ghi','jkl']
+	b=a[:]
+	b[:]=a
+	q=''
+	for z = b: q+=z
+	return b.size()==4 ? q : 0
++++value 'abcdefghijkl'

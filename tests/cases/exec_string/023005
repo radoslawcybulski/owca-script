@@ -1,0 +1,19 @@
+function main():
+	z='qwerty'.$hash()
+	if z!=$hash('qwerty'): return 1
+	z='qwerty'.$str()
+	if z!='qwerty': return 2
+	if not 'qwe'.$bool(): return 3
+	if ''.$bool(): return 4
+	z='qwerty'.$read_1(4)
+	if z!='t': return 5
+	z='qwerty'.$read_2(3,5)
+	if z!='rt': return 5
+	z='qwerty'.$read_2('qwe',5)
+	if z is not null: return 6
+	z='qwerty'.$read_2(3,'qwe')
+	if z is not null: return 7
+	z='qwerty'.$read_2('qwe','rty')
+	if z is not null: return 8
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,6 @@
+function f():
+	yield 'abc'
+function main():
+	z=f()
+	return z(*[])
++++value 'abc'

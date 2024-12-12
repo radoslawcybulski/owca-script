@@ -1,0 +1,7 @@
+function main():
+	function f():
+		a:='q'
+		a='z'
+		return a
+	return 'ok'
++++error 3 YERROR_VARIABLE_IS_LOCAL

@@ -1,0 +1,7 @@
+class T:
+	function $bool(): return true
+function main():
+	z=T()
+	if $bool(z)!=true: return 13
+	return 'ok'
++++value 'ok'

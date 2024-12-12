@@ -1,0 +1,38 @@
+class Z:
+	function $init(v): self.v=v
+	function $less(v): return self.v<v.v
+class T:
+	function $init(v): self.v=v
+	function $less(v): pass
+function main():
+	try:
+		if false > true: return 0
+	except:
+		pass
+	try:
+		if false >= true: return 1
+	except:
+		pass
+	try:
+		if true < false: return 3
+	except:
+		pass
+	try:
+		if true <= false: return 4
+	except:
+		pass
+	if true == false: return 2
+	if false == true: return 2
+	if true != true: return 5
+	if false != false: return 6
+	if 0 < -2: return 7
+	if 0.0 <= -2.0: return 8
+	if 0.0 <= -2: return 9
+	if 0 <= -2.0: return 10
+	if 0 <= -2.0: return 11
+	if Z(2)<Z(1): return 12
+	if 'a'<'': return 15
+	if 'abc'<'a': return 16
+	if T(2)<T(1): return 13
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 36

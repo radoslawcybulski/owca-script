@@ -1,0 +1,5 @@
+function f(a,b,c,d):
+	return a+b+c+d
+function main():
+	return f('a','b',*['d'],**{'d':'e'})
++++value 'abde'

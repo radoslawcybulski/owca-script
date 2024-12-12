@@ -1,0 +1,6 @@
+function main():
+	a: while false:
+		a='ok'
+	a='ok'
+	return a
++++error 3 YERROR_NOT_LVALUE

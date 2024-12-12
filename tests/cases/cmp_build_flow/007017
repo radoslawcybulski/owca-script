@@ -1,0 +1,4 @@
+function a():
+	b=0
+		a=0
++++error 3 YERROR_UNEXPECTED_INDENT

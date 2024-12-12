@@ -1,0 +1,7 @@
+function ff(): pass
+function main():
+	if true:
+		return 'def'
+	else:
+		return 'ok'
++++value 'def'

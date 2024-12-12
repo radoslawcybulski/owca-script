@@ -1,0 +1,7 @@
+class T:
+	function $sadd(v): return 'a'
+function main():
+	t=T()
+	t+='abc'
+	return 'ok'
++++value 'ok'

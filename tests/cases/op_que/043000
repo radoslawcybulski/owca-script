@@ -1,0 +1,4 @@
+function main():
+	if 'abc' ? 'def' : 'ghi': return 'ok'
+	return 1
++++value 'ok'

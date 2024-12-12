@@ -1,0 +1,8 @@
+function main():
+	z=$bool.$hash
+	q=z.bind(true)
+	if q()!=$hash(true): return 1
+	q=z.bind(false)
+	if q()!=$hash(false): return 2
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,17 @@
+throw=false
+class T:
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $less(v):
+		if throw and self.v<='d' and v.v<='d': raise $exception()
+		return v.v<self.v
+	function $eq(v):
+		if throw and self.v<='d' and v.v<='d': raise $exception()
+		return v.v==self.v
+function main():
+	m1={T('a'):T('b'),T('c'):T('d')}
+	m2={T('e'):T('f'),T('g'):T('h')}
+	throw:=true
+	if m1!=m2: return 1
+	return 2
++++exception YEXCEPTION_USER 6 0 15

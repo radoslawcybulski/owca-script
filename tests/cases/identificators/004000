@@ -1,0 +1,3 @@
+function $m(): pass
+function main(): return 'ok'
++++error 1 YERROR_INVALID_IDENT

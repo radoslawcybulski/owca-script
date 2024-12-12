@@ -1,0 +1,5 @@
+function f(a,*b):
+	return a
+function main():
+	return f(a='o',b='k')
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4

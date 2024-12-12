@@ -1,0 +1,16 @@
+class T:
+	pass
+function main():
+	z=T()
+	w=$weakref(z)
+	zz=$object(w)
+	if zz is not z: return 1
+	zz=null
+	z=null
+	zz=$object(w)
+	if zz is not null: return 2
+	z=T()
+	zz=$object(w)
+	if zz is not null: return 3
+	return 'ok'
++++value 'ok'

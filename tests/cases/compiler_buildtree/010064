@@ -1,0 +1,15 @@
+function main():
+	a,,c='a','b','c'
+	if a+c!='ac': return 1
+	a,,c,='a','b','c'
+	if a+c!='ac': return 2
+	a,,c,,='a','b','c','d'
+	if a+c!='ac': return 3
+	a,,c=['a','b','c']
+	if a+c!='ac': return 1
+	a,,c,=['a','b','c']
+	if a+c!='ac': return 2
+	a,,c,,=['a','b','c','d']
+	if a+c!='ac': return 3
+	return 'ok'
++++value 'ok'

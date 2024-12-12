@@ -1,0 +1,11 @@
+function main():
+	s={}
+	if $type(s) is not $map: return 1
+	s={'a'}
+	if $type(s) is not $set: return 2
+	if s!=$set(['a']): return 3
+	s={'a','b','b','a'}
+	if $type(s) is not $set: return 4
+	if s!=$set(['a','b']): return 5
+	return 'ok'
++++value 'ok'

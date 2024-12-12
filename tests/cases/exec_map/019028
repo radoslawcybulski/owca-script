@@ -1,0 +1,10 @@
+function main():
+	m={'a':'b','c':'d'}
+	m.pop()
+	m.pop()
+	if m!={}: return 1
+	m['a']='b'
+	m['c']='d'
+	if m.size()!=2: return 2
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,4 @@
+lambda x
+:
++++error 1 YERROR_SYNTAX_ERROR
++++error 2 YERROR_SYNTAX_ERROR

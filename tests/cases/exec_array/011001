@@ -1,0 +1,41 @@
+class A:
+	function $init(v): self.v=v
+	function $eq(v):
+		z=$cmp(self.v,v.v)==0
+		# $print('==',self.v,v.v,z)
+		return z
+	function $less(v):
+		z=$cmp(self.v,v.v)<0
+		# $print('< ',self.v,v.v,z)
+		return z
+	function $str(): return $str(self.v)
+lst=['a','b','c']
+function g(a,v,q):
+	$print('  ',a,v)
+	return v ? 1<<q : 0
+destvalue=[
+	[ 0b011010, 0b101100, 0b010101 ],
+	[ 0b011010, 0b101100, 0b010101 ],
+	[ 0b011010, 0b101100, 0b010101 ]
+	]
+function f(y,x):
+	z1=[A('b'),A('b'),A('b')]
+	z2=[A('b'),A('b'),A('b')]
+	z1[y]=A(lst[x])
+	$print(y,x,z1,z2)
+	value=        g('==',z1==z2,5)
+	value=value | g('!=',z1!=z2,4)
+	value=value | g('<=',z1<=z2,3)
+	value=value | g('>=',z1>=z2,2)
+	value=value | g('< ',z1< z2,1)
+	value=value | g('> ',z1> z2,0)
+	if value!=destvalue[y][x]:
+		$print(y,x,value,destvalue[y][x])
+		return false
+	return true
+function main():
+	for y = $range(3):
+		for x = $range(3):
+			if not f(y,x): return y*3+x
+	return 'ok'
++++value 'ok'

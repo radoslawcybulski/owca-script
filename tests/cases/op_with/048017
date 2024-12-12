@@ -1,0 +1,13 @@
+function main():
+	z=''
+	function f1():
+		z:=z+'1'
+		return 'b'
+	function f2():
+		z:=z+'2'
+		return 'a'
+	f3=f1.bind(f1)
+	with f1,f2,f3:
+		z='qwe'
+	return z
++++value 'qwe121'

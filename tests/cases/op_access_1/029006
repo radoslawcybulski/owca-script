@@ -1,0 +1,3 @@
+function f(): pass
+f['b']='a'
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 2

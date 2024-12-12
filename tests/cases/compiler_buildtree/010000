@@ -1,0 +1,3 @@
+class A:
+	self
++++error 2 YERROR_SYNTAX_ERROR

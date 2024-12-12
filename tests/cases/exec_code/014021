@@ -1,0 +1,7 @@
+class T:
+	function $write_2(k1,k2,v):
+		return 'a'
+function main():
+	T()['c':'d']+=1
+	return 1
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

@@ -1,0 +1,9 @@
+function f():
+	yield 'ok'
+function main():
+	z=f()
+	q=$gen.$str
+	q=q.bind(z)
+	q()
+	return 'ok'
++++value 'ok'

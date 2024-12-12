@@ -1,0 +1,13 @@
+function f():
+	yield a
+	a='qwe'
+	yield a	
+function main():
+	z=[]
+	for q = f():
+		z.push_back(q)
+	if z!=[null,'qwe']: 
+		$print(z)
+		return 1
+	return 'ok'
++++value 'ok'

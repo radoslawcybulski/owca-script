@@ -1,0 +1,5 @@
+function main():
+	class A($int):
+		pass
+	return 'def'
++++exception YEXCEPTION_CLASSCREATION 2

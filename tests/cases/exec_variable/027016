@@ -1,0 +1,5 @@
+function f(v): return 'ok'
+z=f.bind(f)
+function main():
+	return z(*['a'])
++++value 'ok'

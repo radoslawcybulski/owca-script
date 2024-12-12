@@ -1,0 +1,4 @@
+function main():
+	z=lambda a='q': a+'_'
+	return z()+z('a')
++++value 'q_a_'

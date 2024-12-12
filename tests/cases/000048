@@ -1,0 +1,5 @@
+function main():
+	a: for q = ['1','2','3']:
+		a=$int(q)
+	return 'ok'
++++error 3 YERROR_NOT_LVALUE

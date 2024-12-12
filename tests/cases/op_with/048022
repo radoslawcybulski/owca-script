@@ -1,0 +1,20 @@
+function main():
+	a='a'
+	b='b'
+	class T1:
+		function $withenter():
+			return self
+		function $withexit():
+			a:='o'
+			return 'qwe'
+	class T2:
+		function $withenter():
+			return self
+		function $withexit():
+			b:='k'
+			return 'qwe'
+	for q = ('a','b','c'):
+		with T1(),T2():
+			break
+	return a+b
++++value 'ok'

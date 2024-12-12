@@ -1,0 +1,8 @@
+class T:
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $eq(v): raise $exception()
+function main():
+	m=$map([T('a'),T('b'),T('c'),T('d')])
+	return 'ok'
++++exception YEXCEPTION_USER 4 0 0 6

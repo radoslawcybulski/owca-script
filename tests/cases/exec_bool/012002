@@ -1,0 +1,8 @@
+function main():
+	z=$bool.$str
+	q=z.bind(true)
+	if q()!='true':
+		$print(q())
+		return 1
+	return 'ok'
++++value 'ok'

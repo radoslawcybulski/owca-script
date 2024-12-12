@@ -1,0 +1,7 @@
+function main():
+	a=false ? 'not ok' : 'ok'
+	if a!='ok': return 1
+	a=true ? 'ok2' : 'not ok2'
+	if a!='ok2': return 1
+	return 'ok'
++++value 'ok'

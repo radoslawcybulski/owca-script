@@ -1,0 +1,12 @@
+class T1($exception): pass
+class T2($exception): pass
+class T3($exception): pass
+function main():
+	try:
+		raise T3('ok')
+	except T1 as e:    return 1
+	except T2 as e:    return 2
+	except T1,T2,T3 as e: return e.text()
+	except as e: return 3
+	return 'ok'
++++value 'ok'

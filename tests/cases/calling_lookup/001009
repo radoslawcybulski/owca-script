@@ -1,0 +1,7 @@
+class T:
+	function $bool(): return true
+	pass
+function main():
+	if $bool(true)!=true: return 3
+	return 'ok'
++++value 'ok'

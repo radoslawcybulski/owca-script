@@ -1,0 +1,10 @@
+class T2:
+	pass
+class T:
+	function $str(): raise $exception(T2())
+function f(*lst): pass
+function main():
+	a=T()
+	f(*a)
+	return 'ok'
++++exception YEXCEPTION_INVALIDLISTPARAM 8

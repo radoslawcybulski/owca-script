@@ -1,0 +1,5 @@
+a=0
+function main():
+	a[1]:=2
+	return 'ok'
++++error 3 YERROR_SYNTAX_ERROR

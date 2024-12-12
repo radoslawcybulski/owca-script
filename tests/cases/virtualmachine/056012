@@ -1,0 +1,6 @@
+function g(): return '123456'
+function f(a,b,c=g(),d='abc'):
+	return a+b+c+d
+function main():
+	return f('a',*['d'],**{'d':'e'})
++++value 'ad123456e'

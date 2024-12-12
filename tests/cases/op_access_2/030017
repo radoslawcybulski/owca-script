@@ -1,0 +1,3 @@
+function f(): yield 'abc'
+f()['b':'c']
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 2

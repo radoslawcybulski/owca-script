@@ -1,0 +1,14 @@
+class A:
+	function $str(): return 'QWE'
+function main():
+	v=$print(1,'a',2,'b',join='-')
+	if v!='1-a-2-b': return 1
+	v=$print(123,A(),456,'IOP',join=':')
+	if v!='123:QWE:456:IOP': return 2
+	try:
+		v=$print(123,A(),456,'IOP',join=A())
+		return 3
+	except $exception_param:
+		pass
+	return 'ok'
++++value 'ok'

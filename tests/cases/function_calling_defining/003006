@@ -1,0 +1,6 @@
+function f():
+	pass
+function main():
+	f(**{'q':'a'})
+	return 'ok'
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4

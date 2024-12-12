@@ -1,0 +1,9 @@
+function f():
+	z='def'
+	raise $exception('ghi')
+function main():
+	try:
+		f()
+	except $exception as e:
+		return e.text()
++++value 'ghi'

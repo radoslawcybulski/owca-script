@@ -1,0 +1,6 @@
+function main():
+	for x = ('a','b','c'):
+		pass
+		break l1
+	return 'ok'
++++error 4 YERROR_UNDEFINED

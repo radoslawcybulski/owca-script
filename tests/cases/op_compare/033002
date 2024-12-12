@@ -1,0 +1,7 @@
+function main():
+	if main!=main: return 1
+	if main.bind(main)==main: return 2
+	if main==main.bind(main): return 3
+	if main.bind(main)!=main.bind(main): return 4
+	return 'ok'
++++value 'ok'

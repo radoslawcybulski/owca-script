@@ -1,0 +1,4 @@
+function main():
+	m=$map(['q','e','q'],['r','t','y'])
+	return 'ok'
++++value 'ok'

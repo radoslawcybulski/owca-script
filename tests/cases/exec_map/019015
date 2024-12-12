@@ -1,0 +1,13 @@
+function f1():
+	yield 'a'
+	yield 'b'
+	yield 'c'
+function f2():
+	yield 'd'
+	raise $exception()
+	yield 'e'
+	yield 'f'
+function main():
+	m=$map(f1(),f2())
+	return 'ok'
++++exception YEXCEPTION_USER 7 0 11

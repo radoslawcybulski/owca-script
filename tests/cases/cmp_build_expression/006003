@@ -1,0 +1,21 @@
+function main():
+	function f( a00,a01,a02,a03,a04,a05,a06,a07,a08,a09,
+				a10,a11,a12,a13,a14,a15,a16,a17,a18,a19,
+				a20,a21,a22,a23,a24,a25,a26,a27,a28,a29,
+				a30,a31,a32,a33):
+		return a00+a01+a02+a30+a31+a32+a33
+	m={}
+	for x = $range(32):
+		$print(x)
+		m['a'+(x<10 ? '0' : '')+$str(x)]='_'+(x<10 ? '0' : '')+$str(x)
+	q=m.clone()
+	try:
+		return f(**q)
+	except:
+		pass
+	try:
+		return f(a32='_32',**q)
+	except:
+		pass
+	return f(a32='_32',a33='_33',**q)
++++value '_00_01_02_30_31_32_33'

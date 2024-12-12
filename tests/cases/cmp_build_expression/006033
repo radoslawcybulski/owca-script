@@ -1,0 +1,5 @@
+function main():
+	function f(a): pass
+	f(a='qwe',a='rty')
+	return 'ok'
++++error 3 YERROR_KEYWORD_PARAM_USED_TWICE

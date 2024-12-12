@@ -1,0 +1,17 @@
+function main():
+	size=20
+	lst=$list(size)
+	for x = $range(size):
+		lst[x]=x
+	lst.shuffle()
+	index: for x = lst:
+		$print(index,x)
+	lst.sort()
+	index: for x = lst:
+		$print(index,x)
+	if lst.size()!=size: return 1
+	for index = $range(1,size):
+		if lst[index-1]>=lst[index]: return 2
+		# if lst[index-1].index>=lst[index].index: return 3
+	return 'ok'
++++value 'ok'

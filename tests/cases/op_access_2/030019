@@ -1,0 +1,31 @@
+class Q:
+	function $read_2(k1,k2):
+		if k1!='q' or k2!='w': raise $exception()
+		return self.v
+	function $write_2(k1,k2,v):
+		if k1!='q' or k2!='w': raise $exception()
+		self.v=v
+		return v
+class T1:
+	function $add(v):
+		return 'o'+v
+class T2:
+	function $radd(v):
+		return v+'k'
+class T3:
+	function $sadd(v):
+		self.v='o'+v
+		return self.v
+function main():
+	z=Q()
+	z['q':'w']=T1()
+	z['q':'w']+='k'
+	if z['q':'w']!='ok': return 1
+	z['q':'w']='o'
+	z['q':'w']+=T2()
+	if z['q':'w']!='ok': return 2
+	z['q':'w']=T3()
+	z['q':'w']+=T2()
+	if z['q':'w'].v!='ok': return 3
+	return 'ok'
++++value 'ok'

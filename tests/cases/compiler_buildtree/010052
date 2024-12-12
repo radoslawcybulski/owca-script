@@ -1,0 +1,4 @@
+function main():
+	,c,d,='a','b','c','d'
+	return 'ok'
++++exception YEXCEPTION_TOOMANYITEMSINITER 2

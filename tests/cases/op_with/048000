@@ -1,0 +1,21 @@
+a=''
+class T1:
+	function $init(v):
+		self.v=v
+	function $withenter():
+		a:=a+'$'+self.v
+		return self
+	function $withexit():
+		a:=a+self.v
+function f():
+	with a1=T1('a'),a2=T1('b'),a3=T1('c'):
+		a:=a+'_'
+		yield 'b'
+function g():
+	z=f()
+	z()
+	return z
+function main():
+	z=g()
+	return a
++++value '$a$b$c_'

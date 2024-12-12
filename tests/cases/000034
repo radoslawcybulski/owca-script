@@ -1,0 +1,4 @@
+function main():
+	a=b+=c='ok'
+	return 'ok'
++++error 2 YERROR_SYNTAX_ERROR

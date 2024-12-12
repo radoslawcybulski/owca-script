@@ -1,0 +1,15 @@
+function main():
+	a=0
+	for x = $range(10): a+=x
+	if a!=45: return 1
+	a=0
+	for x = $range(10,2): a+=x
+	if a!=52: return 2
+	a=0
+	for x = $range(3,10,2): a+=x
+	if a!=24: return 3
+	a=0
+	for x = $range(-3,-10,-2): a+=x
+	if a!=-24: return 4
+	return 'ok'
++++value 'ok'

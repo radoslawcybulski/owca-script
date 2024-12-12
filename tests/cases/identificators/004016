@@ -1,0 +1,7 @@
+function main():
+	a=0
+	function f():
+		a=1
+		a:='ok'
+	return a
++++error 5 YERROR_VARIABLE_IS_LOCAL

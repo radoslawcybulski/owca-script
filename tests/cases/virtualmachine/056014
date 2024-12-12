@@ -1,0 +1,10 @@
+function f(a,b,c):
+	yield a
+	yield b
+	yield c
+function main():
+	a=''
+	for z = f('a',*['b'],**{'c':'d'}):
+		a+=z
+	return a
++++value 'abd'

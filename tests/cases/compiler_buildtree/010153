@@ -1,0 +1,7 @@
+function main():
+	lst=[('a','b'),('c','d'),('e','f')]
+	i=0
+	for a,b = lst: pass
+	for a,b = lst: pass
+	return 'ok'
++++value 'ok'

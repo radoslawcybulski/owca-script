@@ -1,0 +1,20 @@
+class T:
+	function $init(v): self.v=v
+	function $hash(): return self.v>>8
+	function $eq(v):
+		return self.v==v.v
+	function $less(v):
+		return self.v<v.v	
+function main():
+	m1={T(0):'qwe'}
+	m2={T(0):'qwe'}
+	if m1!=m2: return 1
+	m1={T(0):'qwe'}
+	m2={T(0x100):'qwe'}
+	if m1==m2: return 1
+	m1={T(0):'qwe'}
+	m2={T(1):'qwe'}
+	if m1==m2: return 1
+	
+	return 'ok'
++++value 'ok'

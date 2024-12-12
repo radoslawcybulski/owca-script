@@ -1,0 +1,12 @@
+class T:
+	function $eq(v): raise $exception()
+	function f(): pass
+	function g(): pass
+function main():
+	t=T()
+	z=$function.$eq
+	z=z.bind(t.f)
+	if z(t.g): return 1
+	if z(t.f): return 2
+	return 3
++++exception YEXCEPTION_USER 2 0 10

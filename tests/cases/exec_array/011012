@@ -1,0 +1,9 @@
+function f():
+	yield '1'
+	yield '2'
+	raise $exception()
+	yield '3'
+function main():
+	a=$list(f())
+	return a==['1','2','3'] ? 'ok' : 'fail'
++++exception YEXCEPTION_USER 4 0 7

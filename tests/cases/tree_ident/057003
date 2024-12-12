@@ -1,0 +1,6 @@
+function main():
+	function f():
+		l1:=3
+	f()
+	return 'ok'
++++error 3 YERROR_UNDEFINED

@@ -1,0 +1,4 @@
+class T:
+	function $radd(v): raise $exception()
+'a'+T()
++++compilation_exception YEXCEPTION_USER 2 3

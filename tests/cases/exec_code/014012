@@ -1,0 +1,7 @@
+class Z: pass
+class T:
+	function $write_1(k,v):
+		raise $exception()
+function main():
+	T()['abc']=Z()
++++exception YEXCEPTION_USER 4 6

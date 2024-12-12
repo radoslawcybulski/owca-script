@@ -1,0 +1,18 @@
+class T:
+	function read f(): pass
+	function write g(v): pass
+	function read h(): pass
+	function write h(v): pass
+function main():
+	v=$property()
+	z=$property.$str
+	z=z.bind(v)
+	if z()!='property': return 2
+	z=$property.$bool
+	z=z.bind(v)
+	if z()!=true: return 3
+	if T.f.read is null or not T.f.write is null: return 11
+	if not T.g.read is null or T.g.write is null: return 13
+	if T.h.read is null or T.h.write is null: return 15
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,8 @@
+function main():
+	z=''
+	for x = ('o','k'):
+		z+=x
+	finally:
+		return z
+	return 'qwe'
++++value 'ok'

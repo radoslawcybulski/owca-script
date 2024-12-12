@@ -1,0 +1,8 @@
+function main():
+	function f():
+		with lambda: 0:
+			return 'ok'
+		z='qwerty'
+		return z
+	return f()
++++value 'ok'

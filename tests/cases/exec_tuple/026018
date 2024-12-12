@@ -1,0 +1,8 @@
+function f():
+	yield 'o'
+	yield 'a'
+	raise $exception()
+function main():
+	t=$tuple(f())
+	return t[0]+t[1]+t[2]
++++exception YEXCEPTION_USER 4 0 6

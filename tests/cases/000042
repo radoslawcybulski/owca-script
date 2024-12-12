@@ -1,0 +1,21 @@
+class T:
+	function read(): return 0
+	function f(): pass
+	function $bool(): return true
+class F:
+	function $bool(): return false
+function g():
+	yield 1
+function main():
+	lst=((1,true),(0,false),(1.1,true),(0.0,false),('a',true),('',false),(main,true),(g(),true),(T,true),(T.read,true),(T.f,true),(T(),true),(F(),false))
+	cnt: for a,b = lst:
+		q=not a
+		a=$bool(a)
+		$print(a,b,q)
+		if a!=b: return cnt*3
+		if $type(a)!=$bool or $type(b)!=$bool or $type(q)!=$bool:
+			$print(cnt,' ',q,' ',a,' ',b,' ')
+			return cnt*3+1
+		if q==b: return cnt*3+2
+	return 'ok'
++++value 'ok'

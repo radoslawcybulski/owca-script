@@ -1,0 +1,83 @@
+coroutines=[]
+
+class coroutine($coroutine):
+	function $init(*p,**mp):
+		$coroutine.$init(self=self,*p,**mp)
+		coroutines.push_back(self)
+
+function coresume(obj):
+	$costop(('resume',obj))
+
+function costop(obj,value):
+	$costop(('value',value))
+
+function copeek():
+	return $copeek()
+
+function coserver():
+	if coroutines:
+		code='resume'
+		value=coroutines[0]
+		
+		while coroutines:
+			$print('code',code)
+			if code=='resume':
+				obj=value
+			else:
+				$print(code)
+				raise $exception()
+
+			$print('resuming',$id(obj))
+			ret=$coresume(obj)
+
+			if not obj:
+				size=coroutines.size()
+				index : while index < size:
+					if coroutines[index] is obj:
+						coroutines.pop(index)
+						break
+				finally:
+					raise $exception()
+				$print('coroutine returned value',ret)
+				if coroutines:
+					code='resume'
+					value=coroutines[0]
+			else:
+				code,value=ret
+	
+result=''
+
+function f1(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f1',params)
+		coresume(r2)
+		
+function f2(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f2',params)
+		coresume(r3)
+
+function f3(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f3',params)
+		if params:
+			coresume(r1)
+
+r1=coroutine(f1,'1','2','3')
+r2=coroutine(f2,'4','5','6')
+r3=coroutine(f3,'7','8','9')
+
+function main():
+	coserver()
+	return result
+
++++value '147258369'

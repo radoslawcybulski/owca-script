@@ -1,0 +1,7 @@
+function main():
+	a='ok'
+	c=0
+	f=a and c
+	if f != false: return 1
+	return a
++++value 'ok'

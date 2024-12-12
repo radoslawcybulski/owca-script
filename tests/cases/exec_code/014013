@@ -1,0 +1,7 @@
+class Z:
+	function $init(v):
+		self.v=v
+function main():
+	a,b,c=Z('a'),Z('b'),Z('c')
+	return a.v=='a' and b.v=='b' and c.v=='c' ? 'ok' : 0
++++value 'ok'

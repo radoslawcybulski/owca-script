@@ -1,0 +1,6 @@
+function main():
+	for x = ('a','b','c'):
+		pass
+		break x
+	return 'ok'
++++error 4 YERROR_INVALID_IDENT

@@ -1,0 +1,27 @@
+function main():
+	a=$tuple()
+	if a.size()!=0 or a: return 1
+	try:
+		a=$tuple((1,2,3),(4,5,6))
+	except:
+		pass
+	else:
+		return 2
+	try:
+		a=$tuple(1,2)
+	except:
+		pass
+	else:
+		return 3
+	try:
+		a=$tuple(3)
+	except:
+		pass
+	else:
+		return 4
+	a=('abc',)
+	if a.size()!=1 or a[0]!='abc': return 5
+	a=(,'abc')
+	if a.size()!=2 or not a[0] is null or a[1]!='abc': return 6
+	return 'ok'
++++value 'ok'

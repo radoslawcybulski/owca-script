@@ -1,0 +1,28 @@
+data = []
+
+function main():
+	function f(a,b,c):
+		$print('function f started')
+		resumed_value=$costop('stop 1')
+		$print('resumed with value "'+resumed_value+'"')
+		$print('function f parameters are:',a,b,c)
+		resumed_value=$costop('stop 2')
+		$print('resumed with value "'+resumed_value+'"')
+		$print('function f is done')
+		return 'coroutine done'
+	function g(a,b):
+		return f(a,b,a+' | '+b)
+		
+	c=$coroutine(g,'q','w')
+
+	resume_loop: while $coalive(c):
+		$print('resuming')
+		
+		stop_value=$coresume(c,'resume '+$str(resume_loop))
+		$print('stopped with value "'+stop_value+'"')
+		
+	$print('done')
+	
+	return 'ok'
+	
++++value 'ok'

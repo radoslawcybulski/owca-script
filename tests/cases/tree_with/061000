@@ -1,0 +1,3 @@
+f=null
+with f: a:=4
++++error 2 YERROR_UNDEFINED

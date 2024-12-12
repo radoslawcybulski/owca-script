@@ -1,0 +1,7 @@
+function f(): return 'ok'
+class T:
+	pass
+function main():
+	T.f=f.bind(main)
+	return T().f()
++++value 'ok'

@@ -1,0 +1,3 @@
+try:
+	pass
++++error 3 YERROR_NO_EXCEPT_CLAUSE

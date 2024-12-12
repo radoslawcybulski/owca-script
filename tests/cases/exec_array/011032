@@ -1,0 +1,30 @@
+class T:
+	function $init(q):
+		self.v=q
+		self.index=0
+	
+	function $less(v):
+		return self.v<v.v
+	function $str():
+		return $str(self.index)+":"+$str(self.v)
+
+function main():
+	size=20
+	for loop = $range(10):
+		$print('index',loop,'of 10')
+		lst=$list(size)
+		for x = $range(size):
+			lst[x]=T(x>>1)
+		lst.shuffle()
+		index: for x = lst:
+			x.index=index
+			#$print(index,x)
+		lst.sort()
+		#index: for x = lst:
+		#	$print(index,x)
+		if lst.size()!=size: return 1
+		for index = $range(1,size):
+			if lst[index-1].v>lst[index].v: return 2		
+			if lst[index-1].v==lst[index].v and lst[index-1].index>=lst[index].index: return 3
+	return 'ok'
++++value 'ok'

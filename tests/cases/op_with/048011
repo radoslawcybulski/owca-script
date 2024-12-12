@@ -1,0 +1,14 @@
+class T:
+	function $init(v): self.v=v
+	function $withenter():
+		return self
+	function $withexit():
+		if self.v: raise $exception()
+function main():
+	first=true
+	for x = ('a','b','c'):
+		with a1=T(0),a2=T(1),a3=T(0):
+			if first:
+				first=false
+				restart
++++exception YEXCEPTION_USER 6 10

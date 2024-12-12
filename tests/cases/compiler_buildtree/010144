@@ -1,0 +1,5 @@
+function main():
+	if false:
+		return 'def'
+	return 'ghi'
++++value 'ghi'

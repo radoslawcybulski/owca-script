@@ -1,0 +1,29 @@
+a='1'
+b='2'
+class T1:
+	function $init():
+		a:='i'
+	function $withenter():
+		return self
+	function $withexit():
+		a:='o'
+class T2:
+	function $init():
+		b:='j'
+	function $withenter():
+		return self
+	function $withexit():
+		b:='k'
+function f():
+	yield a+b
+	with T1(),T2():
+		yield a+b+'q'
+		yield a+b+'w'
+		yield a+b+'e'
+	yield a+b
+function main():
+	z=''
+	for q = f():
+		z+=q
+	return z
++++value '12ijqijwijeok'

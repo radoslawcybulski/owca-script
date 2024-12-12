@@ -1,0 +1,4 @@
+function a():
+	q=0
+ return 'ok'
++++error 3 YERROR_MIXED_CHARS_IN_INDENT

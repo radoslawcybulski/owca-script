@@ -1,0 +1,6 @@
+function main():
+	z=$int.$bool
+	z=z.bind(13)
+	if not z(): return 1
+	return 'ok'
++++value 'ok'

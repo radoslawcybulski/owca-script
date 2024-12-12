@@ -1,0 +1,5 @@
+function main():
+	a=b=c='ok'
+	if not a is b or not a is c or not b is c: return 1
+	return a
++++value 'ok'

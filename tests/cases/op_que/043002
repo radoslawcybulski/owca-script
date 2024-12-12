@@ -1,0 +1,4 @@
+function main():
+	'abc' ? a : b='def'
+	return 'ok'
++++value 'ok'

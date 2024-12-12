@@ -1,0 +1,9 @@
+class Z: pass
+class T:
+	function read r():
+		return Z()
+	function write r(v):
+		return 'b'
+function main():
+	T().r+=1
++++exception YEXCEPTION_INVALIDPARAMTYPE 8

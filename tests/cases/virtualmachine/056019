@@ -1,0 +1,6 @@
+class T:
+	function $hash(): return 123
+function main():
+	q=main.bind(T)
+	return $hash(q)==q.$hash() ? 'ok' : 1
++++value 'ok'

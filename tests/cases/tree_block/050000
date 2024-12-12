@@ -1,0 +1,11 @@
+function f():
+	raise $exception()
+function g():
+	yield 'q'
+	yield f()
+function main():
+	a=''
+	for x = g():
+		a+=x
+	return a
++++exception YEXCEPTION_USER 2 5 8

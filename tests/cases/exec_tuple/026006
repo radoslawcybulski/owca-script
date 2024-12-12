@@ -1,0 +1,3 @@
+function main():
+	('a','b','c','d')*-3
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 2

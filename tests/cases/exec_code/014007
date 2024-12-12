@@ -1,0 +1,8 @@
+class T:
+	function $read_1(k):
+		pass
+	function $write_1(k,v):
+		pass
+function main():
+	T()['def']+=1
++++exception YEXCEPTION_INVALIDPARAMTYPE 7

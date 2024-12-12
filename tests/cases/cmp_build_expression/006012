@@ -1,0 +1,4 @@
+function main():
+	z=lambda a,b='q',c: 'ok'
+	return z()
++++error 2 YERROR_SYNTAX_ERROR

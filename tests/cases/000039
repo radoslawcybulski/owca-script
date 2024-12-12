@@ -1,0 +1,52 @@
+class T:
+	function $str(): return 't'
+function s(a=null):
+	$print('s ',self)
+	return self
+function c(a=null):
+	$print('c ',class)
+	return class
+function f(a=null): return null
+function main():
+	if s()!=null: return 1
+	if c()!=null: return 2
+	if f()!=null: return 3
+	a=s.bind('abc')
+	if a()!='abc': return 4
+	if a(*['q'])!='abc': return 4
+	if a(**{'a':'dfg'})!='abc': return 4
+	a=c.bind('abc')
+	if a()!=$str: return 5
+	if a(*['qwe'])!=$str: return 5
+	if a(**{'a':'asd'})!=$str: return 5
+	a=f.bind('abc')
+	if a() is not null: return 5
+	if a(*['qwe']) is not null: return 5
+	if a(**{'a':'asd'}) is not null: return 5
+	a=s.bind(null)
+	if a() is not null: return 4
+	if a(*['q']) is not null: return 4
+	if a(**{'a':'dfg'}) is not null: return 4
+	a=c.bind(null)
+	if a() is not null: return 5
+	if a(*['qwe']) is not null: return 5
+	if a(**{'a':'asd'}) is not null: return 5
+	a=f.bind(null)
+	if a() is not null: return 5
+	if a(*['qwe']) is not null: return 5
+	if a(**{'a':'asd'}) is not null: return 5
+	t=T()
+	a=s.bind(t)
+	if a() is not t: return 4
+	if a(*['q']) is not t: return 4
+	if a(**{'a':'dfg'}) is not t: return 4
+	a=c.bind(t)
+	if a() is not T: return 5
+	if a(*['qwe']) is not T: return 5
+	if a(**{'a':'asd'}) is not T: return 5
+	a=f.bind(t)
+	if a() is not null: return 5
+	if a(*['qwe']) is not null: return 5
+	if a(**{'a':'asd'}) is not null: return 5
+	return 'ok'
++++value 'ok'

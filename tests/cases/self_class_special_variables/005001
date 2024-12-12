@@ -1,0 +1,19 @@
+class A:
+	function f():
+		return self
+	function g():
+		return class
+	function $noteq(v):
+		return $id(self)!=$id(v)
+class B(A): pass
+class C(A): pass
+function main():
+	b,c=B(),C()
+	if B.g()!=B: return 1
+	if C.g()!=C: return 2
+	if b.f()!=b: return 3
+	if c.f()!=c: return 4
+	if b.g()!=B: return 5
+	if c.g()!=C: return 6
+	return 'ok'
++++value 'ok'

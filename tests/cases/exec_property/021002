@@ -1,0 +1,19 @@
+class T:
+	function f(): pass
+function main():
+	v=$property()
+	t=T()
+	z=main
+	z=z.bind(main)
+	v.read=null
+	v.read=z
+	v.read=t.f
+	v.read=z
+	v.read=t.f
+	v.read=null
+	v.read=t.f
+	v.read=z
+	v.read=t.f
+	v.read=null
+	v.read='abc'
++++exception YEXCEPTION_INVALIDPARAMTYPE 0 18

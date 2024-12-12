@@ -1,0 +1,6 @@
+function f():
+	pass
+function main():
+	f(*1)
+	return 'ok'
++++exception YEXCEPTION_INVALIDLISTPARAM 4

@@ -1,0 +1,8 @@
+function main():
+	if false:
+		a=0
+		l: for a = []:
+			class T:
+				l=1
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,19 @@
+function f1(a,b,c):
+	d=$costop(null)
+	return a+b+c+d
+function f2(a,b,c):
+	d=$costop(null)
+	return b+c+a+d
+function f3(a,b,c):
+	d=$costop(null)
+	return c+a+b+d
+function main():
+	r1=$coroutine(f1,'1','2','3')
+	r2=$coroutine(f2,'4','5','6')
+	r3=$coroutine(f3,'7','8','9')
+	$coresume(r1)
+	$coresume(r2)
+	$coresume(r3)
+	val=$coresume(r1,'q')+$coresume(r2,'w')+$coresume(r3,'e')
+	return val
++++value '123q564w978e'

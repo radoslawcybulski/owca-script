@@ -1,0 +1,9 @@
+class T:
+	function $eq(v): raise $exception()
+function main():
+	if main==T.$eq: return 1
+	b=main.bind('abc')
+	a=main.bind(T())
+	if a==b: return 2
+	return 'ok'
++++exception YEXCEPTION_USER 2 0 7

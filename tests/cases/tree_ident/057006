@@ -1,0 +1,3 @@
+l: for l = ('q','w','e'):
+	function l(): pass
++++error 2 YERROR_ALREADY_DEFINED

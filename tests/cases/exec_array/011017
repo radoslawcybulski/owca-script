@@ -1,0 +1,3 @@
+function main():
+	$list(1,b=2)
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 2

@@ -1,0 +1,4 @@
+function f(a,b,*c,d): pass
+function main():
+	return 'ok'
++++error 1 YERROR_SYNTAX_ERROR

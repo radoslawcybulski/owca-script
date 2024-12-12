@@ -1,0 +1,29 @@
+class A:
+	function $init(x): self.x=x
+	
+	function $eq(v):
+		return $bool(self.x & v)
+
+function main():
+	a=['q','w','e','r','t','y']
+	for x = $range(a.size()):
+		if a.find(a[x])!=x: return 1
+	if a.find(' ')>=0: return 2
+	
+	b=[]
+	for x = $range(32):
+		b.push_back(A(x))
+		
+	for x = $range(5):
+		z=1 << x
+		tmp=$list(b.find_all(z))
+		if tmp.size()!=b.size()/2:
+			$print(z,tmp)
+			return 3
+		for y = tmp:
+			if not y & z:
+				$print(z,tmp)
+				return 4
+	return 'ok'
+	
++++value 'ok'

@@ -1,0 +1,13 @@
+function f1(a,b,c):
+	return a+b+c
+function f2(a,b,c):
+	return b+c+a
+function f3(a,b,c):
+	return c+a+b
+function main():
+	r1=$coroutine(f1,'1','2','3')
+	r2=$coroutine(f2,'4','5','6')
+	r3=$coroutine(f3,'7','8','9')
+	val=$coresume(r1)+$coresume(r2)+$coresume(r3)
+	return val
++++value '123564978'

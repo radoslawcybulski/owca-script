@@ -1,0 +1,6 @@
+function f():
+	raise $exception()
+function main():
+	if f() ? 'def' : 'ghi': return 'ok'
+	return 1
++++exception YEXCEPTION_USER 2 4

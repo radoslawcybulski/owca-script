@@ -1,0 +1,8 @@
+function main():
+	l: for x = ('a','b','c'):
+		try:
+			raise $exception()
+		except as l:
+			pass
+	return 'ok'
++++error 5 YERROR_NOT_LVALUE

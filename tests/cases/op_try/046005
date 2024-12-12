@@ -1,0 +1,15 @@
+function main():
+	a=''
+	for x = ('a','b','c'):
+		a+='_'
+		try:
+			raise $exception()
+		except:
+			continue
+		a+=x
+	else:
+		a+='e'
+	finally:
+		a+='f'
+	return a
++++value '___f'

@@ -1,0 +1,7 @@
+l1='qwe'
+function main():
+	function f():
+		l1:=3
+	l1='rty'
+	return 'ok'
++++error 4 YERROR_MEANING_OF_VARIABLE_HAS_CHANGED

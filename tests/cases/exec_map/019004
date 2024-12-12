@@ -1,0 +1,14 @@
+throw=false
+class T:
+	function $init(v): self.v=v
+	function $hash():
+		if throw: raise $exception()
+		return 0
+	function $eq(v):
+		return self.v==v.v
+function main():
+	m=$map([T('a'),T('b'),T('c'),T('d'),T('e'),T('f')])
+	throw:=true
+	m.get(T('a'))
+	return 'ok'
++++exception YEXCEPTION_USER 5 0 12

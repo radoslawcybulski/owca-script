@@ -1,0 +1,7 @@
+function f(a,b,c):
+	return a+b+c
+function main():
+	r=$coroutine(f,'q','w','e')
+	val=$coresume(r)
+	return val
++++value 'qwe'

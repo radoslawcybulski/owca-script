@@ -1,0 +1,8 @@
+class T:
+	function $read_1(k):
+		return 'a'
+	function $write_1(k,v):
+		raise $exception()
+function main():
+	T()['def']+='b'
++++exception YEXCEPTION_USER 5 7

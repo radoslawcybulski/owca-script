@@ -1,0 +1,3 @@
+function a():
+	"
++++error 2 YERROR_UNFINISHED_STRING_CONSTANT

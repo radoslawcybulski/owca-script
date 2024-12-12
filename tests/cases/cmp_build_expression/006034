@@ -1,0 +1,9 @@
+function main():
+	z='-'+a for a = ['q','w','e']
+	a=[]
+	for q = z:
+		a+=[q]
+	if a!=['-q','-w','-e']: return 1
+
+	return 'ok'
++++value 'ok'

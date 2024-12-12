@@ -1,0 +1,14 @@
+function f(t):
+	try:
+		return $real.$str.bind(t)()
+	except:
+		return null
+function main():
+	v=(('10.0',10),('123.25',123.25),('-123.5',-123.5))
+	c:for a,b = v:
+		z=f(b)
+		if z!=a:
+			$print('a=',a,' b=',b,' z=',z)
+			return c+1
+	return 'ok'
++++value 'ok'

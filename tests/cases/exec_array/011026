@@ -1,0 +1,6 @@
+class T:
+	function $str(): return ''
+function main():
+	$str([T(),T(),T()])
+	return 'ok'
++++value 'ok'

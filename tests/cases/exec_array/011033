@@ -1,0 +1,20 @@
+lst=[]
+
+class T:
+	function $init(q):
+		self.v=q
+	
+	function $eq(v):
+		return self.v==v.v
+	function $less(v):
+		lst[:]=[]
+		return self.v<v.v
+
+function main():
+	size=20
+	lst:=$list(size)
+	for x = $range(size):
+		lst[x]=T(x>>1)
+	lst.sort()
+	return 'ok'
++++exception YEXCEPTION_LISTMODIFEDWHILEBEINGSORTED 0 18

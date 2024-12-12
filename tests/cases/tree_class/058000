@@ -1,0 +1,4 @@
+class T:
+	a:=4
+	a=2
++++error 2 YERROR_VARIABLE_IS_LOCAL

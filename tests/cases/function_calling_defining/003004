@@ -1,0 +1,14 @@
+function main():
+	m=null
+	class T:
+		function $init(q): self.v=q
+		function $hash(): return 0
+		function $eq(v):
+			m:=null
+			return self.v==v.v
+	function f(**q):
+		return $bool(q)
+	m={'q':'i','w':'u','e':'y','r':'t'}
+	if not f(**m): return 1
+	return 'ok'
++++value 'ok'

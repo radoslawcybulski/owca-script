@@ -1,0 +1,16 @@
+function main():
+	a='ok'
+	b='oka'
+	c=0
+	d=a
+	e=a and d
+	f=a and c
+	g=a or b
+	h=a or a
+	if e != true: return 1
+	$print(f)
+	if f != false: return 2
+	if g != true: return 3
+	if h != true: return 4
+	return a
++++value 'ok'

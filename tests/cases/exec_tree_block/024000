@@ -1,0 +1,8 @@
+function main():
+	if false:
+		a=0
+		l: for a = []:
+			while true:
+				l=1
+	return 'ok'
++++error 6 YERROR_NOT_LVALUE

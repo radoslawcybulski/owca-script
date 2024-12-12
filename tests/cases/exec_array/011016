@@ -1,0 +1,87 @@
+function main():
+	a=['abc','def','ghi','jkl']
+	a*=0
+	if a!=[]: return 1
+	a=['abc','def','ghi','jkl']
+	a=a*0
+	if a!=[]: return 1
+	a=['abc','def','ghi','jkl']
+	a=0*a
+	if a!=[]: return 1
+	a=['abc','def','ghi','jkl']
+	if a[0]!='abc': return 1
+	if a[1]!='def': return 2
+	if a[-1]!='jkl': return 3
+	if a[-2]!='ghi': return 3
+	a[0]='abc'
+	a[1]='def'
+	a[-1]='jkl'
+	a[-2]='ghi'
+	if a[0]!='abc': return 1
+	if a[1]!='def': return 2
+	if a[-1]!='jkl': return 3
+	if a[-2]!='ghi': return 3.0
+	a[-4:-2]=['def','abc']
+	if a!=['def','abc','ghi','jkl']: return 3.1
+	a[-3:-4]=[]
+	if a!=['def','abc','ghi','jkl']: return 3.2
+	a[-12:-10]=['q']
+	if a!=['q','def','abc','ghi','jkl']: return 3.3
+	a[0:1]=[]
+	if a!=['def','abc','ghi','jkl']: return 3.4
+	a[1:2]=['h','i']
+	if a!=['def','h','i','ghi','jkl']: return 3.5
+	a[6:8]=[]
+	if a!=['def','h','i','ghi','jkl']: return 3.6
+	a=['abc','def','ghi','jkl']
+	try:
+		a[4]
+		return 4
+	except:
+		pass
+	try:
+		a[4]='qwerty'
+		return 4.5
+	except:
+		pass
+	try:
+		a[-5]
+		return 5
+	except:
+		pass
+	try:
+		a[-5]='qwerty'
+		return 5.5
+	except:
+		pass
+	if a[0:2]!=['abc','def']: return 6
+	if a[:2]!=['abc','def']: return 7
+	if a[-3:-1]!=['def','ghi']: return 8
+	if a[-3:]!=['def','ghi','jkl']: return 9
+	if a[2:0]!=[]: return 10
+	if a[-2:-4]!=[]: return 11
+	if a.size()!=4: return 12
+	b=a[:]
+	if a!=b: return 13
+	b[0]=4
+	if a==b: return 14
+	if a[1:]!=b[1:]: return 15
+	b[:]=a
+	if a!=b: return 16
+	b[2:]=(1.0,2.0)
+	if b!=['abc','def',1.0,2.0]: return 17
+	z=''
+	for q = a:
+		z+=q
+	if z!='abcdefghijkl': return 18
+	if ['a','b']*3!=['a','b','a','b','a','b']: return 19
+	if 3*['a','b']!=['a','b','a','b','a','b']: return 20
+	if ['a','b']+['c','d']!=['a','b','c','d']: return 21
+	z=['a','b']
+	z.$init(('c','d','e'))
+	if z!=['c','d','e']: return 22
+	z=['a','b','c']
+	z.$init(['c','d'])
+	if z!=['c','d']: return 23
+	return 'ok'
++++value 'ok'

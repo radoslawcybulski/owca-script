@@ -1,0 +1,6 @@
+function main():
+	a='ok'
+	a: while false:
+		pass
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,4 @@
+function f(): pass
+z=f.bind(f)
+z['b':'c']
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 3

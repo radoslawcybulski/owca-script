@@ -1,0 +1,8 @@
+function f(a,b,c):
+	return a+b+c
+function main():
+	r=$coroutine(f,'q','w','e')
+	val=$coresume(r)
+	$coresume(r)
+	return val
++++exception YEXCEPTION_CANTRESUMEFINISHEDCOROUTINE 0 6

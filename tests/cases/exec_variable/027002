@@ -1,0 +1,31 @@
+class T0:
+	pass
+class T1:
+	function $bool (): return self
+class T2:
+	function $bool (): raise $exception()
+class T3:
+	function $bool (): return true
+function main():
+	if not 1: return 1
+	if 0: return 2
+	if not 1.5: return 3
+	if 0.0: return 4
+	if not true: return 5
+	if false: return 6
+	if not 'abc': return 7
+	if '': return 8
+	if not T3(): return 9
+	try:
+		if not T2(): return 10
+		return 11
+	except:
+		pass
+	try:
+		if not T0(): return 10
+		return 11
+	except:
+		pass
+	if not T1(): return 12
+	return 'ok'
++++exception YEXCEPTION_INVALIDRETURNTYPE 4 29

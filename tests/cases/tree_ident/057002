@@ -1,0 +1,7 @@
+function main():
+	l1: while l1<2:
+		function f():
+			l1:=3
+		f()
+	return 'ok'
++++error 4 YERROR_NOT_LVALUE

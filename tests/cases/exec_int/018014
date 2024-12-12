@@ -1,0 +1,14 @@
+function f(t):
+	try:
+		return $int.$str.bind(t)()
+	except:
+		return null
+function main():
+	v=(('10',10),('123',123),('-123',-123))
+	c:for a,b = v:
+		z=f(b)
+		if z!=a:
+			$print('a=',a,' b=',b,' z=',z)
+			return c+1
+	return 'ok'
++++value 'ok'

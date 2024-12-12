@@ -1,0 +1,10 @@
+function main():
+	try:
+		pass
+	except $exception: return 'abc'
+	except:
+		l: for a = []:
+			class T:
+				l:=1
+	return 'ok'
++++error 8 YERROR_NOT_LVALUE

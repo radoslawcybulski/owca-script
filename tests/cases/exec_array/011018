@@ -1,0 +1,5 @@
+function main():
+	if not $bool([1]): return 7
+	if $bool([]): return 'a'
+	return 'ok'
++++value 'ok'

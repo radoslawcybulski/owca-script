@@ -1,0 +1,5 @@
+a=b=$exception
+class A(a,b):
+	pass
+function main(): return 'def'
++++value 'def'

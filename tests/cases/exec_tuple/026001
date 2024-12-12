@@ -1,0 +1,6 @@
+function main():
+	z=('q','w','e','r','t','y')
+	if z[:3]!=('q','w','e'): return 1
+	if z[3:]!=('r','t','y'): return 2
+	return z[main:3]
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

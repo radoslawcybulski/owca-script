@@ -1,0 +1,9 @@
+function f():
+	pass
+
+	# 
+	
+function main():
+	f(1)
+	return 'ok'
++++exception YEXCEPTION_TOOMANYPARAMETERS 7

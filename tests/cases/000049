@@ -1,0 +1,26 @@
+function main():
+	a=''
+	try:
+		try:
+			raise $exception()
+		except $exception_math:
+			a+='b'
+			raise
+		except $exception:
+			a+='r'
+			raise
+		else:
+			a+='e'
+		finally:
+			a+='f'
+		a+='_'
+	except $exception_math:
+		a+='B'
+	except $exception:
+		a+='R'
+	else:
+		a+='E'
+	finally:
+		a+='F'
+	return a
++++value 'rRF'

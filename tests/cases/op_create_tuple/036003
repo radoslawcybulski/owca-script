@@ -1,0 +1,8 @@
+function main():
+	function f():
+		yield 'abc'
+		raise $exception()
+		yield 'def'
+	a,b,c=f()
+	return 'ok'
++++exception YEXCEPTION_USER 4 6

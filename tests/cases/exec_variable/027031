@@ -1,0 +1,8 @@
+function f(): pass
+class T:
+	a=f
+function main():
+	z=T.a
+	T.a='ok'
+	return T.a
++++value 'ok'

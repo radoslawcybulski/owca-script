@@ -1,0 +1,7 @@
+function main():
+	try:
+		raise $exception()
+	except:
+		raise
+	return 'ok'
++++exception YEXCEPTION_USER 3

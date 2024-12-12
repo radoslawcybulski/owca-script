@@ -1,0 +1,19 @@
+function main():
+	a='a'
+	b='b'
+	class T1:
+		function $withenter():
+			return self
+		function $withexit():
+			a:='o'
+	class T2:
+		function $withenter():
+			return self
+		function $withexit():
+			b:='k'
+	try:
+		with T1(),T2():
+			raise $exception()
+	except:
+		return a+b
++++value 'ok'

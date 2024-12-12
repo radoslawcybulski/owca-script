@@ -1,0 +1,10 @@
+function main():
+	z=true
+	while z:
+		if z:
+			z=false
+			continue
+		else:
+			break
+	return 'ok'
++++value 'ok'

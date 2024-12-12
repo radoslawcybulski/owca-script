@@ -1,0 +1,2 @@
+$property()['b']
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 1

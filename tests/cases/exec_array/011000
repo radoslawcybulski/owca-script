@@ -1,0 +1,44 @@
+function main():
+	a=$list()
+	if a.size()!=0 or a: return 1
+	try:
+		a=$list((1,2,3),(4,5,6))
+	except $exception_param:
+		pass
+	else:
+		return 2
+	try:
+		a=$list(1,2)
+	except $exception_param:
+		pass
+	else:
+		return 3
+	try:
+		a=$list(3)
+	except $exception_param:
+		return 4
+	else:
+		if a.size()!=3 or a!=[null,null,null]: return 5
+	try:
+		a=$list(4.0)
+	except $exception_param:
+		return 6
+	else:
+		if a.size()!=4 or a!=[null,null,null,null]: return 7
+	try:
+		a=$list(4.5)
+		return 8
+	except $exception_param:
+		pass
+	try:
+		a=$list(-4)
+		return 9
+	except $exception_param:
+		pass
+	a=['a','b','c']
+	b=['a','b','g']
+	z=a+b
+	if z!=['a','b','c','a','b','g']:
+		return 10
+	return 'ok'
++++value 'ok'

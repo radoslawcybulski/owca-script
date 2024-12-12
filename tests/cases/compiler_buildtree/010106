@@ -1,0 +1,7 @@
+try:
+	pass
+except 0: a+
+except: pass
+else: pass
+finally: pass
++++error 3 YERROR_SYNTAX_ERROR

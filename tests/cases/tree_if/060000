@@ -1,0 +1,2 @@
+if true: a:=4
++++error 1 YERROR_UNDEFINED

@@ -1,0 +1,9 @@
+class Z: pass
+class T:
+	function $read_1(k):
+		return Z()
+	function $write_1(k,v):
+		pass
+function main():
+	T()['def']+=1
++++exception YEXCEPTION_INVALIDPARAMTYPE 8

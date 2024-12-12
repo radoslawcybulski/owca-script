@@ -1,0 +1,6 @@
+function main():
+	z=$type.$hash
+	z=z.bind($type('str'))
+	if z()!=$hash($type('str')): return 1
+	return 'ok'
++++value 'ok'

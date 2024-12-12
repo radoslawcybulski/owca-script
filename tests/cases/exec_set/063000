@@ -1,0 +1,8 @@
+class T:
+	function $hash(): raise $exception()
+function main():
+	m=$set()
+	if m!=$set(): return 1
+	m=$set([T(),T(),T(),T(),T(),T()])
+	return 'ok'
++++exception YEXCEPTION_USER 2 0 0 6

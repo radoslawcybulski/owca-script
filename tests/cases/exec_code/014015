@@ -1,0 +1,7 @@
+class T:
+	function $read_1(k):
+		return 'a'
+function main():
+	T()['c']+=1
+	return 1
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

@@ -1,0 +1,4 @@
+function main():
+	$str(a=0)
+	return 'ok'
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 2

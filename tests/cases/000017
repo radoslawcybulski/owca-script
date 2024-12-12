@@ -1,0 +1,7 @@
+function ff(): pass
+function main():
+	if false:
+		return 0
+	else:
+		return 'ok'
++++value 'ok'

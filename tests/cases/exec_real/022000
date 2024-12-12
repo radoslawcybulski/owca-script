@@ -1,0 +1,27 @@
+function main():
+	z=$real.$hash
+	z=z.bind(0.5)
+	if z()!=$hash(0.5): return 1
+	z=z.bind(2.0)
+	if z()!=$hash(2.0): return 2
+	if z()!=$hash(2): return 3
+	z=z.bind(2)
+	if z()!=$hash(2.0): return 2.5
+	if z()!=$hash(2): return 3.5
+	z=$real.$bool
+	z=z.bind(2.5)
+	if not z(): return 12
+	z=z.bind(0)
+	if z(): return 13
+	z=z.bind(0.0)
+	if z(): return 14
+	try:
+		$real(main)
+		return 15
+	except:
+		pass
+	if $real(4)!=4.0: return 16
+	if $real(true)!=1.0: return 17
+	if $real(false)!=0.0: return 18
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,27 @@
+change=false
+m1={}
+class T:
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $eq(v):
+		if self.m!=v.m:
+			m1.clear()
+		return self.v==v.v
+	function $less(v):
+		if self.m!=v.m:
+			m1.clear()
+		return self.v<v.v	
+function main():
+	m2={}
+	for x = $range(10):
+		t=T(x)
+		t.m=1
+		m1[t]='qwerty'
+		t=T(x)
+		t.m=2
+		m2[t]='qwerty'
+	
+	change:=true
+	
+	return m1==m2 ? 1 : 2
++++exception YEXCEPTION_MAPMODIFEDWHILEBEINGUSED 0 26

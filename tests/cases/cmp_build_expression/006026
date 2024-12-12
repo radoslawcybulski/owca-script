@@ -1,0 +1,4 @@
+function main():
+	z=lambda x,y,*a,**b: x+y+a[0]+a[1]+b['qwe']+b['rty']
+	return z(*['a','b','c','d'],**{'qwe':'e','rty':'f'})
++++value 'abcdef'

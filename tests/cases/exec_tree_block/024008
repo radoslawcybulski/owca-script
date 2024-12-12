@@ -1,0 +1,5 @@
+function main():
+	l: for a = []:
+		function f(l,l): pass
+	return 'ok'
++++error 3 YERROR_ALREADY_DEFINED

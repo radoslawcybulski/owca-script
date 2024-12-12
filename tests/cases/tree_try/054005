@@ -1,0 +1,4 @@
+try: pass
+except $exception_math: pass
+finally: a:=4
++++error 3 YERROR_UNDEFINED

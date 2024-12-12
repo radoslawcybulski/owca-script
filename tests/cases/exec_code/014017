@@ -1,0 +1,5 @@
+class T: pass
+function main():
+	T()['c']+=1
+	return 1
++++exception YEXCEPTION_INVALIDPARAMTYPE 3

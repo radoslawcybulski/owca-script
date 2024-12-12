@@ -1,0 +1,5 @@
+while a: pass
+else: pass
+finally: pass
+finally: pass
++++error 4 YERROR_SYNTAX_ERROR

@@ -1,0 +1,9 @@
+function f():
+	yield 'abc'
+class T:
+	a=f()
+function main():
+	t=T()
+	t.a='ok'
+	return t.a
++++value 'ok'

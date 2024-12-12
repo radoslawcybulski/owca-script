@@ -1,0 +1,5 @@
+function main():
+	function f(): raise $exception()
+	a='a','b',f(),'c'
+	return 'ok'
++++exception YEXCEPTION_USER 2 3

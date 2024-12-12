@@ -1,0 +1,12 @@
+class A:
+	function a():
+		pass
+		
+class B:
+	function b():
+		pass
+
+function main():
+	return 'ok'
+
++++value 'ok'

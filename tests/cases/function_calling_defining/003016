@@ -1,0 +1,6 @@
+function f(a,b):
+	pass
+function main():
+	f(1,2,*[1])
+	return 'ok'
++++exception YEXCEPTION_TOOMANYPARAMETERS 4

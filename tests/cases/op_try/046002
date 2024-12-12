@@ -1,0 +1,11 @@
+function main():
+	try:
+		raise $exception()
+	except:
+		return 'ok'
+	else:
+		return 1
+	finally:
+		return 2
+	return 3
++++value 'ok'

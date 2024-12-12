@@ -1,0 +1,128 @@
+coroutines=[]
+
+class coroutine($coroutine):
+	function $init(*p,**mp):
+		$coroutine.$init(self=self,*p,**mp)
+		coroutines.push_back(self)
+		self._waiting=null
+	function $str():
+		z=$memberget(self,'name',null)
+		return z is null ? $str($id(self)) : z
+		
+class comutex:
+	function $init():
+		self._owner=null
+	function $bool():
+		return self._owner is null
+	function lock(thr=null):
+		if thr is null:
+			thr=copeek()
+		if self._owner is null:
+			self._owner=thr
+		elif self._owner is not thr:
+			$costop(('wait',(self,)))
+	function unlock():
+		self._owner=null
+	function $withenter():
+		self.lock()
+	function $withexit():
+		self.unlock()
+		
+function coresume(obj):
+	$costop(('resume',obj))
+
+function costop(obj):
+	$costop()
+
+function copeek():
+	return $copeek()
+
+function coserver():
+	if coroutines:
+		index=-1
+		
+		function check_and_lock(th):
+			waiting=th._waiting
+			if not waiting:
+				return true
+			for w = waiting:
+				if not w: return false
+			for w = waiting:
+				w.lock(th)
+			return true
+
+		resume=null
+		
+		while coroutines:
+			if resume is null or not check_and_lock(resume):
+				size=coroutines.size()
+				ind: while ind<size:
+					index=(index+1) % size
+					th=coroutines[index]
+					if th is not resume and check_and_lock(th):
+						break
+				else:
+					return false
+				finally:
+					return true
+				resume=th
+
+			$print('resuming',resume,coroutines)
+			ret=$coresume(resume)
+
+			if not resume:
+				index=coroutines.find(resume)
+				coroutines.pop(index)
+				$print('coroutine',resume,'returned value',ret)
+				resume=null
+			else:
+				code,value=ret
+				if code=='resume':
+					resume=value
+					$print('resume',value)
+				elif code=='wait':
+					if resume._waiting:
+						raise $exception()
+					resume._waiting=value
+					resume=null
+		return false			
+	
+result=''
+
+function f1(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f1',params)
+		coresume(r2)
+		
+function f2(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f2',params)
+		coresume(r3)
+
+function f3(a,b,c):
+	params=[a,b,c]
+	while params:	
+		result:=result+params[0]
+		params.pop(0)
+		$print('f3',params)
+		if params:
+			coresume(r1)
+
+r1=coroutine(f1,'1','2','3')
+r2=coroutine(f2,'4','5','6')
+r3=coroutine(f3,'7','8','9')
+r1.name='r1'
+r2.name='r2'
+r3.name='r3'
+
+function main():
+	coserver()
+	return result
+	
++++value '147258369'

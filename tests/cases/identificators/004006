@@ -1,0 +1,7 @@
+class T:
+	function m(): pass
+	function write m(v): return 'ok'
+function main():
+	a=T().m=1
+	return a
++++value 'ok'

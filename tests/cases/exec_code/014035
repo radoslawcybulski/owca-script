@@ -1,0 +1,7 @@
+class T:
+	function $read_2(k1,k2):
+		return 'a'
+function main():
+	T()['c':'d']+='b'
+	return 1
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

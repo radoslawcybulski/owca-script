@@ -1,0 +1,5 @@
+class C(1):
+	function f(): pass
+function main():
+	return 'ok'
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 1

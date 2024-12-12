@@ -1,0 +1,5 @@
+function main():
+	a=1
+	if not 0<=a<=3: return 0
+	return 'ok'
++++value 'ok'

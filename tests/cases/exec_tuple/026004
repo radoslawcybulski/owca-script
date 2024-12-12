@@ -1,0 +1,6 @@
+class T:
+	function $eq(v): raise $exception()
+function main():
+	if ('a','b',T())==('a','b','c'): return 1
+	return 2
++++exception YEXCEPTION_USER 2 0 4

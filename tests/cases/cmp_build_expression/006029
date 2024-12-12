@@ -1,0 +1,3 @@
+class T:
+	yield 'a'
++++error 2 YERROR_UNEXPECTED_RETURN_YIELD

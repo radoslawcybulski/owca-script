@@ -1,0 +1,7 @@
+function main():
+	t=$tuple(['a','b','c'])
+	if $str(t)!='( a, b, c )':
+		$print(t)
+		return 1
+	return t[0]+t[1]+t[2]
++++value 'abc'

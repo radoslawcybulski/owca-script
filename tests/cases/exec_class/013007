@@ -1,0 +1,6 @@
+function main():
+	z=$type.$call
+	z=z.bind('qwe')
+	z()
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 4

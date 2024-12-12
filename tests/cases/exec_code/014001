@@ -1,0 +1,7 @@
+class T:
+	function $add(v):
+		raise $exception('abc')
+function main():
+	a=T()
+	a+=1
++++exception YEXCEPTION_USER 3 6

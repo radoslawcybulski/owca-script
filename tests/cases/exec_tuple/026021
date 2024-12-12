@@ -1,0 +1,9 @@
+class T:
+	function $req(v): return false
+	function $rless(v): raise $exception()
+function main():
+	if (0,1)>=(2,3,4): return 1
+	if (0,1)>=(2,3): return 2
+	if ()!=(): return 3
+	(2,1)<(2,T())
++++exception YEXCEPTION_USER 3 0 8

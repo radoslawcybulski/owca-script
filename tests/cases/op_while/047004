@@ -1,0 +1,5 @@
+function main():
+	while 'abc':
+		return 'ok'
+	return 2
++++value 'ok'

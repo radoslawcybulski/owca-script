@@ -1,0 +1,6 @@
+function f():
+	raise $exception()
+function main():
+	f() ? a : b='def'
+	return 'ok'
++++exception YEXCEPTION_USER 2 4

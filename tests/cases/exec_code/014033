@@ -1,0 +1,9 @@
+class T:
+	function read r(): return 'abc'
+	function write r(v): return 'ok'
+function main():
+	a,b,T().r='a','b','c'
+	T().r=4
+	a=T().r=4
+	return a
++++value 'ok'

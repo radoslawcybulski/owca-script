@@ -1,0 +1,15 @@
+function main():
+	a='qwe'
+	g='rty'
+	class Z:
+		a='asdfg'
+		function f():
+			return a
+		function g():
+			return g
+	a1=Z.f()+Z.g()
+	z=Z()
+	a2=z.f()+z.g()
+	if a1!=a2: return 1
+	return a1
++++value 'qwerty'

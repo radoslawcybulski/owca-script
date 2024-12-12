@@ -1,0 +1,35 @@
+a=''
+function g():
+	try:
+		raise $exception()
+	except $exception_param:
+		pass
+	finally:
+		a:=a+'g'
+	return 1
+function f():
+	try:
+		return g()
+	except $exception_param:
+		pass
+	finally:
+		a:=a+'f'
+	return 0
+function main():
+	try:
+		try:
+			return f()
+		except $exception:
+			a:=a+'$'
+		except $exception_math:
+			a:=a+'_'
+		finally:
+			a:=a+'1'
+	except $exception_param:
+		pass
+	else:
+		a:=a+'4'
+	finally:
+		a:=a+'2'
+	return a
++++value '$14'

@@ -1,0 +1,6 @@
+function main():
+	z=['-'+a for a = ['q','w','e','r'] if a!='w']
+	$print(z)
+	if z!=['-q','-e','-r']: return 1
+	return 'ok'
++++value 'ok'

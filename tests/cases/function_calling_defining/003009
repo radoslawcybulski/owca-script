@@ -1,0 +1,6 @@
+function f(a,b):
+	pass
+function main():
+	f(1,2)
+	return 'ok'
++++value 'ok'

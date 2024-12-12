@@ -1,0 +1,21 @@
+class T1:
+	function $init():
+		$print('t1',$id(self))
+		self.v='abc'
+	function f():
+		$print($id(self))
+		$print($typename($type(self)))
+		return self.v
+t=T1()
+class T2:
+	function $init():
+		$print('t2',$id(self))
+		self.v='def'
+	f=t.f
+	v='ghi'
+function main():
+	t=T2()
+	if t.f()!='def': return 2
+	if T2.f()!='ghi': return 1
+	return T2.g
++++exception YEXCEPTION_MISSINGMEMBER 20

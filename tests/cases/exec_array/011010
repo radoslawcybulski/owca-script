@@ -1,0 +1,11 @@
+function main():
+	a=['abc','def','ghi','jkl']
+	if $str(a)!='[ abc, def, ghi, jkl ]': return 1
+	if $str([])!='[]': return 2
+	try:
+		a[4]
+		return 4
+	except:
+		pass
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,5 @@
+function f(a,b,*lst):
+	return a+b
+function main():
+	return f('a','b','c',*['d','e'],**{'f':'g'})
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4

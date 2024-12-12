@@ -1,0 +1,28 @@
+class A:
+	function $str(): return 'a'
+	function f(): return 'a'
+	function g(): return $str(self)
+class B:
+	function $str(): return 'b'
+	function f(): return 'b'
+	function g(): return $str(self)
+class C:
+	pass
+class Z1(A,B):
+	pass
+class Z2(B,A):
+	pass
+class Z3(B,C):
+	pass
+class Z4(C,A):
+	pass
+class Z5(A,B,C):
+	pass
+function main():
+	l: for cl,val = ((Z1,'a'),(Z2,'b'),(Z3,'b'),(Z4,'a'),(Z5,'a')):
+		c=cl()
+		if $str(c)!=val: return l*3+0
+		if c.f()!=val: return l*3+1
+		if c.g()!=val: return l*3+2
+	return 'ok'
++++value 'ok'

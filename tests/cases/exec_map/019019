@@ -1,0 +1,8 @@
+class T:
+	function $hash(): return 0
+	function $str(): raise $exception()
+function main():
+	m={'a':'b',T():'c'}
+	$str(m)
+	return 'ok'
++++exception YEXCEPTION_USER 3 0 0 6

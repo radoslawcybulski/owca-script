@@ -1,0 +1,15 @@
+function f(): yield '123'
+class T:
+	function read f(): pass
+	function $str(): return self
+function main():
+	if $str(1.5)!='1.5': return 1
+	$str(f())
+	$str(T.f)
+	$str(f)
+	z=main
+	z=z.bind(main)
+	$str(z)
+	$str(T())
+	return 'ok'
++++exception YEXCEPTION_INVALIDRETURNTYPE 4 0 13

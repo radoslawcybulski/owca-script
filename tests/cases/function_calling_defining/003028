@@ -1,0 +1,5 @@
+function f(a,*b):
+	return a=='o' and b==['k'] ? 'ok' : null
+function main():
+	return f('o','k')
++++value 'ok'

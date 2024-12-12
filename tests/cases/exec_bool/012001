@@ -1,0 +1,5 @@
+class T:
+	function $bool(): raise $exception()
+function main():
+	return $bool(T())
++++exception YEXCEPTION_USER 2 0 4

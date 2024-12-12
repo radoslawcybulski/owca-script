@@ -1,0 +1,4 @@
+function main():
+	function f(): pass
+	with f
++++error 3 YERROR_SYNTAX_ERROR

@@ -1,0 +1,9 @@
+function main():
+	try:
+		raise $exception()
+	except $exception_math:
+		pass
+	except:
+		return 'ok'
+	return 'ok'
++++value 'ok'

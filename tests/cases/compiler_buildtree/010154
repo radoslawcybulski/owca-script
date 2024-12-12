@@ -1,0 +1,10 @@
+function main():
+	try:
+		try:
+			raise $exception('ok')
+		finally:
+			raise $exception('a')
+	except as e:
+		return e.text()
+	return 1
++++error 5 YERROR_NO_EXCEPT_CLAUSE

@@ -1,0 +1,3 @@
+function main():
+	return $int('abc',123)
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 2

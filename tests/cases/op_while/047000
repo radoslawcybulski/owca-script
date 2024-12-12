@@ -1,0 +1,47 @@
+function f(mode):
+	a=''
+	z1=-1
+	t1=('a','b','c')
+	t2=('d','e','f')
+	l1: while l1<t1.size():
+		x=t1[l1]
+		z1+=1
+		z2=-1
+		l2: while l2<t2.size():
+			y=t2[l2]
+			z2+=1
+			a+='_'+x+y
+			if mode==0: break
+			if mode==1: break l1
+			if mode==2: continue
+			if mode==3: continue l1
+			if mode==4 and z2==0: restart
+			if mode==5 and z1==0: restart l1
+			if mode==6: finally
+			if mode==7: finally l1
+		else:
+			a+='1'
+		finally:
+			a+='2'
+	else:
+		a+='3'
+	finally:
+		a+='4'
+	return a
+function main():
+	for md,res = (
+			(0,'_ad_bd_cd4'),
+			(1,'_ad'),
+			(2,'_ad_ae_af2_bd_be_bf2_cd_ce_cf24'),
+			(3,'_ad_bd_cd4'),
+			(4,'_ad_ad_ae_af2_bd_bd_be_bf2_cd_cd_ce_cf24'),
+			(5,'_ad_ad_ae_af2_bd_be_bf2_cd_ce_cf24'),
+			(6,'_ad2_bd2_cd24'),
+			(7,'_ad4'),
+		):
+		r=f(md)
+		if r!=res:
+			$print(md,res,r)
+			return md
+	return 'ok'
++++value 'ok'

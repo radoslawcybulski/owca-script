@@ -1,0 +1,32 @@
+function test(mode,count):
+	$print('test',mode,'of',silnia(count),'count',count)
+	tmp=$list(count)
+	for x = $range(count): tmp[x]=$str(x)
+	
+	lst=[]
+	while tmp:
+		index=mode % tmp.size()
+		mode=(mode-index)/tmp.size()
+		lst.push_back(tmp.pop(index))
+	
+	$print(lst)
+	lst.sort()
+	$print(lst)
+	if lst:
+		for x = $range(1,lst.size()):
+			if lst[x-1]>=lst[x]: return 1
+
+	return null
+	
+function silnia(x):
+	if x==0: return 1
+	if x==1: return 1
+	return silnia(x-1)*x
+	
+function main():
+	for count = $range(6):
+		total=silnia(count)
+		for mode = $range(total):
+			test(mode,count)			
+	return 'ok'
++++value 'ok'

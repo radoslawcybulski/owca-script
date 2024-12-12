@@ -1,0 +1,3 @@
+function main():
+	return $int(false,12)
++++exception YEXCEPTION_INVALIDPARAMTYPE 0 2

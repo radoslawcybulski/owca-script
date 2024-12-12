@@ -1,0 +1,4 @@
+class A:
+	2+
+function main(): return 'def'
++++error 2 YERROR_SYNTAX_ERROR

@@ -1,0 +1,4 @@
+function main():
+	a=$property(read=4)
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 0 2

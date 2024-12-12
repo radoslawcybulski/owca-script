@@ -1,0 +1,2 @@
+for x = (1,2,3): a:=4
++++error 1 YERROR_UNDEFINED

@@ -1,0 +1,27 @@
+a=''
+class T1:
+	function $init(v):
+		a:=a+'$'+v
+		self.v=v
+	function $withenter():
+		a:=a+'!'+self.v
+		return self.v+'__'
+	function $withexit():
+		a:=a+self.v
+function f():
+	with a1=T1('a'),a2=T1('b'),a3=T1('c'):
+		if a1!='a__' or a2!='b__' or a3!='c__':
+			raise $exception()
+		yield 'a'
+		a:=a+'_'
+		yield 'b'
+function main():
+	z=f()
+	if a!='': return 1
+	z()
+	if a!='$a!a$b!b$c!c': return 2
+	z()
+	if a!='$a!a$b!b$c!c_': return 3
+	z=null
+	return a
++++value '$a!a$b!b$c!c_cba'

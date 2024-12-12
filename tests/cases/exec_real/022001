@@ -1,0 +1,16 @@
+function f(t):
+	try:
+		return $real(t)
+	except:
+		return null
+function main():
+	v=((' 123.5',123.5),('10.5',10.5),('123.5',123.5),('-123.25',-123.25),
+		('- 123.25',null),('123.',123.0),('abc',null),('123.12q',null),('123.q',null),
+		('q123',null),('!123',null),('1 23',null),(' 123	',123.0),(10.0,10.0))
+	c:for a,b = v:
+		z=f(a)
+		if z!=b:
+			$print('a=',a,' b=',b,' z=',z)
+			return c+1
+	return 'ok'
++++value 'ok'

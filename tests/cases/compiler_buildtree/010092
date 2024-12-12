@@ -1,0 +1,5 @@
+if a: pass
+elif a+: pass
+else: pass
+finally: pass
++++error 2 YERROR_SYNTAX_ERROR

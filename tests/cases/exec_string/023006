@@ -1,0 +1,9 @@
+function main():
+	if 'a' + 'b' + 'c' != 'abc':
+		return 1
+	if 'a' + 'b' + 'c' != 'abc':
+		return 1
+	if 'a' + 'b' + 'c' != 'abc':
+		return 1
+	return 'ok'
++++value 'ok'

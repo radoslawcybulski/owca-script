@@ -1,0 +1,4 @@
+class T:
+	function $m(): pass
+function main(): return 'ok'
++++error 2 YERROR_INVALID_IDENT

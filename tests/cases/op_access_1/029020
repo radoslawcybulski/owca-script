@@ -1,0 +1,4 @@
+function main():
+	z='qwerty'
+	return z[17]
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 3

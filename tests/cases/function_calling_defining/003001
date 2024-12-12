@@ -1,0 +1,9 @@
+function f():
+	pass
+	
+	# 
+
+function main():
+	f(a=1)
+	return 'ok'
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 7

@@ -1,0 +1,4 @@
+class T:
+	function $str(): return ''
+	function read $str(): return ''
++++error 3 YERROR_INVALID_IDENT

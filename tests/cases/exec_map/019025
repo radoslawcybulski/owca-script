@@ -1,0 +1,10 @@
+class T:
+	function $hash(): return 0
+	function $init(v): self.v=v
+	function $eq(v):
+		if not self.v or not v.v: raise $exception()
+		return self.v==v.v
+function main():
+	v={T(1):1,T(2):2,T(3):3,T(0):0}
+	return 'ok'
++++exception YEXCEPTION_USER 5 0 8

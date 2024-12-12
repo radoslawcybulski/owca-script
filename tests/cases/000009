@@ -1,0 +1,10 @@
+function f():
+	yield 'a'
+	yield 'b'
+	yield 'c'
+function main():
+	res=''
+	for a=f():
+		res+=a
+	return res
++++value 'abc'

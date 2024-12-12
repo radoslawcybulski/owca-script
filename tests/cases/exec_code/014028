@@ -1,0 +1,7 @@
+class T:
+	function read r():
+		raise $exception()
+function main():
+	a=T().r
+	return 1
++++exception YEXCEPTION_USER 3 5

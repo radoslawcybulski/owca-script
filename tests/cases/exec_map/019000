@@ -1,0 +1,8 @@
+class T:
+	function $hash(): raise $exception()
+function main():
+	m=$map()
+	if m!={}: return 1
+	m=$map([T(),T(),T(),T(),T(),T()])
+	return 'ok'
++++exception YEXCEPTION_USER 2 0 0 6

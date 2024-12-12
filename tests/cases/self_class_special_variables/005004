@@ -1,0 +1,23 @@
+function main():
+	class A:
+		a=0
+		function f():
+			class.a=class.a+1
+	class B(A):
+		a=10
+	class C(A):
+		a=100
+	A.f()
+	B.f()
+	C.f()
+	if A.a!=1: 
+		$print(A.a)
+		return 1
+	if B.a!=11: 
+		$print(B.a)
+		return 2
+	if C.a!=101: 
+		$print(C.a)
+		return 3
+	return 'ok'
++++value 'ok'

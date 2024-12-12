@@ -1,0 +1,11 @@
+function f():
+	yield 'abc'
+function main():
+	z=f()
+	for q = z:
+		pass
+	for q = z:
+		return 1
+	if not z() is null: return 2
+	return 'ok'
++++value 'ok'

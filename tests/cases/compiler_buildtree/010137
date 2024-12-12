@@ -1,0 +1,5 @@
+a=b=$exception
+class A(a,):
+	pass
+function main(): return 'def'
++++error 2 YERROR_SYNTAX_ERROR

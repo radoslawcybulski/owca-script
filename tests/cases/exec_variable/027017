@@ -1,0 +1,6 @@
+class T:
+	function $call(v): return 'ok'
+function main():
+	t=T()
+	return t(*['a'])
++++value 'ok'

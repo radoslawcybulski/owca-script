@@ -1,0 +1,7 @@
+class T:
+	function $read_2(k1,k2):
+		raise $exception()
+function main():
+	a=T()['c':'d']
+	return 1
++++exception YEXCEPTION_USER 3 5

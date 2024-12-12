@@ -1,0 +1,11 @@
+class T:
+	function $hash(): return self.v
+	function $init(v): self.v=v
+	function $eq(v):
+		return self.v==($type(v)==$int ? v : v.v)
+	function $req(v):
+		return self.v==($type(v)==$int ? v : v.v)
+function main():
+	a={T(0):'abc',T(1):'def',T(2):'ghi'}
+	return a[0]+a[1]+a[2]
++++value 'abcdefghi'

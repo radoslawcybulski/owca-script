@@ -1,0 +1,6 @@
+function f():
+	raise $exception()
+function main():
+	for x = f(): pass
+	return 'ok'
++++exception YEXCEPTION_USER 2 4

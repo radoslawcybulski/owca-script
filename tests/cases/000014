@@ -1,0 +1,24 @@
+class A($exception): pass
+class B($exception): pass
+class C($exception): pass
+function f():
+	if true:
+		index=0
+		while index<4:
+			try:
+				if index==0: raise A()
+				elif index==1: raise B()
+				elif index==2: raise C()
+				else: yield 'g'
+			except A: yield 'a'
+			except B: yield 'b'
+			except: yield 'c'
+			else: yield 'd'
+			finally: yield 'e'
+			index+=1
+function main():
+	res=''
+	for a=f():
+		res+=a
+	return res
++++value 'aebecegd'

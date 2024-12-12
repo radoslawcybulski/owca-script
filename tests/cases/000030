@@ -1,0 +1,15 @@
+function main():
+	a='ok'
+	b='oka'
+	c=3.0
+	d=a
+	e=a is d
+	f=a is b
+	g=a is c
+	h=a is a
+	if e != true: return 1
+	if f != false: return 2
+	if g != false: return 3
+	if h != true: return 4
+	return a
++++value 'ok'

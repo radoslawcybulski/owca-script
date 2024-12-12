@@ -1,0 +1,13 @@
+function main():
+	first=true
+	lp: while true:
+		if not first: break
+		first=false
+		while true:
+			restart lp
+			return 'a'
+		return 'b'
+	else: return 'c'
+	finally: return 'd'
+	return 'e'
++++value 'e'

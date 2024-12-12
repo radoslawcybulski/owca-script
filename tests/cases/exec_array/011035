@@ -1,0 +1,17 @@
+function main():
+	a=[]
+	a.push_front('q')
+	a.push_back('r')
+	a.insert(1,'w')
+	if a!=['q','w','r']: return 1
+	a.insert(-1,'e')
+	if a!=['q','w','e','r']: return 2
+	if a.pop_front()!='q': return 3
+	if a.pop_back()!='r': return 4
+	if a.pop_front('1')!='w': return 5
+	if a.pop_back('1')!='e': return 6
+	if a.pop_front('1')!='1': return 7
+	if a.pop_back('2')!='2': return 8	
+	a.insert(10,'1')
+	return 'ok'
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 15

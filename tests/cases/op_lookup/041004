@@ -1,0 +1,24 @@
+class Q: pass
+class T1:
+	function $add(v):
+		return 'o'+v
+class T2:
+	function $radd(v):
+		return v+'k'
+class T3:
+	function $sadd(v):
+		self.v='o'+v
+		return self.v
+function main():
+	q=Q()
+	q.t=T1()
+	q.t+='k'
+	if q.t!='ok': return 1
+	q.t='o'
+	q.t+=T2()
+	if q.t!='ok': return 2
+	q.t=T3()
+	q.t+='k'
+	if q.t.v!='ok': return 3
+	return 'ok'
++++value 'ok'

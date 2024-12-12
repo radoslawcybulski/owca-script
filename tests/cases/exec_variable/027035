@@ -1,0 +1,7 @@
+class T:
+	a=1.0
+function main():
+	t=T()
+	t.a='ok'
+	return t.a
++++value 'ok'

@@ -1,0 +1,6 @@
+class f:
+	pass
+function main():
+	t=f()
+	t()
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

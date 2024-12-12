@@ -1,0 +1,7 @@
+class T:
+	function $eq(v): return false
+	function $eq(v): raise $exception()
+function main():
+	T()==1
+	return 'ok'
++++exception YEXCEPTION_USER 3 5

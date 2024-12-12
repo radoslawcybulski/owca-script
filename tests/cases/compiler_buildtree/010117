@@ -1,0 +1,4 @@
+class:
+	pass
+function main(): return 'def'
++++error 1 YERROR_SYNTAX_ERROR

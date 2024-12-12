@@ -1,0 +1,11 @@
+class A:
+	function f():
+		return $id(self)
+	function g():
+		return $id(class)
+function main():
+	a,b=A(),A()
+	if a.f()==b.f(): return 0
+	if a.g()!=b.g(): return 1
+	return 'ok'
++++value 'ok'

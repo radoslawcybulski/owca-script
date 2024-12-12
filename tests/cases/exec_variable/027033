@@ -1,0 +1,8 @@
+function f(): pass
+class T:
+	a=f.bind(f)
+function main():
+	t=T()
+	t.a='ok'
+	return t.a
++++value 'ok'

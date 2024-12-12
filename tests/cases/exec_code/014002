@@ -1,0 +1,6 @@
+class T:
+	function write r(v):
+		return 'd'
+function main():
+	T().r+=1
++++exception YEXCEPTION_NOTRVALUE 5

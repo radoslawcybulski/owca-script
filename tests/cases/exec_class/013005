@@ -1,0 +1,5 @@
+class T: pass
+function main():
+	t=T('def')
+	return 'ok'
++++exception YEXCEPTION_NOCONSTRUCTOR 0 3

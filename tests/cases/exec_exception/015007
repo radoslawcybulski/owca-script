@@ -1,0 +1,13 @@
+function main():
+	a=$exception()
+	if a.size()<4: return main()
+	else:
+		c=[]
+		for b = a:
+			$print(b)
+			c+=[b[2]]
+		if a[0][2]!=2 or a[1][2]!=3 or a[2][2]!=3 or a[3][2]!=3: return 1
+		if a[-4][2]!=2 or a[-3][2]!=3 or a[-2][2]!=3 or a[-1][2]!=3: return 1
+		if c!=[2,3,3,3]: return 2
+		return 'ok'
++++value 'ok'

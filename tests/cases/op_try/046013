@@ -1,0 +1,11 @@
+class T1($exception): pass
+class T2($exception): pass
+function main():
+	try:
+		raise T1()
+	except T1:    return 'ok'
+	except T2:    return 1
+	except T1,T2: return 2
+	except: return 3
+	return 'ok'
++++value 'ok'

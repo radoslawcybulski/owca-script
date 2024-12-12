@@ -1,0 +1,32 @@
+function main():
+	a=['a','b','c']
+	b=[]
+	a+=b
+	if a!=['a','b','c']: return 1
+	a=['a','b','c']
+	b=[]
+	b+=a
+	if a!=['a','b','c']: return 2
+	a=['a','b','c']
+	a*=1
+	if a!=['a','b','c']: return 3
+	try:
+		a=['a','b','c']
+		a*=-1
+		return 4
+	except:
+		pass
+	z=$list.$sadd
+	z.bind('abc')
+	try:
+		z(['d','e','f'])
+	except:
+		pass
+	z=$list.$smul
+	z.bind('abc')
+	try:
+		z(2)
+	except:
+		pass
+	return 'ok'
++++value 'ok'

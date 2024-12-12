@@ -1,0 +1,8 @@
+function main():
+	b=[1,2]
+	a=b[0:2]=c=[3,4]
+	if not a==b or not a==c or not b==c: return 1
+	if a.size()!=2 or a!=[3,4]:
+		return 2
+	return 'ok'
++++value 'ok'

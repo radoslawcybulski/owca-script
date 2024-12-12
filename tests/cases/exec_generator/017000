@@ -1,0 +1,12 @@
+function g():
+	yield 'a'
+	yield 'b'
+	yield 'c'
+function f():
+	for a = g():
+		yield a+'_'
+function main():
+	z=''
+	for q = f(): z+=q
+	return z
++++value 'a_b_c_'

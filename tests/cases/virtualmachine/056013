@@ -1,0 +1,5 @@
+class T($exception):
+	function $init(): raise $exception()
+function main():
+	raise T()
++++exception YEXCEPTION_USER 2 4

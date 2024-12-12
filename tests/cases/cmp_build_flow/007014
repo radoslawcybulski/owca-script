@@ -1,0 +1,5 @@
+function a():
+	function b(+):
+		pass
+	pass
++++error 2 YERROR_SYNTAX_ERROR

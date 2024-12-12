@@ -1,0 +1,4 @@
+function main():
+	t=$tuple(null)
+	return t[0]+t[1]+t[2]
++++exception YEXCEPTION_INVALIDPARAMTYPE 0 2

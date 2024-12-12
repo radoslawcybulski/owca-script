@@ -1,0 +1,5 @@
+function main():
+	if not not false: return 1
+	if not not not true: return 2
+	return 'ok'
++++value 'ok'

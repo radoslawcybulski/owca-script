@@ -1,0 +1,7 @@
+function main():
+	try:
+		raise $exception()
+	except:
+		return 'ok'
+	return 'a'
++++value 'ok'

@@ -1,0 +1,11 @@
+class T:
+	function f(): pass
+	function read g(): pass
+	function $hash(): return 'abc'
+function main():
+	t=T()
+	z=$function.$hash
+	z=z.bind(t.f)
+	if $hash(t.f)!=z(): return 1
+	return $hash(t)
++++exception YEXCEPTION_INVALIDRETURNTYPE 4 0 0 9

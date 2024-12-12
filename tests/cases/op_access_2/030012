@@ -1,0 +1,4 @@
+function main():
+	if 'qwe'[0:2]!='qw': return 1
+	return 'qwe'['abc':'def']
++++exception YEXCEPTION_INVALIDPARAMTYPE 3

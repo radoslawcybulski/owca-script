@@ -1,0 +1,10 @@
+function main():
+	lp: while true:
+		while true:
+			finally lp
+			return 'a'
+		return 'b'
+	else: return 'c'
+	finally: return 'd'
+	return 'e'
++++value 'd'

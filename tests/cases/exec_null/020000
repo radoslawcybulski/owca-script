@@ -1,0 +1,13 @@
+function main():
+	if not $type(null)() is null: return 1
+	z=$type(null).$str
+	z=z.bind(null)
+	if z()!='null': return 2
+	z=$type(null).$bool
+	z=z.bind(null)
+	if z()!=false: return 3
+	z=$type(null).$hash
+	z=z.bind(null)
+	if z()!=$hash(null): return 4
+	return 'ok'
++++value 'ok'

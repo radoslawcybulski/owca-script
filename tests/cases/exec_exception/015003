@@ -1,0 +1,16 @@
+function main():
+	a=$exception('abc',12)
+	if a.text()!='abc': return 1
+	if a.code()!=12: return 2
+	if a!=a: return 5
+	if not a==a: return 6
+	b=a
+	a=$exception('def',4)
+	if a.text()!='def': return 3
+	if a.code()!=4: return 4
+	if b!=b: return 7
+	if not b==b: return 8
+	if a==b: return 9
+	if not a!=b: return 10
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,9 @@
+class T:
+	function $init(v): self.v=v
+	function $add(v):
+		return self.v+v
+function main():
+	t=T('qwe')
+	t+='rty'
+	return $type(t) is $str ? t : 'fail'
++++value 'qwerty'

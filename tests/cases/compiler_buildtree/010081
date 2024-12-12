@@ -1,0 +1,4 @@
+for a = (2,): pass
+else: pass
+finally: 2+
++++error 3 YERROR_SYNTAX_ERROR

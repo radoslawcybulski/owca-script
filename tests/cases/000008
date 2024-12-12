@@ -1,0 +1,5 @@
+z=(lambda x
+: x+'_')
+function main():
+	return z('a')
++++value 'a_'

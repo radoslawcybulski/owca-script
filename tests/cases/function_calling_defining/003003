@@ -1,0 +1,12 @@
+class T:
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $eq(v):
+		m1:={}
+		return self.v==v.v
+m1={T(11):T(2),T(13):T(4),T(15):T(6)}
+m2={T(21):T(2),T(23):T(4),T(25):T(6)}
+function main():
+	if m1.size()!=0: return 'failed'
+	return 'ok'
++++value 'ok'

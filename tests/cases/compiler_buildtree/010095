@@ -1,0 +1,7 @@
+if a: pass
+elif a: pass
+elif a: pass
+else: pass
+finally: pass
+finally: pass
++++error 6 YERROR_SYNTAX_ERROR

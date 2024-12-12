@@ -1,0 +1,6 @@
+function main():
+	l: for x = ('a','b','c'):
+		l: for y = ('d','e','f'):
+			pass
+	return 'ok'
++++error 3 YERROR_NOT_LVALUE

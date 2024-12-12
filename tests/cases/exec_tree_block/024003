@@ -1,0 +1,8 @@
+function main():
+	try:
+		l: for a = []:
+			class T:
+				l:=1
+	except: pass
+	return 'ok'
++++error 5 YERROR_NOT_LVALUE

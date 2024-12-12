@@ -1,0 +1,10 @@
+class T:
+	function $init(v): self.v=v
+	function $withenter():
+		return self
+	function $withexit():
+		if self.v: raise $exception()
+function main():
+	with a1=T(0),a2=T(1),a3=T(0):
+		return
++++exception YEXCEPTION_USER 6 8

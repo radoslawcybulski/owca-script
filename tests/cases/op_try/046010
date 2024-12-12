@@ -1,0 +1,16 @@
+function main():
+	a=''
+	for x = ('a','b','c'):
+		try:
+			if not a:
+				a='_'
+				restart
+		except:
+			return 1
+		a+=x
+	else:
+		a+='e'
+	finally:
+		a+='f'
+	return a
++++value '_abcf'

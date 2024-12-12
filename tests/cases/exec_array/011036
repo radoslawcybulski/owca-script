@@ -1,0 +1,4 @@
+function main():
+	a=[]
+	return a.pop_back()
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 3

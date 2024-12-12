@@ -1,0 +1,21 @@
+throw=false
+class T:
+	function $init(v): self.v=v
+	function $hash():
+		return 0
+	function $eq(v):
+		if throw: raise $exception()
+		return self.v==v.v
+function main():
+	m={}
+	if m.getset('123','456')!='456': return 1
+	if m.getset('123','456')!='456': return 2
+	m.clear()
+	if m!={}: return 3
+	m=$map([T('a'),T('b'),T('c'),T('d'),T('e'),T('f')])
+	throw:=true
+	if m.getset('123','456')!='456': return 1
+	if m['123']!='456': return 2
+	m.getset(T('a'),'qwe')
+	return 'ok'
++++exception YEXCEPTION_USER 7 0 19

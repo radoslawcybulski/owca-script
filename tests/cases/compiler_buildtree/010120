@@ -1,0 +1,5 @@
+a=b=0
+class A(a,b):
+	pass
+function main(): return 'def'
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 2

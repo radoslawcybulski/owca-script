@@ -1,0 +1,5 @@
+function main():
+	function main():
+		return 'ok'
+	return main()
++++value 'ok'

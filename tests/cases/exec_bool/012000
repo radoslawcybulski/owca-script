@@ -1,0 +1,8 @@
+function main():
+	z=$bool.$bool
+	z=z.bind(false)
+	if z(): return 1
+	z=z.bind(true)
+	if not z(): return 2
+	return 'ok'
++++value 'ok'

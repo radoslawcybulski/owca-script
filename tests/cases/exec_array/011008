@@ -1,0 +1,6 @@
+function main():
+	a=['a','b','c','d']
+	if a.pop(2)!='c': return 1
+	if a.pop(-1)!='d': return 2
+	a.pop(4)
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 5

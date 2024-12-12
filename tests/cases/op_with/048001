@@ -1,0 +1,26 @@
+a=''
+class T1:
+	function $init(v):
+		self.v=v
+	function $withenter():
+		a:=a+'$'+self.v
+		return self
+	function $withexit():
+		a:=a+self.v
+function f():
+	with a1=T1('a'),a2=T1('b'),a3=T1('c'):
+		yield 'a'
+		a:=a+'_'
+		yield 'b'
+function main():
+	z=f()
+	if a!='': return 1
+	q=z()
+	if q!='a': return 4
+	if a!='$a$b$c': return 2
+	q=z()
+	if q!='b': return 5
+	if a!='$a$b$c_': return 3
+	z=null
+	return a
++++value '$a$b$c_cba'

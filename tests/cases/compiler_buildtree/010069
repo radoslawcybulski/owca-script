@@ -1,0 +1,3 @@
+a=b='abc'
+function main(): return a
++++value 'abc'

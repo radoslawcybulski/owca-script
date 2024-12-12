@@ -1,0 +1,5 @@
+class T: pass
+class Z(T,$int): pass
+function main():
+	return 'ok'
++++compilation_exception YEXCEPTION_CLASSCREATION 2

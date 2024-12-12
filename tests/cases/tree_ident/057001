@@ -1,0 +1,4 @@
+function main():
+	a='qwe'
+	a:='rty'
++++error 3 YERROR_VARIABLE_IS_LOCAL

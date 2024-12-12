@@ -1,0 +1,11 @@
+class T:
+	function $init(v): self.v=v
+	function $str():
+		if self.v: raise $exception()
+		return ''
+function main():
+	if $str(T(0))!='':
+		return 1
+	$str(T(1))
+	return 'ok'
++++exception YEXCEPTION_USER 4 0 9

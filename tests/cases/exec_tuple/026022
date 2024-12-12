@@ -1,0 +1,41 @@
+function main():
+	data=(((1,2,3),(0,1,2),1),((1,2,3),(0,1),1),((1,2,3),(0,1,2,3),1),((1,2,3),(2,3),-1),((1,2,3),(2,0,0),-1),((1,2,3),(2,3,4,5),-1))
+	for left,right,ret = data:
+		if (left <right)!=(ret <0):
+			$print(left,right,ret)
+			return 1
+		if (left >right)!=(ret >0):
+			$print(left,right,ret)
+			return 1
+		if (left<=right)!=(ret<=0):
+			$print(left,right,ret)
+			return 1
+		if (left>=right)!=(ret>=0):
+			$print(left,right,ret)
+			return 1
+		if (left==right)!=(ret==0):
+			$print(left,right,ret)
+			return 1
+		if (left!=right)!=(ret!=0):
+			$print(left,right,ret)
+			return 1
+		if (right <left)!=(-ret <0):
+			$print(right,left,-ret)
+			return 1
+		if (right >left)!=(-ret >0):
+			$print(right,left,-ret)
+			return 1
+		if (right<=left)!=(-ret<=0):
+			$print(right,left,-ret)
+			return 1
+		if (right>=left)!=(-ret>=0):
+			$print(right,left,-ret)
+			return 1
+		if (right==left)!=(-ret==0):
+			$print(right,left,-ret)
+			return 1
+		if (right!=left)!=(-ret!=0):
+			$print(right,left,-ret)
+			return 1
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,4 @@
+function main():
+	m=$map('a','b','c')
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 0 2

@@ -1,0 +1,6 @@
+function main():
+	class T:
+		function $init(b): self.b=b
+		function $bool(): return self.b
+	return (T(true) ? 'o' : '1')+(T(false) ? '2' : 'k')
++++value 'ok'

@@ -1,0 +1,5 @@
+function main():
+	function f(a,b,c): return 'ok'
+	return f(1)
+	return 'ok'
++++exception YEXCEPTION_NOTENOUGHPARAMETERS 3

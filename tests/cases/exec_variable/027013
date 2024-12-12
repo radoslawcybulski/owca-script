@@ -1,0 +1,2 @@
+false(*['a'])
++++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 1

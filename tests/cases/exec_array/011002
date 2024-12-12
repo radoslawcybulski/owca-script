@@ -1,0 +1,4 @@
+function main():
+	a=['a','b','c']
+	a.resize(-4)
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 3

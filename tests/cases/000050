@@ -1,0 +1,18 @@
+class A:
+	function $add(v): return 'a'
+	function $radd(v): return 'b'
+	function $sub(v): return 'c'	
+class B(A):
+	function $add(v): return 'e'
+	function $radd(v): return 'f'
+	function $sub(v): return 'g'
+function main():
+	if A()+B()!='f': return 1
+	if B()+A()!='e': return 2
+	z=A()-B()
+	if z!='c': 
+		$print(z)
+		return 3
+	if B()-A()!='g': return 4
+	return 'ok'
++++value 'ok'

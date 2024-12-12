@@ -1,0 +1,84 @@
+function main():
+	l1=('0','1','2','3','4','5','6','7','8','9')
+	l2=('a','b','c','d','e','f','g','h','j','k')
+	m={}
+	m={}
+	ml: for x = l1:
+		$print(x)
+		m[x]=2*x
+		for y = l2:
+			m[y]=3*y
+		for y = l2:
+			z=m[y]
+			if z!=3*y:
+				$print('x=',x,'y=',y,'z=',z)
+				return 1
+		for y = l2:
+			m[y]+=y
+		for y = l2:
+			z=m[y]
+			if z!=4*y:
+				$print('x=',x,' y=',y,'z=',z)
+				return 2
+		for y = l2:
+			m[y]=3*y
+		for y = l2:
+			z=m[y]
+			if z!=3*y:
+				$print('x=',x,' y=',y,'z=',z)
+				return 3
+		for y = l2:
+			z=m.pop(y,123)
+			if z!=3*y:
+				$print('x=',x,' y=',y,'z=',z)
+				return 4
+			z=m.pop(y,123)
+			if z!=123:
+				$print('x=',x,' y=',y,'z=',z)
+				return 5
+			m[y]=y
+			z=m[y]
+			if z!=y:
+				$print('x=',x,' y=',y,'z=',z)
+				return 6
+			m.pop(y)
+			z=m.pop(y,123)
+			if z!=123:
+				$print('x=',x,' y=',y,'z=',z)
+				return 7
+			m[y]=y
+			z=m.pop(y)
+			if z!=y:
+				$print('x=',x,' y=',y,'z=',z)
+				return 8
+			m[y]=y
+			mmm=m.clone()
+			mmm2={}
+			while true:
+				z=mmm.pop(default_value=null)
+				if z is null: break
+				mmm2[z[0]]=z[1]
+			if mmm:
+				$print(mmm2,mmm)
+				return 9
+			if mmm2!=m:
+				$print(mmm2,mmm)
+				return 10
+			m.pop(y)
+		if m.size()!=ml+1: return 100
+	l=[]
+	while m:
+		x,y=m.pop()
+		$print('x=',x,' y=',y)
+	try:
+		m.pop()
+		return 101
+	except:
+		pass
+	try:
+		m.pop('abc')
+		return 102
+	except:
+		pass
+	return 'ok'
++++value 'ok'

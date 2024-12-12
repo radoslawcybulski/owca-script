@@ -1,0 +1,5 @@
+function f(a,b,c,d):
+	return a+b+c+d
+function main():
+	return f('a',*['d'],**{'d':'e'})
++++exception YEXCEPTION_NOTENOUGHPARAMETERS 4

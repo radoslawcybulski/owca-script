@@ -1,0 +1,8 @@
+function main():
+	try:
+		class A($int):
+			pass
+		return 'abc'
+	except: pass
+	return 'def'
++++value 'def'

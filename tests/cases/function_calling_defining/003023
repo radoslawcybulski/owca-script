@@ -1,0 +1,15 @@
+function main():
+	del=false
+	class T:
+		function $hash(): return self.v
+		function $init(v):
+			self.v=v
+		function $eq(v):
+			if del: a=null
+			return self.v==v.v
+		function $str():
+			return 'T('+$str(self.v)+')'
+	g={'a':'ok','q':'w','e':'r'}
+	function f(a,**m): return a+m['q']+m['e']
+	return f(**g)
++++value 'okwr'

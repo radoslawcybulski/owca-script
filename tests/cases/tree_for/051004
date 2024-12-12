@@ -1,0 +1,7 @@
+function main():
+	for x = ():
+		pass
+	else:
+		return 'ok'
+	return 'qwe'
++++value 'ok'

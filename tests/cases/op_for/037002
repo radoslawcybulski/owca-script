@@ -1,0 +1,8 @@
+class T:
+	function $write_1(k,v):
+		raise $exception()
+function main():
+	t=T()
+	for t['a'] = ['a','b','c']: pass
+	return 'ok'
++++exception YEXCEPTION_USER 3 6

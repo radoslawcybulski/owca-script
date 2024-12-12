@@ -1,0 +1,30 @@
+class T:
+	function $bool(): return true
+	pass
+class F:
+	function $bool(): return false
+	pass
+function gen(): yield 0
+function main():
+	if $str(true)!='true': return 1
+	if $str(false)!='false': return 2
+	if $bool(true)!=true: return 3
+	if $bool(false)!=false: return 4
+	if $bool(1)!=true: return 5
+	if $bool(0)!=false: return 6
+	if $bool(1.0)!=true: return 7
+	if $bool(0.0)!=false: return 8
+	if $bool('a')!=true: return 9
+	if $bool('')!=false: return 10
+	if $bool(main)!=true: return 11
+	if $bool(T)!=true: return 12
+	if $bool(T())!=true: return 13
+	if $bool(F())!=false: return 14
+	if $bool(null)!=false: return 15
+	if $bool(gen())!=true: return 16
+	if $bool([])!=false: return 17
+	if $bool([0])!=true: return 18
+	if $bool(())!=false: return 19
+	if $bool((0,))!=true: return 20
+	return 'ok'
++++value 'ok'

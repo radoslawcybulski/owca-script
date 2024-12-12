@@ -1,0 +1,5 @@
+class T:
+	function read m(): pass
+	function m(): return 'ok'
+function main(): return T.m()
++++value 'ok'

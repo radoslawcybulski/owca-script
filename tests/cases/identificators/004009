@@ -1,0 +1,4 @@
+m=0
+function m(): return 'ok'
+function main(): return m()
++++value 'ok'

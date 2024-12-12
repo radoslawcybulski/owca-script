@@ -1,0 +1,3 @@
+function main():
+	[1]['a']
++++exception YEXCEPTION_INVALIDPARAMTYPE 2

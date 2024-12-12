@@ -1,0 +1,7 @@
+function f(): return 'a'
+function g(): return 'b'
+function h(): return 'c'
+function main():
+	a,b,c=f(),g(),h()
+	return a+b+c
++++value 'abc'

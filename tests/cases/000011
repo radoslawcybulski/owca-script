@@ -1,0 +1,10 @@
+function f():
+	if true:
+		ll: while ll<3:
+			yield $str(ll)+('a','b','c')[ll]
+function main():
+	res=''
+	for a=f():
+		res+=a
+	return res
++++value '0a1b2c'

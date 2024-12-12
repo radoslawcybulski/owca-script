@@ -1,0 +1,6 @@
+function f(a,b,**mp):
+	if mp.size()!=2: return 1
+	return a+b+mp['c']+mp['d']
+function main():
+	return f('a','b',**{'c':'e','d':'f'})
++++value 'abef'

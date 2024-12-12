@@ -1,0 +1,2 @@
+yield 'abc'
++++error 1 YERROR_UNEXPECTED_RETURN_YIELD

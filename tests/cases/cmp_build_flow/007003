@@ -1,0 +1,3 @@
+function +():
+	pass
++++error 1 YERROR_SYNTAX_ERROR

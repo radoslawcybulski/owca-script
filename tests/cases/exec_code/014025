@@ -1,0 +1,7 @@
+function f():
+	raise $exception()
+	yield 'a'
+function main():
+	for a=f(): pass
+	return 'b'
++++exception YEXCEPTION_USER 2 5

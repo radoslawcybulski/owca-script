@@ -1,0 +1,5 @@
+function f(a,b):
+	return a+b+$str(self)
+function main():
+	return f(a='a',b='b',self='_')
++++value 'ab_'

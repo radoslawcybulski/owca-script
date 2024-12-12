@@ -1,0 +1,7 @@
+function main():
+	z=lambda x: x+'_'
+	q=''
+	for x = ('a','b','c'):
+		q+=z(x)
+	return q
++++value 'a_b_c_'

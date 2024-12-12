@@ -1,0 +1,6 @@
+function main():
+	function close(): raise $exception()
+	with a1=close:
+		pass
+	return 'ok'
++++exception YEXCEPTION_USER 2 3

@@ -1,0 +1,15 @@
+function f():
+	if true:
+		index=0
+		while index<3:
+			if index==0: yield 'a'
+			elif index==1: yield 'b'
+			else: yield 'c'
+			finally: yield 'd'
+			index+=1
+function main():
+	res=''
+	for a=f():
+		res+=a
+	return res
++++value 'adbdc'

@@ -1,0 +1,6 @@
+function f():
+	yield 'abc'
+function main():
+	t=f()
+	t('a')
++++exception YEXCEPTION_TOOMANYPARAMETERS 5

@@ -1,0 +1,10 @@
+function main():
+	a=b=[]
+	for a[0],b[0]=1+2+3+4+5:
+		a=
+	else:
+		pass
+	finally:
+		pass
+	return 'ok'
++++error 4 YERROR_SYNTAX_ERROR

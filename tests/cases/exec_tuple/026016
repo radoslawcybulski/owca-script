@@ -1,0 +1,7 @@
+class T: pass
+function main():
+	t=T()
+	l=[0]
+	a,t.a,l[0]='a','b','c'
+	return l[0]+t.a+a
++++value 'cba'

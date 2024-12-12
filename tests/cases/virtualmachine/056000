@@ -1,0 +1,17 @@
+function f1(a,b,**mp):
+	if mp.size()!=0: return 1
+	return a+b
+function f2(a,b,*mp):
+	if mp.size()!=0: return 1
+	return a+b
+function f3(a,b,*mp1,**mp2):
+	if mp1.size()!=0: return 1
+	if mp2.size()!=0: return 2
+	return a+b
+function main():
+	z1=f1('a','b')+f2('a','b')+f3('a','b')
+	z2=f1('c','d',*[])+f2('c','d',*[])+f3('c','d',*[])
+	z3=f1('e','f',**{})+f2('e','f',**{})+f3('e','f',**{})
+	z4=f1('g','h',self=f1)+f2('g','h',self=f1)+f3('g','h',self=f1)
+	return z1+z2+z3+z4
++++value 'abababcdcdcdefefefghghgh'

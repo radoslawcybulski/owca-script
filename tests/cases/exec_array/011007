@@ -1,0 +1,6 @@
+function main():
+	z=$list.$gen
+	z=z.bind('abc')
+	if not z() is null: return 1
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 4

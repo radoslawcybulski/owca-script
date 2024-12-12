@@ -1,0 +1,6 @@
+class T:
+	function read r():
+		return 'c'
+function main():
+	T().r+='d'
++++exception YEXCEPTION_NOTLVALUE 5

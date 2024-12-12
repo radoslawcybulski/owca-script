@@ -1,0 +1,12 @@
+function main():
+	function f():
+		while 'abc':
+			return 'ok'
+		else:
+			return 'qwe'
+		finally:
+			return 'asd'
+		z='qwerty'
+		return z
+	return f()
++++value 'ok'

@@ -1,0 +1,6 @@
+function f(a,b):
+	pass
+function main():
+	f(1,2,**{'qwe':'rty'})
+	return 'ok'
++++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4

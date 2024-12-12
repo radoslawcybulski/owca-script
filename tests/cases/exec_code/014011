@@ -1,0 +1,7 @@
+class Z: pass
+class T:
+	function write r(v):
+		raise $exception()
+function main():
+	T().r=Z()
++++exception YEXCEPTION_USER 4 6

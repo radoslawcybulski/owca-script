@@ -1,0 +1,8 @@
+class T:
+	function $eq(v): raise $exception()
+	function $noteq(v): raise $exception()
+function main():
+	a=[T(),T(),T()]
+	b=[T(),T(),T()]
+	return a!=b ? 'ok' : 1
++++exception YEXCEPTION_USER 2 0 7

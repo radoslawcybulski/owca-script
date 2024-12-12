@@ -1,0 +1,9 @@
+function f():
+	a=0
+	try: pass
+	except a: pass
+	except: pass
+	else: pass
+	finally: pass
+function main(): return 'def'
++++value 'def'

@@ -1,0 +1,10 @@
+function main():
+	s=$set(['a','b','d','e'])
+	if 'a' not in s: return 1
+	if 'b' not in s: return 2
+	if 'c'     in s: return 3
+	if 'd' not in s: return 4
+	if 'e' not in s: return 5
+	if main in s: return 6
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,4 @@
+function main():
+	m=$map(['q','e','q','w'],['r','t','y'])	
+	return 'ok'
++++exception YEXCEPTION_MISSINGVALUEPARAMETER 0 2

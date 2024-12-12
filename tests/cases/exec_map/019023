@@ -1,0 +1,13 @@
+throw=false
+class T:
+	function $init(v): self.v=v
+	function $hash(): return 0
+	function $eq(v):
+		if throw: raise $exception()
+		return v==self.v
+function main():
+	m1={T('a'):T('b'),T('c'):T('d')}
+	throw:=true
+	m1[T('e')]=T('f')
+	return 2
++++exception YEXCEPTION_USER 6 0 11

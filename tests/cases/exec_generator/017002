@@ -1,0 +1,8 @@
+function f():
+	yield 'ok'
+function main():
+	z=f()
+	q=$gen.$call
+	q=q.bind(z)
+	return q()
++++value 'ok'

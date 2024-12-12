@@ -1,0 +1,7 @@
+function main():
+	a='ok'
+	b='oka'
+	c=3.0
+	if a is b or a is c: return 1
+	return a
++++value 'ok'

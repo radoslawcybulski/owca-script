@@ -1,0 +1,7 @@
+class T:
+	function $init():
+		return 'abc'
+function main():
+	t=T()
+	return 'ok'
++++exception YEXCEPTION_INVALIDRETURNTYPE 3 5

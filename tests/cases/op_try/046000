@@ -1,0 +1,7 @@
+function main():
+	try:
+		raise $exception()
+	except $int:
+		pass
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 4

@@ -1,0 +1,5 @@
+function main():
+	a=null
+	with a:
+		pass
++++exception YEXCEPTION_INVALIDPARAMTYPE 3

@@ -1,0 +1,12 @@
+function main():
+	try:
+		try:
+			raise $exception('ok')
+		except $exception_param:
+			raise $exception('b')
+		finally:
+			raise $exception('a')
+	except as e:
+		return e.text()
+	return 1
++++value 'ok'

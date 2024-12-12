@@ -1,0 +1,4 @@
+class $a:
+	pass
+function main(): return 'def'
++++error 1 YERROR_INVALID_IDENT

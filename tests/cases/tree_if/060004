@@ -1,0 +1,5 @@
+function main():
+	if true: pass
+	else: return 'ok'
+	finally: return 'ok'
++++value 'ok'

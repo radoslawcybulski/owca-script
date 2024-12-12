@@ -1,0 +1,7 @@
+class T:
+	function $hash(): return 0
+	function $eq(v): raise $exception()
+function main():
+	a={T():'abc',T():'def',T():'ghi'}
+	return 1
++++exception YEXCEPTION_USER 3 0 5

@@ -1,0 +1,5 @@
+function $add(*b):
+	return 'ok'+b[0]
+function main():
+	return $add('q')
++++value 'okq'

@@ -1,0 +1,5 @@
+function main():
+	a=0
+	a:=0
+	return 'ok'
++++error 3 YERROR_VARIABLE_IS_LOCAL

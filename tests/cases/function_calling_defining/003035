@@ -1,0 +1,4 @@
+class T:
+	function $add(a,**b):
+		return 'ok'
++++compilation_exception YEXCEPTION_CLASSCREATION 1

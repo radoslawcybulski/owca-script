@@ -1,0 +1,7 @@
+class T:
+	function $new():
+		return
+function main():
+	t=T()
+	return 'ok'
++++exception YEXCEPTION_MISSINGRETURNVALUE 3 5

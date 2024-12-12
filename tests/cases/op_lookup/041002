@@ -1,0 +1,10 @@
+class T:
+	function $init(v): self.v=v
+	function $sadd(v):
+		self.v+=v
+		return v+'-'
+function main():
+	t=T('qwe')
+	t+='rty'
+	return t.v
++++value 'qwerty'

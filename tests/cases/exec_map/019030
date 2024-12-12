@@ -1,0 +1,4 @@
+function main():
+	m=$map(['q','w','e','r','q','y'])
+	return m=={'q':'y','e':'r'} ? 'ok' : 1
++++value 'ok'

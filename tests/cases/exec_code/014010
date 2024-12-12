@@ -1,0 +1,11 @@
+class Z:
+	function $init(v): self.v=v
+	function $add(v): raise $exception()
+class T:
+	function $read_1(k):
+		return Z(2)
+	function $write_1(k,v):
+		pass
+function main():
+	T()['def']+=Z(4)
++++exception YEXCEPTION_USER 3 10

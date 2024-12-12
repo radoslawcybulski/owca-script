@@ -1,0 +1,8 @@
+class T:
+	function $radd(v):
+		raise $exception('abc')
+function main():
+	a=1
+	a+=T()
+	return 'ok'
++++exception YEXCEPTION_USER 3 6

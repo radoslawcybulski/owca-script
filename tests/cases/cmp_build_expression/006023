@@ -1,0 +1,4 @@
+function main():
+	lambda x,y,*a,**b:
+
++++error 2 YERROR_SYNTAX_ERROR

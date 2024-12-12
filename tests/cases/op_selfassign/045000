@@ -1,0 +1,7 @@
+class T:
+	function $sadd(v): pass
+function main():
+	t=T()
+	t+='abc'
+	return 'ok'
++++exception YEXCEPTION_INVALIDPARAMTYPE 5

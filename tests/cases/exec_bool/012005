@@ -1,0 +1,6 @@
+class T:
+	function $bool(): pass
+function main():
+	if T(): return "o"
+	return "k"
++++exception YEXCEPTION_INVALIDPARAMTYPE 4

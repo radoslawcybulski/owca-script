@@ -1,0 +1,7 @@
+function main():
+	function f():
+		yield 'abc'
+		yield 'def'
+	a,b,c=f()
+	return 'ok'
++++exception YEXCEPTION_TOOLITTLEITEMSINITER 5

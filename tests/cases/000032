@@ -1,0 +1,4 @@
+function main():
+	if 1 is 2 == 3: return 1
+	return 1
++++error 2 YERROR_SYNTAX_ERROR

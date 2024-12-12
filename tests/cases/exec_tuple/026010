@@ -1,0 +1,4 @@
+function main():
+	a,='ok',
+	return a
++++value 'ok'

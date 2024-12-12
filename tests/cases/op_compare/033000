@@ -1,0 +1,5 @@
+function main():
+	function f(): raise $exception()
+	g=f.bind(f)
+	return g!='a' ? 'ok' : 0
++++value 'ok'

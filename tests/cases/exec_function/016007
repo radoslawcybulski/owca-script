@@ -1,0 +1,30 @@
+function f():
+	a=$exception()
+class C:
+	function f(): return self
+	function g(): return class
+	function h(): return null
+	function $eq(v): return $id(self)==$id(v)
+	function $noteq(v): return $id(self)!=$id(v)
+function main():
+	if not f: return 1
+	if f:
+		if f.object()!=null: return 3
+		if C.f.object()!=C or C.g.object()!=C or C.h.object()!=C: return 4
+		a=C()
+		b=C()
+		if a.f.object()!=a: return 5
+		if a.g.object()!=a: return 6
+		if a.h.object()!=a: return 7
+		if a.f()!=a: return 8
+		if a.g()!=C: return 9
+		if a.h()!=null: return 10
+		z=a.f.bind(b)
+		if z()!=b: return 11
+		z=a.g.bind(b)
+		if z()!=C: return 12
+		z=a.h.bind(b)
+		if z()!=null: return 13
+		return 'ok'
+	else: return 2
++++value 'ok'

@@ -1,0 +1,6 @@
+class T:
+	function $str(): raise $exception()
+function main():
+	$str(T())
+	return 'ok'
++++exception YEXCEPTION_USER 2 0 4

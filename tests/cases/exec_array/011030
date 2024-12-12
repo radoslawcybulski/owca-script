@@ -1,0 +1,13 @@
+function main():
+	a=['a','b','c','d']
+	a.resize(0)
+	if a!=[]: return 1
+	a.resize(0)
+	if a!=[]: return 2
+	a=['a','b','c','d']
+	a.resize(3)
+	if a!=['a','b','c']: return 3
+	a.resize(3)
+	if a!=['a','b','c']: return 3
+	return 'ok'
++++value 'ok'

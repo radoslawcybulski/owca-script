@@ -1,0 +1,3 @@
+function main():
+	return 'abc'.size()==3 ? 'ok' : 'a'
++++value 'ok'

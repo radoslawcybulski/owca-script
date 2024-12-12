@@ -1,0 +1,8 @@
+function f():
+	a=$exception()
+function g(a=f()):
+	pass
+function main():
+	g()
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,3 @@
+function a():
+	yield
++++error 2 YERROR_MISSING_VALUE_FOR_YIELD_RAISE

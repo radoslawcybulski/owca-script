@@ -1,0 +1,3 @@
+function main():
+	return 2.5E
++++error 2 YERROR_WRONG_FORMAT_OF_NUMBER

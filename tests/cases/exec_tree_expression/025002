@@ -1,0 +1,6 @@
+function main():
+	function f():
+		yield 1
+		return 'ok'
+	return 'ok'
++++error 4 YERROR_UNEXPECTED_RETURN_VALUE

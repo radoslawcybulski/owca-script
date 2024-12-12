@@ -1,0 +1,6 @@
+function main():
+	class T: pass
+	with T():
+		z='qwe'
+	return z
++++exception YEXCEPTION_INVALIDPARAMTYPE 3

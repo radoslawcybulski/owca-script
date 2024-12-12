@@ -1,0 +1,7 @@
+function main():
+	function f():
+		a:=true ? 'ok' : 'ff'
+	a='123'
+	f()
+	return a
++++value 'ok'

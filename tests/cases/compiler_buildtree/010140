@@ -1,0 +1,2 @@
+function main(): if true: return 'def'
++++error 1 YERROR_SYNTAX_ERROR

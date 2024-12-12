@@ -1,0 +1,6 @@
+function main():
+	z=$type.$bool.bind($int)
+	if not z(): return 1
+	function f(): raise $exception()
+	class T($exception,f()): pass
++++exception YEXCEPTION_USER 4 5

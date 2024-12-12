@@ -1,0 +1,23 @@
+class T:
+	function read r(): pass
+function f(): pass
+function g(): pass
+function main():
+	a=T.r
+	if a.write!=null: return 1
+	a.read=f
+	a.write=g
+	if a.read!=f: return 2
+	if a.write!=g: return 3
+	a.read=null
+	if a.read!=null: return 4
+	if a.write!=g: return 5
+	a.read=f
+	a.write=null
+	if a.read!=f: return 6
+	if a.write!=null: return 7
+	a.read=null
+	if a.read!=null: return 8
+	if a.write!=null: return 9
+	return 'ok'
++++value 'ok'

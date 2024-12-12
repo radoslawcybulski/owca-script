@@ -1,0 +1,9 @@
+function main():
+	if 1+2+3+4+5:
+		a=
+	else:
+		pass
+	finally:
+		pass
+	return 'ok'
++++error 3 YERROR_SYNTAX_ERROR

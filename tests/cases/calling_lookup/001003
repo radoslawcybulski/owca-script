@@ -1,0 +1,6 @@
+function main():
+	a: for z = []:
+		pass
+	a='ok'
+	return a
++++value 'ok'

@@ -1,0 +1,22 @@
+class T1:
+	function $add(v):
+		return 'o'+v
+class T2:
+	function $radd(v):
+		return v+'k'
+class T3:
+	function $sadd(v):
+		self.v='o'+v
+		return self.v
+function main():
+	t=T1()
+	t+='k'
+	if t!='ok': return 1
+	t='o'
+	t+=T2()
+	if t!='ok': return 2
+	t=T3()
+	t+='k'
+	if t.v!='ok': return 3
+	return 'ok'
++++value 'ok'

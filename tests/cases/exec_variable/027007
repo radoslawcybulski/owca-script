@@ -1,0 +1,6 @@
+function main():
+	z=main.bind(main)
+	q=$function.$hash.bind(z)
+	if q()!=$hash(z): return 1
+	return 'ok'
++++value 'ok'

@@ -1,0 +1,16 @@
+function f(a):
+	x: while x<a:
+		if x<3 and x==a-1:
+			yield $str(a)
+			break
+	else:
+		yield '0'
+	finally:
+		yield 'f'
+function main():
+	a=''
+	for x = (0,1,2,3,4):
+		for y = f(x):
+			a+=y
+	return a
++++value '0123f'

@@ -1,0 +1,7 @@
+function main():
+	try:
+		a=$exception('',1234)
+	except as e:
+		return 'a'
+	return a.code()==1234 ? 'ok' : 'abc'
++++value 'ok'

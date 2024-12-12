@@ -1,0 +1,7 @@
+function f():
+	yield 1
+	yield 2
+function main():
+	for a = f(): pass
+	return 'ok'
++++value 'ok'

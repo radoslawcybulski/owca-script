@@ -1,0 +1,6 @@
+function g(): return '123456'
+function f(a,b,c='abc',d=g()):
+	return a+b+c+d
+function main():
+	return f('a',*['d'],**{'d':'e'})
++++value 'adabce'

@@ -1,0 +1,19 @@
+class C:
+	function $init(): self.v=0
+	function $call():
+		if self.v<10:
+			self.v+=1
+			return self.v
+	function $gen(): return self
+function f():
+	yield 1
+function main():
+	a=0
+	for c = C():
+		a+=c
+	if a!=55: return 1
+	if not f(): return 2
+	a=f()
+	if $id($gen(a))!=$id(a): return 3
+	return 'ok'
++++value 'ok'

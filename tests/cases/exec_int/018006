@@ -1,0 +1,6 @@
+function main():
+	z=$int.$hash
+	z=z.bind(13)
+	if z()!=$hash(13): return 1
+	return 'ok'
++++value 'ok'

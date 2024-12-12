@@ -1,0 +1,12 @@
+function main():
+	class T:
+		function $withenter():
+			return self
+		function $withexit(): pass
+	a1='a'
+	a2='b'
+	with a1=T(),a2=T():
+		if $type(a1) is not T or $type(a2) is not T: return 1
+	if $type(a1) is not T or $type(a2) is not T: return 2
+	return 'ok'
++++value 'ok'

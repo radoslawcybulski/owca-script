@@ -1,0 +1,34 @@
+class A:
+	pass
+class B:
+	pass
+class C:
+	pass
+class Z1(A,B):
+	pass
+class Z2(B,A):
+	pass
+class Z3(B,C):
+	pass
+class Z4(C,A):
+	pass
+class Z5(A,B,C):
+	pass
+class Q:
+	function read f1(): return 0
+	function write f2(v): return 1
+	function read f3(): return 2
+	function write f3(): return 3
+	function g1(): pass
+	function g2(): class
+	function g3(): self
+function gg():
+	yield 1
+function main():
+	l1: for cl,val = (($int,'$int'),($real,'$real'),($str,'$str'),($bool,'$bool'),(A,'A'),(B,'B'),(C,'C'),(Z1,'Z1'),(Z2,'Z2'),(Z3,'Z3'),(Z4,'Z4'),(Z5,'Z5')):
+		$print(val)
+		if $typename($type(cl()))!=val: return l1
+	l2: for cl,val = ((1,'$int'),(0.2,'$real'),(null,'$null'),(true,'$bool'),(false,'$bool'),(Q.f1,'$property'),(Q.f2,'$property'),(Q.f3,'$property'),(gg(),'$gen'),(gg,'$function'),(Q.g1,'$function'),(Q.g2,'$function'),(Q.g3,'$function'),):
+		if $typename($type(cl))!=val: return $real(l2)
+	return 'ok'
++++value 'ok'

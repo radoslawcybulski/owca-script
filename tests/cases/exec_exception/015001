@@ -1,0 +1,4 @@
+function main():
+	a=$exception()
+	a[123456]
++++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 3

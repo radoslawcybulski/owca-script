@@ -1,0 +1,15 @@
+function main():
+	s = '\u1010\u1020\u1030'
+	if s.size() != 3: return 1
+	if s[:] != '\u1010\u1020\u1030': return 2
+	if s[1:] != '\u1020\u1030': return 3
+	if s[:-1] != '\u1010\u1020': return 4
+	if s[1:-1] != '\u1020': return 5
+	if s[0] != '\u1010': return 6
+	if s[1] != '\u1020': return 7
+	if s[2] != '\u1030': return 8
+	if s[-3] != '\u1010': return 9
+	if s[-2] != '\u1020': return 10
+	if s[-1] != '\u1030': return 11
+	return 'ok'
++++value 'ok'

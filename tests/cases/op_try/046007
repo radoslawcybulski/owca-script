@@ -1,0 +1,15 @@
+function main():
+	a=''
+	for x = ('a','b','c'):
+		a+='_'
+		try:
+			raise $exception()
+		except:
+			if a.size()<2: restart
+		a+=x
+	else:
+		a+='e'
+	finally:
+		a+='f'
+	return a
++++value '__a_b_cf'

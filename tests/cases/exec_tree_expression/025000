@@ -1,0 +1,9 @@
+function main():
+	v=not 1
+	if v!=false: return 0
+	v=not 0
+	if v!=true: return 1
+	if not 1: return 2
+	if not 0: return 'ok'
+	return 3
++++value 'ok'

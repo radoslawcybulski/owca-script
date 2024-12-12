@@ -1,0 +1,60 @@
+function main():
+	data=(([1,2,3],[0,1,2],1),([1,2,3],[0,1],1),([1,2,3],[0,1,2,3],1),([1,2,3],[2,3],-1),([1,2,3],[2,0,0],-1),([1,2,3],[2,3,4,5],-1))
+	for left,right,ret = data:
+		if (left <right)!=(ret <0):
+			$print(left,right,ret)
+			return 1
+		if (left >right)!=(ret >0):
+			$print(left,right,ret)
+			return 2
+		if (left<=right)!=(ret<=0):
+			$print(left,right,ret)
+			return 3
+		if (left>=right)!=(ret>=0):
+			$print(left,right,ret)
+			return 4
+		if (left==right)!=(ret==0):
+			$print(left,right,ret)
+			return 5
+		if (left!=right)!=(ret!=0):
+			$print(left,right,ret)
+			return 6
+		if (right <left)!=(-ret <0):
+			$print(right,left,-ret)
+			return 7
+		if (right >left)!=(-ret >0):
+			$print(right,left,-ret)
+			return 8
+		if (right<=left)!=(-ret<=0):
+			$print(right,left,-ret)
+			return 9
+		if (right>=left)!=(-ret>=0):
+			$print(right,left,-ret)
+			return 10
+		if (right==left)!=(-ret==0):
+			$print(right,left,-ret)
+			return 11
+		if (right!=left)!=(-ret!=0):
+			$print(right,left,-ret)
+			return 12
+	a=['a','b','c']
+	a+=['d','e']
+	$print(a)
+	if a!=['a','b','c','d','e']: return 13
+	a=['a','b','c']
+	a*=2
+	if a!=['a','b','c','a','b','c']: return 14
+	if not $bool([1]): return 15
+	if $bool([]): return 16
+	b=[]
+	for a = ['a','b','c','d','e','f']:
+		b+=[a]
+	if b!=['a','b','c','d','e','f']: return 17
+	v=$gen(['a','b','c'])
+	v=$gen(['d','e','f'])
+	b=[]
+	for a = v:
+		b+=[a]
+	if b!=['d','e','f']: return 18
+	return 'ok'
++++value 'ok'

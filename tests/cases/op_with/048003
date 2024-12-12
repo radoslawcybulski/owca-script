@@ -1,0 +1,25 @@
+a=''
+class T1:
+	function $init(v):
+		self.v=v
+	function $withenter():
+		a:=a+'$'+self.v
+		return self
+	function $withexit():
+		a:=a+self.v
+class T2:
+	function $init(v):
+		a:=a+'$'+v
+	function $withenter():
+		return self
+	function $withexit():
+		pass
+function main():
+	try:
+		with a1=T1('a'),a2=T2('b'),a3=T2('c'):
+			a:=a+'_'
+			raise $exception()
+	except:
+		return a
+	return 'qwe'
++++value '$a$b$c_a'
