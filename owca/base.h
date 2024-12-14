@@ -16,6 +16,7 @@
 #include <typeinfo>
 #include <algorithm>
 #include <stdint.h>
+#include <cstdio>
 
 #ifdef RCDEBUG_TIME_IT
 namespace owca {
@@ -47,7 +48,8 @@ namespace owca {
 #define TIMEIT(timer) do { } while(0)
 #endif
 
-void debugprint(const char *);
+void debugprint(const char *, ...);
+
 #ifdef RCDEBUG
 namespace owca { namespace __owca__ {
 	class exec_variable;

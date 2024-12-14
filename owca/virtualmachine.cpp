@@ -2391,11 +2391,15 @@ cont:
 				if (q->finalized()) {
 					goto pop_frame;
 				}
-restart:
 				r=q->first_time_run() ? q->first_time_execute(r) : q->execute(r);
-
-				if (allocated_object_waiting_for_delete_in_progress == NULL) purge_objects();
-
+				
+				// static unsigned int index = 0;
+				// auto qii = ++index;
+				// debugprint("%d: frame %p (%s) -> %s\n",
+				// 	qii, q, (q->fnc ? q->fnc->name()->str().c_str() : "<empty>"),
+				// 	to_string(r).c_str()
+				// 	);
+				
 				switch(r.type()) {
 				case executionstackreturnvalue::CREATE_GENERATOR:
 #ifdef RCDEBUG_EXECUTION

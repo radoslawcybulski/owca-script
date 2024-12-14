@@ -79,11 +79,15 @@ namespace owca {
 #include <Windows.h>
 #endif
 
-void debugprint(const char *txt)
+void debugprint(const char *txt, ...)
 {
+	va_list args;
+	va_start (args, txt);
+	char buf[4096];
+	vsnprintf(buf, sizeof(buf) - 1, txt, args);
 #if defined _WIN32 || defined _WIN64
-	OutputDebugStringA(txt);
+	OutputDebugStringA(buf);
 #else
-	printf("%s", txt);
+	printf("%s", buf);
 #endif
 }
