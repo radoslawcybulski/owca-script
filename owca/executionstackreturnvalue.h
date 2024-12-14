@@ -15,7 +15,6 @@ namespace owca {
 				CREATE_GENERATOR,
 				CO_START,
 				CO_STOP,
-				DEBUG_BREAK,
 			};
 		private:
 			type_ tp;
@@ -25,6 +24,19 @@ namespace owca {
 			type_ type() const { return tp; }
 		};
 
+		inline std::string to_string(executionstackreturnvalue e) {
+			switch (e.type()) {
+			case executionstackreturnvalue::OK: return "OK";
+			case executionstackreturnvalue::EXCEPTION: return "EXCEPTION";
+			case executionstackreturnvalue::RETURN: return "RETURN";
+			case executionstackreturnvalue::RETURN_NO_VALUE: return "RETURN_NO_VALUE";
+			case executionstackreturnvalue::FUNCTION_CALL: return "FUNCTION_CALL";
+			case executionstackreturnvalue::CREATE_GENERATOR: return "CREATE_GENERATOR";
+			case executionstackreturnvalue::CO_START: return "CO_START";
+			case executionstackreturnvalue::CO_STOP: return "CO_STOP";
+			}
+			return "<unknown value executionstackreturnvalue>";
+		}
 	}
 }
 
