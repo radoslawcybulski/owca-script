@@ -20,7 +20,6 @@ struct cpp_function_as_struct : public owca_user_function_base_object {
 	}
 	owca_function_return_value run(owca_global &retval, bool is_exception)
 	{
-		printf("state %d\n",state);
 		switch(state) {
 		case 0: {
 			// state 0 - first time
@@ -48,7 +47,8 @@ struct cpp_function_as_struct : public owca_user_function_base_object {
 			// we are done
 			break;
 		}
-		return owca_function_return_value::NO_RETURN_VALUE;
+		retval.null_set(true);
+		return owca_function_return_value::RETURN_VALUE;
 	}
 	
 };
@@ -98,11 +98,6 @@ bool run_file_4(const char *file_name)
 			// vm.compile will never returns this
 			// as global scope cant return value
 			break;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			// vm.compile finished without an exception and everything went well
-			// or compilation failed (in which case ml.has_errors() will be true)
-			// nothing to do
-			break;
 		case owca_function_return_value::EXCEPTION:
 			// an exception was raised, when executing some code in global scope
 			// res object will bear an actual exception object, which 
@@ -132,10 +127,6 @@ bool run_file_4(const char *file_name)
 			// function returned with a value, lets print it
 			printf("function returned value %s\n",function_return_value.str().c_str());
 			return function_return_value.int_is() && function_return_value.int_get() == 0;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			// function returned without value
-			// nothing to do
-			break;
 		case owca_function_return_value::EXCEPTION:
 			// an exception was raised
 			break;

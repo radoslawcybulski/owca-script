@@ -41,10 +41,6 @@ bool run_file_2(owca_namespace &nspace, const char *file_name)
 			// vm.compile will never returns this
 			// as global scope cant return value
 			break;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			// vm.compile finished without an exception and everything went well
-			// nothing to do
-			break;
 		case owca_function_return_value::EXCEPTION:
 			// an exception was raised, when executing some code in global scope
 			// res object will bear an actual exception object, which 
@@ -122,10 +118,6 @@ bool run_files(std::list<std::string> files, std::string function_name)
 	case owca_function_return_value::RETURN_VALUE:
 		// function returned with a value, lets print it
 		printf("function returned value %s\n",function_return_value.str().c_str());
-		break;
-	case owca_function_return_value::NO_RETURN_VALUE:
-		// function returned without value
-		// nothing to do
 		break;
 	case owca_function_return_value::EXCEPTION:
 		// an exception was raised

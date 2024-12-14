@@ -327,9 +327,7 @@ static unsigned int test_file(const char *filename)
 		vm.run_gc();
 		switch(r.type()) {
 		case owca_function_return_value::RETURN_VALUE:
-			RCASSERT(0);
-			return __LINE__;
-		case owca_function_return_value::NO_RETURN_VALUE: 
+			RCASSERT(res.no_value_is());
 			break;
 		case owca_function_return_value::EXCEPTION: {
 			unsigned int v=parse_exception(res,tr_exception_type,tr_exception_name,tr_exception_lines,tr_exception_lines_count);
@@ -383,9 +381,6 @@ print_errors:
 			}
 
 			switch(r.type()) {
-			case owca_function_return_value::NO_RETURN_VALUE:
-				printf("no value returned\n");
-				return __LINE__;
 			case owca_function_return_value::RETURN_VALUE: {
 				std::string z=res.str();
 				//printf("value returned is %s\n",z.c_str());

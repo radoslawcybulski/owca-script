@@ -150,7 +150,6 @@ static void test(Test &t)
 	vm.run_gc();
 	{
 		switch(result.type()) {
-		case owca_function_return_value::NO_RETURN_VALUE: break;
 		case owca_function_return_value::RETURN_VALUE: RCASSERT(0);
 		case owca_function_return_value::EXCEPTION:
 			parse_exception(res,t);
@@ -189,9 +188,6 @@ static void test(Test &t)
 				}
 
 				switch(result.type()) {
-				case owca_function_return_value::NO_RETURN_VALUE:
-					RCASSERT(0);
-					break;
 				case owca_function_return_value::RETURN_VALUE:
 					printf("value returned is %s\n",res.str().c_str());
 					switch(t.restype) {
@@ -1589,12 +1585,9 @@ namespace Z {
 		}
 		else {
 			switch(r.type()) {
-			// this should never happen, when compiling
-			case owca_function_return_value::RETURN_VALUE: 
-				break;
-				
 			// main block executed without problems
-			case owca_function_return_value::NO_RETURN_VALUE: 			
+			case owca_function_return_value::RETURN_VALUE: 
+				RCASSERT(result.no_value_is());
 				break;
 				
 			// main block raised an exception
@@ -1605,7 +1598,7 @@ namespace Z {
 				break;
 			}
 		
-			if (r.type()==owca_function_return_value::NO_RETURN_VALUE) {
+			if (r.type()==owca_function_return_value::RETURN_VALUE) {
 				owca_global mainfnc=nspace["main"];
 				r=mainfnc.call(result);
 			
@@ -1613,12 +1606,6 @@ namespace Z {
 				// function returned value (either by return or by yield)
 				case owca_function_return_value::RETURN_VALUE:
 					printf("function returned '%s'.\n",result.str().c_str());
-					break;
-					
-				// function returned without value (either by return, 
-				// or by falling out of the scope)
-				case owca_function_return_value::NO_RETURN_VALUE: 			
-					printf("function returned without value.\n");
 					break;
 					
 				// function raised an exception

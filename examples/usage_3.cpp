@@ -55,11 +55,6 @@ bool run_file_3(const char *file_name)
 			// vm.compile will never returns this
 			// as global scope cant return value
 			break;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			// vm.compile finished without an exception and everything went well
-			// or compilation failed (in which case ml.has_errors() will be true)
-			// nothing to do
-			break;
 		case owca_function_return_value::EXCEPTION:
 			// an exception was raised, when executing some code in global scope
 			// res object will bear an actual exception object, which 
@@ -89,10 +84,6 @@ bool run_file_3(const char *file_name)
 		case owca_function_return_value::RETURN_VALUE:
 			// function returned with a value, lets print it
 			return function_return_value.int_is() && function_return_value.int_get() == 0;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			// function returned without value
-			// nothing to do
-			break;
 		case owca_function_return_value::EXCEPTION:
 			// an exception was raised
 			break;

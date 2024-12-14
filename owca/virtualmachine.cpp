@@ -2348,18 +2348,41 @@ cont:
 			return execution_exception_object_thrown!=NULL;
 		}
 
+		//void virtual_machine::raise_if_needed(executionreturnvalue r) {
+		//	vm_execution_stack *finishstack=execution_stack;
+		//	while(finishstack->coroutine_object()) {
+		//		finishstack=finishstack->prev();
+		//		RCASSERT(finishstack);
+		//	}
+
+		//	exec_variable *returnval=finishstack->peek_frame_indexed(0)->return_value;
+
+		//	while (true) {
+		//		switch (r) {
+		//		case executionreturnvalue::VME_VALUE:
+		//			return;
+		//		case executionreturnvalue::VME_EXCEPTION:
+		//			throw owca_exception{ owca_global{ *this, *returnval } };
+		//		default:
+		//			RCASSERT(0);
+		//		}
+
+		//		r = execute_stack();
+		//	}
+		//}
 		executionreturnvalue virtual_machine::execute_stack()
 		{
 			RCASSERT(execution_stack && execution_stack->index>=0);
 
 			vm_execution_stack *finishstack=execution_stack;
-			if (finishstack->coroutine_object()) {
+			while(finishstack->coroutine_object()) {
 				finishstack=finishstack->prev();
 				RCASSERT(finishstack);
 			}
 
 			executionstackreturnvalue r=executionstackreturnvalue::OK;
 			exec_variable *returnval=finishstack->peek_frame_indexed(0)->return_value;
+
 			RCASSERT(returnval->mode()==VAR_NULL);
 			bool no_value = false;
 
@@ -2663,7 +2686,7 @@ update_oper:
 			}
 			switch(r.type()) {
 			case executionstackreturnvalue::OK:
-				return no_value ? VME_NO_VALUE : VME_VALUE;
+				return VME_VALUE;
 			case executionstackreturnvalue::RETURN:
 				return VME_VALUE;
 			case executionstackreturnvalue::EXCEPTION:

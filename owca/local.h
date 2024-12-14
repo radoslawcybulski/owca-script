@@ -174,8 +174,9 @@ namespace owca {
 		DLLEXPORT void real_set(owca_real r);
 		DLLEXPORT owca_real real_get() const;
 		DLLEXPORT bool real_is() const;
-		DLLEXPORT void null_set();
+		DLLEXPORT void null_set(bool no_value = false);
 		DLLEXPORT bool null_is() const;
+		DLLEXPORT bool no_value_is() const;
 		DLLEXPORT bool function_is() const;
 		DLLEXPORT bool object_is() const;
 		DLLEXPORT owca_global function_bind(const owca_local &obj) const;

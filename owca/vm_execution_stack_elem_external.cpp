@@ -281,8 +281,6 @@ namespace owca {
 			*return_value = tmp_return_value._object;
 			tmp_return_value._object.reset();
 			return executionstackreturnvalue::RETURN;
-		case owca_function_return_value::NO_RETURN_VALUE:
-			break;
 		case owca_function_return_value::CREATE_GENERATOR:
 			return executionstackreturnvalue::CREATE_GENERATOR;
 		case owca_function_return_value::COROUTINE_STOP:

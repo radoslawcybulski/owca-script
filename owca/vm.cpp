@@ -100,7 +100,7 @@ namespace owca {
 	{
 		compile_1 cc = compile_1(nspace.ns->hashindex);
 		std::vector<unsigned char> tmp = vm->compile(errorswarnings,fs,cc);
-		owca_function_return_value rr(owca_function_return_value::NO_RETURN_VALUE);
+		owca_function_return_value rr = owca_function_return_value::RETURN_VALUE;
 
 		if (!errorswarnings.has_errors())
 			rr=nspace.apply_code(result,tmp);
@@ -123,7 +123,6 @@ namespace owca {
 		if (vm->execution_stack) {
 			executionreturnvalue r=vm->execute_stack();
 			switch(r) {
-			case VME_NO_VALUE:
 			case VME_EXCEPTION:
 			case VME_VALUE:
 				RCASSERT(vm->execution_stack->empty());
@@ -135,7 +134,7 @@ namespace owca {
 			GC(vm);
 			return owca_function_return_value(r);
 		}
-		return owca_function_return_value::NO_RETURN_VALUE;
+		return owca_function_return_value::RETURN_VALUE;
 	}
 
 	owca_global owca_vm::executing_function()

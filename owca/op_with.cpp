@@ -161,8 +161,6 @@ namespace owca { namespace __owca__ {
 				tmp.gc_release(vm);
 				tmp.reset();
 				break;
-			case VME_NO_VALUE:
-				break;
 			default:
 				RCASSERT(0);
 			}

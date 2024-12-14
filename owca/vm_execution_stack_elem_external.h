@@ -279,7 +279,6 @@ namespace owca {
 		enum state_t {
 			_NONE,
 			RETURN_VALUE,
-			NO_RETURN_VALUE,
 			CREATE_GENERATOR,
 			COROUTINE_STOP,
 			EXCEPTION,

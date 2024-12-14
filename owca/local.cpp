@@ -613,8 +613,9 @@ namespace owca {
 	void owca_local::real_set(owca_real r) { _object.gc_release(*_vm); _object.set_real(r); }
 	owca_real owca_local::real_get() const { return _object.get_real(); }
 	bool owca_local::real_is() const { return _object.mode()==__owca__::VAR_REAL; }
-	void owca_local::null_set() { _object.gc_release(*_vm); _object.set_null(); }
+	void owca_local::null_set(bool no_value) { _object.gc_release(*_vm); _object.set_null(no_value); }
 	bool owca_local::null_is() const { return _object.mode()==__owca__::VAR_NULL; }
+	bool owca_local::no_value_is() const { return _object.is_no_return_value(); }
 	bool owca_local::function_is() const { return _object.mode()==__owca__::VAR_FUNCTION || _object.mode()==__owca__::VAR_FUNCTION_FAST; }
 	bool owca_local::object_is() const { return _object.mode()==__owca__::VAR_OBJECT; }
 	bool owca_local::type_is() const { return _object.mode()==__owca__::VAR_OBJECT && _object.get_object()->is_type(); }
@@ -686,7 +687,7 @@ namespace owca {
 				prv.gc_release(*_vm);
 				switch(lrv.type()) {
 				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.reset(); r=VME_NO_VALUE; break;
+				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
 				case lookupreturnvalue::LOOKUP_FUNCTION_CALL: result._object.reset();
 					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
 					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
@@ -710,7 +711,7 @@ namespace owca {
 				lookupreturnvalue lrv=_object.lookup_read(result._object,*_vm,name._ss,true);
 				switch(lrv.type()) {
 				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: r=VME_NO_VALUE; break;
+				case lookupreturnvalue::LOOKUP_NOT_FOUND: r = VME_VALUE; result._object.set_null(true); break;
 				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
 					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
 					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
@@ -737,8 +738,8 @@ namespace owca {
 					r=VME_VALUE;
 				}
 				else {
-					result._object.reset();
-					r=VME_NO_VALUE;
+					result._object.set_null(true);
+					r=VME_VALUE;
 				}
 			}
 			else {
@@ -746,7 +747,10 @@ namespace owca {
 				result._object.reset();
 				result._update_vm(_vm);
 				bool b=_object.get_namespace()->get_variable(name._ss,result._object);
-				r=b ? VME_VALUE : VME_NO_VALUE;
+				if (!b) {
+					result._object.set_null(true);
+				}
+				r=VME_VALUE;
 			}
 			break;
 		default: RCASSERT(0);
@@ -772,7 +776,7 @@ namespace owca {
 		case VAR_PROPERTY:
 		case VAR_FUNCTION:
 		case VAR_WEAK_REF:
-		case VAR_FUNCTION_FAST: r=VME_NO_VALUE; break;
+		case VAR_FUNCTION_FAST: r = VME_VALUE; result._object.set_null(true); break;
 		case VAR_OBJECT:
 			if (&result._object==&_object || &result._object==&val._object) {
 				exec_object *o=_object.get_object();
@@ -783,7 +787,7 @@ namespace owca {
 				if (&result._object==&val._object) vv.gc_release(*_vm);
 				switch(lrv.type()) {
 				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.reset(); r=VME_NO_VALUE; break;
+				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
 				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
 					result._object.reset();
 					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
@@ -808,7 +812,7 @@ namespace owca {
 				lookupreturnvalue lrv=_object.lookup_write(result._object,*_vm,name._ss,val._object,true);
 				switch(lrv.type()) {
 				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: r=VME_NO_VALUE; break;
+				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
 				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
 					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
 					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
@@ -835,18 +839,16 @@ namespace owca {
 				result._object=val._object;
 				result._object.gc_acquire();
 				r=VME_VALUE;
-				//}
-				//else {
-				//	result._object.reset();
-				//	r=VME_NO_VALUE;
-				//}
 			}
 			else {
 				result._object.gc_release(*result._vm);
 				result._object.reset();
 				result._update_vm(_vm);
 				bool b=_object.get_namespace()->get_variable(name._ss,result._object);
-				r=b ? VME_VALUE : VME_NO_VALUE;
+				if (!b) {
+					result._object.set_null(true);
+				}
+				r=VME_VALUE;
 			}
 			break;
 		default: RCASSERT(0);
@@ -862,7 +864,6 @@ namespace owca {
 		case VME_EXCEPTION: _state=owca_function_return_value::EXCEPTION; break;
 		default:
 			RCASSERT(0);
-		case VME_NO_VALUE: _state=owca_function_return_value::NO_RETURN_VALUE; break;
 		}
 	}
 
@@ -996,7 +997,6 @@ namespace owca {
 		case owca_function_return_value::COROUTINE_STOP:
 			break;
 		case owca_function_return_value::RETURN_VALUE:
-		case owca_function_return_value::NO_RETURN_VALUE:
 		case owca_function_return_value::EXCEPTION:
 			_vm->pop_execution_stack();
 			break;

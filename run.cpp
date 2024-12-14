@@ -107,9 +107,7 @@ int main(int argc, const char *argv[])
 		vm.run_gc();
 		switch(r.type()) {
 		case owca_function_return_value::RETURN_VALUE:
-			RCASSERT(0);
-			return __LINE__;
-		case owca_function_return_value::NO_RETURN_VALUE:
+			RCASSERT(res.no_value_is());
 			break;
 		case owca_function_return_value::EXCEPTION:
 			print_exception(res);
