@@ -65,7 +65,7 @@ namespace owca {
 	void owca_class::add_inheritance(const owca_global &g)
 	{
 		if (g._object.mode()!=__owca__::VAR_OBJECT || g._object.get_object()->is_type()) {
-			throw owca_exception("not a type");
+			throw owca_exception(ExceptionCode::NOT_A_TYPE, "when trying to add a base class to class " + ic->name() + ": not a type, but " + g._object.kind_as_text());
 		}
 		ic->_add_inherit(g._object.get_object());
 	}

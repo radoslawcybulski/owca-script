@@ -34,7 +34,7 @@ namespace owca {
         opcode_data *opc = new opcode_data(get_file_name());
 		if (!ns->validate_code_and_prepare_for_execution(data, opc)) {
 			delete opc;
-			throw owca_exception("input code failed to validate");
+			throw owca_exception(ExceptionCode::CODE_FAILED_TO_VALIDATE, "input code failed to validate");
 		}
 
 		result._object.gc_release(*result._vm);
@@ -69,8 +69,6 @@ namespace owca {
 		//owca_internal_string_nongc *n=owca_internal_string_nongc::allocate_nongc(name.c_str(),(unsigned int)name.size());
 		int z=nspace->insert_variable(name,val);
 		RCASSERT(z>=0);
-		//n->gc_release(*(virtual_machine*)NULL);
-		//if (z<0) throw owca_exception(OWCA_ERROR_FORMAT1("member %1 is not a lvalue",name->str()));
 	}
 
 	void owca_namespace::obj_constructor::_read(exec_variable &val) const
@@ -79,13 +77,13 @@ namespace owca {
 		bool b=nspace->get_variable(name,val);
 		//n->gc_release(*(virtual_machine*)NULL);
 
-		if (!b) throw owca_exception(OWCA_ERROR_FORMAT1("namespace object is missing member %1",name->str()));
+		if (!b) throw owca_exception(ExceptionCode::MISSING_MEMBER, OWCA_ERROR_FORMAT1("namespace object is missing member %1",name->str()));
 	}
 
 	owca_namespace::obj_constructor owca_namespace::operator [] (const owca_string &s)
 	{
 		if (internal_class::_check_name(s.data(), s.data_size())) return obj_constructor(*this, s._ss);
-		throw owca_exception(OWCA_ERROR_FORMAT("invalid identificator"));
+		throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT("invalid identificator"));
 	}
 
 	owca_vm &owca_namespace::vm()

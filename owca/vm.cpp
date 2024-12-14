@@ -168,7 +168,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, txt, len);
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		ret._object.set_string(vm->allocate_string(txt, len, char_count));
 		return ret;
 	}
@@ -195,7 +195,7 @@ _set:
 		case VAR_OBJECT:
 		case VAR_WEAK_REF:
 		case VAR_NAMESPACE:
-			if (l._vm!=vm) throw owca_exception("different VMs in use");
+			if (l._vm!=vm) throw owca_exception(ExceptionCode::INVALID_VM, "different VMs in use");
 			goto _set;
 		default:
 			RCASSERT(0);

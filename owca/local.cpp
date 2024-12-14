@@ -61,7 +61,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, s.c_str(),(unsigned int)s.size());
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_object.set_string(owca_internal_string_nongc::allocate(s.c_str(), (unsigned int)s.size(),char_count));
 	}
 
@@ -72,7 +72,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, c, (unsigned int)(e-c));
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_object.set_string(owca_internal_string_nongc::allocate(c, (unsigned int)(e - c),char_count));
 	}
 
@@ -81,13 +81,13 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, &c,1);
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_object.set_string(owca_internal_string_nongc::allocate(&c, 1,char_count));
 	}
 
 	void owca_local::bind(owca_vm &vm)
 	{
-		if (_vm!=NULL && _vm!=vm.vm) throw owca_exception("VM already set and is different");
+		if (_vm!=NULL && _vm!=vm.vm) throw owca_exception(ExceptionCode::INVALID_VM, "VM already set and is different");
 		_update_vm(vm.vm);
 	}
 
@@ -113,7 +113,7 @@ namespace owca {
 		case VAR_WEAK_REF:
 		case VAR_OBJECT:
 			RCASSERT(_vm);
-			if (vm!=NULL && _vm!=vm) throw owca_exception("different VMs in use");
+			if (vm!=NULL && _vm!=vm) throw owca_exception(ExceptionCode::INVALID_VM, "different VMs in use");
 			break;
 		default:
 			RCASSERT(0);
@@ -224,14 +224,14 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, p, size);
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_object.gc_release(*_vm);
 		_object.set_string(owca_internal_string_nongc::allocate(p,size,char_count));
 	}
 
 	owca_string owca_local::string_get() const
 	{
-		if (_object.mode()!=VAR_STRING) throw owca_exception("not a string");
+		if (_object.mode()!=VAR_STRING) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a string");
 		owca_string s;
 		s._ss=_object.get_string();
 		s._vm=_vm;
@@ -240,14 +240,14 @@ namespace owca {
 
 	const char *owca_local::string_get(unsigned int &sz) const
 	{
-		if (_object.mode()!=VAR_STRING) throw owca_exception("not a string");
+		if (_object.mode()!=VAR_STRING) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a string");
 		sz = _object.get_string()->data_size();
 		return _object.get_string()->data_pointer();
 	}
 
     std::string owca_local::function_name() const
     {
-        if (!function_is()) throw owca_exception("not a function");
+        if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
         RCASSERT(_vm != NULL);
 		switch(_object.mode()) {
 		case VAR_FUNCTION:
@@ -264,7 +264,7 @@ namespace owca {
 
 	std::string owca_local::function_file_name() const
     {
-        if (!function_is()) throw owca_exception("not a function");
+        if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
         RCASSERT(_vm != NULL);
 		switch(_object.mode()) {
 		case VAR_FUNCTION:
@@ -281,7 +281,7 @@ namespace owca {
 
 	unsigned int owca_local::function_file_line() const
     {
-        if (!function_is()) throw owca_exception("not a function");
+        if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
         RCASSERT(_vm != NULL);
 		switch(_object.mode()) {
 		case VAR_FUNCTION:
@@ -298,7 +298,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_global owca_local::function_bind(const owca_local &obj) const
 	{
-		if (!function_is()) throw owca_exception("not a function");
+		if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
 
 		_check_vm(obj);
 		owca_global o(_vm);
@@ -317,7 +317,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_global owca_local::function_obj() const
 	{
-		if (!function_is()) throw owca_exception("not a function");
+		if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
 
 		owca_global o(_vm);
 		switch(_object.mode()) {
@@ -336,7 +336,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_global owca_local::function_member_of() const
 	{
-		if (!function_is()) throw owca_exception("not a function");
+		if (!function_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a function");
 
 		owca_global o(_vm);
 		exec_object *co=NULL;
@@ -507,7 +507,7 @@ namespace owca {
 
 	owca_namespace owca_local::namespace_get() const
 	{
-		if (!namespace_is()) throw owca_exception("not a namespace");
+		if (!namespace_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a namespace");
 		return _object.get_namespace()->generate();
 	}
 
@@ -526,7 +526,7 @@ namespace owca {
 
 	owca_map owca_local::map_get() const
 	{
-		if (!map_is()) throw owca_exception("not a map");
+		if (!map_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a map");
 		exec_map_object *o=_vm->data_from_object<exec_map_object>(_object.get_object());
 		owca_map m;
 		m.obj=_object.get_object();
@@ -550,7 +550,7 @@ namespace owca {
 
 	owca_list owca_local::list_get() const
 	{
-		if (!list_is()) throw owca_exception("not a list");
+		if (!list_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a list");
 		exec_array_object *o=_vm->data_from_object<exec_array_object>(_object.get_object());
 		owca_list m;
 		m.obj=_object.get_object();
@@ -574,7 +574,7 @@ namespace owca {
 
 	owca_tuple owca_local::tuple_get() const
 	{
-		if (!tuple_is()) throw owca_exception("not a tuple");
+		if (!tuple_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a tuple");
 		exec_tuple_object *o=_vm->data_from_object<exec_tuple_object>(_object.get_object());
 		owca_tuple m;
 		m.obj=_object.get_object();
@@ -616,11 +616,12 @@ namespace owca {
 	void owca_local::null_set() { _object.gc_release(*_vm); _object.set_null(); }
 	bool owca_local::null_is() const { return _object.mode()==__owca__::VAR_NULL; }
 	bool owca_local::function_is() const { return _object.mode()==__owca__::VAR_FUNCTION || _object.mode()==__owca__::VAR_FUNCTION_FAST; }
+	bool owca_local::object_is() const { return _object.mode()==__owca__::VAR_OBJECT; }
 	bool owca_local::type_is() const { return _object.mode()==__owca__::VAR_OBJECT && _object.get_object()->is_type(); }
 
 	owca_string owca_local::type_name() const
 	{
-		if (!type_is()) throw owca_exception("not a type");
+		if (!type_is()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "not a type");
 		owca_string s(_vm,_object.get_object()->CO().name);
 		_object.get_object()->CO().name->gc_acquire();
 		s._destroy=true;
@@ -662,8 +663,8 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_get_member(owca_global &result, const owca_string &name) const
 	{
-		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		executionreturnvalue r;
 
 		switch(_object.mode()) {
@@ -756,8 +757,8 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_set_member(owca_global &result, const owca_string &name, const owca_global &val) const
 	{
-		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(val);
 
 		executionreturnvalue r;
@@ -912,13 +913,13 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		return _call(result,_object,NULL,0);
 	}
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(p1);
 		//exec_variable arr[]={p1._object};
 		exec_variable *arr=new exec_variable[1];
@@ -928,7 +929,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(p1);
 		_check_vm(p2);
 		exec_variable *arr=new exec_variable[2];
@@ -939,7 +940,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(p1);
 		_check_vm(p2);
 		_check_vm(p3);
@@ -952,7 +953,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(p1);
 		_check_vm(p2);
 		_check_vm(p3);
@@ -967,7 +968,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_call_parameters &cp) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(cp.list_parameter);
 		_check_vm(cp.map_parameter);
 
@@ -982,7 +983,7 @@ namespace owca {
 
 	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_parameters &cp) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_check_vm(cp.vm);
 
 		return _call(result,_object,*cp.ci);
@@ -1010,7 +1011,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::get_member(owca_global &result, const owca_string &member) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r=prepare_get_member(result,member);
 		return _finalize_get_set_member(r);
@@ -1018,7 +1019,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::set_member(owca_global &result, const owca_string &member, const owca_global &val) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r=prepare_set_member(result,member,val);
 		return _finalize_get_set_member(r);
@@ -1026,7 +1027,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1035,7 +1036,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,p1);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1044,7 +1045,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,p1,p2);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1053,7 +1054,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,p1,p2,p3);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1062,7 +1063,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,p1,p2,p3,p4);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1071,7 +1072,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_call_parameters &cp) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,cp);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
@@ -1080,7 +1081,7 @@ namespace owca {
 
 	owca_function_return_value owca_local::call(owca_global &result, const owca_parameters &cp) const
 	{
-		if (_vm==NULL) throw owca_exception("VM not set");
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
 		_vm->push_execution_stack();
 		owca_function_return_value r = prepare_call(result,cp);
 		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();

@@ -38,6 +38,30 @@ namespace owca { namespace __owca__ {
 		if (type == STRING) data.s->gc_release(*(virtual_machine*)0); // TODO: fix it
 	}
 
+	std::string exec_variable::kind_as_text() const {
+		switch (mode()) {
+		case exectype::VAR_NULL: return "NULL";
+		case exectype::VAR_INT: return "integer";
+		case exectype::VAR_REAL: return "real";
+		case exectype::VAR_BOOL: return "bool";
+		case exectype::VAR_STRING: return "string";
+		case exectype::VAR_GENERATOR: return "generator";
+		case exectype::VAR_PROPERTY: return "property";
+		case exectype::VAR_FUNCTION: return "function";
+		case exectype::VAR_FUNCTION_FAST: return "function";
+		case exectype::VAR_OBJECT: return "object";
+		case exectype::VAR_NAMESPACE: return "namespace";
+		case exectype::VAR_WEAK_REF: return "weak-ref";
+		case exectype::VAR_COUNT:
+		case exectype::VAR_HASH_DELETED:
+		case exectype::VAR_HASH_EMPTY:
+		case exectype::VAR_NO_DEF_VALUE:
+		case exectype::VAR_NO_PARAM_GIVEN:
+			RCASSERT(0);
+		}
+		return "<unknown variable type>";
+	}
+
 	void defval::get(exec_variable &r) const
 	{
 		switch(type) {

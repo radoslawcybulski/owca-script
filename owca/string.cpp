@@ -31,7 +31,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, txt, (unsigned int)(t - txt));
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_ss = owca_internal_string_nongc::allocate(txt, (unsigned int)(t - txt), char_count);
 	}
 
@@ -40,7 +40,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = (unsigned int)owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, txt, (unsigned int)size);
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_ss = owca_internal_string_nongc::allocate(txt, (unsigned int)size,char_count);
 	}
 
@@ -49,7 +49,7 @@ namespace owca {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, s.c_str(), (unsigned int)s.size());
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		_ss = owca_internal_string_nongc::allocate(s.c_str(), (unsigned int)s.size(),char_count);
 	}
 
@@ -71,7 +71,7 @@ namespace owca {
 	{
 		owca_int sz = _ss ? _ss->character_count() : 0;
 		if (index<0) index+=sz;
-		if (index<0 || index>sz) throw owca_exception(OWCA_ERROR_FORMAT2("index %1 is invalid for string of size %2",int_to_string(index),int_to_string(sz)));
+		if (index<0 || index>sz) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("index %1 is invalid for string of size %2",int_to_string(index),int_to_string(sz)));
 		return (unsigned int)index;
 	}
 

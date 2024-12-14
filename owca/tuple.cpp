@@ -17,7 +17,7 @@ namespace owca {
 	unsigned int owca_tuple::_update_index(owca_int index) const
 	{
 		if (index<0) index+=to->size();
-		if (index<0 || index>=to->size()) throw owca_exception(OWCA_ERROR_FORMAT2("index %1 is invalid for tuple of size %2",int_to_string(index),int_to_string(to->size())));
+		if (index<0 || index>=to->size()) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("index %1 is invalid for tuple of size %2",int_to_string(index),int_to_string(to->size())));
 		return (unsigned int)index;
 	}
 

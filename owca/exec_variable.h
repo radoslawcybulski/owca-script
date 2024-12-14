@@ -81,6 +81,7 @@ namespace owca { namespace __owca__ {
 
 		bool type(exectype tp) const;
 		bool type(exec_object *tp) const;
+		std::string kind_as_text() const;
 		//bool type_raise(virtual_machine &, exectype tp) const;
 		//bool type_raise(virtual_machine &, exec_object *tp) const;
 

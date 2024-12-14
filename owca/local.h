@@ -5,7 +5,6 @@
 #include "exec_variable.h"
 #include "structinfo.h"
 #include "exectype.h"
-#include "exception.h"
 
 namespace owca {
 	class owca_class;
@@ -178,6 +177,7 @@ namespace owca {
 		DLLEXPORT void null_set();
 		DLLEXPORT bool null_is() const;
 		DLLEXPORT bool function_is() const;
+		DLLEXPORT bool object_is() const;
 		DLLEXPORT owca_global function_bind(const owca_local &obj) const;
 		DLLEXPORT owca_global function_obj() const;
 		DLLEXPORT owca_global function_member_of() const;

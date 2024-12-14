@@ -1550,7 +1550,7 @@ namespace Z {
 		ExceptionCode code=(ExceptionCode)
 			(res.int_is() ? res.int_get() : (int)ExceptionCode::NONE);
 
-		printf("exception: %s\n",ExceptionCode_text(code));
+		printf("exception: %s\n",to_string(code).c_str());
 
 		// size of stack bound with exception object
 		res=execute(*exc.vm(),exc,"size");

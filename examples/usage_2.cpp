@@ -62,8 +62,6 @@ bool run_file_2(owca_namespace &nspace, const char *file_name)
 	}
 	catch (owca_exception e) {
 		printf("%s exception\n",e.message().c_str());
-		// Y throws C++ exceptions only for C++ side mistakes
-		// invalid parameters for example
 		return false;
 	}
 }

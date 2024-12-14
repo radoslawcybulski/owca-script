@@ -41,7 +41,7 @@ namespace owca {
 		else {
 			index-=ci->normal_params_count;
 			if (index<ci->list_params_count) v=&ci->list_params[index];
-			else throw owca_exception(OWCA_ERROR_FORMAT("index is too large"));
+			else throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("index %1 is too large - there's only %2 indexable parameters", int_to_string(index + ci->normal_params_count), int_to_string(ci->normal_params_count + ci->list_params_count)));
 		}
 		owca_global g;
 		g._update_vm(vm);
@@ -62,7 +62,7 @@ namespace owca {
 
 	owca_global owca_parameters::parameter(unsigned int index) const
 	{
-		if (index>=ci->normal_params_count) throw owca_exception(OWCA_ERROR_FORMAT1("parameter index %1 is too large",int_to_string(index)));
+		if (index>=ci->normal_params_count) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("parameter index %1 is too large - there's only %2 parameters",int_to_string(index), int_to_string(ci->normal_params_count)));
 		owca_global g(*vm,ci->normal_params[index]);
 		g._object.gc_acquire();
 		return g;
@@ -70,7 +70,7 @@ namespace owca {
 
 	owca_global owca_parameters::list_parameter(unsigned int index) const
 	{
-		if (index>=ci->list_params_count) throw owca_exception(OWCA_ERROR_FORMAT1("parameter list index %1 is too large",int_to_string(index)));
+		if (index>=ci->list_params_count) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("parameter list index %1 is too large - there's only %2 parameters",int_to_string(index), int_to_string(ci->list_params_count)));
 		owca_global g(*vm,ci->list_params[index]);
 		g._object.gc_acquire();
 		return g;

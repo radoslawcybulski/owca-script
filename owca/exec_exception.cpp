@@ -15,9 +15,10 @@
 #include "location.h"
 #include "vm_execution_stack_elem_internal.h"
 #include "vm_execution_stack_elem_external.h"
+#include "tuple.h"
 
 namespace owca {
-	const char *ExceptionCode_text(ExceptionCode code)
+	std::string to_string(ExceptionCode code)
 	{
 		switch(code) {
 	#define Q(a) case ExceptionCode::a: return #a;
@@ -67,6 +68,55 @@ namespace owca {
 		default:
 			RCASSERT(0);
 			return "";
+		}
+	}
+
+	bool owca_exception::has_exception_object() const {
+		return _exception_object.object_is();
+	}
+
+	static owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
+	{
+		owca_global z,res;
+		owca_function_return_value r=exc.get_member(z,member);
+
+		if (r==owca_function_return_value::RETURN_VALUE) {
+			if (param>=0) {
+				r=z.call(res,param);
+			}
+			else {
+				r=z.call(res);
+			}
+
+			if (r==owca_function_return_value::RETURN_VALUE) return res;
+		}
+		return owca_global();
+	}
+
+	std::vector<owca_exception::StacktraceElem> owca_exception::stacktrace() const {
+		if (!has_exception_object()) return {};
+
+		try {
+			auto res=execute(*_exception_object.vm(),_exception_object,"size");
+			owca_int lines_count=res.int_is() ? res.int_get() : 0;
+			std::vector<owca_exception::StacktraceElem> ret_value;
+			ret_value.reserve(lines_count);
+
+			for(unsigned int i=0;i<lines_count;++i) {
+				owca_global e=execute(*_exception_object.vm(),_exception_object,"$read_1",i);
+				owca_tuple t=e.tuple_get();
+
+				std::string function_name=t.get(0).str();
+				std::string filename=t.get(1).str();
+				auto function_line = t.get(2).int_get();
+
+				ret_value.push_back({ std::move(filename), std::move(function_name), function_line });
+			}
+
+			return ret_value;
+		}
+		catch (...) {
+			RCASSERT(false);
 		}
 	}
 

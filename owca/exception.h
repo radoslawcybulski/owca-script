@@ -1,6 +1,9 @@
 #ifndef _RC_Y_EXCEPTION_H
 #define _RC_Y_EXCEPTION_H
 
+#include "global.h"
+#include <exception>
+
 #ifdef OVERFLOW
 #undef OVERFLOW
 #endif
@@ -48,16 +51,33 @@ namespace owca {
 		LIST_MODIFED_WHILE_BEING_SORTED,
 		MAP_MODIFED_WHILE_BEING_USED,
 		SET_MODIFED_WHILE_BEING_USED,
+		NOT_A_TYPE,
+		INVALID_UTF8_STRING,
+		EMPTY_LIST,
+		CODE_FAILED_TO_VALIDATE,
 		USER=1024,
 	};
-	DLLEXPORT const char *ExceptionCode_text(ExceptionCode);
+	DLLEXPORT std::string to_string(ExceptionCode);
 
-	class owca_exception {
+	class owca_exception : public std::exception {
+		owca_global _exception_object;
 		std::string _message;
+		ExceptionCode _code;
 	public:
-		owca_exception(const std::string &txt) : _message(txt) { }
+		owca_exception(ExceptionCode code, const std::string& txt) : _message(to_string(code) + ": " + txt), _code(code) { }
+		explicit owca_exception(owca_global exception_object);
 
+		struct StacktraceElem {
+			std::string function, filename;
+			owca_int line;
+		};
 		const std::string &message() const { return _message; }
+		const char* what() const { return _message.c_str(); }
+		auto code() const { return _code; }
+		const auto& exception_object() const { return _exception_object; }
+		bool has_exception_object() const;
+		std::vector<StacktraceElem> stacktrace() const;
+
 	};
 
 }

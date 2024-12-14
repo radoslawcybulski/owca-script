@@ -74,7 +74,7 @@ namespace owca {
 	unsigned int owca_list::_update_index(owca_int index, bool allow_one_index_after_size) const
 	{
 		if (index<0) index+=ao->size();
-		if (index<0 || (allow_one_index_after_size ? (index>ao->size()) : (index>=ao->size()))) throw owca_exception(OWCA_ERROR_FORMAT2("index %1 is invalid for list of size %2", int_to_string(index), int_to_string(ao->size())));
+		if (index<0 || (allow_one_index_after_size ? (index>ao->size()) : (index>=ao->size()))) throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, OWCA_ERROR_FORMAT2("index %1 is invalid for list of size %2", int_to_string(index), int_to_string(ao->size())));
 		return (unsigned int)index;
 	}
 
@@ -87,7 +87,7 @@ namespace owca {
 	owca_global owca_list::pop_front()
 	{
 		owca_global g;
-		if (ao->size()==0) throw owca_exception("cant pop fron empty list");
+		if (ao->size()==0) throw owca_exception(ExceptionCode::EMPTY_LIST, "cant pop fron empty list");
 		ao->pop(g._object,*vm,0);
 		g._update_vm(vm);
 		return g;
@@ -96,7 +96,7 @@ namespace owca {
 	owca_global owca_list::pop_back()
 	{
 		owca_global g;
-		if (ao->size()==0) throw owca_exception("cant pop fron empty list");
+		if (ao->size()==0) throw owca_exception(ExceptionCode::EMPTY_LIST, "cant pop fron empty list");
 		ao->pop(g._object,*vm,ao->size()-1);
 		g._update_vm(vm);
 		return g;

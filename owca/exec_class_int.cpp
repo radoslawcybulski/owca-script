@@ -24,7 +24,7 @@ namespace owca {
 	void owca_class::obj_constructor::_read(__owca__::exec_variable &val) const
 	{
 		std::map<std::string,__owca__::exec_variable>::iterator it=ic.mp.find(name->str());
-		if (it==ic.mp.end()) throw owca_exception(OWCA_ERROR_FORMAT1("missing member %1",name->str()));
+		if (it==ic.mp.end()) throw owca_exception(ExceptionCode::MISSING_MEMBER, OWCA_ERROR_FORMAT1("missing member %1",name->str()));
 		val=it->second;
 		val.gc_acquire();
 	}
@@ -47,7 +47,7 @@ namespace owca {
 		void internal_class::obj_constructor::_read(__owca__::exec_variable &val) const
 		{
 			std::map<std::string,__owca__::exec_variable>::iterator it=ic.mp.find(name->str());
-			if (it==ic.mp.end()) throw owca_exception(OWCA_ERROR_FORMAT1("missing member %1",name->str()));
+			if (it==ic.mp.end()) throw owca_exception(ExceptionCode::MISSING_MEMBER, OWCA_ERROR_FORMAT1("missing member %1",name->str()));
 			val=it->second;
 			val.gc_acquire();
 		}

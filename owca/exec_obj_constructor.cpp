@@ -121,7 +121,7 @@ namespace owca { namespace __owca__ {
 		unsigned int index = 0;
 		unsigned int char_count = owca_internal_string::calculate_char_count_and_missing_bytes_if_any(index, s, size);
 		if (index != 0)
-			throw owca_exception("invalid utf8 string");
+			throw owca_exception(ExceptionCode::INVALID_UTF8_STRING, "invalid utf8 string");
 		exec_variable v;
 		v.set_string(_vm.allocate_string(s,size,char_count));
 		write(v);

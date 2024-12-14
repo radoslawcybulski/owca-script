@@ -2825,7 +2825,7 @@ update_oper:
 				}
 				if (!mi.valid()) {
 					delete[] level0map;
-					throw owca_exception(OWCA_ERROR_FORMAT1("namespace object is missing member %1", ident->str()));
+					throw owca_exception(ExceptionCode::MISSING_MEMBER, OWCA_ERROR_FORMAT1("namespace object is missing member %1", ident->str()));
 				}
 				level0map[level0map_index] = result->hashindex.getval(mi.get()).v;
 				++level0map_index;
