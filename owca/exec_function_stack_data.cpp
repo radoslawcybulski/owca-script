@@ -47,8 +47,8 @@ namespace owca {
 
 		void exec_function_stack_data::_link_to_destroy(virtual_machine &vm)
 		{
-			//exec_base::_link_to_destroy(vm);
 			_delay_destruction(vm);
+			_release_resources(vm);
 		}
 	}
 }
