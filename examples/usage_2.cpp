@@ -35,15 +35,7 @@ bool run_file_2(owca_namespace &nspace, const char *file_name)
 		// vm.compile function returns object, which tells You how the code compilation
 		// (or execution) went
 
-		while (r.type() == owca_function_return_value::DEBUG_BREAK) {
-			// $debugbreak function was called. it pauses the execution
-			// and allows to inspect VM, check values and so on
-			// ignore it for now
-			r = vm.resume_execution();
-		}
-		
 		// only those values can be returned from vm.compile function
-		// (and DEBUG_BREAK, which we just ignored)
 		switch(r.type()) {
 		case owca_function_return_value::RETURN_VALUE:
 			// vm.compile will never returns this
@@ -124,18 +116,10 @@ bool run_files(std::list<std::string> files, std::string function_name)
 	owca_global function_return_value;
 	owca_function_return_value r = function.call(function_return_value);
 	
-	while (r.type() == owca_function_return_value::DEBUG_BREAK) {
-		// $debugbreak function was called. it pauses the execution
-		// and allows to inspect VM, check values and so on
-		// ignore it for now
-		r = vm.resume_execution();
-	}
-		
 	// Y doesnt run the garbage collector itself for now, so run it once a while
 	vm.run_gc();
 
 	// only those values can be returned from call function
-	// (and DEBUG_BREAK, which we just ignored)
 	switch(r.type()) {
 	case owca_function_return_value::RETURN_VALUE:
 		// function returned with a value, lets print it

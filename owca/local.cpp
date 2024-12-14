@@ -857,7 +857,6 @@ namespace owca {
 	owca_function_return_value::owca_function_return_value(executionreturnvalue r)
 	{
 		switch(r) {
-		case VME_DEBUG_BREAK: _state=owca_function_return_value::DEBUG_BREAK; break;
 		case VME_VALUE: _state=owca_function_return_value::RETURN_VALUE; break;
 		case VME_EXCEPTION: _state=owca_function_return_value::EXCEPTION; break;
 		default:
@@ -992,7 +991,6 @@ namespace owca {
 	owca_function_return_value owca_local::_finalize_get_set_member(owca_function_return_value r) const
 	{
 		switch(r.type()) {
-		case owca_function_return_value::DEBUG_BREAK:
 		case owca_function_return_value::CREATE_GENERATOR:
 		case owca_function_return_value::COROUTINE_STOP:
 			break;

@@ -283,7 +283,6 @@ namespace owca {
 			CREATE_GENERATOR,
 			COROUTINE_STOP,
 			EXCEPTION,
-			DEBUG_BREAK,
 			FUNCTION_CALL,
 		};
 	private:

@@ -129,8 +129,6 @@ namespace owca {
 				RCASSERT(vm->execution_stack->empty());
 				vm->pop_execution_stack();
 				break;
-			case VME_DEBUG_BREAK:
-				break;
 			default:
 				RCASSERT(0);
 			}

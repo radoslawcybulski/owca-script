@@ -1627,10 +1627,6 @@ namespace Z {
 					printf("an exception is raised.\n");
 					print_exception(result);
 					break;
-				
-				// $debugbreak function was called
-				case owca_function_return_value::DEBUG_BREAK:
-					break;
 				}
 			
 			}

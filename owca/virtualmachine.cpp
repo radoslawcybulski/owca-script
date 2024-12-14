@@ -2357,7 +2357,6 @@ cont:
 				finishstack=finishstack->prev();
 				RCASSERT(finishstack);
 			}
-			bool allowdebug=finishstack->prev()==NULL;
 
 			executionstackreturnvalue r=executionstackreturnvalue::OK;
 			exec_variable *returnval=finishstack->peek_frame_indexed(0)->return_value;
@@ -2398,11 +2397,6 @@ restart:
 				if (allocated_object_waiting_for_delete_in_progress == NULL) purge_objects();
 
 				switch(r.type()) {
-				case executionstackreturnvalue::DEBUG_BREAK:
-					if (allowdebug) {
-						goto debug_break;
-					}
-					else goto restart;
 				case executionstackreturnvalue::CREATE_GENERATOR:
 #ifdef RCDEBUG_EXECUTION
 					sprintf(dbuf,"executing stackframe %6d      CREATE_GENERATOR\n",q->get_debug_ident()); debugprint(dbuf);
@@ -2686,8 +2680,6 @@ update_oper:
 				RCASSERT(0);
 			}
 			return VME_VALUE;
-debug_break:
-			return VME_DEBUG_BREAK;
 		}
 
 		//vm_execution_stack *virtual_machine::create_execution_stack()

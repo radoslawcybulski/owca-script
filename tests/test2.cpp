@@ -2045,7 +2045,7 @@ void test_class()
 
 		static const char *tcode=
 			"function f():\n"
-			"	$debugbreak()\n"
+			"	pass\n"
 			"function test():\n"
 			"	proxy_call(f)\n"
 			"	return 'ok'\n"
@@ -2061,8 +2061,7 @@ void test_class()
 			RCASSERT(0);
 			return;
 		}
-		RCASSERT(nspace["test"].call(res)==owca_function_return_value::DEBUG_BREAK);
-		RCASSERT(vm.resume_execution() == owca_function_return_value::RETURN_VALUE);
+		RCASSERT(nspace["test"].call(res)==owca_function_return_value::RETURN_VALUE);
 		printf("return value: %s\n",res.string_get().str().c_str());
 		RCASSERT(res.string_get()=="ok");			
 	}

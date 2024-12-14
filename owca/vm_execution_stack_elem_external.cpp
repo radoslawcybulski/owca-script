@@ -223,7 +223,6 @@ namespace owca {
 			//case executionstackreturnvalue::REPLACE_CALL:
 			case executionstackreturnvalue::FUNCTION_CALL:
 			case executionstackreturnvalue::CREATE_GENERATOR:
-			case executionstackreturnvalue::DEBUG_BREAK:
 				RCASSERT(0);
 			default:
 				RCASSERT(0);
@@ -289,8 +288,6 @@ namespace owca {
 			return executionstackreturnvalue::CREATE_GENERATOR;
 		case owca_function_return_value::COROUTINE_STOP:
 			return executionstackreturnvalue::CO_STOP;
-		case owca_function_return_value::DEBUG_BREAK:
-			return executionstackreturnvalue::DEBUG_BREAK;
 		case owca_function_return_value::FUNCTION_CALL:
 			return executionstackreturnvalue::FUNCTION_CALL;
 		default:
@@ -310,7 +307,6 @@ namespace owca {
 		//case executionstackreturnvalue::REPLACE_CALL:
 		case executionstackreturnvalue::FUNCTION_CALL:
 		case executionstackreturnvalue::CREATE_GENERATOR:
-		case executionstackreturnvalue::DEBUG_BREAK:
 			RCASSERT(0);
 		default:
 			RCASSERT(0);

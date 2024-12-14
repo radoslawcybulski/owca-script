@@ -428,7 +428,6 @@ namespace owca {
 				//case executionstackreturnvalue::REPLACE_CALL:
 			case executionstackreturnvalue::FUNCTION_CALL:
 			case executionstackreturnvalue::CREATE_GENERATOR:
-			case executionstackreturnvalue::DEBUG_BREAK:
 				RCASSERT(0);
 			default:
 				RCASSERT(0);

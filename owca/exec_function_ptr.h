@@ -361,8 +361,6 @@ namespace owca {
 					return executionstackreturnvalue::FUNCTION_CALL;
 				case owca_function_return_value::FUNCTION_CALL:
 					return executionstackreturnvalue::FUNCTION_CALL;
-				case owca_function_return_value::DEBUG_BREAK:
-					return executionstackreturnvalue::DEBUG_BREAK;
 				case owca_function_return_value::COROUTINE_STOP:
 					//vm->push_execution_stack();
 					this->vm->raise_cant_stop_coroutine_from_user_function();

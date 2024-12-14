@@ -10,6 +10,8 @@
 #include "exception.h"
 #include "compile_visible_items.h"
 #include "executionreturnvalue.h"
+#include "debug_interface.h"
+#include <memory>
 
 namespace owca {
 	class owca_global;
@@ -380,6 +382,7 @@ namespace owca {
 			vm_execution_stack *execution_stack;
 			bool execution_self_oper;
 			//exec_variable tmpretval;
+			DebugInterface* debug_interface = nullptr;
 
 			void register_opcode_data(opcode_data *opc) { opcode_datas.push_back(opc); }
 			executionreturnvalue execute_stack(void);

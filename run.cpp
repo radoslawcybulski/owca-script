@@ -104,13 +104,6 @@ int main(int argc, const char *argv[])
 		owca::owca_source_file_Text input(totaltext.c_str());
 		owca_function_return_value r=vm.compile(res,nspace,ml,input);
 
-		while(r.type() == owca_function_return_value::DEBUG_BREAK) {
-			// $debugbreak function was called. it pauses the execution
-			// and allows to inspect VM, check values and so on
-			// ignore it for now
-			r = vm.resume_execution();
-		}
-
 		vm.run_gc();
 		switch(r.type()) {
 		case owca_function_return_value::RETURN_VALUE:

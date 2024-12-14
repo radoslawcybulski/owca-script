@@ -7,7 +7,6 @@ namespace owca {
 			VME_VALUE,
 			VME_NO_VALUE,
 			VME_EXCEPTION,
-			VME_DEBUG_BREAK,
 		};
 	}
 }

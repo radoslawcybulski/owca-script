@@ -250,19 +250,11 @@ cont:
 
 		D_FUNC0(compiler,debugbreak)
 			{
-				switch(mode) {
-				CASE(0)
-					mode=1;
-					return executionstackreturnvalue::DEBUG_BREAK;
-				CASE(1)
-					break;
-				default:
-					RCASSERT(0);
-				}
+				if (vm->debug_interface)
+					vm->debug_interface->debug_break();
 				return executionstackreturnvalue::RETURN;
 			}
-			unsigned char mode;
-			void create_self(void) { mode=0; }
+			void create_self(void) {}
 		D_END
 
 		D_FUNC1(compiler,id,const exec_variable*)
