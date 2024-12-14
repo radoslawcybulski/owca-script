@@ -21,10 +21,9 @@ namespace owca { namespace __owca__ {
 			CASE(0)
 				mode=1;
 				generator.reset();
-
 				if (p1->mode()==VAR_NO_PARAM_GIVEN) {
 					self->resize(*vm,0);
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					break;
 				}
 				owca_int i;
 				switch(p1->mode()) {
@@ -70,7 +69,8 @@ namespace owca { namespace __owca__ {
 			default:
 				RCASSERT(0);
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 
 		exec_variable generator,tmpvar;
@@ -131,7 +131,8 @@ namespace owca { namespace __owca__ {
 				self->get(i)=self->get(index);
 				self->get(index)=v;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -142,7 +143,10 @@ namespace owca { namespace __owca__ {
 
 				{
 					getter g = getter(self->ptr());
-					if (sa.create(vm,g,self->size())) return executionstackreturnvalue::RETURN_NO_VALUE;
+					if (sa.create(vm, g, self->size())) {
+						return_value->set_null(true);
+						return executionstackreturnvalue::RETURN;
+					}
 				}
 				varsptr=self->ptr();
 			}
@@ -164,7 +168,8 @@ namespace owca { namespace __owca__ {
 			newtable=self->_swap_table(newtable);
 			exec_array_object::_release_table(*vm,newtable);
 
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 
 		class getter : public exec_sort_array_getter_base {
@@ -462,7 +467,8 @@ namespace owca { namespace __owca__ {
 				return executionstackreturnvalue::RETURN;
 			}
 			else {
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		}
 	D_END
@@ -494,7 +500,8 @@ namespace owca { namespace __owca__ {
 					CALC(1,vm->calculate_generator(&generator,*p3));
 				}
 				else {
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				}
 			CASE(1)
 				if (!tmp.empty() && tmp.back().is_no_return_value()) GOTO(2);
@@ -594,7 +601,8 @@ namespace owca { namespace __owca__ {
 				GOTO(1);
 			}
 			RCASSERT(0);
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		stringbuffer sb;
 		unsigned int index;
@@ -638,7 +646,8 @@ namespace owca { namespace __owca__ {
 				return_value->gc_acquire();
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 
 		unsigned int index;
@@ -778,7 +787,8 @@ namespace owca { namespace __owca__ {
 			default:
 				RCASSERT(0);
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		exec_variable tmp;
 		unsigned int index;

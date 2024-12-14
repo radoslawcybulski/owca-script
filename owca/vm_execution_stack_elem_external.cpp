@@ -219,8 +219,6 @@ namespace owca {
 			case executionstackreturnvalue::EXCEPTION: return executionstackreturnvalue::EXCEPTION;
 			case executionstackreturnvalue::OK: break;
 			case executionstackreturnvalue::RETURN:
-			case executionstackreturnvalue::RETURN_NO_VALUE:
-			//case executionstackreturnvalue::REPLACE_CALL:
 			case executionstackreturnvalue::FUNCTION_CALL:
 			case executionstackreturnvalue::CREATE_GENERATOR:
 				RCASSERT(0);
@@ -232,7 +230,8 @@ namespace owca {
 				switch(return_handling_mode) {
 				case RETURN_HANDLING_OPERATOR_RETURN_ANY_UPDATE_OPER:
 				case RETURN_HANDLING_OPERATOR_RETURN_BOOL_UPDATE_OPER:
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				case RETURN_HANDLING_NONE:
 				case RETURN_HANDLING_OPERATOR_RETURN_INIT:
 				case RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
@@ -293,7 +292,8 @@ namespace owca {
 		default:
 			RCASSERT(0);
 		}
-		return executionstackreturnvalue::RETURN_NO_VALUE;
+		return_value->set_null(true);
+		return executionstackreturnvalue::RETURN;
 	}
 
 	executionstackreturnvalue owca_user_function_base_object::first_time_execute(executionstackreturnvalue mode)
@@ -303,8 +303,6 @@ namespace owca {
 		case executionstackreturnvalue::EXCEPTION: return executionstackreturnvalue::EXCEPTION;
 		case executionstackreturnvalue::OK: break;
 		case executionstackreturnvalue::RETURN:
-		case executionstackreturnvalue::RETURN_NO_VALUE:
-		//case executionstackreturnvalue::REPLACE_CALL:
 		case executionstackreturnvalue::FUNCTION_CALL:
 		case executionstackreturnvalue::CREATE_GENERATOR:
 			RCASSERT(0);

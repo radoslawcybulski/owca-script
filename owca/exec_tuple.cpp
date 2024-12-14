@@ -148,7 +148,8 @@ done:
 				GOTO(1);
 			}
 			RCASSERT(0);
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		stringbuffer sb;
 		unsigned int index;
@@ -345,7 +346,8 @@ done:
 				tuple_read_2_i(self,*vm,*return_value,i1,i2);
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -368,7 +370,8 @@ done:
 				GOTO(1);
 			default:
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		}
 
@@ -391,7 +394,8 @@ done:
 				return_value->gc_acquire();
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		unsigned int index;
 		unsigned char mode;

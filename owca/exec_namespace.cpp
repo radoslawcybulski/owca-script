@@ -214,7 +214,8 @@ cont:
 					return executionstackreturnvalue::RETURN;
 				}
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 			exec_variable tmp;
 			owca_internal_string *join;
@@ -346,7 +347,10 @@ done:
 						return_value->set_int(start);
 						start+=step;
 					}
-					else return executionstackreturnvalue::RETURN_NO_VALUE;
+					else {
+						return_value->set_null(true);
+						return executionstackreturnvalue::RETURN;
+					}
 					break;
 				default:
 					RCASSERT(0);
@@ -367,7 +371,8 @@ done:
 
 		D_FUNC0(compiler,trap)
 		{
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		D_END
 
@@ -482,7 +487,8 @@ done:
 				if (p1) {
 					m_z=(unsigned int)((p1>>32)&0xffffffff);
 					m_w=(unsigned int)(p1&0xffffffff);
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				}
 				else {
 					return_value->set_int(random());
@@ -534,7 +540,8 @@ done:
 					return executionstackreturnvalue::RETURN;
 				default:
 					RCASSERT(0);
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				}
 			}
 

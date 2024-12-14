@@ -45,7 +45,8 @@ namespace owca { namespace __owca__ {
 					CALC(20,vm->calculate_generator(&keys,*p));
 				}
 				else if (cp.normal_params_count+cp.list_params_count==0) {
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				}
 				vm->raise_unsupported_operation();
 				return executionstackreturnvalue::FUNCTION_CALL;
@@ -53,7 +54,8 @@ namespace owca { namespace __owca__ {
 				CALC(11,vm->calculate_iter_next(&tmp[1],values));
 			CASE(11)
 				if (tmp[1].is_no_return_value()) { // done
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				}
 				CALC(12,vm->calculate_iter_next(&tmp[2],values));
 			CASE(12)
@@ -97,7 +99,10 @@ namespace owca { namespace __owca__ {
 				if (g_keys && g_vals) {
 					NEXT(24,vm->prepare_call_operator(&tmp_res,E_ACCESS_1_WRITE,tmp));
 				}
-				if (!g_keys && !g_vals) return executionstackreturnvalue::RETURN_NO_VALUE;
+				if (!g_keys && !g_vals) {
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
+				}
 				if (!g_keys) vm->raise_missing_key_parameter();
 				else vm->raise_missing_value_parameter();
 				return executionstackreturnvalue::FUNCTION_CALL;
@@ -111,7 +116,8 @@ namespace owca { namespace __owca__ {
 				GOTO(21);
 			default:
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		}
 
@@ -185,7 +191,8 @@ namespace owca { namespace __owca__ {
 				GOTO(10);
 			default:
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		}
 
@@ -345,7 +352,8 @@ lookup_done:
 				goto continue_;
 			default:
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				a->return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		}
 	};
@@ -583,7 +591,8 @@ return_false:
 	D_SELF0(map,clear,exec_map_object*)
 		{
 			self->map.clear(*vm);
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -624,7 +633,8 @@ return_false:
 				return_value->gc_acquire();
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		exec_map_object_iterator index;
 		unsigned char mode;
@@ -643,7 +653,8 @@ return_false:
 				return_value->gc_acquire();
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		exec_map_object_iterator index;
 		unsigned char mode;
@@ -662,7 +673,8 @@ return_false:
 				return_value->gc_acquire();
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		exec_map_object_iterator index;
 		unsigned char mode;
@@ -686,7 +698,8 @@ return_false:
 				return_value->set_object(o);
 				return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 		exec_map_object_iterator index;
 		unsigned char mode;

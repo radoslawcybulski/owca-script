@@ -181,7 +181,8 @@ namespace owca {
 				}
 #endif
 
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		D_END
 
@@ -230,7 +231,8 @@ namespace owca {
 					self->get(*vm,*return_value,index++);
 					return executionstackreturnvalue::RETURN;
 				}
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 
 			unsigned int index;

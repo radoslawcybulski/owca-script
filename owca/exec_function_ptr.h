@@ -354,7 +354,8 @@ namespace owca {
 				case owca_function_return_value::NO_RETURN_VALUE:
 					RCASSERT(first_time);
 					first_time=false;
-					return executionstackreturnvalue::RETURN_NO_VALUE;
+					this->return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
 				case owca_function_return_value::CREATE_GENERATOR:
 					//vm->push_execution_stack();
 					this->vm->raise_cant_create_generator_from_user_function();
@@ -369,7 +370,8 @@ namespace owca {
 					RCASSERT(0);
 				}
 				RCASSERT(0);
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				this->return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		};
 

@@ -424,8 +424,6 @@ namespace owca {
 			case executionstackreturnvalue::EXCEPTION: return executionstackreturnvalue::EXCEPTION;
 			case executionstackreturnvalue::OK: break;
 			case executionstackreturnvalue::RETURN:
-			case executionstackreturnvalue::RETURN_NO_VALUE:
-				//case executionstackreturnvalue::REPLACE_CALL:
 			case executionstackreturnvalue::FUNCTION_CALL:
 			case executionstackreturnvalue::CREATE_GENERATOR:
 				RCASSERT(0);
@@ -502,7 +500,8 @@ namespace owca {
 						}
 					}
 					else {
-						return executionstackreturnvalue::RETURN_NO_VALUE;
+						return_value->set_null(true);
+						return executionstackreturnvalue::RETURN;
 					}
 					break;
 				case returnvalueflow::CALL_FUNCTION_CONTINUE_OPCODES:
@@ -524,7 +523,8 @@ namespace owca {
 				case returnvalueflow::RETURN_NO_VALUE:
 					if (fncstackdata->empty()) {
 						is_done(true);
-						return executionstackreturnvalue::RETURN_NO_VALUE;
+						return_value->set_null(true);
+						return executionstackreturnvalue::RETURN;
 					}
 					if (!fncstackdata->peek()->resume_return(*this)) fncstackdata->pop(*vm);
 					break;

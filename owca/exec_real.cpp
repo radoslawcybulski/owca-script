@@ -106,10 +106,14 @@ namespace owca { namespace __owca__ {
 					}
 					return_value->set_string(string_mul(vm,p1->get_string(),(unsigned int)i));
 				}
-				else return executionstackreturnvalue::RETURN_NO_VALUE;
+				else {
+					return_value->set_null(true);
+					return executionstackreturnvalue::RETURN;
+				}
 				break; }
 			default:
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 			return executionstackreturnvalue::RETURN;
 		}
@@ -132,7 +136,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self == (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self == p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -142,7 +147,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self != (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self != p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -152,7 +158,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self < (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self < p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -162,7 +169,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self > (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self > p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -172,7 +180,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self <= (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self <= p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
@@ -182,7 +191,8 @@ namespace owca { namespace __owca__ {
 			case VAR_INT: return_value->set_bool(self >= (owca_real)p1->get_int()); return executionstackreturnvalue::RETURN;
 			case VAR_REAL: return_value->set_bool(self >= p1->get_real()); return executionstackreturnvalue::RETURN;
 			}
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 

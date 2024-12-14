@@ -588,7 +588,8 @@ namespace owca {
 					return_value->set_string(string_read_2(self,vm,i1,i2));
 					return executionstackreturnvalue::RETURN;
 				}
-				return executionstackreturnvalue::RETURN_NO_VALUE;
+				return_value->set_null(true);
+				return executionstackreturnvalue::RETURN;
 			}
 		D_END
 

@@ -2520,10 +2520,6 @@ handle_exception:
 					}
 
 					break;
-				case executionstackreturnvalue::RETURN_NO_VALUE:
-					q->return_value->set_null(true);
-					no_value = true;
-					goto handle_return;
 				case executionstackreturnvalue::RETURN:
 					execution_self_oper=(q->operator_mode==10);
 handle_return:
@@ -2670,8 +2666,6 @@ update_oper:
 				return no_value ? VME_NO_VALUE : VME_VALUE;
 			case executionstackreturnvalue::RETURN:
 				return VME_VALUE;
-			case executionstackreturnvalue::RETURN_NO_VALUE:
-				return VME_NO_VALUE;
 			case executionstackreturnvalue::EXCEPTION:
 				returnval->gc_release(*this);
 				returnval->set_object(execution_exception_object_thrown);

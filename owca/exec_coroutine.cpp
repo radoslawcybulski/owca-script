@@ -61,8 +61,8 @@ namespace owca { namespace __owca__ {
 				vm->execution_stack->set_coroutine_object(v_self.get_object());
 				vm->execution_stack->gc_acquire();
 			}
-
-			return executionstackreturnvalue::RETURN_NO_VALUE;
+			return_value->set_null(true);
+			return executionstackreturnvalue::RETURN;
 		}
 	D_END
 
