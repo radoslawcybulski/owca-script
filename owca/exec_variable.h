@@ -52,6 +52,7 @@ namespace owca { namespace __owca__ {
 		};
 	private:
 		union {
+			bool no_return_value;
 			owca_int i;
 			owca_real r;
 			bool b;
@@ -72,7 +73,7 @@ namespace owca { namespace __owca__ {
 		void setmode(exectype m) {
 			_mode=m;
 		}
-		void reset() { _mode=VAR_NULL; }
+		void reset() { set_null(); }
 
 		DLLEXPORT void gc_acquire() const;
 		DLLEXPORT void gc_release(virtual_machine &);
@@ -104,13 +105,14 @@ namespace owca { namespace __owca__ {
 		void set_function_fast(exec_function_ptr *fnc, exec_object *slf=NULL) { RCASSERT(fnc); _mode=VAR_FUNCTION_FAST; data.fncfast.slf=slf; data.fncfast.fnc=fnc; }
 		void set_property(exec_property *p) { RCASSERT(p); _mode=VAR_PROPERTY; data.prop=p; }
 		void set_namespace(exec_namespace *n) { RCASSERT(n); _mode=VAR_NAMESPACE; data.nspace=n; }
-		void set_null() { _mode=VAR_NULL; }
+		void set_null(bool no_return_value = false) { _mode = VAR_NULL; data.no_return_value = no_return_value; }
 		void set_bool(bool z) { _mode=VAR_BOOL; data.b=z; }
 		void set_int(owca_int i) { _mode=VAR_INT; data.i=i; }
 		void set_real(owca_real r) { _mode=VAR_REAL; data.r=r; }
 		void set_generator(vm_execution_stack_elem_base *st) { RCASSERT(st); _mode=VAR_GENERATOR; data.generator=st; }
 		void set_weak_ref(exec_weakref_object *w) { RCASSERT(w); _mode=VAR_WEAK_REF; data.weakref=w; }
 
+		bool is_no_return_value() const { return _mode == VAR_NULL && data.no_return_value; }
 		bool get_int_min(owca_int &ret) const;
 		bool get_int_max(owca_int &ret) const;
 		bool get_int(owca_int &ret) const;

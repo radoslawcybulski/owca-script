@@ -35,7 +35,7 @@ namespace owca { namespace __owca__ {
 			CASE(10)
 				CALC(11,vm->calculate_iter_next(&tmp[1],values));
 			CASE(11)
-				if (vm->execution_no_return_value) { // done
+				if (tmp[1].is_no_return_value()) { // done
 					return executionstackreturnvalue::RETURN_NO_VALUE;
 				}
 				NEXT(13,vm->prepare_call_operator(&tmp_res,E_BIN_OR_SELF,tmp));

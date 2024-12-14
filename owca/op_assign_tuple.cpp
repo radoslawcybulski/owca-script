@@ -42,7 +42,7 @@ namespace owca { namespace __owca__ {
 				return true;
 			}
 		case 1:
-			if (oe.vm->execution_no_return_value) {
+			if (retval.is_no_return_value()) {
 				// generator is done
 
 				if (index<count) {

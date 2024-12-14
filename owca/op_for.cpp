@@ -91,7 +91,7 @@ namespace owca { namespace __owca__ {
 			oe.set_code_position(begin);
 			break;
 		case 11:
-			if (oe.vm->execution_no_return_value) { // done
+			if (temp.is_no_return_value()) { // done
 				return set_dest_else_finally(oe);
 			}
 			RCASSERT(oe.tempstackactpos==0);

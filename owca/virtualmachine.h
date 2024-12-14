@@ -378,7 +378,6 @@ namespace owca {
 			std::string to_stdstring_type(exec_object *type);
 
 			vm_execution_stack *execution_stack;
-			bool execution_no_return_value;
 			bool execution_self_oper;
 			//exec_variable tmpretval;
 

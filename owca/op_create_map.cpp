@@ -85,7 +85,7 @@ namespace owca { namespace __owca__ {
 			mode=2;
 			return true;
 		CASE(2)
-			if (oe.vm->execution_no_return_value) { // done
+			if (tmp.is_no_return_value()) { // done
 				RCASSERT(generator==&oe.temp(oe.tempstackactpos-1));
 				oe.r=returnvalueflow::CONTINUE_OPCODES;
 				generator->gc_release(*oe.vm);

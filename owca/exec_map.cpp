@@ -52,12 +52,12 @@ namespace owca { namespace __owca__ {
 			CASE(10)
 				CALC(11,vm->calculate_iter_next(&tmp[1],values));
 			CASE(11)
-				if (vm->execution_no_return_value) { // done
+				if (tmp[1].is_no_return_value()) { // done
 					return executionstackreturnvalue::RETURN_NO_VALUE;
 				}
 				CALC(12,vm->calculate_iter_next(&tmp[2],values));
 			CASE(12)
-				if (vm->execution_no_return_value) {
+				if (tmp[2].is_no_return_value()) {
 					vm->raise_missing_value_parameter();
 					return executionstackreturnvalue::FUNCTION_CALL;
 				}
@@ -90,10 +90,10 @@ namespace owca { namespace __owca__ {
 			CASE(21)
 				CALC(22,vm->calculate_iter_next(&tmp[1],keys));
 			CASE(22)
-				g_keys=!vm->execution_no_return_value;
+				g_keys=!tmp[1].is_no_return_value();
 				CALC(23,vm->calculate_iter_next(&tmp[2],values));
 			CASE(23)
-				g_vals=!vm->execution_no_return_value;
+				g_vals=!tmp[2].is_no_return_value();
 				if (g_keys && g_vals) {
 					NEXT(24,vm->prepare_call_operator(&tmp_res,E_ACCESS_1_WRITE,tmp));
 				}

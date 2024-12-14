@@ -55,7 +55,7 @@ namespace owca { namespace __owca__ {
 				mode=11;
 				return executionstackreturnvalue::FUNCTION_CALL;
 			CASE(11)
-				if (vm->execution_no_return_value) {
+				if (tmp.back().is_no_return_value()) {
 					tmp.pop_back();
 					self->resize(*vm,(unsigned int)tmp.size());
 					unsigned int index=0;
@@ -497,7 +497,7 @@ namespace owca { namespace __owca__ {
 					return executionstackreturnvalue::RETURN_NO_VALUE;
 				}
 			CASE(1)
-				if (!tmp.empty() && vm->execution_no_return_value) GOTO(2);
+				if (!tmp.empty() && tmp.back().is_no_return_value()) GOTO(2);
 				tmp.push_back(exec_variable());
 				tmp.back().reset();
 

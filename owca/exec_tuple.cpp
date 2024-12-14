@@ -30,7 +30,7 @@ namespace owca { namespace __owca__ {
 				mode=11;
 				return executionstackreturnvalue::FUNCTION_CALL;
 			CASE(11)
-				if (vm->execution_no_return_value) {
+				if (tmp.back().is_no_return_value()) {
 					tmp.pop_back();
 done:
 					exec_tuple_object *self;

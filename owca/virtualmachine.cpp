@@ -2362,6 +2362,7 @@ cont:
 			executionstackreturnvalue r=executionstackreturnvalue::OK;
 			exec_variable *returnval=finishstack->peek_frame_indexed(0)->return_value;
 			RCASSERT(returnval->mode()==VAR_NULL);
+			bool no_value = false;
 
 			while (finishstack != execution_stack || !execution_stack->empty()) {
 				vm_execution_stack_elem_base* q = execution_stack->peek_frame();
@@ -2450,6 +2451,7 @@ restart:
 						}
 
 						*execution_stack->peek_frame_indexed(0)->return_value=*q->return_value;
+						no_value = q->return_value->is_no_return_value();
 						//q->return_value->gc_acquire();
 						q->return_value->set_null();
 						execution_stack->peek_frame_indexed(0)->return_value=NULL;
@@ -2521,10 +2523,10 @@ handle_exception:
 
 					break;
 				case executionstackreturnvalue::RETURN_NO_VALUE:
-					execution_no_return_value=true;
+					q->return_value->set_null(true);
+					no_value = true;
 					goto handle_return;
 				case executionstackreturnvalue::RETURN:
-					execution_no_return_value=false;
 					execution_self_oper=(q->operator_mode==10);
 handle_return:
 #ifdef RCDEBUG_EXECUTION
@@ -2536,22 +2538,18 @@ handle_return:
 					r=executionstackreturnvalue::OK;
 					switch(q->return_handling_mode) {
 					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN:
-						execution_no_return_value=false;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
 pop_frame:
+						if (q->return_value) {
+							no_value = q->return_value->is_no_return_value();
+						}
+						else {
+							no_value = true;
+						}
 						if (execution_stack->count()==1 && execution_stack->coroutine_object()) {
 							vm_execution_stack *st=execution_stack->prev();
 							RCASSERT(st);
 							RCASSERT(execution_stack->peek_frame_indexed(0)==q);
-
-							if (execution_no_return_value) {
-								q->return_value->set_null();
-								execution_no_return_value=false;
-							}
-							else {
-								//*execution_stack->peek_frame_indexed(0)->return_value=*q->return_value;
-								//q->return_value->set_null();
-							}
 
 							execution_stack->pop_frame(q);
 							execution_stack->set_prev(NULL);
@@ -2563,7 +2561,7 @@ pop_frame:
 						}
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-						RCASSERT(execution_no_return_value);
+						RCASSERT(q->return_value->is_no_return_value());
 						execution_exception_parameters[1].gc_release(*this);
 						execution_exception_parameters[1].reset();
 						if (execution_exception_object_thrown) execution_exception_object_thrown->gc_release(*this);
@@ -2576,7 +2574,7 @@ pop_frame:
 						goto handle_exception;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT:
-						if (!execution_no_return_value) {
+						if (!q->return_value->is_no_return_value()) {
 							raise_invalid_return_type(*q->return_value,NULL);
 #ifdef RCDEBUG
 							RCASSERT(execution_stack->index>cindex && execution_stack==cstack);
@@ -2584,13 +2582,12 @@ pop_frame:
 						}
 						else {
 							q->return_value->set_object(q->init_object);
-							execution_no_return_value=false;
 							q->init_object=NULL;
 							goto pop_frame;
 						}
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_BOOL:
-						if (execution_no_return_value) goto unsupported;
+						if (q->return_value->is_no_return_value()) goto unsupported;
 						else if (q->return_value->mode()!=VAR_BOOL) {
 							raise_invalid_return_type(*q->return_value,class_bool);
 #ifdef RCDEBUG
@@ -2600,7 +2597,7 @@ pop_frame:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INT:
-						if (execution_no_return_value) goto unsupported;
+						if (q->return_value->is_no_return_value()) goto unsupported;
 						else if (q->return_value->mode()!=VAR_INT) {
 							raise_invalid_return_type(*q->return_value,class_int);
 #ifdef RCDEBUG
@@ -2610,7 +2607,7 @@ pop_frame:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_CANT_BE_UNUSED:
-						if (execution_no_return_value) {
+						if (q->return_value->is_no_return_value()) {
 							raise_missing_return_value();
 #ifdef RCDEBUG
 							RCASSERT(execution_stack->index>cindex && execution_stack==cstack);
@@ -2619,7 +2616,7 @@ pop_frame:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_STR:
-						if (execution_no_return_value) goto unsupported;
+						if (q->return_value->is_no_return_value()) goto unsupported;
 						else if (q->return_value->mode()!=VAR_STRING) {
 							raise_invalid_return_type(*q->return_value,class_string);
 #ifdef RCDEBUG
@@ -2629,7 +2626,7 @@ pop_frame:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_UNUSED_UNSUPPORTED:
-						if (execution_no_return_value) {
+						if (q->return_value->is_no_return_value()) {
 unsupported:
 							q->gc_acquire();
 							//vislocker _v(*this,q);
@@ -2640,7 +2637,7 @@ unsupported:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_ANY_UPDATE_OPER:
-						if (execution_no_return_value) {
+						if (q->return_value->is_no_return_value()) {
 update_oper:
 							q->gc_acquire();
 							//vislocker _v(*this,q);
@@ -2651,7 +2648,7 @@ update_oper:
 						else goto pop_frame;
 						break;
 					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_BOOL_UPDATE_OPER:
-						if (execution_no_return_value) goto update_oper;
+						if (q->return_value->is_no_return_value()) goto update_oper;
 						switch(q->return_value->mode()) {
 						case VAR_BOOL:
 							goto pop_frame;
@@ -2672,7 +2669,7 @@ update_oper:
 			}
 			switch(r.type()) {
 			case executionstackreturnvalue::OK:
-				return execution_no_return_value ? VME_NO_VALUE : VME_VALUE;
+				return no_value ? VME_NO_VALUE : VME_VALUE;
 			case executionstackreturnvalue::RETURN:
 				return VME_VALUE;
 			case executionstackreturnvalue::RETURN_NO_VALUE:
