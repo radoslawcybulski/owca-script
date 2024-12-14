@@ -7,4 +7,4 @@ class T:
 function main():
 	with a1=T(0),a2=T(1),a3=T(0):
 		return 'abc'
-+++exception YEXCEPTION_USER 6 8
++++exception USER 6 8

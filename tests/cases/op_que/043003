@@ -3,4 +3,4 @@ function f():
 function main():
 	f() ? a : b='def'
 	return 'ok'
-+++exception YEXCEPTION_USER 2 4
++++exception USER 2 4

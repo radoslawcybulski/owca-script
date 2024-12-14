@@ -5,4 +5,4 @@ function main():
 	a='123'
 	f()
 	return a
-+++exception YEXCEPTION_USER 2 4 6
++++exception USER 2 4 6

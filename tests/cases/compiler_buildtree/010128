@@ -1,4 +1,4 @@
 class A($real):
 	pass
 function main(): return 'def'
-+++compilation_exception YEXCEPTION_CLASSCREATION 1
++++compilation_exception CLASS_CREATION 1

@@ -3,4 +3,4 @@ class T:
 		return 'd'
 function main():
 	T().r+=1
-+++exception YEXCEPTION_NOTRVALUE 5
++++exception NOT_RVALUE 5

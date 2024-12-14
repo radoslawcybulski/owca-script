@@ -30,7 +30,7 @@ public:
 		bool b;
 	} res_value;
 	//std::string res_exception_name;
-	exceptioncode res_exception_code;
+	ExceptionCode res_exception_code;
 	int res_exception_line;
 	owca_message_type res_compilation_type,res_compilation_type2;
 	int res_compilation_line,res_compilation_line2;
@@ -39,9 +39,9 @@ public:
 
 	Test(unsigned int cline_, const std::string &code_, const char *s) : cline(cline_),code(code_),restype(VALUE_STRING) { res_value.s=s; }
 
-	//Test(unsigned int cline_, const std::string &code_, exceptioncode exc, int exc_line) : cline(cline_),code(code_),restype(EXCEPTION_ERROR),
+	//Test(unsigned int cline_, const std::string &code_, ExceptionCode exc, int exc_line) : cline(cline_),code(code_),restype(EXCEPTION_ERROR),
 	//	res_exception_code(exc),res_exception_line(exc_line) { }
-	//Test(exceptioncode exc, unsigned int cline_, const std::string &code_, int exc_line) : cline(cline_),code(code_),restype(COMPILATION_EXCEPTION_ERROR),
+	//Test(ExceptionCode exc, unsigned int cline_, const std::string &code_, int exc_line) : cline(cline_),code(code_),restype(COMPILATION_EXCEPTION_ERROR),
 	//	res_exception_code(exc),res_exception_line(exc_line) { }
 	//Test(unsigned int cline_, const std::string &code_, owca_message_type cmp, int cmp_line) : cline(cline_),code(code_),restype(COMPILATION_ERROR),
 	//	res_compilation_type(cmp),res_compilation_line(cmp_line) { }
@@ -104,14 +104,14 @@ static void parse_exception(const owca_global &exc, Test &t)
 {
 	owca_global res=execute(*exc.vm(),exc,"code");
 	owca_int code=res.int_get();
-	RCASSERT(t.res_exception_code<0 || t.res_exception_code==code);
+	RCASSERT((int)t.res_exception_code<0 || (int)t.res_exception_code==code);
 
 	owca_global line=execute(*exc.vm(),exc,"$read_1",0);
 
 	res=execute(*exc.vm(),line,"$read_1",2);
 	owca_int lineindex=res.int_get();
 
-	RCASSERT(t.res_exception_line<0 || t.res_exception_line==lineindex);
+	RCASSERT((int)t.res_exception_line<0 || (int)t.res_exception_line==lineindex);
 }
 
 #define T(a) do { if (!(a)) __test_failed(t,0); } while(0)
@@ -220,7 +220,7 @@ static void test(Test &t)
 }
 #undef T
 
-//static void test(unsigned int cline, const std::string &oper, const std::string &v1, const std::string &v2, exceptioncode exc, int line=2)
+//static void test(unsigned int cline, const std::string &oper, const std::string &v1, const std::string &v2, ExceptionCode exc, int line=2)
 //{
 //	Test t(cline,"function main():\n"
 //				"	return "+v1+" "+oper+" "+v2+"\n",exc,line);
@@ -273,8 +273,8 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"	function $noteq(v):\n"
 		"		if $type(v)!=EXP: return EXP!=$type(v)\n"
 		"		return self.v!=v.v\n"
-		"invint=EXP("+int_to_string((owca_int)YEXCEPTION_INTEGEROUTOFBOUNDS)+")\n"
-		"div=EXP("+int_to_string((owca_int)YEXCEPTION_DIVISIONBYZERO)+")\n"
+		"invint=EXP("+int_to_string((owca_int)ExceptionCode::INTEGER_OUT_OF_BOUNDS)+")\n"
+		"div=EXP("+int_to_string((owca_int)ExceptionCode::DIVISION_BY_ZERO)+")\n"
 		"class T:\n"
 		"	function read prop(): return 0\n"
 		"class G:\n"
@@ -306,7 +306,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"		res=v1 " +opsym+ " v2\n"
 		"	except as e1:\n"
 		"		if $type(r1)==EXP and r1.v==e1.code(): res=r1\n"
-		"		elif e1.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+":\n"
+		"		elif e1.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+":\n"
 		"			$print(i1,' ',i2,' e1 ',e1.code(),' expected r1 ',r1)\n"
 		"			return 2\n"
 		"		else: res=null\n"
@@ -317,7 +317,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"	try:\n"
 		"		res=v1.$" +optext+ "(v2)\n"
 		"	except as e2:\n"
-		"		if e2.code()=="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+" or e2.code()=="+int_to_string((owca_int)YEXCEPTION_MISSINGMEMBER)+": res=null\n"
+		"		if e2.code()=="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+" or e2.code()=="+int_to_string((owca_int)ExceptionCode::MISSING_MEMBER)+": res=null\n"
 		"		elif $type(r1)==EXP and r1.v==e2.code(): res=r1\n"
 		"		else:\n"
 		"			$print(i1,' ',i2,' e2 ',e2.code(),' expected r1 ',r1)\n"
@@ -326,7 +326,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"		try:\n"
 		"			res=v2.$r" +optext+ "(v1)\n"
 		"		except as e2:\n"
-		"			if e2.code()=="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+" or e2.code()=="+int_to_string((owca_int)YEXCEPTION_MISSINGMEMBER)+": res=null\n"
+		"			if e2.code()=="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+" or e2.code()=="+int_to_string((owca_int)ExceptionCode::MISSING_MEMBER)+": res=null\n"
 		"			elif $type(r1)==EXP and r1.v==e2.code(): res=r1\n"
 		"			else:\n"
 		"				$print(i1,' ',i2,' e2 ',e2.code(),' expected r1 ',r1)\n"
@@ -335,7 +335,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		//"		res=f(v)\n"
 		//"	except as e2:\n"
 		//"		if $type(r1)==EXP and r1.v==e2.code(): res=r1\n"
-		//"		elif e2.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+": return 5\n"
+		//"		elif e2.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+": return 5\n"
 		//"		else: res=null\n"
 		"	if $type(r1) is $real and $type(res) is $real and -0.001<=r1-res<=0.001: res=r1\n"
 		"	if res!=r1:\n"
@@ -346,7 +346,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"		res" +opsym+ "=v2\n"
 		"	except as e3:\n"
 		"		if $type(r2)==EXP and r2.v==e3.code(): res=r2\n"
-		"		elif e3.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+":\n"
+		"		elif e3.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+":\n"
 		"			$print(i1,' ',i2,' e3 ',e3.code(),' expected r2 ',r2)\n"
 		"			return 7\n"
 		"		else: res=null\n"
@@ -362,7 +362,7 @@ void test_operator_2(const std::string &optext, const std::string &opsym, const 
 		"		res=f(v2)\n"
 		"	except as e4:\n"
 		"		if $type(r3)==EXP and r3.v==e4.code(): res=r3\n"
-		"		if e4.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+":\n"
+		"		if e4.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+":\n"
 		"			$print(i1,' ',i2,' e4 ',e4.code(),' expected r3 ',r3)\n"
 		"			return 10\n"
 		"		else: res=null\n"
@@ -928,8 +928,8 @@ void test_operator_2_cmp(const std::string &optext, const std::string &opsym, co
 		"	function $noteq(v):\n"
 		"		if $type(v)!=EXP: return EXP!=$type(v)\n"
 		"		return self.v!=v.v\n"
-		"invint=EXP("+int_to_string((owca_int)YEXCEPTION_INTEGEROUTOFBOUNDS)+")\n"
-		"div=EXP("+int_to_string((owca_int)YEXCEPTION_DIVISIONBYZERO)+")\n"
+		"invint=EXP("+int_to_string((owca_int)ExceptionCode::INTEGER_OUT_OF_BOUNDS)+")\n"
+		"div=EXP("+int_to_string((owca_int)ExceptionCode::DIVISION_BY_ZERO)+")\n"
 		"class T:\n"
 		"	function read prop(): return 0\n"
 		"class G:\n"
@@ -964,7 +964,7 @@ void test_operator_2_cmp(const std::string &optext, const std::string &opsym, co
 		"		res=v1 " +opsym+ " v2\n"
 		"	except as e1:\n"
 		"		if $type(r1)==EXP and r1.v==e1.code(): res=r1\n"
-		"		elif e1.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+":\n"
+		"		elif e1.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+":\n"
 		"			$print(m1str[i1],' ',m2str[i2],' e1 ',e1.code(),' expected r1 ',r1)\n"
 		"			return 2\n"
 		"		else: res=null\n"
@@ -975,7 +975,7 @@ void test_operator_2_cmp(const std::string &optext, const std::string &opsym, co
 		"	try:\n"
 		"		res=v1.$" +optext+ "(v2)\n"
 		"	except as e2:\n"
-		"		if e2.code()=="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+" or e2.code()=="+int_to_string((owca_int)YEXCEPTION_MISSINGMEMBER)+": res=null\n"
+		"		if e2.code()=="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+" or e2.code()=="+int_to_string((owca_int)ExceptionCode::MISSING_MEMBER)+": res=null\n"
 		"		elif $type(r2)==EXP and r2.v==e2.code(): res=r2\n"
 		"		else:\n"
 		"			$print(m1str[i1],' ',m2str[i2],' e2 ',e2.code(),' expected r2 ',r2)\n"
@@ -987,7 +987,7 @@ void test_operator_2_cmp(const std::string &optext, const std::string &opsym, co
 		"	try:\n"
 		"		res=v2.$r" +optext+ "(v1)\n"
 		"	except as e2:\n"
-		"		if e2.code()=="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+" or e2.code()=="+int_to_string((owca_int)YEXCEPTION_MISSINGMEMBER)+": res=null\n"
+		"		if e2.code()=="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+" or e2.code()=="+int_to_string((owca_int)ExceptionCode::MISSING_MEMBER)+": res=null\n"
 		"		elif $type(r3)==EXP and r3.v==e2.code(): res=r3\n"
 		"		else:\n"
 		"			$print(m1str[i1],' ',m2str[i2],' e2 ',e2.code(),' expected r3 ',r3)\n"
@@ -1230,8 +1230,8 @@ void test_operator_1(const std::string &optext, const std::string &opsym, const 
 		"	function $noteq(v):\n"
 		"		if $type(v)!=EXP: return EXP!=$type(v)\n"
 		"		return self.v!=v.v\n"
-		"invint=EXP("+int_to_string((owca_int)YEXCEPTION_INTEGEROUTOFBOUNDS)+")\n"
-		"div=EXP("+int_to_string((owca_int)YEXCEPTION_DIVISIONBYZERO)+")\n"
+		"invint=EXP("+int_to_string((owca_int)ExceptionCode::INTEGER_OUT_OF_BOUNDS)+")\n"
+		"div=EXP("+int_to_string((owca_int)ExceptionCode::DIVISION_BY_ZERO)+")\n"
 		"class T:\n"
 		"	function read prop(): return 0\n"
 		"class G:\n"
@@ -1258,7 +1258,7 @@ void test_operator_1(const std::string &optext, const std::string &opsym, const 
 		"		res="+opsym+" v1\n"
 		"	except as e1:\n"
 		"		if $type(r1)==EXP and r1.v==e1.code(): res=r1\n"
-		"		elif e1.code()!="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+": return 2\n"
+		"		elif e1.code()!="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+": return 2\n"
 		"		else: res=null\n"
 		"	if res!=r1:\n"
 		"		$print(i1,' value returned ',res,' expected r1 ',r1)\n"
@@ -1266,7 +1266,7 @@ void test_operator_1(const std::string &optext, const std::string &opsym, const 
 		"	try:\n"
 		"		res=v1.$" +optext+ "()\n"
 		"	except as e2:\n"
-		"		if e2.code()=="+int_to_string((owca_int)YEXCEPTION_INVALIDPARAMTYPE)+" or e2.code()=="+int_to_string((owca_int)YEXCEPTION_MISSINGMEMBER)+": res=null\n"
+		"		if e2.code()=="+int_to_string((owca_int)ExceptionCode::INVALID_PARAM_TYPE)+" or e2.code()=="+int_to_string((owca_int)ExceptionCode::MISSING_MEMBER)+": res=null\n"
 		"		elif $type(r1)==EXP and r1.v==e2.code(): res=r1\n"
 		"		else:\n"
 		"			$print(i1,' e2 ',e2.code(),' expected r1 ',r1)\n"
@@ -1547,10 +1547,10 @@ namespace Z {
 	void print_exception(owca_global &exc)
 	{
 		owca_global res=execute(*exc.vm(),exc,"code");
-		exceptioncode code=(exceptioncode)
-			(res.int_is() ? res.int_get() : exceptioncode::YEXCEPTION_NONE);
+		ExceptionCode code=(ExceptionCode)
+			(res.int_is() ? res.int_get() : (int)ExceptionCode::NONE);
 
-		printf("exception: %s\n",exceptioncode_text(code));
+		printf("exception: %s\n",ExceptionCode_text(code));
 
 		// size of stack bound with exception object
 		res=execute(*exc.vm(),exc,"size");

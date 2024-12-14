@@ -3,4 +3,4 @@ class T:
 function main():
 	if T(): return "o"
 	return "k"
-+++exception YEXCEPTION_INVALIDPARAMTYPE 4
++++exception INVALID_PARAM_TYPE 4

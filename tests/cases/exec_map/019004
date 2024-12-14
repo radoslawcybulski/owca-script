@@ -11,4 +11,4 @@ function main():
 	throw:=true
 	m.get(T('a'))
 	return 'ok'
-+++exception YEXCEPTION_USER 5 0 12
++++exception USER 5 0 12

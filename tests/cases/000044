@@ -4,4 +4,4 @@ class T:
 function main():
 	T()==1
 	return 'ok'
-+++exception YEXCEPTION_USER 3 5
++++exception USER 3 5

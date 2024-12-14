@@ -3,4 +3,4 @@ function f():
 function main():
 	f(**{'q':'a'})
 	return 'ok'
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4
++++exception UNUSED_KEYWORD_PARAM 4

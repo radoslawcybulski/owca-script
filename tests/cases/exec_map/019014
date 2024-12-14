@@ -11,4 +11,4 @@ function main():
 	m=$map(f1(),f2())
 	$print(m)
 	return 'ok'
-+++exception YEXCEPTION_USER 3 0 11
++++exception USER 3 0 11

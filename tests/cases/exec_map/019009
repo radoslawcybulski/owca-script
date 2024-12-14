@@ -1,4 +1,4 @@
 function main():
 	m=$map(['a','b','c','d'],**{'a':'b'})
 	return 'ok'
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 0 2
++++exception UNUSED_KEYWORD_PARAM 0 2

@@ -4,4 +4,4 @@ class T:
 		raise $exception()
 function main():
 	T().r=Z()
-+++exception YEXCEPTION_USER 4 6
++++exception USER 4 6

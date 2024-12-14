@@ -1,4 +1,4 @@
 function f():
 	raise $exception()
 'abc'[f():'def']
-+++compilation_exception YEXCEPTION_USER 2 3
++++compilation_exception USER 2 3

@@ -3,4 +3,4 @@ function f():
 function main():
 	f(*1)
 	return 'ok'
-+++exception YEXCEPTION_INVALIDLISTPARAM 4
++++exception INVALID_LIST_PARAM 4

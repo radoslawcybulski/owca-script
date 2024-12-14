@@ -2,4 +2,4 @@ function main():
 	while 'abc':
 		raise $exception()
 	return 2
-+++exception YEXCEPTION_USER 3
++++exception USER 3

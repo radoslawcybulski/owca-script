@@ -1,4 +1,4 @@
 function main():
 	raise 'abc'
 	return 1
-+++exception YEXCEPTION_INVALIDPARAMTYPE 2
++++exception INVALID_PARAM_TYPE 2

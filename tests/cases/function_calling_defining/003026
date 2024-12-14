@@ -2,4 +2,4 @@ function f(a,b):
 	return a+b
 function main():
 	return f(*['o'],**{'a':'k'})
-+++exception YEXCEPTION_PARAMASSIGNEDTWICE 4
++++exception PARAM_ASSIGNED_TWICE 4

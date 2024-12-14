@@ -2,4 +2,4 @@ function f(): raise $exception()
 function main():
 	z=lambda : f()
 	return z()
-+++exception YEXCEPTION_USER 1 3 4
++++exception USER 1 3 4

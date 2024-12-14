@@ -4,4 +4,4 @@ function main():
 		for a = q:
 			z+=a
 	return z
-+++exception YEXCEPTION_INVALIDPARAMTYPE 5
++++exception INVALID_PARAM_TYPE 5

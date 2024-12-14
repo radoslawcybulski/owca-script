@@ -3,4 +3,4 @@ function main():
 	t=T(**{})
 	t=T(**{'abc':'def'})
 	return 'ok'
-+++exception YEXCEPTION_NOCONSTRUCTOR 0 4
++++exception NO_CONSTRUCTOR 0 4

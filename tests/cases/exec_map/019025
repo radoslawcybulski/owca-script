@@ -7,4 +7,4 @@ class T:
 function main():
 	v={T(1):1,T(2):2,T(3):3,T(0):0}
 	return 'ok'
-+++exception YEXCEPTION_USER 5 0 8
++++exception USER 5 0 8

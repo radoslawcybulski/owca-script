@@ -1,2 +1,2 @@
 2.5['b':'c']='a'
-+++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 1
++++compilation_exception INVALID_PARAM_TYPE 1

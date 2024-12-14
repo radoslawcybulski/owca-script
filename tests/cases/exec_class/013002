@@ -4,4 +4,4 @@ class T:
 function main():
 	t=T()
 	return 'ok'
-+++exception YEXCEPTION_MISSINGRETURNVALUE 3 5
++++exception MISSING_RETURN_VALUE 3 5

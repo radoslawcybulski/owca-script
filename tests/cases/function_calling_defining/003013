@@ -3,4 +3,4 @@ function f(a,b):
 function main():
 	f(1)
 	return 'ok'
-+++exception YEXCEPTION_NOTENOUGHPARAMETERS 4
++++exception NOT_ENOUGH_PARAMETERS 4

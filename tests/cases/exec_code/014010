@@ -8,4 +8,4 @@ class T:
 		pass
 function main():
 	T()['def']+=Z(4)
-+++exception YEXCEPTION_USER 3 10
++++exception USER 3 10

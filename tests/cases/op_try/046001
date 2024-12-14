@@ -4,4 +4,4 @@ function main():
 	except $int:
 		pass
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 4
++++exception INVALID_PARAM_TYPE 4

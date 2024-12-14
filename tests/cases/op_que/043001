@@ -3,4 +3,4 @@ function f():
 function main():
 	if f() ? 'def' : 'ghi': return 'ok'
 	return 1
-+++exception YEXCEPTION_USER 2 4
++++exception USER 2 4

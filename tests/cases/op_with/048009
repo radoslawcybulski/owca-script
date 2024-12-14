@@ -8,4 +8,4 @@ function main():
 	for x = ('a','b','c'):
 		with a1=T(0),a2=T(1),a3=T(0):
 			continue
-+++exception YEXCEPTION_USER 6 9
++++exception USER 6 9

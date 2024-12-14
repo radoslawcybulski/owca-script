@@ -1,3 +1,3 @@
 function main():
 	$tuple(**{'a':'b'})
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 2
++++exception UNUSED_KEYWORD_PARAM 2

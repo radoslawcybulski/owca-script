@@ -2,4 +2,4 @@ a=b=0
 class A(a):
 	pass
 function main(): return 'def'
-+++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 2
++++compilation_exception INVALID_PARAM_TYPE 2

@@ -3,4 +3,4 @@ function main():
 	if a.pop(2)!='c': return 1
 	if a.pop(-1)!='d': return 2
 	a.pop(4)
-+++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 5
++++exception INTEGER_OUT_OF_BOUNDS 0 5

@@ -1,4 +1,4 @@
 function main():
 	function f(): raise $exception()
 	f().abc='qwe'
-+++exception YEXCEPTION_USER 2 3
++++exception USER 2 3

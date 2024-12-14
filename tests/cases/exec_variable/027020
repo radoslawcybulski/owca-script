@@ -3,4 +3,4 @@ class f:
 function main():
 	t=f()
 	t()
-+++exception YEXCEPTION_INVALIDPARAMTYPE 5
++++exception INVALID_PARAM_TYPE 5

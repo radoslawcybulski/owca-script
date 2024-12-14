@@ -2,4 +2,4 @@ function f(a,*b):
 	return a
 function main():
 	return f(a='o',b='k')
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 4
++++exception UNUSED_KEYWORD_PARAM 4

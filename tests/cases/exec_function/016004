@@ -6,4 +6,4 @@ function main():
 	a=main.bind(T())
 	if a==b: return 2
 	return 'ok'
-+++exception YEXCEPTION_USER 2 0 7
++++exception USER 2 0 7

@@ -4,4 +4,4 @@ class T:
 function main():
 	a=T()
 	a+=1
-+++exception YEXCEPTION_USER 3 6
++++exception USER 3 6

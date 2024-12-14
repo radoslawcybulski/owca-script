@@ -15,7 +15,7 @@ namespace owca {
 	class owca_class;
 	class owca_string_buffer;
 	class owca_namespace;
-	enum exceptioncode;
+	enum class ExceptionCode;
 	class owca_user_function_base_object;
 
 	namespace __owca__ {
@@ -56,7 +56,7 @@ namespace owca {
 		DLLEXPORT virtual ~owca_vm();
 
 		DLLEXPORT void set_print_function(void (*printfnc)(const std::string &));
-		DLLEXPORT owca_global construct_builtin_exception(exceptioncode code, const std::string &txt);
+		DLLEXPORT owca_global construct_builtin_exception(ExceptionCode code, const std::string &txt);
 		DLLEXPORT owca_function_return_value compile(owca_global &execresult, owca_namespace &result, owca_message_list &errorswarnings, const owca_source_file &fs);
 		DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs);
 

@@ -2,4 +2,4 @@ class T: pass
 function main():
 	T()['c':'d']=1
 	return 1
-+++exception YEXCEPTION_INVALIDPARAMTYPE 3
++++exception INVALID_PARAM_TYPE 3

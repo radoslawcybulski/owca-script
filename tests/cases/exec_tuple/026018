@@ -5,4 +5,4 @@ function f():
 function main():
 	t=$tuple(f())
 	return t[0]+t[1]+t[2]
-+++exception YEXCEPTION_USER 4 0 6
++++exception USER 4 0 6

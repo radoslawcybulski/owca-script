@@ -3,4 +3,4 @@ class T:
 function main():
 	$str(T())
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 4
++++exception INVALID_PARAM_TYPE 0 4

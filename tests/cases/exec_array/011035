@@ -14,4 +14,4 @@ function main():
 	if a.pop_back('2')!='2': return 8	
 	a.insert(10,'1')
 	return 'ok'
-+++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 15
++++exception INTEGER_OUT_OF_BOUNDS 0 15

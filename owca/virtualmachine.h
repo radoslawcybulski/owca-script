@@ -455,14 +455,14 @@ namespace owca {
 			exec_variable execution_exception_parameters[3];
 
 			DLLEXPORT bool exception_thrown() const;
-			DLLEXPORT exec_object *_raise_get_exception_type(exceptioncode code);
+			DLLEXPORT exec_object *_raise_get_exception_type(ExceptionCode code);
 
 			DLLEXPORT bool ensure_no_map_params(exec_map_object *mp);
 			DLLEXPORT void _raise_from_user(const exec_variable &);
-			//void _raise_from_user(exceptioncode code, const std::string &txt);
-			//void _raise_from_user(exceptioncode code);
-			DLLEXPORT void _raise(exceptioncode code, exec_object *exctype, const std::string &txt);
-			DLLEXPORT void _prepare_construct_exception(exceptioncode code, exec_object *exctype, const std::string &txt);
+			//void _raise_from_user(ExceptionCode code, const std::string &txt);
+			//void _raise_from_user(ExceptionCode code);
+			DLLEXPORT void _raise(ExceptionCode code, exec_object *exctype, const std::string &txt);
+			DLLEXPORT void _prepare_construct_exception(ExceptionCode code, exec_object *exctype, const std::string &txt);
 			// params
 
 			void raise_class_creation(const std::string &);

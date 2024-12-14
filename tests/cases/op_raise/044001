@@ -4,4 +4,4 @@ function main():
 	except:
 		raise
 	return 'ok'
-+++exception YEXCEPTION_USER 3
++++exception USER 3

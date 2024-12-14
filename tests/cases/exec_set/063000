@@ -5,4 +5,4 @@ function main():
 	if m!=$set(): return 1
 	m=$set([T(),T(),T(),T(),T(),T()])
 	return 'ok'
-+++exception YEXCEPTION_USER 2 0 0 6
++++exception USER 2 0 0 6

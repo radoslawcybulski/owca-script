@@ -4,4 +4,4 @@ function main():
 	t=T()
 	t+='abc'
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 5
++++exception INVALID_PARAM_TYPE 5

@@ -14,4 +14,4 @@ function main():
 	throw:=true
 	if m1==m2: return 1
 	return 2
-+++exception YEXCEPTION_USER 6 0 15
++++exception USER 6 0 15

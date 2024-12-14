@@ -2,4 +2,4 @@ function main():
 	a=null
 	with a:
 		pass
-+++exception YEXCEPTION_INVALIDPARAMTYPE 3
++++exception INVALID_PARAM_TYPE 3

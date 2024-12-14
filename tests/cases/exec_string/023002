@@ -3,4 +3,4 @@ class T:
 function main():
 	$str(T())
 	return 'ok'
-+++exception YEXCEPTION_USER 2 0 4
++++exception USER 2 0 4

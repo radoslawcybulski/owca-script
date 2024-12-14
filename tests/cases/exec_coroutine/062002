@@ -5,4 +5,4 @@ function main():
 	val=$coresume(r)
 	$coresume(r)
 	return val
-+++exception YEXCEPTION_CANTRESUMEFINISHEDCOROUTINE 0 6
++++exception CANT_RESUME_FINISHED_COROUTINE 0 6

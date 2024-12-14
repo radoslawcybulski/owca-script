@@ -10,4 +10,4 @@ function main():
 	throw:=true
 	m1[T('e')]=T('f')
 	return 2
-+++exception YEXCEPTION_USER 6 0 11
++++exception USER 6 0 11

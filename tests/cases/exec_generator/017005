@@ -6,4 +6,4 @@ function main():
 	a=f()
 	b=a(*'123')
 	return b
-+++exception YEXCEPTION_TOOMANYPARAMETERS 7
++++exception TOO_MANY_PARAMETERS 7

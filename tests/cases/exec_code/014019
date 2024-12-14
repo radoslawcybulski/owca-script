@@ -4,4 +4,4 @@ class T:
 function main():
 	a=T()['c']
 	return 1
-+++exception YEXCEPTION_USER 3 5
++++exception USER 3 5

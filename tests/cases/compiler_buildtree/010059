@@ -1,4 +1,4 @@
 function main():
 	,c=['a']
 	return 'ok'
-+++exception YEXCEPTION_TOOLITTLEITEMSINITER 2
++++exception TOO_LITTLE_ITEMS_IN_ITER 2

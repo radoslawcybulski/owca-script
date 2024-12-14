@@ -35,4 +35,4 @@ function main():
 	if 'abc'<'a': return 16
 	if T(2)<T(1): return 13
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 36
++++exception INVALID_PARAM_TYPE 36

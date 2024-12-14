@@ -2,4 +2,4 @@ function f(a,b,c,d):
 	return a+b+c+d
 function main():
 	return f('a',*['d'],**{'c':'e'})
-+++exception YEXCEPTION_NOTENOUGHPARAMETERS 4
++++exception NOT_ENOUGH_PARAMETERS 4

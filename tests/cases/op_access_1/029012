@@ -1,4 +1,4 @@
 function main():
 	if 'qwe'[0]!='q': return 1
 	return 'qwe'['abc']
-+++exception YEXCEPTION_INVALIDPARAMTYPE 3
++++exception INVALID_PARAM_TYPE 3

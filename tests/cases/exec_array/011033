@@ -17,4 +17,4 @@ function main():
 		lst[x]=T(x>>1)
 	lst.sort()
 	return 'ok'
-+++exception YEXCEPTION_LISTMODIFEDWHILEBEINGSORTED 0 18
++++exception LIST_MODIFED_WHILE_BEING_SORTED 0 18

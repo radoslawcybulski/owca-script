@@ -3,4 +3,4 @@ function main():
 	with a1=close:
 		pass
 	return 'ok'
-+++exception YEXCEPTION_USER 2 3
++++exception USER 2 3

@@ -6,4 +6,4 @@ function f():
 function main():
 	a=$list(f())
 	return a==['1','2','3'] ? 'ok' : 'fail'
-+++exception YEXCEPTION_USER 4 0 7
++++exception USER 4 0 7

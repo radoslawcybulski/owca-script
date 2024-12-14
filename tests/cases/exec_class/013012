@@ -2,4 +2,4 @@ class A:
 	pass
 function main():
 	return $type(A,**{'q':'rty'})
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 0 4
++++exception UNUSED_KEYWORD_PARAM 0 4

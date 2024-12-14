@@ -1,4 +1,4 @@
 function f(): pass
 z=f.bind(f)
 z['b']
-+++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 3
++++compilation_exception INVALID_PARAM_TYPE 3

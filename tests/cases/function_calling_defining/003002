@@ -3,4 +3,4 @@ function f():
 function main():
 	f(*[1])
 	return 'ok'
-+++exception YEXCEPTION_TOOMANYPARAMETERS 4
++++exception TOO_MANY_PARAMETERS 4

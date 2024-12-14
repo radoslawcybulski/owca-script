@@ -1,3 +1,3 @@
 function main():
 	$print('q','w','e',**{'join':'--','delta':'qwe'})
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 0 2
++++exception UNUSED_KEYWORD_PARAM 0 2

@@ -6,4 +6,4 @@ function main():
 	t.f='abc'
 	t.g='abc'
 	return 'ok'
-+++exception YEXCEPTION_NOTLVALUE 7
++++exception NOT_LVALUE 7

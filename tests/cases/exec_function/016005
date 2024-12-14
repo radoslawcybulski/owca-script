@@ -5,4 +5,4 @@ function main():
 	a=main.bind(T())
 	if a!=b: return 'ok'
 	return 2
-+++exception YEXCEPTION_USER 2 0 6
++++exception USER 2 0 6

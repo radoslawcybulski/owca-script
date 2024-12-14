@@ -5,4 +5,4 @@ class T:
 		pass
 function main():
 	T()['def']+=1
-+++exception YEXCEPTION_INVALIDPARAMTYPE 7
++++exception INVALID_PARAM_TYPE 7

@@ -1091,11 +1091,11 @@ namespace owca {
 	//{
 	//	if (!convert(exception_object,vm,a,pname)) return false;
 	//	if (a<minval) {
-	//		exception_object=vm.construct_builtin_exception(YEXCEPTION_INTEGEROUTOFBOUNDS,OWCA_ERROR_FORMAT2("number %1 is lower than required minimum %2",int_to_string(a),int_to_string(minval)));
+	//		exception_object=vm.construct_builtin_exception(INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT2("number %1 is lower than required minimum %2",int_to_string(a),int_to_string(minval)));
 	//		return false;
 	//	}
 	//	if (a>maxval) {
-	//		exception_object=vm.construct_builtin_exception(YEXCEPTION_INTEGEROUTOFBOUNDS,OWCA_ERROR_FORMAT2("number %1 is higher than required maximum %2",int_to_string(a),int_to_string(maxval)));
+	//		exception_object=vm.construct_builtin_exception(INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT2("number %1 is higher than required maximum %2",int_to_string(a),int_to_string(maxval)));
 	//		return false;
 	//	}
 	//	return true;

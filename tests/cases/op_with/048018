@@ -3,4 +3,4 @@ function main():
 	with T():
 		z='qwe'
 	return z
-+++exception YEXCEPTION_INVALIDPARAMTYPE 3
++++exception INVALID_PARAM_TYPE 3

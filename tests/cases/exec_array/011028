@@ -6,4 +6,4 @@ class T:
 function main():
 	[T(0),T(0),T(1),T(0)].$str()
 	return 'ok'
-+++exception YEXCEPTION_USER 4 0 7
++++exception USER 4 0 7

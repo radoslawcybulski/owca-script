@@ -3,4 +3,4 @@ class C:
 	raise $exception()
 function main():
 	return 'ok'
-+++compilation_exception YEXCEPTION_USER 3 1
++++compilation_exception USER 3 1

@@ -28,4 +28,4 @@ function main():
 		pass
 	if not T1(): return 12
 	return 'ok'
-+++exception YEXCEPTION_INVALIDRETURNTYPE 4 29
++++exception INVALID_RETURN_TYPE 4 29

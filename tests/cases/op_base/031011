@@ -1,4 +1,4 @@
 function f():
 	raise $exception()
 f()['ghi':'def']='q'
-+++compilation_exception YEXCEPTION_USER 2 3
++++compilation_exception USER 2 3

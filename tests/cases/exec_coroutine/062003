@@ -5,4 +5,4 @@ r=$coroutine(f,'q','w','e')
 function main():
 	val=$coresume(r)
 	return val
-+++exception YEXCEPTION_CANTRESUMEFROMCOROUTINE 0 2 0 6
++++exception CANT_RESUME_FROM_COROUTINE 0 2 0 6

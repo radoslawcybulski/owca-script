@@ -4,4 +4,4 @@ function f():
 function main():
 	for a=f(): pass
 	return 'b'
-+++exception YEXCEPTION_USER 2 5
++++exception USER 2 5

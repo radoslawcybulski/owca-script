@@ -16,4 +16,4 @@ function main():
 	v.read=t.f
 	v.read=null
 	v.read='abc'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 18
++++exception INVALID_PARAM_TYPE 0 18

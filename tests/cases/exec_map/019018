@@ -4,4 +4,4 @@ function main():
 	m={'a':'b','c':T()}
 	$str(m)
 	return 'ok'
-+++exception YEXCEPTION_USER 2 0 0 5
++++exception USER 2 0 0 5

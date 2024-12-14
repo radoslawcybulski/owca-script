@@ -23,11 +23,11 @@ namespace owca {
 	{
 		if (pcountmax==MAX) pcountmax=pcountmin;
 		if (count()<pcountmin) {
-			vm->owner_vm->construct_builtin_exception(YEXCEPTION_NOTENOUGHPARAMETERS,OWCA_ERROR_FORMAT("not enough parameters given"));
+			vm->owner_vm->construct_builtin_exception(ExceptionCode::NOT_ENOUGH_PARAMETERS,OWCA_ERROR_FORMAT("not enough parameters given"));
 			return false;
 		}
 		if (count()>pcountmax) {
-			vm->owner_vm->construct_builtin_exception(YEXCEPTION_TOOMANYPARAMETERS,OWCA_ERROR_FORMAT("too many parameters given"));
+			vm->owner_vm->construct_builtin_exception(ExceptionCode::TOO_MANY_PARAMETERS,OWCA_ERROR_FORMAT("too many parameters given"));
 			return false;
 		}
 		return true;
@@ -104,7 +104,7 @@ namespace owca {
 			else {
 				if (count>0) {
 required_:
-					exception_object=vm->owner_vm->construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,
+					exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,
 							OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[0].str()));
 					return false;
 				}
@@ -119,7 +119,7 @@ required_:
 				exec_variable *v=ci->map->ident_get(identificators[i]._ss);
 				if (v==NULL) {
 					if (!required || required[i]) {
-						exception_object=vm->owner_vm->construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[i].str()));
+						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[i].str()));
 						return false;
 					}
 					if (used) used[i]=false;
@@ -143,11 +143,11 @@ required_:
 								goto cont;
 							}
 						}
-						exception_object=vm->owner_vm->construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,OWCA_ERROR_FORMAT1("unused keyword parameter %1",k.get_string()->str()));
+						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("unused keyword parameter %1",k.get_string()->str()));
 						return false;
 					}
 					else {
-						exception_object=vm->owner_vm->construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,OWCA_ERROR_FORMAT("keyword parameter is not a string"));
+						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("keyword parameter is not a string"));
 						return false;
 					}
 cont: ;

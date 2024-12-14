@@ -3,4 +3,4 @@ class T:
 function main():
 	a,b,T()['def'],c='q','w','e','x'
 	return 'ok'
-+++exception YEXCEPTION_USER 2 4
++++exception USER 2 4

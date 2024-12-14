@@ -1,3 +1,3 @@
 function f(): pass
 f['b':'c']='a'
-+++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 2
++++compilation_exception INVALID_PARAM_TYPE 2

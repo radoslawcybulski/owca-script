@@ -11,4 +11,4 @@ function f():
 function main():
 	for z = f():
 		pass
-+++exception YEXCEPTION_USER 6 8 12
++++exception USER 6 8 12

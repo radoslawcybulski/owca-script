@@ -1,4 +1,4 @@
 class A: pass
 function main():
 	a=$list(A())
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 3
++++exception INVALID_PARAM_TYPE 0 3

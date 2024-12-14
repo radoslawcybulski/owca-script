@@ -2,4 +2,4 @@ function f(a,b):
 	return a+b
 function main():
 	return f('a','b','c',**{'d':'e'})
-+++exception YEXCEPTION_TOOMANYPARAMETERS 4
++++exception TOO_MANY_PARAMETERS 4

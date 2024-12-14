@@ -4,4 +4,4 @@ class T:
 function main():
 	t=T()
 	return 'ok'
-+++exception YEXCEPTION_INVALIDRETURNTYPE 3 5
++++exception INVALID_RETURN_TYPE 3 5

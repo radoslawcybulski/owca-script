@@ -24,4 +24,4 @@ function main():
 	change:=true
 	
 	return m1==m2 ? 1 : 2
-+++exception YEXCEPTION_MAPMODIFEDWHILEBEINGUSED 0 26
++++exception MAP_MODIFED_WHILE_BEING_USED 0 26

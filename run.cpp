@@ -32,7 +32,7 @@ static owca_global execute(owca_vm &vm, const owca_global &exc, const std::strin
 static void print_exception(owca_global &exc)
 {
 	owca_global res=execute(*exc.vm(),exc,"code");
-	exceptioncode code=(exceptioncode)res.int_get();
+	ExceptionCode code=(ExceptionCode)res.int_get();
 	res=execute(*exc.vm(),exc,"size");
 	unsigned int linecount=(unsigned int)res.int_get();
 

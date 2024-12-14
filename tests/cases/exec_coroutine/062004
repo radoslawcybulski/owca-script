@@ -1,3 +1,3 @@
 function main():
 	$costop(null)
-+++exception YEXCEPTION_NOCOROUTINETOSTOP 0 2
++++exception NO_COROUTINE_TO_STOP 0 2

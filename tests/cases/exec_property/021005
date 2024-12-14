@@ -1,4 +1,4 @@
 function main():
 	a=$property(write=4)
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 2
++++exception INVALID_PARAM_TYPE 0 2

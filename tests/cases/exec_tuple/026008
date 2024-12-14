@@ -14,4 +14,4 @@ function main():
 	z=('a','b')
 	if z*3!=('a','b','a','b','a','b'): return 6
 	$hash(('a','b',T(),'d'))
-+++exception YEXCEPTION_USER 2 0 0 16
++++exception USER 2 0 0 16

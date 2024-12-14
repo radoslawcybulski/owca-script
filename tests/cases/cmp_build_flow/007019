@@ -8,4 +8,4 @@ function main():
 	with a1=T('1'),a2=T('2'),a3=T('3'):
 		a+=':'+a1.v+a2.v+a3.v+':'
 	return a
-+++exception YEXCEPTION_INVALIDPARAMTYPE 8
++++exception INVALID_PARAM_TYPE 8

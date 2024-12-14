@@ -1507,56 +1507,56 @@ cont:
 			return true;
 		}
 
-		exec_object *virtual_machine::_raise_get_exception_type(exceptioncode code)
+		exec_object *virtual_machine::_raise_get_exception_type(ExceptionCode code)
 		{
 			switch(code) {
-			case YEXCEPTION_INTEGEROUTOFBOUNDS:
-			case YEXCEPTION_INVALIDLISTPARAM:
-			case YEXCEPTION_INVALIDMAPPARAM:
-			case YEXCEPTION_INVALIDPARAMTYPE:
-			case YEXCEPTION_CLASSCREATION:
-			case YEXCEPTION_PARAMASSIGNEDTWICE:
-			case YEXCEPTION_PARAMNOTSET:
-			case YEXCEPTION_UNUSEDKEYWORDPARAM:
-			case YEXCEPTION_NOCONSTRUCTOR:
-			case YEXCEPTION_TOOMANYPARAMETERS:
-			case YEXCEPTION_NOTENOUGHPARAMETERS:
-			case YEXCEPTION_UNSUPPORTEDKEYWORDPARAMETERS:
-			case YEXCEPTION_INVALIDVM:
-			case YEXCEPTION_KEYWORDPARAMNOTSTRING:
-			case YEXCEPTION_MISSINGVALUEPARAMETER:
-			case YEXCEPTION_MISSINGKEYPARAMETER:
+			case ExceptionCode::INTEGER_OUT_OF_BOUNDS:
+			case ExceptionCode::INVALID_LIST_PARAM:
+			case ExceptionCode::INVALID_MAP_PARAM:
+			case ExceptionCode::INVALID_PARAM_TYPE:
+			case ExceptionCode::CLASS_CREATION:
+			case ExceptionCode::PARAM_ASSIGNED_TWICE:
+			case ExceptionCode::PARAM_NOT_SET:
+			case ExceptionCode::UNUSED_KEYWORD_PARAM:
+			case ExceptionCode::NO_CONSTRUCTOR:
+			case ExceptionCode::TOO_MANY_PARAMETERS:
+			case ExceptionCode::NOT_ENOUGH_PARAMETERS:
+			case ExceptionCode::UNSUPPORTED_KEYWORD_PARAMETERS:
+			case ExceptionCode::INVALID_VM:
+			case ExceptionCode::KEYWORD_PARAM_NOT_STRING:
+			case ExceptionCode::MISSING_VALUE_PARAMETER:
+			case ExceptionCode::MISSING_KEY_PARAMETER:
 				return class_exception_param;
-			case YEXCEPTION_DIVISIONBYZERO:
-			case YEXCEPTION_OVERFLOW:
+			case ExceptionCode::DIVISION_BY_ZERO:
+			case ExceptionCode::OVERFLOW:
 				return class_exception_math;
-			case YEXCEPTION_TOOMANYITEMSINITER:
-			case YEXCEPTION_TOOLITTLEITEMSINITER:
-			case YEXCEPTION_INVALIDRETURNTYPE:
-			case YEXCEPTION_INVALIDOPERATORFUNCTION:
-			case YEXCEPTION_MISSINGRETURNVALUE:
-			case YEXCEPTION_STACKOVERFLOW:
-			case YEXCEPTION_CANTINSERT:
-			case YEXCEPTION_KEYNOTFOUND:
-			case YEXCEPTION_NOCOROUTINETOSTOP:
-			case YEXCEPTION_CANTSTOPFROMWITHINUSERFUNCTION:
-			case YEXCEPTION_CANTRESUMEFROMCOROUTINE:
-			case YEXCEPTION_CANTRESUMENORMALFUNCTION:
-			case YEXCEPTION_CANTRESUMEFINISHEDCOROUTINE:
-			case YEXCEPTION_CANTSTOPCOROUTINEFROMUSERFUNCTION:
-			case YEXCEPTION_CANTCREATEGENERATORFROMUSERFUNCTION:
-			case YEXCEPTION_LISTMODIFEDWHILEBEINGSORTED:
-			case YEXCEPTION_MAPMODIFEDWHILEBEINGUSED:
-			case YEXCEPTION_SETMODIFEDWHILEBEINGUSED:
+			case ExceptionCode::TOO_MANY_ITEMS_IN_ITER:
+			case ExceptionCode::TOO_LITTLE_ITEMS_IN_ITER:
+			case ExceptionCode::INVALID_RETURN_TYPE:
+			case ExceptionCode::INVALID_OPERATOR_FUNCTION:
+			case ExceptionCode::MISSING_RETURN_VALUE:
+			case ExceptionCode::STACK_OVERFLOW:
+			case ExceptionCode::CANT_INSERT:
+			case ExceptionCode::KEY_NOT_FOUND:
+			case ExceptionCode::NO_COROUTINE_TO_STOP:
+			case ExceptionCode::CANT_STOP_FROM_WITHIN_USER_FUNCTION:
+			case ExceptionCode::CANT_RESUME_FROM_COROUTINE:
+			case ExceptionCode::CANT_RESUME_NORMAL_FUNCTION:
+			case ExceptionCode::CANT_RESUME_FINISHED_COROUTINE:
+			case ExceptionCode::CANT_STOP_COROUTINE_FROM_USER_FUNCTION:
+			case ExceptionCode::CANT_CREATE_GENERATOR_FROM_USER_FUNCTION:
+			case ExceptionCode::LIST_MODIFED_WHILE_BEING_SORTED:
+			case ExceptionCode::MAP_MODIFED_WHILE_BEING_USED:
+			case ExceptionCode::SET_MODIFED_WHILE_BEING_USED:
 				return class_exception_operation;
-			case YEXCEPTION_MISSINGMEMBER:
-			case YEXCEPTION_NOTLVALUE:
-			case YEXCEPTION_NOTRVALUE:
-			case YEXCEPTION_INVALIDIDENT:
+			case ExceptionCode::MISSING_MEMBER:
+			case ExceptionCode::NOT_LVALUE:
+			case ExceptionCode::NOT_RVALUE:
+			case ExceptionCode::INVALID_IDENT:
 				return class_exception_access;
-			case YEXCEPTION_USER:
+			case ExceptionCode::USER:
 			default:
-				RCASSERT(code>=YEXCEPTION_USER);
+				RCASSERT(code>=ExceptionCode::USER);
 				return class_exception;
 			}
 		}
@@ -1579,7 +1579,7 @@ cont:
 			}
 		}
 
-		void virtual_machine::_prepare_construct_exception(exceptioncode code, exec_object *exctype, const std::string &txt)
+		void virtual_machine::_prepare_construct_exception(ExceptionCode code, exec_object *exctype, const std::string &txt)
 		{
 			if (exctype==NULL) exctype=_raise_get_exception_type(code);
 
@@ -1593,7 +1593,7 @@ cont:
 			RCASSERT(prepare_call_function(&execution_exception_object_temp,execution_exception_parameters[0],&execution_exception_parameters[1],2));
 		}
 
-		RCLMFUNCTION void virtual_machine::_raise(exceptioncode code, exec_object *exctype, const std::string &txt)
+		RCLMFUNCTION void virtual_machine::_raise(ExceptionCode code, exec_object *exctype, const std::string &txt)
 		{
 			_prepare_construct_exception(code,exctype,txt);
 
@@ -1603,148 +1603,148 @@ cont:
 
 		void virtual_machine::raise_overflow()
 		{
-			_raise(YEXCEPTION_OVERFLOW,NULL,OWCA_ERROR_FORMAT("an operation has caused numeric overlow"));
+			_raise(ExceptionCode::OVERFLOW,NULL,OWCA_ERROR_FORMAT("an operation has caused numeric overlow"));
 		}
 
 		void virtual_machine::raise_division_by_zero()
 		{
-			_raise(YEXCEPTION_DIVISIONBYZERO,NULL,OWCA_ERROR_FORMAT("division by zero"));
+			_raise(ExceptionCode::DIVISION_BY_ZERO,NULL,OWCA_ERROR_FORMAT("division by zero"));
 		}
 
 		void virtual_machine::raise_invalid_list_param(const exec_variable &p)
 		{
-			_raise(YEXCEPTION_INVALIDLISTPARAM,NULL,OWCA_ERROR_FORMAT1("list parameter must be a list or tuple, not %1",to_stdstring_type(p)));
+			_raise(ExceptionCode::INVALID_LIST_PARAM,NULL,OWCA_ERROR_FORMAT1("list parameter must be a list or tuple, not %1",to_stdstring_type(p)));
 		}
 
 		void virtual_machine::raise_invalid_map_param(const exec_variable &p)
 		{
-			_raise(YEXCEPTION_INVALIDMAPPARAM,NULL,OWCA_ERROR_FORMAT1("map parameter must be a map, not %1",to_stdstring_type(p)));
+			_raise(ExceptionCode::INVALID_MAP_PARAM,NULL,OWCA_ERROR_FORMAT1("map parameter must be a map, not %1",to_stdstring_type(p)));
 		}
 
 		void virtual_machine::raise_invalid_integer(const std::string &txt)
 		{
-			_raise(YEXCEPTION_INTEGEROUTOFBOUNDS,NULL,txt);
+			_raise(ExceptionCode::INTEGER_OUT_OF_BOUNDS,NULL,txt);
 		}
 
 		void virtual_machine::raise_invalid_param(const std::string &txt)
 		{
-			_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,txt);
+			_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,txt);
 		}
 
 		//void virtual_machine::raise_invalid_param(const exec_variable &o) // o has an invalid type
 		//{
-		//	_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not of valid type",to_stdstring(o)));
+		//	_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not of valid type",to_stdstring(o)));
 		//}
 
 		void virtual_machine::raise_invalid_param(const std::string &o, exec_object *p) // o is not a type of p
 		{
-			if (p==class_class) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a type",o));
-			else if (p==class_generator) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a generator",o));
-			else if (p==class_exception) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT2("parameter '%1' doesnt inherit from type ",o,class_exception->CO().name->str()));
-			else if (p==class_int) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not an integer",o));
-			else if (p==class_real) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a real",o));
-			else if (p==class_string) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a string",o));
-			else if (p==class_function) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a function",o));
-			else return _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT2("parameter '%1' is not of type %2",o,p->CO().name->str()));
+			if (p==class_class) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a type",o));
+			else if (p==class_generator) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a generator",o));
+			else if (p==class_exception) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT2("parameter '%1' doesnt inherit from type ",o,class_exception->CO().name->str()));
+			else if (p==class_int) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not an integer",o));
+			else if (p==class_real) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a real",o));
+			else if (p==class_string) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a string",o));
+			else if (p==class_function) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("parameter '%1' is not a function",o));
+			else return _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT2("parameter '%1' is not of type %2",o,p->CO().name->str()));
 		}
 
 		void virtual_machine::raise_invalid_param(const exec_variable &o, exec_object *p) // o is not a type of p
 		{
-			if (p==class_class) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a type",to_stdstring_type(o)));
-			else if (p==class_generator) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a generator",to_stdstring_type(o)));
-			else if (p==class_exception) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT2("%1 doesnt inherit from type %2",to_stdstring_type(o),class_exception->CO().name->str()));
-			else if (p==class_int) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not an integer",to_stdstring_type(o)));
-			else if (p==class_real) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a real",to_stdstring_type(o)));
-			else if (p==class_string) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a string",to_stdstring_type(o)));
-			else if (p==class_function) _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a function",to_stdstring_type(o)));
-			else return _raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT2("%1 is not of type %2",to_stdstring_type(o),p->CO().name->str()));
+			if (p==class_class) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a type",to_stdstring_type(o)));
+			else if (p==class_generator) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a generator",to_stdstring_type(o)));
+			else if (p==class_exception) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT2("%1 doesnt inherit from type %2",to_stdstring_type(o),class_exception->CO().name->str()));
+			else if (p==class_int) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not an integer",to_stdstring_type(o)));
+			else if (p==class_real) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a real",to_stdstring_type(o)));
+			else if (p==class_string) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a string",to_stdstring_type(o)));
+			else if (p==class_function) _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not a function",to_stdstring_type(o)));
+			else return _raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT2("%1 is not of type %2",to_stdstring_type(o),p->CO().name->str()));
 		}
 
 		void virtual_machine::raise_class_creation(const std::string &z)
 		{
-			_raise(YEXCEPTION_CLASSCREATION,NULL,z);
+			_raise(ExceptionCode::CLASS_CREATION,NULL,z);
 		}
 
 		void virtual_machine::raise_param_not_set(owca_internal_string *id)
 		{
-			_raise(YEXCEPTION_PARAMNOTSET,NULL,OWCA_ERROR_FORMAT1("parameter %1 not assigned",id->str()));
+			_raise(ExceptionCode::PARAM_NOT_SET,NULL,OWCA_ERROR_FORMAT1("parameter %1 not assigned",id->str()));
 		}
 
 		void virtual_machine::raise_keowca_map_param_not_string()
 		{
-			_raise(YEXCEPTION_KEYWORDPARAMNOTSTRING,NULL,OWCA_ERROR_FORMAT("keys for map parameter must be strings"));
+			_raise(ExceptionCode::KEYWORD_PARAM_NOT_STRING,NULL,OWCA_ERROR_FORMAT("keys for map parameter must be strings"));
 		}
 
 		void virtual_machine::raise_missing_key_parameter()
 		{
-			_raise(YEXCEPTION_MISSINGKEYPARAMETER,NULL,OWCA_ERROR_FORMAT("missing key parameter in key - value pair"));
+			_raise(ExceptionCode::MISSING_KEY_PARAMETER,NULL,OWCA_ERROR_FORMAT("missing key parameter in key - value pair"));
 		}
 
 		void virtual_machine::raise_missing_value_parameter()
 		{
-			_raise(YEXCEPTION_MISSINGVALUEPARAMETER,NULL,OWCA_ERROR_FORMAT("missing value parameter in key - value pair"));
+			_raise(ExceptionCode::MISSING_VALUE_PARAMETER,NULL,OWCA_ERROR_FORMAT("missing value parameter in key - value pair"));
 		}
 
 		void virtual_machine::raise_unused_keyword_param(owca_internal_string *id)
 		{
-			if (id) _raise(YEXCEPTION_UNUSEDKEYWORDPARAM,NULL,OWCA_ERROR_FORMAT1("unused keyword parameter %1",id->str()));
-			else _raise(YEXCEPTION_UNUSEDKEYWORDPARAM,NULL,OWCA_ERROR_FORMAT("keyword parameter is not a string"));
+			if (id) _raise(ExceptionCode::UNUSED_KEYWORD_PARAM,NULL,OWCA_ERROR_FORMAT1("unused keyword parameter %1",id->str()));
+			else _raise(ExceptionCode::UNUSED_KEYWORD_PARAM,NULL,OWCA_ERROR_FORMAT("keyword parameter is not a string"));
 		}
 
 		void virtual_machine::raise_param_assigned_twice(owca_internal_string *id, int index)
 		{
-			if (id==NULL && index<0) _raise(YEXCEPTION_PARAMASSIGNEDTWICE,NULL,OWCA_ERROR_FORMAT("keyword parameter assigned more than once"));
-			else _raise(YEXCEPTION_PARAMASSIGNEDTWICE,NULL,OWCA_ERROR_FORMAT1("parameter %1 assigned more than once",(id ? id->str() : "num "+int_to_string(index))));
+			if (id==NULL && index<0) _raise(ExceptionCode::PARAM_ASSIGNED_TWICE,NULL,OWCA_ERROR_FORMAT("keyword parameter assigned more than once"));
+			else _raise(ExceptionCode::PARAM_ASSIGNED_TWICE,NULL,OWCA_ERROR_FORMAT1("parameter %1 assigned more than once",(id ? id->str() : "num "+int_to_string(index))));
 		}
 
 		void virtual_machine::raise_unsupported_keyword_parameters()
 		{
-			_raise(YEXCEPTION_UNSUPPORTEDKEYWORDPARAMETERS,NULL,OWCA_ERROR_FORMAT("unexpected keyword parameters"));
+			_raise(ExceptionCode::UNSUPPORTED_KEYWORD_PARAMETERS,NULL,OWCA_ERROR_FORMAT("unexpected keyword parameters"));
 		}
 
 		void virtual_machine::raise_not_enough_parameters(exec_function_ptr *fnc)
 		{
-			_raise(YEXCEPTION_NOTENOUGHPARAMETERS,NULL,OWCA_ERROR_FORMAT1("not enough parameters for function %1",fnc->name()->str()));
+			_raise(ExceptionCode::NOT_ENOUGH_PARAMETERS,NULL,OWCA_ERROR_FORMAT1("not enough parameters for function %1",fnc->name()->str()));
 		}
 
 		void virtual_machine::raise_no_constructor()
 		{
-			_raise(YEXCEPTION_NOCONSTRUCTOR,NULL,OWCA_ERROR_FORMAT("constructor is missing"));
+			_raise(ExceptionCode::NO_CONSTRUCTOR,NULL,OWCA_ERROR_FORMAT("constructor is missing"));
 		}
 
 		void virtual_machine::raise_too_many_parameters(exec_function_ptr *fnc)
 		{
-			_raise(YEXCEPTION_TOOMANYPARAMETERS,NULL,OWCA_ERROR_FORMAT1("too many parameters for function %1",fnc->name()->str()));
+			_raise(ExceptionCode::TOO_MANY_PARAMETERS,NULL,OWCA_ERROR_FORMAT1("too many parameters for function %1",fnc->name()->str()));
 		}
 
 		void virtual_machine::raise_too_many_parameters(const std::string &txt)
 		{
-			_raise(YEXCEPTION_TOOMANYPARAMETERS,NULL,txt);
+			_raise(ExceptionCode::TOO_MANY_PARAMETERS,NULL,txt);
 		}
 
 		void virtual_machine::raise_invalid_ident(const std::string &id) // id is not valid string for an ident
 		{
-			_raise(YEXCEPTION_INVALIDIDENT,NULL,OWCA_ERROR_FORMAT1("'%1' is not a valid identificator",id));
+			_raise(ExceptionCode::INVALID_IDENT,NULL,OWCA_ERROR_FORMAT1("'%1' is not a valid identificator",id));
 		}
 
 		void virtual_machine::raise_not_rvalue_member(const exec_variable &v, const std::string &txt) // v.txt is not rvalue
 		{
-			_raise(YEXCEPTION_NOTRVALUE,NULL,OWCA_ERROR_FORMAT1("member %1 is not a rvalue",txt));
+			_raise(ExceptionCode::NOT_RVALUE,NULL,OWCA_ERROR_FORMAT1("member %1 is not a rvalue",txt));
 		}
 
 		void virtual_machine::raise_not_lvalue_member(const exec_variable &v, const std::string &txt) // v.txt is not lvalue
 		{
-			_raise(YEXCEPTION_NOTLVALUE,NULL,OWCA_ERROR_FORMAT1("member %1 is not a lvalue",txt));
+			_raise(ExceptionCode::NOT_LVALUE,NULL,OWCA_ERROR_FORMAT1("member %1 is not a lvalue",txt));
 		}
 
 		void virtual_machine::raise_missing_member(const exec_variable &o, const std::string &txt)
 		{
-			_raise(YEXCEPTION_MISSINGMEMBER,NULL,OWCA_ERROR_FORMAT2("%1 is missing member %2",to_stdstring_type(o),txt));
+			_raise(ExceptionCode::MISSING_MEMBER,NULL,OWCA_ERROR_FORMAT2("%1 is missing member %2",to_stdstring_type(o),txt));
 		}
 
 		void virtual_machine::raise_missing_member(exec_object *n, const std::string &txt)
 		{
-			_raise(YEXCEPTION_MISSINGMEMBER,NULL,OWCA_ERROR_FORMAT2("%1 is missing member %2",to_stdstring_type(n),txt));
+			_raise(ExceptionCode::MISSING_MEMBER,NULL,OWCA_ERROR_FORMAT2("%1 is missing member %2",to_stdstring_type(n),txt));
 		}
 
 		void virtual_machine::raise_invalid_operator_function(exec_function_ptr *fnc)
@@ -1754,13 +1754,13 @@ cont:
 				RCASSERT(fnc->internal_map_param().location.valid() || fnc->internal_list_param().location.valid());
 			case exec_function_ptr::F_FAST:
 			case exec_function_ptr::F_SELF:
-				_raise(YEXCEPTION_INVALIDOPERATORFUNCTION,NULL,OWCA_ERROR_FORMAT("operator function cant take list / map parameters"));
+				_raise(ExceptionCode::INVALID_OPERATOR_FUNCTION,NULL,OWCA_ERROR_FORMAT("operator function cant take list / map parameters"));
 				break;
 			case exec_function_ptr::F_FAST_0:
 			case exec_function_ptr::F_FAST_1:
 			case exec_function_ptr::F_FAST_2:
 			case exec_function_ptr::F_FAST_3:
-				_raise(YEXCEPTION_INVALIDOPERATORFUNCTION,NULL,OWCA_ERROR_FORMAT("operator function must accept self parameter"));
+				_raise(ExceptionCode::INVALID_OPERATOR_FUNCTION,NULL,OWCA_ERROR_FORMAT("operator function must accept self parameter"));
 				break;
 			case exec_function_ptr::F_SELF_0:
 			case exec_function_ptr::F_SELF_1:
@@ -1774,104 +1774,104 @@ cont:
 
 		void virtual_machine::raise_missing_return_value()
 		{
-			_raise(YEXCEPTION_MISSINGRETURNVALUE,NULL,OWCA_ERROR_FORMAT("function failed to return any value"));
+			_raise(ExceptionCode::MISSING_RETURN_VALUE,NULL,OWCA_ERROR_FORMAT("function failed to return any value"));
 		}
 
 		void virtual_machine::raise_map_modified_while_being_used()
 		{
-			_raise(YEXCEPTION_MAPMODIFEDWHILEBEINGUSED,NULL,OWCA_ERROR_FORMAT("map was modified while it was being used"));
+			_raise(ExceptionCode::MAP_MODIFED_WHILE_BEING_USED,NULL,OWCA_ERROR_FORMAT("map was modified while it was being used"));
 		}
 
 		void virtual_machine::raise_set_modified_while_being_used()
 		{
-			_raise(YEXCEPTION_SETMODIFEDWHILEBEINGUSED,NULL,OWCA_ERROR_FORMAT("set was modified while it was being used")); // correct eng gramar?
+			_raise(ExceptionCode::SET_MODIFED_WHILE_BEING_USED,NULL,OWCA_ERROR_FORMAT("set was modified while it was being used")); // correct eng gramar?
 		}
 
 		void virtual_machine::raise_list_modified_while_being_sorted()
 		{
-			_raise(YEXCEPTION_LISTMODIFEDWHILEBEINGSORTED,NULL,OWCA_ERROR_FORMAT("list was modified while being sorted"));
+			_raise(ExceptionCode::LIST_MODIFED_WHILE_BEING_SORTED,NULL,OWCA_ERROR_FORMAT("list was modified while being sorted"));
 		}
 
 		void virtual_machine::raise_too_much_iter_obj()
 		{
-			_raise(YEXCEPTION_TOOMANYITEMSINITER,NULL,OWCA_ERROR_FORMAT("too many elements"));
+			_raise(ExceptionCode::TOO_MANY_ITEMS_IN_ITER,NULL,OWCA_ERROR_FORMAT("too many elements"));
 		}
 
 		void virtual_machine::raise_too_little_iter_obj()
 		{
-			_raise(YEXCEPTION_TOOLITTLEITEMSINITER,NULL,OWCA_ERROR_FORMAT("not enough elements"));
+			_raise(ExceptionCode::TOO_LITTLE_ITEMS_IN_ITER,NULL,OWCA_ERROR_FORMAT("not enough elements"));
 		}
 
 		void virtual_machine::raise_invalid_return_type(const exec_variable &o, exec_object *p) // return type: o is not a type of p
 		{
-			if (p) _raise(YEXCEPTION_INVALIDRETURNTYPE,NULL,OWCA_ERROR_FORMAT2("return value %1 is not of type %2",to_stdstring_type(o),to_stdstring_type(p)));
-			else _raise(YEXCEPTION_INVALIDRETURNTYPE,NULL,OWCA_ERROR_FORMAT1("unexpected %1 as return value",to_stdstring_type(o)));
+			if (p) _raise(ExceptionCode::INVALID_RETURN_TYPE,NULL,OWCA_ERROR_FORMAT2("return value %1 is not of type %2",to_stdstring_type(o),to_stdstring_type(p)));
+			else _raise(ExceptionCode::INVALID_RETURN_TYPE,NULL,OWCA_ERROR_FORMAT1("unexpected %1 as return value",to_stdstring_type(o)));
 		}
 
 		void virtual_machine::raise_invalid_key()
 		{
-			_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT("key not found"));
+			_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT("key not found"));
 		}
 
 		void virtual_machine::raise_stack_overflow()
 		{
 			execution_stack->check_stack_overflow=false;
-			_raise(YEXCEPTION_STACKOVERFLOW,NULL,OWCA_ERROR_FORMAT("maximum stack depth reached"));
+			_raise(ExceptionCode::STACK_OVERFLOW,NULL,OWCA_ERROR_FORMAT("maximum stack depth reached"));
 		}
 
 		void virtual_machine::raise_unsupported_operation()
 		{
-			_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT("unsupported operation"));
+			_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT("unsupported operation"));
 		}
 
 		void virtual_machine::raise_unsupported_call_operation(const exec_variable &fnc)
 		{
-			_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not callable",to_stdstring_type(fnc)));
+			_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,OWCA_ERROR_FORMAT1("%1 is not callable",to_stdstring_type(fnc)));
 		}
 
 		void virtual_machine::raise_cant_insert()
 		{
-			_raise(YEXCEPTION_CANTINSERT,NULL,OWCA_ERROR_FORMAT("cant insert into map (map possibly modified while inserting?)"));
+			_raise(ExceptionCode::CANT_INSERT,NULL,OWCA_ERROR_FORMAT("cant insert into map (map possibly modified while inserting?)"));
 		}
 
 		void virtual_machine::raise_key_not_found()
 		{
-			_raise(YEXCEPTION_KEYNOTFOUND,NULL,OWCA_ERROR_FORMAT("key not found"));
+			_raise(ExceptionCode::KEY_NOT_FOUND,NULL,OWCA_ERROR_FORMAT("key not found"));
 		}
 
 		void virtual_machine::raise_cant_stop_from_within_user_function()
 		{
-			_raise(YEXCEPTION_CANTSTOPFROMWITHINUSERFUNCTION,NULL,OWCA_ERROR_FORMAT("cant stop coroutine with user function call on stack"));
+			_raise(ExceptionCode::CANT_STOP_FROM_WITHIN_USER_FUNCTION,NULL,OWCA_ERROR_FORMAT("cant stop coroutine with user function call on stack"));
 		}
 
 		void virtual_machine::raise_no_coroutine_to_stop()
 		{
-			_raise(YEXCEPTION_NOCOROUTINETOSTOP,NULL,OWCA_ERROR_FORMAT("no coroutine is running, nothing to stop"));
+			_raise(ExceptionCode::NO_COROUTINE_TO_STOP,NULL,OWCA_ERROR_FORMAT("no coroutine is running, nothing to stop"));
 		}
 
 		void virtual_machine::raise_cant_resume_from_coroutine()
 		{
-			_raise(YEXCEPTION_CANTRESUMEFROMCOROUTINE,NULL,OWCA_ERROR_FORMAT("cant resume from coroutine"));
+			_raise(ExceptionCode::CANT_RESUME_FROM_COROUTINE,NULL,OWCA_ERROR_FORMAT("cant resume from coroutine"));
 		}
 
 		void virtual_machine::raise_cant_resume_normal_function()
 		{
-			_raise(YEXCEPTION_CANTRESUMENORMALFUNCTION,NULL,OWCA_ERROR_FORMAT("cant resume a function"));
+			_raise(ExceptionCode::CANT_RESUME_NORMAL_FUNCTION,NULL,OWCA_ERROR_FORMAT("cant resume a function"));
 		}
 
 		void virtual_machine::raise_cant_resume_fnished_coroutine()
 		{
-			_raise(YEXCEPTION_CANTRESUMEFINISHEDCOROUTINE,NULL,OWCA_ERROR_FORMAT("cant resume finished coroutine"));
+			_raise(ExceptionCode::CANT_RESUME_FINISHED_COROUTINE,NULL,OWCA_ERROR_FORMAT("cant resume finished coroutine"));
 		}
 
 		void virtual_machine::raise_cant_stop_coroutine_from_user_function()
 		{
-			_raise(YEXCEPTION_CANTSTOPCOROUTINEFROMUSERFUNCTION,NULL,OWCA_ERROR_FORMAT("cant yield coroutine from within simple user function"));
+			_raise(ExceptionCode::CANT_STOP_COROUTINE_FROM_USER_FUNCTION,NULL,OWCA_ERROR_FORMAT("cant yield coroutine from within simple user function"));
 		}
 
 		void virtual_machine::raise_cant_create_generator_from_user_function()
 		{
-			_raise(YEXCEPTION_CANTCREATEGENERATORFROMUSERFUNCTION,NULL,OWCA_ERROR_FORMAT("cant create generator out of simple user function"));
+			_raise(ExceptionCode::CANT_CREATE_GENERATOR_FROM_USER_FUNCTION,NULL,OWCA_ERROR_FORMAT("cant create generator out of simple user function"));
 		}
 
 		const char *operatorcodes_ident(operatorcodes opc);
@@ -1983,46 +1983,46 @@ cont:
 			case E_ADD: {
 				const char *ident=operatorcodes_ident(oper);
 				RCASSERT(ident);
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" "+std::string(ident)+" "+to_stdstring_type_short(params[1])+" is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" "+std::string(ident)+" "+to_stdstring_type_short(params[1])+" is not supported");
 				break; }
 			case E_IN: {
 				const char *ident=operatorcodes_ident(oper);
 				RCASSERT(ident);
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[1])+" "+std::string(ident)+" "+to_stdstring_type_short(params[0])+" is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[1])+" "+std::string(ident)+" "+to_stdstring_type_short(params[0])+" is not supported");
 				break; }
 			case E_SIGN_CHANGE:
 			case E_BIN_NOT: {
 				const char *ident=operatorcodes_ident(oper);
 				RCASSERT(ident);
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,std::string(ident)+" "+to_stdstring_type_short(params[0])+" is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,std::string(ident)+" "+to_stdstring_type_short(params[0])+" is not supported");
 				break; }
 			case E_NEW:
 			case E_INIT:
 				RCASSERT(0);
 			case E_WITH_ENTER:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support 'with' protocol, $withenter operator is missing");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support 'with' protocol, $withenter operator is missing");
 				break;
 			case E_WITH_EXIT:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support 'with' protocol, $withexit operator is missing");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support 'with' protocol, $withexit operator is missing");
 				break;
 			case E_STR:
 			case E_HASH:
 			case E_GENERATOR:
 			case E_BOOL:
 			case E_CALL:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support "+operator_identificators[oper]->str()+" operator");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" doesnt support "+operator_identificators[oper]->str()+" operator");
 				break;
 			case E_ACCESS_2_WRITE:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+" : "+to_stdstring_type_short(params[2])+"] = "+to_stdstring_type_short(params[3])+" is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+" : "+to_stdstring_type_short(params[2])+"] = "+to_stdstring_type_short(params[3])+" is not supported");
 				break;
 			case E_ACCESS_2_READ:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+" : "+to_stdstring_type_short(params[2])+"] is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+" : "+to_stdstring_type_short(params[2])+"] is not supported");
 				break;
 			case E_ACCESS_1_WRITE:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+"] = "+to_stdstring_type_short(params[2])+" is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+"] = "+to_stdstring_type_short(params[2])+" is not supported");
 				break;
 			case E_ACCESS_1_READ:
-				_raise(YEXCEPTION_INVALIDPARAMTYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+"] is not supported");
+				_raise(ExceptionCode::INVALID_PARAM_TYPE,NULL,to_stdstring_type_short(params[0])+" ["+to_stdstring_type_short(params[1])+"] is not supported");
 				break;
 			default:
 				RCASSERT(0);

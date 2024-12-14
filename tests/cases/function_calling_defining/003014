@@ -3,4 +3,4 @@ function f(a,b):
 function main():
 	f(1,2,a=1)
 	return 'ok'
-+++exception YEXCEPTION_PARAMASSIGNEDTWICE 4
++++exception PARAM_ASSIGNED_TWICE 4

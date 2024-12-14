@@ -5,4 +5,4 @@ class T:
 function main():
 	m=$map([T('a'),T('b'),T('c'),T('d')])
 	return 'ok'
-+++exception YEXCEPTION_USER 4 0 0 6
++++exception USER 4 0 0 6

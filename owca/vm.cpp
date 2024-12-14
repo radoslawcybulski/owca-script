@@ -69,12 +69,12 @@ namespace owca {
 		return z;
 	}
 
-	owca_global owca_vm::construct_builtin_exception(exceptioncode code, const std::string &txt)
+	owca_global owca_vm::construct_builtin_exception(ExceptionCode code, const std::string &txt)
 	{
 		owca_global z(*this);
 		z._object.set_object(vm->_raise_get_exception_type(code));
 		z._object.gc_acquire();
-		RCASSERT(z.call(z,txt,code)==owca_function_return_value::RETURN_VALUE);
+		RCASSERT(z.call(z,txt,(int)code)==owca_function_return_value::RETURN_VALUE);
 		return z;
 	}
 

@@ -6,4 +6,4 @@ function f():
 function main():
 	f(1)
 	return 'ok'
-+++exception YEXCEPTION_TOOMANYPARAMETERS 7
++++exception TOO_MANY_PARAMETERS 7

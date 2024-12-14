@@ -3,4 +3,4 @@ function f(a,b):
 function main():
 	f(1,2,*[1],**{1:2})
 	return 'ok'
-+++exception YEXCEPTION_TOOMANYPARAMETERS 4
++++exception TOO_MANY_PARAMETERS 4

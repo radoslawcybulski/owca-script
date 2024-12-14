@@ -204,10 +204,10 @@ namespace owca {
 			if (get(a)) return true;
 			if (__owca__::__type_name__<A>::INDEX!=0xff) {
 				const char *tname=typenames[__owca__::__type_name__<A>::INDEX];
-				exception_object = vm.construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname));
+				exception_object = vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname));
 			}
 			else {
-				exception_object = vm.construct_builtin_exception(YEXCEPTION_INVALIDPARAMTYPE,OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname));
+				exception_object = vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname));
 			}
 			return false;
 		}

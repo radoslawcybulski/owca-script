@@ -53,7 +53,7 @@ namespace owca {
 		__owca__::exec_object *o;
 		std::string rt=ic->create(o);
 		if (!rt.empty()) {
-			ret=ic->vm.owner_vm->construct_builtin_exception(YEXCEPTION_CLASSCREATION,rt);
+			ret=ic->vm.owner_vm->construct_builtin_exception(ExceptionCode::CLASS_CREATION,rt);
 			return owca_function_return_value::EXCEPTION;
 		}
 		ret._object.gc_release(*ret._vm);

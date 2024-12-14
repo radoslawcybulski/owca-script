@@ -3,4 +3,4 @@ function f():
 function main():
 	f(**1)
 	return 'ok'
-+++exception YEXCEPTION_INVALIDMAPPARAM 4
++++exception INVALID_MAP_PARAM 4

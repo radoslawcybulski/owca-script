@@ -2,4 +2,4 @@ class T: pass
 class Z(T,$int): pass
 function main():
 	return 'ok'
-+++compilation_exception YEXCEPTION_CLASSCREATION 2
++++compilation_exception CLASS_CREATION 2

@@ -5,4 +5,4 @@ class T:
 		raise $exception()
 function main():
 	T()['def']+='b'
-+++exception YEXCEPTION_USER 5 7
++++exception USER 5 7

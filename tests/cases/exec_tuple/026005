@@ -1,4 +1,4 @@
 function main():
 	if ('a','b','c','d')[-2]!='c': return 1
 	('a','b','c','d')[6]
-+++exception YEXCEPTION_INTEGEROUTOFBOUNDS 0 3
++++exception INTEGER_OUT_OF_BOUNDS 0 3

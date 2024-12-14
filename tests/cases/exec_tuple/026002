@@ -1,4 +1,4 @@
 function main():
 	z=('q','w','e','r','t','y')
 	return z[3:main]
-+++exception YEXCEPTION_INVALIDPARAMTYPE 3
++++exception INVALID_PARAM_TYPE 3

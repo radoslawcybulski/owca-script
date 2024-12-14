@@ -6,4 +6,4 @@ function f():
 function main():
 	f(a=1)
 	return 'ok'
-+++exception YEXCEPTION_UNUSEDKEYWORDPARAM 7
++++exception UNUSED_KEYWORD_PARAM 7

@@ -3,4 +3,4 @@ function f():
 function main():
 	t=f()
 	t(*['a'])
-+++exception YEXCEPTION_TOOMANYPARAMETERS 5
++++exception TOO_MANY_PARAMETERS 5

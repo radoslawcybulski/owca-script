@@ -3,4 +3,4 @@ function main():
 	if not z(): return 1
 	function f(): raise $exception()
 	class T($exception,f()): pass
-+++exception YEXCEPTION_USER 4 5
++++exception USER 4 5

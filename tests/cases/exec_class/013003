@@ -1,4 +1,4 @@
 function main():
 	$type(main)()
 	return 'ok'
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 2
++++exception INVALID_PARAM_TYPE 0 2

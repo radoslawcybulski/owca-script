@@ -6,4 +6,4 @@ class T:
 		return 'b'
 function main():
 	T().r+=1
-+++exception YEXCEPTION_INVALIDPARAMTYPE 8
++++exception INVALID_PARAM_TYPE 8

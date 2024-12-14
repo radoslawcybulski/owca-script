@@ -1,2 +1,2 @@
 1['b':'c']
-+++compilation_exception YEXCEPTION_INVALIDPARAMTYPE 1
++++compilation_exception INVALID_PARAM_TYPE 1

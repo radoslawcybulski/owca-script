@@ -8,4 +8,4 @@ function main():
 		return 1
 	$str(T(1))
 	return 'ok'
-+++exception YEXCEPTION_USER 4 0 9
++++exception USER 4 0 9

@@ -3,4 +3,4 @@ class T:
 function main():
 	t=$str(('a','b',T(),'c'))
 	return t[0]+t[1]+t[2]
-+++exception YEXCEPTION_INVALIDPARAMTYPE 0 0 4
++++exception INVALID_PARAM_TYPE 0 0 4

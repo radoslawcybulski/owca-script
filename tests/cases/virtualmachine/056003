@@ -4,4 +4,4 @@ function f(a,b=g()):
 	return a+b
 function main():
 	return f('a')
-+++compilation_exception YEXCEPTION_USER 2 3
++++compilation_exception USER 2 3

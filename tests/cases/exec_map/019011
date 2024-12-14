@@ -4,4 +4,4 @@ function f():
 function main():
 	m=$map(f())
 	return 'ok'
-+++exception YEXCEPTION_USER 3 0 5
++++exception USER 3 0 5

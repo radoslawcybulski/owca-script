@@ -15,7 +15,7 @@ function run():
 		return 3
 	except:
 		pass
-	# this will raise an exception (YEXCEPTION_INVALIDPARAMTYPE), as 1.5 is
+	# this will raise an exception (INVALID_PARAM_TYPE), as 1.5 is
 	# not convertible to an integer without loosing part of the information
 
 	try:
@@ -23,6 +23,6 @@ function run():
 		return 4
 	except:
 		pass
-	# this will also raise an exception (YEXCEPTION_INVALIDPARAMTYPE)
+	# this will also raise an exception (INVALID_PARAM_TYPE)
 	# Y doesnt try to convert strings to integers / reals
 	return 0
