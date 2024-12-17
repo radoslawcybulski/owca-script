@@ -96,6 +96,7 @@ namespace owca {
 		DLLEXPORT std::string __exception_format(const char *msg);
 		DLLEXPORT std::string __exception_format1(const char *msg, const std::string &p1);
 		DLLEXPORT std::string __exception_format2(const char *msg, const std::string &p1, const std::string &p2);
+		DLLEXPORT std::string __exception_format3(const char *msg, const std::string &p1, const std::string &p2, const std::string &p3);
 
 		void debug_check_memory(void);
 	}
@@ -106,5 +107,6 @@ namespace owca {
 #define OWCA_ERROR_FORMAT owca::__owca__::__exception_format
 #define OWCA_ERROR_FORMAT1 owca::__owca__::__exception_format1
 #define OWCA_ERROR_FORMAT2 owca::__owca__::__exception_format2
+#define OWCA_ERROR_FORMAT3 owca::__owca__::__exception_format3
 
 #endif

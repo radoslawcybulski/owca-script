@@ -11,7 +11,6 @@ namespace owca {
 	class owca_vm;
 	class owca_namespace;
 	class returnvalue;
-	class owca_function_return_value;
 	namespace __owca__ {
 		class virtual_machine;
 		class exec_stack_variables;
@@ -73,7 +72,7 @@ namespace owca {
 			int insert_variable(owca_internal_string *ident, const exec_variable &v); // <0 - ident is readonly and value already exists
 			bool get_variable(owca_internal_string *ident, exec_variable &v); // false - not found
 			void clear();
-			owca_function_return_value apply_code(exec_variable &retval, opcode_data *opc);
+			void apply_code(opcode_data *opc);
 			bool validate_code_and_prepare_for_execution(const std::vector<unsigned char> &data, opcode_data *execution_data = NULL);
 
             exec_namespace *copy(owca_internal_string *file_name);

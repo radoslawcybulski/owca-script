@@ -50,7 +50,7 @@ namespace owca { namespace __owca__ {
 			}
 
 			{
-				vmstack _vmstack(*vm);
+				auto pop = vm->push_execution_stack();
 
 				if (!vm->prepare_call_function(NULL,*fnc,cp,NULL)) {
 					return executionstackreturnvalue::FUNCTION_CALL;

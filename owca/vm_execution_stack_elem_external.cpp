@@ -271,27 +271,38 @@ namespace owca {
 		vm_execution_stack_elem_external_self__::_release_resources(vm);
 	}
 
-	__owca__::executionstackreturnvalue owca_user_function_base_object::parse(owca_function_return_value frv)
-	{
-		switch(frv.type()) {
-		case owca_function_return_value::EXCEPTION:
-			vm_execution_stack_elem_external_self__::vm->_raise_from_user(tmp_return_value._object);
+	//__owca__::executionstackreturnvalue owca_user_function_base_object::parse(owca_function_return_value frv)
+	//{
+	//	switch(frv.type()) {
+	//	case owca_function_return_value::EXCEPTION:
+	//		vm_execution_stack_elem_external_self__::vm->_raise_from_user(tmp_return_value._object);
+	//		return executionstackreturnvalue::EXCEPTION;
+	//	case owca_function_return_value::RETURN_VALUE:
+	//		*return_value = tmp_return_value._object;
+	//		tmp_return_value._object.reset();
+	//		return executionstackreturnvalue::RETURN;
+	//	case owca_function_return_value::CREATE_GENERATOR:
+	//		return executionstackreturnvalue::CREATE_GENERATOR;
+	//	case owca_function_return_value::COROUTINE_STOP:
+	//		return executionstackreturnvalue::CO_STOP;
+	//	case owca_function_return_value::FUNCTION_CALL:
+	//		return executionstackreturnvalue::FUNCTION_CALL;
+	//	default:
+	//		RCASSERT(0);
+	//	}
+	//	return_value->set_null(true);
+	//	return executionstackreturnvalue::RETURN;
+	//}
+
+	__owca__::executionstackreturnvalue owca_user_function_base_object::parse_owca_exc(owca_exception& oe) {
+		if (oe.has_exception_object()) {
+			auto t = oe.take_exception_object();
+			vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown = t._object.get_object();
+			t._object.reset();
 			return executionstackreturnvalue::EXCEPTION;
-		case owca_function_return_value::RETURN_VALUE:
-			*return_value = tmp_return_value._object;
-			tmp_return_value._object.reset();
-			return executionstackreturnvalue::RETURN;
-		case owca_function_return_value::CREATE_GENERATOR:
-			return executionstackreturnvalue::CREATE_GENERATOR;
-		case owca_function_return_value::COROUTINE_STOP:
-			return executionstackreturnvalue::CO_STOP;
-		case owca_function_return_value::FUNCTION_CALL:
-			return executionstackreturnvalue::FUNCTION_CALL;
-		default:
-			RCASSERT(0);
 		}
-		return_value->set_null(true);
-		return executionstackreturnvalue::RETURN;
+		vm_execution_stack_elem_external_self__::vm->_raise(oe.code(), oe.message());
+		return executionstackreturnvalue::FUNCTION_CALL;
 	}
 
 	executionstackreturnvalue owca_user_function_base_object::first_time_execute(executionstackreturnvalue mode)
@@ -311,25 +322,52 @@ namespace owca {
 		self._object=v_self;
 		v_self.gc_acquire();
 		parameters._init(*vm_execution_stack_elem_external_self__::vm,cp);
-		owca_function_return_value frv = initialize(tmp_return_value);
-		return parse(frv);
+		try {
+			auto v = initialize();
+			if (generator) {
+				if (v.no_value_is()) {
+					return_value->set_null();
+					return executionstackreturnvalue::RETURN;
+				}
+				return executionstackreturnvalue::CREATE_GENERATOR;
+			}
+			*return_value = v._object;
+			v._object.reset();
+			return executionstackreturnvalue::RETURN;
+		}
+		catch (owca_exception& oe) {
+			return parse_owca_exc(oe);
+		}
 	}
 
 	executionstackreturnvalue owca_user_function_base_object::execute(executionstackreturnvalue r) {
-		bool exc;
 		if (r.type()==executionstackreturnvalue::EXCEPTION) {
-			exc=true;
-			tmp_return_value._object.gc_release(*vm_execution_stack_elem_external_self__::vm);
-			tmp_return_value._update_vm(vm_execution_stack_elem_external_self__::vm);
-			tmp_return_value._object.set_object(vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown);
-			vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown=NULL;
+			if (!catch_exceptions()) return executionstackreturnvalue::EXCEPTION;
+			exec_variable tmp;
+			tmp.set_object(vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown);
+			vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown = nullptr;
+			owca_global tmp2{ *vm_execution_stack_elem_external_self__::vm, tmp };
+			try {
+				auto res = exception_thrown(tmp2);
+				if (res == ExceptionHandled::No) {
+					vm_execution_stack_elem_external_self__::vm->execution_exception_object_thrown = tmp2._object.get_object();
+					tmp2._object.reset();
+					return executionstackreturnvalue::EXCEPTION;
+				}
+			}
+			catch (owca_exception& oe) {
+				return parse_owca_exc(oe);
+			}
 		}
-		else {
-			RCASSERT(r.type()==executionstackreturnvalue::OK);
-			exc=false;
+		try {
+			auto v = run();
+			*return_value = v._object;
+			v._object.reset();
+			return executionstackreturnvalue::RETURN;
 		}
-		owca_function_return_value frv = run(tmp_return_value,exc);
-		return parse(frv);
+		catch (owca_exception& oe) {
+			return parse_owca_exc(oe);
+		}
 	}
 }
 

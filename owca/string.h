@@ -17,6 +17,7 @@ namespace owca {
 		class owca_internal_string;
 		class exec_function_ptr;
 		class obj_constructor_function;
+		class local_obj_constructor;
 	}
 }
 
@@ -28,6 +29,7 @@ namespace owca {
 		friend class __owca__::exec_function_ptr;
 		friend class __owca__::obj_constructor_function;
 		friend class __owca__::internal_class;
+		friend class __owca__::local_obj_constructor;
 		friend class owca_parameters;
 		friend class owca_string_buffer;
 		friend class owca_namespace;

@@ -24,6 +24,7 @@ namespace owca {
 	using namespace __owca__;
 
 	owca_local owca_local::null;
+	owca_local owca_local::null_no_value;
 
 	owca_local::owca_local(const owca_string &s) : _vm(NULL)
 	{
@@ -662,430 +663,205 @@ namespace owca {
 		return "";
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_get_member(owca_global &result, const owca_string &name) const
+	RCLMFUNCTION owca_global owca_local::_call(const __owca__::exec_variable *params, unsigned int size) const
 	{
-		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		executionreturnvalue r;
-
-		switch(_object.mode()) {
-		case VAR_NULL:
-		case VAR_BOOL:
-		case VAR_INT:
-		case VAR_REAL:
-		case VAR_STRING:
-		case VAR_GENERATOR:
-		case VAR_PROPERTY:
-		case VAR_FUNCTION:
-		case VAR_FUNCTION_FAST:
-		case VAR_WEAK_REF:
-		case VAR_OBJECT:
-			if (&result._object==&_object) {
-				//exec_object *o=_object.get_object();
-				exec_variable prv=_object;
-				lookupreturnvalue lrv=_object.lookup_read(result._object,*_vm,name._ss,true);
-				prv.gc_release(*_vm);
-				switch(lrv.type()) {
-				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_FUNCTION_CALL: result._object.reset();
-					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
-					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
-						_vm->execution_stack->peek_frame()->return_handling_mode=vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
-						break;
-					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-						RCASSERT(_vm->execution_stack->peek_frame()->return_value==&_vm->execution_exception_object_temp);
-						_vm->execution_stack->peek_frame()->return_value=&result._object;
-						break;
-					default:
-						RCASSERT(0);
-					}
-					return owca_function_return_value::FUNCTION_CALL; // _vm->owner_vm->resume_execution();
-				default: RCASSERT(0);
-				}
-			}
-			else {
-				result._object.gc_release(*result._vm);
-				result._object.reset();
-				result._update_vm(_vm);
-				lookupreturnvalue lrv=_object.lookup_read(result._object,*_vm,name._ss,true);
-				switch(lrv.type()) {
-				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: r = VME_VALUE; result._object.set_null(true); break;
-				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
-					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
-					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
-						_vm->execution_stack->peek_frame()->return_handling_mode=vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
-						break;
-					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-						RCASSERT(_vm->execution_stack->peek_frame()->return_value==&_vm->execution_exception_object_temp);
-						_vm->execution_stack->peek_frame()->return_value=&result._object;
-						break;
-					default:
-						RCASSERT(0);
-					}
-					return owca_function_return_value::FUNCTION_CALL; // _vm->owner_vm->resume_execution();
-				default: RCASSERT(0);
-				}
-			}
-			break;
-		case VAR_NAMESPACE:
-			if (&result._object==&_object) {
-				exec_namespace *ns=_object.get_namespace();
-				bool b=ns->get_variable(name._ss,result._object);
-				ns->gc_release(*_vm);
-				if (b) {
-					r=VME_VALUE;
-				}
-				else {
-					result._object.set_null(true);
-					r=VME_VALUE;
-				}
-			}
-			else {
-				result._object.gc_release(*result._vm);
-				result._object.reset();
-				result._update_vm(_vm);
-				bool b=_object.get_namespace()->get_variable(name._ss,result._object);
-				if (!b) {
-					result._object.set_null(true);
-				}
-				r=VME_VALUE;
-			}
-			break;
-		default: RCASSERT(0);
-		}
-		if (_vm) GC(_vm);
-		return owca_function_return_value(r);
-	}
-
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_set_member(owca_global &result, const owca_string &name, const owca_global &val) const
-	{
-		if (!internal_class::_check_name(name.data(), (unsigned int)name.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", name.str()));
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_check_vm(val);
-
-		executionreturnvalue r;
-		switch(_object.mode()) {
-		case VAR_NULL:
-		case VAR_BOOL:
-		case VAR_INT:
-		case VAR_REAL:
-		case VAR_STRING:
-		case VAR_GENERATOR:
-		case VAR_PROPERTY:
-		case VAR_FUNCTION:
-		case VAR_WEAK_REF:
-		case VAR_FUNCTION_FAST: r = VME_VALUE; result._object.set_null(true); break;
-		case VAR_OBJECT:
-			if (&result._object==&_object || &result._object==&val._object) {
-				exec_object *o=_object.get_object();
-				exec_variable vv=val._object;
-
-				lookupreturnvalue lrv=_object.lookup_write(result._object,*_vm,name._ss,vv,true);
-				if (&result._object==&_object) o->gc_release(*_vm);
-				if (&result._object==&val._object) vv.gc_release(*_vm);
-				switch(lrv.type()) {
-				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
-					result._object.reset();
-					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
-					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
-						_vm->execution_stack->peek_frame()->return_handling_mode=vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
-						break;
-					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-						RCASSERT(_vm->execution_stack->peek_frame()->return_value==&_vm->execution_exception_object_temp);
-						_vm->execution_stack->peek_frame()->return_value=&result._object;
-						break;
-					default:
-						RCASSERT(0);
-					}
-					return owca_function_return_value::FUNCTION_CALL; // _vm->owner_vm->resume_execution();
-				default: RCASSERT(0);
-				}
-			}
-			else {
-				result._object.gc_release(*result._vm);
-				result._object.reset();
-				result._update_vm(_vm);
-				lookupreturnvalue lrv=_object.lookup_write(result._object,*_vm,name._ss,val._object,true);
-				switch(lrv.type()) {
-				case lookupreturnvalue::LOOKUP_FOUND: r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_NOT_FOUND: result._object.set_null(true); r=VME_VALUE; break;
-				case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
-					switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
-					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
-						_vm->execution_stack->peek_frame()->return_handling_mode=vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
-						break;
-					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-						RCASSERT(_vm->execution_stack->peek_frame()->return_value==&_vm->execution_exception_object_temp);
-						_vm->execution_stack->peek_frame()->return_value=&result._object;
-						break;
-					default:
-						RCASSERT(0);
-					}
-					return owca_function_return_value::FUNCTION_CALL; // _vm->owner_vm->resume_execution();
-				default: RCASSERT(0);
-				}
-			}
-			break;
-		case VAR_NAMESPACE:
-			if (&result._object==&_object) {
-				exec_namespace *ns=_object.get_namespace();
-
-				RCASSERT(ns->insert_variable(name._ss,val._object)>=0);
-				ns->gc_release(*_vm);
-				result._object=val._object;
-				result._object.gc_acquire();
-				r=VME_VALUE;
-			}
-			else {
-				result._object.gc_release(*result._vm);
-				result._object.reset();
-				result._update_vm(_vm);
-				bool b=_object.get_namespace()->get_variable(name._ss,result._object);
-				if (!b) {
-					result._object.set_null(true);
-				}
-				r=VME_VALUE;
-			}
-			break;
-		default: RCASSERT(0);
-		}
-		if (_vm) GC(_vm);
-		return owca_function_return_value(r);
-	}
-
-	owca_function_return_value::owca_function_return_value(executionreturnvalue r)
-	{
-		switch(r) {
-		case VME_VALUE: _state=owca_function_return_value::RETURN_VALUE; break;
-		case VME_EXCEPTION: _state=owca_function_return_value::EXCEPTION; break;
-		default:
-			RCASSERT(0);
-		}
-	}
-
-	void owca_local::_call_prepare_after(owca_global &result) const
-	{
-		switch(_vm->execution_stack->peek_frame()->return_handling_mode) {
-		case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
-			break;
-		case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
-			RCASSERT(_vm->execution_stack->peek_frame()->return_value==&_vm->execution_exception_object_temp);
-			_vm->execution_stack->peek_frame()->return_value=&result._object;
-			break;
-		default:
-			RCASSERT(0);
-		}
-		result._object.gc_release(*result._vm);
-		result._object.reset();
-		result._update_vm(_vm);
-	}
-
-	RCLMFUNCTION owca_function_return_value owca_local::_call(owca_global &result, const __owca__::exec_variable &fncval, const __owca__::exec_variable *params, unsigned int size) const
-	{
-		if (_vm->prepare_call_function(&result._object,fncval,params,size)) {
+		exec_variable tmp;
+		auto pop = _vm->push_execution_stack();
+		if (_vm->prepare_call_function(&tmp, _object, params, size)) {
 			_vm->execution_stack->peek_frame()->set_param_array(params);
 		}
-		else delete [] params;
-		_call_prepare_after(result);
-		return owca_function_return_value::FUNCTION_CALL; // _vm->owner_vm->resume_execution();
+		_vm->execute_stack();
+		return { *_vm, tmp };
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::_call(owca_global &result, const __owca__::exec_variable &fncval, const __owca__::exec_variable *params, unsigned int size, const __owca__::exec_variable &list, const __owca__::exec_variable &map) const
+	RCLMFUNCTION owca_global owca_local::_call(const __owca__::exec_variable *params, unsigned int size, const __owca__::exec_variable &list, const __owca__::exec_variable &map) const
 	{
 		__owca__::virtual_machine::keyword_param_iterator empty;
-		if (_vm->prepare_call_function(&result._object,fncval,list.mode()==VAR_NULL ? NULL : &list,map.mode()==VAR_NULL ? NULL : &map,empty,params,size,NULL)) {
+		exec_variable tmp;
+		auto pop = _vm->push_execution_stack();
+		if (_vm->prepare_call_function(&tmp, _object, list.mode() == VAR_NULL ? NULL : &list, map.mode() == VAR_NULL ? NULL : &map, empty, params, size, NULL)) {
 			_vm->execution_stack->peek_frame()->set_param_array(params);
 		}
-		else delete [] params;
-		_call_prepare_after(result);
-		return owca_function_return_value::FUNCTION_CALL; //_vm->owner_vm->resume_execution();
+		_vm->execute_stack();
+		return { *_vm, tmp };
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::_call(owca_global &result, const __owca__::exec_variable &fncval, const callparams &cp) const
+	RCLMFUNCTION owca_global owca_local::_call(const callparams &cp) const
 	{
-		_vm->prepare_call_function(&result._object,fncval,cp,NULL);
-		_call_prepare_after(result);
-		return owca_function_return_value::FUNCTION_CALL;
+		exec_variable tmp;
+		auto pop = _vm->push_execution_stack();
+		_vm->prepare_call_function(&tmp,_object,cp,NULL);
+		_vm->execute_stack();
+		return { *_vm, tmp };
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		return _call(result,_object,NULL,0);
-	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1) const
+	owca_global owca_local::get_member(const owca_string &member) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
+
+		if (!internal_class::_check_name(member.data(), (unsigned int)member.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", member.str()));
+
+		if (_object.mode() == VAR_NAMESPACE) {
+			exec_variable tmp;
+			bool b=_object.get_namespace()->get_variable(member._ss,tmp);
+			if (!b) {
+				return owca_local ::null_no_value;
+			}
+			return { _object.get_namespace()->vm, tmp };
+		}
+		else {
+			exec_variable tmp;
+			lookupreturnvalue lrv=_object.lookup_read(tmp,*_vm,member._ss,true);
+			switch(lrv.type()) {
+			case lookupreturnvalue::LOOKUP_FOUND:
+				return { *_vm, tmp };
+			case lookupreturnvalue::LOOKUP_NOT_FOUND:
+				return owca_local::null_no_value;
+			case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
+				try {
+					switch (_vm->execution_stack->peek_frame()->return_handling_mode) {
+					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
+						_vm->execution_stack->peek_frame()->return_handling_mode = vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
+						break;
+					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
+						RCASSERT(_vm->execution_stack->peek_frame()->return_value == &_vm->execution_exception_object_temp);
+						break;
+					default:
+						RCASSERT(0);
+					}
+					_vm->execute_stack();
+				}
+				catch (...) {
+					_vm->pop_execution_stack_impl();
+					throw;
+				}
+				return { *_vm, tmp };
+			default: RCASSERT(0);
+			}
+		}
+		RCASSERT(0);
+		return {};
+	}
+
+	owca_global owca_local::set_member(const owca_string &member, const owca_global &val) const
+	{
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
+
+		if (!internal_class::_check_name(member.data(), (unsigned int)member.data_size())) throw owca_exception(ExceptionCode::INVALID_IDENT, OWCA_ERROR_FORMAT1("'%1' is not a valid identificator", member.str()));
+		_check_vm(val);
+
+		if (_object.mode() == VAR_NAMESPACE) {
+			exec_variable tmp;
+			bool b=_object.get_namespace()->get_variable(member._ss,tmp);
+			if (!b) {
+				return owca_local::null_no_value;
+			}
+			return owca_global{ _object.get_namespace()->vm, tmp };
+		}
+		else {
+			exec_variable tmp;
+			lookupreturnvalue lrv=_object.lookup_write(tmp,*_vm,member._ss,val._object,true);
+			switch (lrv.type()) {
+			case lookupreturnvalue::LOOKUP_FOUND: return owca_global{ *_vm, tmp };
+			case lookupreturnvalue::LOOKUP_NOT_FOUND: return owca_local::null_no_value;
+			case lookupreturnvalue::LOOKUP_FUNCTION_CALL:
+				try {
+					switch (_vm->execution_stack->peek_frame()->return_handling_mode) {
+					case vm_execution_stack_elem_base::RETURN_HANDLING_NONE:
+						_vm->execution_stack->peek_frame()->return_handling_mode = vm_execution_stack_elem_base::RETURN_HANDLING_NONE_FORCE_RETURN;
+						break;
+					case vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION:
+						RCASSERT(_vm->execution_stack->peek_frame()->return_value == &_vm->execution_exception_object_temp);
+						break;
+					default:
+						RCASSERT(0);
+					}
+					return owca_global{ *_vm, tmp };
+				}
+				catch (...) {
+					_vm->pop_execution_stack_impl();
+					throw;
+				}
+			}
+			RCASSERT(0);
+		}
+		RCASSERT(0);
+		return {};
+	}
+
+	owca_global owca_local::call() const
+	{
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
+		return _call(NULL,0);
+	}
+
+	owca_global owca_local::call(const owca_global &p1) const
+	{
+		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(p1);
-		//exec_variable arr[]={p1._object};
-		exec_variable *arr=new exec_variable[1];
-		arr[0]=p1._object;
-		return _call(result,_object,arr,1);
+		return _call(&p1._object,1);
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2) const
+	owca_global owca_local::call(const owca_global &p1, const owca_global &p2) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(p1);
 		_check_vm(p2);
-		exec_variable *arr=new exec_variable[2];
-		arr[0]=p1._object;
-		arr[1]=p2._object;
-		return _call(result,_object,arr,2);
+		exec_variable arr[] = {p1._object, p2._object};
+		return _call(arr,2);
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const
+	owca_global owca_local::call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(p1);
 		_check_vm(p2);
 		_check_vm(p3);
-		exec_variable *arr=new exec_variable[3];
-		arr[0]=p1._object;
-		arr[1]=p2._object;
-		arr[2]=p3._object;
-		return _call(result,_object,arr,3);
+		exec_variable arr[] = { p1._object, p2._object, p3._object };
+		return _call(arr,3);
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const
+	owca_global owca_local::call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(p1);
 		_check_vm(p2);
 		_check_vm(p3);
 		_check_vm(p4);
-		exec_variable *arr=new exec_variable[4];
-		arr[0]=p1._object;
-		arr[1]=p2._object;
-		arr[2]=p3._object;
-		arr[3]=p4._object;
-		return _call(result,_object,arr,4);
+		exec_variable arr[] = {p1._object, p2._object, p3._object, p4._object};
+		return _call(arr,4);
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_call_parameters &cp) const
+	owca_global owca_local::call(const owca_call_parameters &cp) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(cp.list_parameter);
 		_check_vm(cp.map_parameter);
 
-		if (cp.parameters.empty()) return _call(result,_object,NULL,0,cp.list_parameter._object,cp.map_parameter._object);
+		if (cp.parameters.empty()) return _call(NULL,0,cp.list_parameter._object,cp.map_parameter._object);
 		exec_variable *tmp=new exec_variable[cp.parameters.size()];
 		for(unsigned int i=0;i<cp.parameters.size();++i) {
 			_check_vm(cp.parameters[i]);
 			tmp[i]=cp.parameters[i]._object;
 		}
-		return _call(result,_object,tmp,(unsigned int)cp.parameters.size(),cp.list_parameter._object,cp.map_parameter._object);
+		return _call(tmp,(unsigned int)cp.parameters.size(),cp.list_parameter._object,cp.map_parameter._object);
 	}
 
-	RCLMFUNCTION owca_function_return_value owca_local::prepare_call(owca_global &result, const owca_parameters &cp) const
+	owca_global owca_local::call(const owca_parameters &cp) const
 	{
 		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
+		auto pop = _vm->push_execution_stack();
 		_check_vm(cp.vm);
-
-		return _call(result,_object,*cp.ci);
-	}
-
-	owca_function_return_value owca_local::_finalize_get_set_member(owca_function_return_value r) const
-	{
-		switch(r.type()) {
-		case owca_function_return_value::CREATE_GENERATOR:
-		case owca_function_return_value::COROUTINE_STOP:
-			break;
-		case owca_function_return_value::RETURN_VALUE:
-		case owca_function_return_value::EXCEPTION:
-			_vm->pop_execution_stack();
-			break;
-		case owca_function_return_value::FUNCTION_CALL:
-			r = _vm->owner_vm->resume_execution();
-			break;
-		default:
-			RCASSERT(0);
-		}
-		return r;
-	}
-
-	owca_function_return_value owca_local::get_member(owca_global &result, const owca_string &member) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r=prepare_get_member(result,member);
-		return _finalize_get_set_member(r);
-	}
-
-	owca_function_return_value owca_local::set_member(owca_global &result, const owca_string &member, const owca_global &val) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r=prepare_set_member(result,member,val);
-		return _finalize_get_set_member(r);
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,p1);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,p1,p2);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,p1,p2,p3);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,p1,p2,p3,p4);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_call_parameters &cp) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,cp);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
-	}
-
-	owca_function_return_value owca_local::call(owca_global &result, const owca_parameters &cp) const
-	{
-		if (_vm==NULL) throw owca_exception(ExceptionCode::INVALID_VM, "VM not set");
-		_vm->push_execution_stack();
-		owca_function_return_value r = prepare_call(result,cp);
-		if (r==owca_function_return_value::FUNCTION_CALL) r=_vm->owner_vm->resume_execution();
-		return r;
+		return _call(*cp.ci);
 	}
 
 	//bool owca_local::convert(owca_global &exception_object, owca_vm &vm, owca_int &a, const char *pname, owca_int minval, owca_int maxval)

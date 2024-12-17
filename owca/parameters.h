@@ -32,6 +32,15 @@ namespace owca {
 			vm=&vm_;
 			ci=&ci_;
 		}
+
+		DLLEXPORT void check_parameter_count(unsigned int min_count, unsigned int max_count=MAX) const; // false if exception thrown
+		void convert_parameters_impl(unsigned int) const {}
+		template <typename A, typename ... B> void convert_parameters_impl(unsigned int index, A& a, B & ... b) const {
+			auto val = get(index);
+			val.convert(*vm->owner_vm, a, std::to_string(index + 1).c_str());
+			convert_parameters_impl(index + 1, b...);
+		}
+
 	public:
 		class map_iterator {
 			friend class owca_parameters;
@@ -49,33 +58,14 @@ namespace owca {
 
 		DLLEXPORT unsigned int count() const;
 		DLLEXPORT owca_global get(unsigned int index) const;
-		DLLEXPORT bool get_arguments(owca_global &exception_object, unsigned int *arg_count, owca_global *values, unsigned int mincount, unsigned int maxcount=MAX) const;
-		DLLEXPORT bool get_keyword_arguments(owca_global &exception_object, unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used = NULL, bool *required = NULL) const;
+		DLLEXPORT void get_arguments(unsigned int *arg_count, owca_global *values, unsigned int mincount, unsigned int maxcount=MAX) const;
+		DLLEXPORT void get_keyword_arguments(unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used = NULL, bool *required = NULL) const;
 		//void get(std::vector<owca_global> &params, std::vector<owca_global> &keyparams, unsigned int mincount, unsigned int maxcount, const owca_string *keyidents, unsigned int keyidentscount) const;
 
 
-		DLLEXPORT bool check_parameter_count(owca_global &exception_object, unsigned int min_count, unsigned int max_count=MAX) const; // false if exception thrown
-		template <class A> bool convert_parameters(owca_global &exception_object, A &a) const {
-			if (!check_parameter_count(exception_object, 1) || !get_keyword_arguments(exception_object, NULL, NULL, NULL, 0)) return false;
-			return get(0).convert(exception_object,*vm->owner_vm,a,"1");
-		}
-		template <class A, class B> bool convert_parameters(owca_global &exception_object, A &a, B &b) const {
-			if (!check_parameter_count(exception_object, 2) || !get_keyword_arguments(exception_object, NULL, NULL, NULL, 0)) return false;
-			return get(0).convert(exception_object,*vm->owner_vm,a,"1") &&
-				get(1).convert(exception_object,*vm->owner_vm,b,"2");
-		}
-		template <class A, class B, class C> bool convert_parameters(owca_global &exception_object, A &a, B &b, C &c) const {
-			if (!check_parameter_count(exception_object, 3) || !get_keyword_arguments(exception_object, NULL, NULL, NULL, 0)) return false;
-			return get(0).convert(exception_object,*vm->owner_vm,a,"1") &&
-				get(1).convert(exception_object,*vm->owner_vm,b,"2") &&
-				get(2).convert(exception_object,*vm->owner_vm,c,"3");
-		}
-		template <class A, class B, class C, class D> bool convert_parameters(owca_global &exception_object, A &a, B &b, C &c, D &d) const {
-			if (!check_parameter_count(exception_object, 4) || !get_keyword_arguments(exception_object, NULL, NULL, NULL, 0)) return false;
-			return get(0).convert(exception_object,*vm->owner_vm,a,"1") &&
-				get(1).convert(exception_object,*vm->owner_vm,b,"2") &&
-				get(2).convert(exception_object,*vm->owner_vm,c,"3") &&
-				get(3).convert(exception_object,*vm->owner_vm,d,"4");
+		template <class ... ARGS> void convert_parameters(ARGS & ... a) const {
+			check_parameter_count(sizeof...(a));
+			convert_parameters_impl(0, a...);
 		}
 	};
 	struct owca_call_parameters {

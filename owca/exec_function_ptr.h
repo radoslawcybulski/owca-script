@@ -335,38 +335,32 @@ namespace owca {
 		template <class A, class B> class user_function_base_simple : public A {
 			bool first_time;
 		protected:
-			owca_function_return_value frv;
 			user_function_base_simple() : first_time(true) { }
 		private:
 			executionstackreturnvalue execute(executionstackreturnvalue) {
-				owca_global ret;
-				((B*)this)->call(ret);
-				switch(frv.type()) {
-				case owca_function_return_value::EXCEPTION:
-					this->vm->_raise_from_user(ret._object);
-					return executionstackreturnvalue::EXCEPTION;
-				case owca_function_return_value::RETURN_VALUE:
-					*this->return_value=ret._object;
+				try {
+					auto ret = ((B*)this)->call();
+					*this->return_value = ret._object;
 					ret._object.reset();
-					RCASSERT(first_time);
-					first_time=false;
 					return executionstackreturnvalue::RETURN;
-				case owca_function_return_value::CREATE_GENERATOR:
-					//vm->push_execution_stack();
-					this->vm->raise_cant_create_generator_from_user_function();
-					return executionstackreturnvalue::FUNCTION_CALL;
-				case owca_function_return_value::FUNCTION_CALL:
-					return executionstackreturnvalue::FUNCTION_CALL;
-				case owca_function_return_value::COROUTINE_STOP:
-					//vm->push_execution_stack();
-					this->vm->raise_cant_stop_coroutine_from_user_function();
-					return executionstackreturnvalue::FUNCTION_CALL;
-				default:
-					RCASSERT(0);
 				}
-				RCASSERT(0);
-				this->return_value->set_null(true);
-				return executionstackreturnvalue::RETURN;
+				catch (owca_exception& e) {
+					if (e.has_exception_object()) {
+						this->vm->_raise_from_user(e.exception_object()._object);
+					}
+					else {
+						this->vm->_raise(ExceptionCode::CPP_EXCEPTION_IN_USER_CODE, e.message());
+					}
+					return executionstackreturnvalue::FUNCTION_CALL;
+				}
+				catch (std::exception& e) {
+					this->vm->_raise(ExceptionCode::CPP_EXCEPTION_IN_USER_CODE, e.what());
+					return executionstackreturnvalue::FUNCTION_CALL;
+				}
+				catch (...) {
+					this->vm->_raise(ExceptionCode::CPP_EXCEPTION_IN_USER_CODE, "caught unrecognized c++ exception (inherit from std::exception for exception's message)");
+					return executionstackreturnvalue::FUNCTION_CALL;
+				}
 			}
 		};
 
@@ -377,77 +371,77 @@ namespace owca {
 		struct user_function_t__spec : public user_function_base_simple<vm_execution_stack_elem_external__,user_function_t__spec > {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
 
-			typedef owca_function_return_value (*function)(owca_global &retval, owca_namespace &ns, const owca_parameters &);
-			DLLEXPORT void call(owca_global &ret);
+			typedef owca_global (*function)(owca_namespace &ns, const owca_parameters &);
+			DLLEXPORT owca_global call();
 		};
 		struct user_function_t0_spec : public user_function_base_simple<vm_execution_stack_elem_external_0,user_function_t0_spec > {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
 
-			typedef owca_function_return_value (*function)(owca_global &retval, owca_namespace &ns);
-			DLLEXPORT void call(owca_global &ret);
+			typedef owca_global (*function)(owca_namespace &ns);
+			DLLEXPORT owca_global call();
 		};
 		template <class A> struct user_function_t1_spec : public user_function_base_simple<vm_execution_stack_elem_external_t1<A>,user_function_t1_spec<A> > {
 			enum { FUNCTION_OBJECT_PARAMS_1 };
-			typedef owca_function_return_value (*function)(owca_global &retval, owca_namespace &ns, A);
+			typedef owca_global (*function)(owca_namespace &ns, A);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->fnc->ynamespace()->generate(),this->p1);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1);
 			}
 		};
 		template <class A, class B> struct user_function_t2_spec : public user_function_base_simple<vm_execution_stack_elem_external_t2<A,B>,user_function_t2_spec<A,B> > {
 			enum { FUNCTION_OBJECT_PARAMS_2 };
-			typedef owca_function_return_value (*function)(owca_global &retval, owca_namespace &ns,A,B);
+			typedef owca_global (*function)(owca_namespace &ns,A,B);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->fnc->ynamespace()->generate(),this->p1,this->p2);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1,this->p2);
 			}
 		};
 		template <class A, class B, class C> struct user_function_t3_spec : public user_function_base_simple<vm_execution_stack_elem_external_t3<A,B,C>,user_function_t3_spec<A,B,C> > {
 			enum { FUNCTION_OBJECT_PARAMS_3 };
-			typedef owca_function_return_value (*function)(owca_global &retval, owca_namespace &ns,A,B,C);
+			typedef owca_global (*function)(owca_namespace &ns,A,B,C);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
 			}
 		};
 		template <class SELF> struct user_function_s__spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t<SELF>,user_function_s__spec<SELF> > {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
-			typedef owca_function_return_value (*function)(owca_global &retval, SELF,owca_namespace &ns, const owca_parameters &);
+			typedef owca_global (*function)(SELF,owca_namespace &ns, const owca_parameters &);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->self,this->fnc->ynamespace()->generate(),_generate_parameters(*this->vm,this->cp));
+			inline owca_global call() {
+				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),_generate_parameters(*this->vm,this->cp));
 			}
 		};
 		template <class SELF> struct user_function_s0_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t0<SELF>,user_function_s0_spec<SELF> > {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
-			typedef owca_function_return_value (*function)(owca_global &retval, SELF,owca_namespace &ns);
+			typedef owca_global (*function)(SELF,owca_namespace &ns);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->self,this->fnc->ynamespace()->generate());
+			inline owca_global call() {
+				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate());
 			}
 		};
 		template <class SELF, class A> struct user_function_s1_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t1<SELF,A>,user_function_s1_spec<SELF,A> > {
 			enum { FUNCTION_OBJECT_PARAMS_1 };
-			typedef owca_function_return_value (*function)(owca_global &retval, SELF,owca_namespace &ns, A);
+			typedef owca_global (*function)(SELF,owca_namespace &ns, A);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->self,this->fnc->ynamespace()->generate(),this->p1);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1);
 			}
 		};
 		template <class SELF, class A, class B> struct user_function_s2_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t2<SELF,A,B>,user_function_s2_spec<SELF,A,B> > {
 			enum { FUNCTION_OBJECT_PARAMS_2 };
-			typedef owca_function_return_value (*function)(owca_global &retval, SELF,owca_namespace &ns,A,B);
+			typedef owca_global (*function)(SELF,owca_namespace &ns,A,B);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2);
 			}
 		};
 		template <class SELF, class A, class B, class C> struct user_function_s3_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t3<SELF,A,B,C>,user_function_s3_spec<SELF,A,B,C> > {
 			enum { FUNCTION_OBJECT_PARAMS_3 };
-			typedef owca_function_return_value (*function)(owca_global &retval, SELF,owca_namespace &ns,A,B,C);
+			typedef owca_global (*function)(SELF,owca_namespace &ns,A,B,C);
 
-			inline void call(owca_global &ret) {
-				this->frv=((function)this->userptr)(ret,this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
+			inline owca_global call() {
+				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
 			}
 		};
 

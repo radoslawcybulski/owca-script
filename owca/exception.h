@@ -55,6 +55,7 @@ namespace owca {
 		INVALID_UTF8_STRING,
 		EMPTY_LIST,
 		CODE_FAILED_TO_VALIDATE,
+		CPP_EXCEPTION_IN_USER_CODE,
 		USER=1024,
 	};
 	DLLEXPORT std::string to_string(ExceptionCode);
@@ -75,6 +76,7 @@ namespace owca {
 		const char* what() const { return _message.c_str(); }
 		auto code() const { return _code; }
 		const auto& exception_object() const { return _exception_object; }
+		auto take_exception_object() { return std::move(_exception_object); }
 		bool has_exception_object() const;
 		std::vector<StacktraceElem> stacktrace() const;
 

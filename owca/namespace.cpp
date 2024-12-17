@@ -29,7 +29,7 @@ namespace owca {
         return ns->get_file_name()->str();
     }
 
-	owca_function_return_value owca_namespace::apply_code(owca_global &result, const std::vector<unsigned char> &data)
+	void owca_namespace::apply_code(const std::vector<unsigned char> &data)
 	{
         opcode_data *opc = new opcode_data(get_file_name());
 		if (!ns->validate_code_and_prepare_for_execution(data, opc)) {
@@ -37,11 +37,8 @@ namespace owca {
 			throw owca_exception(ExceptionCode::CODE_FAILED_TO_VALIDATE, "input code failed to validate");
 		}
 
-		result._object.gc_release(*result._vm);
-		result._object.reset();
-		result._update_vm(&ns->vm);
 		ns->vm.register_opcode_data(opc);
-		return ns->apply_code(result._object, opc);
+		ns->apply_code(opc);
 	}
 
 	void owca_namespace::clear()

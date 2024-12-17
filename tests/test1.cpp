@@ -85,31 +85,13 @@ void __test_failed(Test &t, unsigned int line)
 	throw 1.0f;
 }
 
-owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
-{
-	owca_global z,res;
-	owca_function_return_value r=exc.get_member(z,member);
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	if (param>=0) {
-		r=z.call(res,param);
-	}
-	else {
-		r=z.call(res);
-	}
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	return res;
-}
-
 static void parse_exception(const owca_global &exc, Test &t)
 {
-	owca_global res=execute(*exc.vm(),exc,"code");
-	owca_int code=res.int_get();
+	owca_int code=exc.get_member("code").call().int_get();
 	RCASSERT((int)t.res_exception_code<0 || (int)t.res_exception_code==code);
 
-	owca_global line=execute(*exc.vm(),exc,"$read_1",0);
-
-	res=execute(*exc.vm(),line,"$read_1",2);
-	owca_int lineindex=res.int_get();
+	owca_global line = exc.get_member("$read_1").call(0);
+	owca_int lineindex=line.get_member("$read_1").call().int_get();
 
 	RCASSERT((int)t.res_exception_line<0 || (int)t.res_exception_line==lineindex);
 }
@@ -139,24 +121,24 @@ static void test(Test &t)
 	owca_global res;
 	owca_global gnspace=vm.create_namespace("main.ys");
 	owca_namespace nspace=gnspace.namespace_get();
-	owca_function_return_value result;
 
 	vm.set_print_function(printfunction);
 
 	{
 		TIMEIT(tt1);
-		result=vm.compile(res,nspace,ml,owca_source_file_Text(t.code.c_str()));
+		try {
+			vm.compile(nspace, ml, owca_source_file_Text(t.code.c_str()));
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			parse_exception(oe.exception_object(), t);
+		}
+		catch (...) {
+			RCASSERT(0);
+		}
 	}
 	vm.run_gc();
 	{
-		switch(result.type()) {
-		case owca_function_return_value::RETURN_VALUE: RCASSERT(0);
-		case owca_function_return_value::EXCEPTION:
-			parse_exception(res,t);
-			break;
-		default:
-			RCASSERT(0);
-		}
 		if (t.restype!=Test::COMPILATION_EXCEPTION_ERROR) {
 			if (ml.has_errors()) {
 				TIMEIT(tt3);
@@ -183,30 +165,30 @@ static void test(Test &t)
 
 				{
 					TIMEIT(tt5);
-					result=nspace["main"].call(res);
-					vm.run_gc();
-				}
-
-				switch(result.type()) {
-				case owca_function_return_value::RETURN_VALUE:
-					printf("value returned is %s\n",res.str().c_str());
-					switch(t.restype) {
-					case Test::VALUE_STRING: {
-						T(res.string_is());
-						owca_string ss(res.string_get());
-						T(ss==std::string(t.res_value.s));
-						break; }
-					default:
-						T(0);
+					try {
+						auto res = nspace["main"].call();
+						vm.run_gc();
+						printf("value returned is %s\n",res.str().c_str());
+						switch(t.restype) {
+						case Test::VALUE_STRING: {
+							T(res.string_is());
+							owca_string ss(res.string_get());
+							T(ss==std::string(t.res_value.s));
+							break; }
+						default:
+							T(0);
+						}
 					}
-					break;
-				case owca_function_return_value::EXCEPTION:
+					catch (owca_exception& oe) {
+						(void)oe;
+						vm.run_gc();
+						T(t.restype==Test::EXCEPTION_ERROR);
+						parse_exception(res,t);
+					}
+					catch (...) {
+						RCASSERT(0);
+					}
 					vm.run_gc();
-					T(t.restype==Test::EXCEPTION_ERROR);
-					parse_exception(res,t);
-					break;
-				default:
-					RCASSERT(0);
 				}
 			}
 		}
@@ -1521,39 +1503,17 @@ namespace Z {
 		NULL};
 
 
-	owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
-	{
-		owca_global z,res;
-		owca_function_return_value r=exc.get_member(z,member);
-		
-		if (r==owca_function_return_value::RETURN_VALUE) {
-			if (param>=0) {
-				r=z.call(res,param);
-			}
-			else {
-				r=z.call(res);
-			}
-
-			if (r==owca_function_return_value::RETURN_VALUE) return res;
-		}
-		return owca_global();
-	}
-
-		
 	void print_exception(owca_global &exc)
 	{
-		owca_global res=execute(*exc.vm(),exc,"code");
-		ExceptionCode code=(ExceptionCode)
-			(res.int_is() ? res.int_get() : (int)ExceptionCode::NONE);
+		ExceptionCode code = (ExceptionCode)exc.get_member("code").call().int_get();
 
 		printf("exception: %s\n",to_string(code).c_str());
 
 		// size of stack bound with exception object
-		res=execute(*exc.vm(),exc,"size");
-		owca_int lines_count=res.int_is() ? res.int_get() : 0;
+		owca_int lines_count = exc.get_member("size").call().int_get();
 
 		for(unsigned int i=0;i<lines_count;++i) {
-			owca_global e=execute(*exc.vm(),exc,"$read_1",i);
+			owca_global e = exc.get_member("$read_1").call(i);
 			owca_tuple t=e.tuple_get();
 			
 			std::string function_name=t.get(0).str();
@@ -1575,48 +1535,25 @@ namespace Z {
 		namespace_object=vm.create_namespace("foo.y");
 		nspace=namespace_object.namespace_get();
 
-		owca_function_return_value r=vm.compile(result,nspace,errorlist,owca_source_file_Text_array(code));
+		try {
+			vm.compile(nspace, errorlist, owca_source_file_Text_array(code));
+			owca_global mainfnc=nspace["main"];
+			result=mainfnc.call();
+			if (result.string_get() != "hello world") return __LINE__;
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			printf("an exception is raised.\n");
+			print_exception(result);
+			return __LINE__;
+		}
 		
 		if (errorlist.has_errors()) {
 			printf("compilation failed.\n");
 			for(owca_message_list::T it=errorlist.begin();it!=errorlist.end();++it) {
 				printf("%3d: %s\n",it->line(),it->text().c_str());
 			}
-		}
-		else {
-			switch(r.type()) {
-			// main block executed without problems
-			case owca_function_return_value::RETURN_VALUE: 
-				RCASSERT(result.no_value_is());
-				break;
-				
-			// main block raised an exception
-			// result contains an exception object
-			case owca_function_return_value::EXCEPTION: 
-				printf("an exception is raised.\n");
-				print_exception(result);
-				break;
-			}
-		
-			if (r.type()==owca_function_return_value::RETURN_VALUE) {
-				owca_global mainfnc=nspace["main"];
-				r=mainfnc.call(result);
-			
-				switch(r.type()) {
-				// function returned value (either by return or by yield)
-				case owca_function_return_value::RETURN_VALUE:
-					printf("function returned '%s'.\n",result.str().c_str());
-					break;
-					
-				// function raised an exception
-				// result contains an exception object
-				case owca_function_return_value::EXCEPTION: 
-					printf("an exception is raised.\n");
-					print_exception(result);
-					break;
-				}
-			
-			}
+			return __LINE__;
 		}
 		return 0;
 	}
@@ -1637,7 +1574,8 @@ int main()
 	SetUnhandledExceptionFilter(global_exception_filter);
 #endif
 
-	Z::main();
+	auto v = Z::main();
+	if (v != 0) return v;
 
 	test_operator_add();
 	test_operator_sub();

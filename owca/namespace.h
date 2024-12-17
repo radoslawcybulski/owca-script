@@ -45,7 +45,7 @@ namespace owca {
 		bool not_bound() const { return ns==NULL; }
 		DLLEXPORT void clear();
         DLLEXPORT owca_global copy(std::string file_name);
-		DLLEXPORT owca_function_return_value apply_code(owca_global &result, const std::vector<unsigned char> &);
+		DLLEXPORT void apply_code(const std::vector<unsigned char> &);
 		DLLEXPORT bool validate_code(const std::vector<unsigned char> &) const;
 		DLLEXPORT owca_vm &vm();
         DLLEXPORT std::string get_file_name() const;

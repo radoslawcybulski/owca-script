@@ -5,10 +5,9 @@ using namespace owca;
 std::string load_file_as_string(const char *file_name);
 void printfunction(const std::string &txt);
 
-owca_function_return_value cpp_function(owca_global &retval, owca_namespace &ns, owca_int  v1, owca_int v2)
+owca_global cpp_function(owca_namespace& ns, owca_int  v1, owca_int v2)
 {
-	retval.int_set(v1+v2);
-	return owca_function_return_value::RETURN_VALUE;
+	return v1+v2;
 }
 
 bool run_file_3(const char *file_name)
@@ -19,7 +18,6 @@ bool run_file_3(const char *file_name)
 	try {
 		owca_vm vm;            // virtual machine object itself
 		owca_message_list ml;   // list of compilation errors and warnings
-		owca_global res;       // placeholder for Y values
 		owca_global gnspace;   // this will hold Y namespace - result of compilation
 		owca_namespace nspace; // C++ helper when accessing Y namespace
 
@@ -42,25 +40,10 @@ bool run_file_3(const char *file_name)
 		// thus this can result in Y exception
 		// all created names (functions, classes, variables and so on)
 		// are put into namespace nspace
-		// vm.compile function returns object, which tells You how the code compilation
-		// (or execution) went
-		owca_function_return_value r = vm.compile(res, nspace, ml, owca_source_file_Text(source_code.c_str()));
+		 vm.compile(nspace, ml, owca_source_file_Text(source_code.c_str()));
 		
 		// Y doesnt run the garbage collector itself for now, so run it once a while
 		vm.run_gc();
-
-		// only those values can be returned from vm.compile function
-		switch(r.type()) {
-		case owca_function_return_value::RETURN_VALUE:
-			// vm.compile will never returns this
-			// as global scope cant return value
-			break;
-		case owca_function_return_value::EXCEPTION:
-			// an exception was raised, when executing some code in global scope
-			// res object will bear an actual exception object, which 
-			// You can inspect for stack trace, exception code and message and so on
-			break;
-		}
 
 		if (ml.has_errors() || ml.has_warnings()) {
 			for(owca_message_list::T it = ml.begin();it != ml.end();++it) {
@@ -70,29 +53,17 @@ bool run_file_3(const char *file_name)
 		}
 		
 		
-		owca_global function;
-		function = nspace["run"];
-	
-		owca_global function_return_value;
-		r = function.call(function_return_value);
+		auto function = nspace["run"];
+		auto function_return_value = function.call(function_return_value);
 		
 		// Y doesnt run the garbage collector itself for now, so run it once a while
 		vm.run_gc();
 
-		// only those values can be returned from call function
-		switch(r.type()) {
-		case owca_function_return_value::RETURN_VALUE:
-			// function returned with a value, lets print it
-			return function_return_value.int_is() && function_return_value.int_get() == 0;
-		case owca_function_return_value::EXCEPTION:
-			// an exception was raised
-			break;
-		}
-		
-		return false;
+		printf("function returned value %s\n",function_return_value.str().c_str());
+		return function_return_value.int_is() && function_return_value.int_get() == 0;
 	}
-	catch (owca_exception e) {
-		printf("%s exception\n",e.message().c_str());
+	catch (const std::exception &e) {
+		printf("exception %s\n",e.what());
 		return false;
 	}
 }

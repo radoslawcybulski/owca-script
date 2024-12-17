@@ -3,10 +3,9 @@
 
 namespace owca {
 	namespace __owca__ {
-		enum executionreturnvalue {
-			VME_VALUE,
-			VME_EXCEPTION,
-		};
+		//enum executionreturnvalue {
+		//	VME_VALUE,
+		//};
 	}
 }
 

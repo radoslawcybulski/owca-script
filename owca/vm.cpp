@@ -74,8 +74,7 @@ namespace owca {
 		owca_global z(*this);
 		z._object.set_object(vm->_raise_get_exception_type(code));
 		z._object.gc_acquire();
-		RCASSERT(z.call(z,txt,(int)code)==owca_function_return_value::RETURN_VALUE);
-		return z;
+		return z.call(txt,(int)code);
 	}
 
 	class compile_1 : public compile_visible_items {
@@ -96,16 +95,13 @@ namespace owca {
 		}
 	};
 
-	owca_function_return_value owca_vm::compile(owca_global &result, owca_namespace &nspace, owca_message_list &errorswarnings, const owca_source_file &fs)
+	void owca_vm::compile(owca_namespace &nspace, owca_message_list &errorswarnings, const owca_source_file &fs)
 	{
 		compile_1 cc = compile_1(nspace.ns->hashindex);
 		std::vector<unsigned char> tmp = vm->compile(errorswarnings,fs,cc);
-		owca_function_return_value rr = owca_function_return_value::RETURN_VALUE;
-
-		if (!errorswarnings.has_errors())
-			rr=nspace.apply_code(result,tmp);
-
-		return rr;
+		if (!errorswarnings.has_errors()) {
+			nspace.apply_code(tmp);
+		}
 	}
 
 	class compile_2 : public compile_visible_items {
@@ -118,24 +114,24 @@ namespace owca {
 		return vm->compile(errorswarnings,fs,cc);
 	}
 
-	owca_function_return_value owca_vm::resume_execution()
-	{
-		if (vm->execution_stack) {
-			executionreturnvalue r=vm->execute_stack();
-			switch(r) {
-			case VME_EXCEPTION:
-			case VME_VALUE:
-				RCASSERT(vm->execution_stack->empty());
-				vm->pop_execution_stack();
-				break;
-			default:
-				RCASSERT(0);
-			}
-			GC(vm);
-			return owca_function_return_value(r);
-		}
-		return owca_function_return_value::RETURN_VALUE;
-	}
+	//owca_function_return_value owca_vm::resume_execution()
+	//{
+	//	if (vm->execution_stack) {
+	//		executionreturnvalue r=vm->execute_stack();
+	//		switch(r) {
+	//		case VME_EXCEPTION:
+	//		case VME_VALUE:
+	//			RCASSERT(vm->execution_stack->empty());
+	//			vm->pop_execution_stack();
+	//			break;
+	//		default:
+	//			RCASSERT(0);
+	//		}
+	//		GC(vm);
+	//		return owca_function_return_value(r);
+	//	}
+	//	return owca_function_return_value::RETURN_VALUE;
+	//}
 
 	owca_global owca_vm::executing_function()
 	{
@@ -227,7 +223,7 @@ _set:
 		return cnt;
 	}
 
-	bool owca_vm::stack_get_element(owca_global &ret, unsigned int depth)
+	owca_global owca_vm::stack_get_element(unsigned int depth)
 	{
 		exec_stack_element_object *se;
 		vm_execution_stack *s=vm->execution_stack;
@@ -237,13 +233,12 @@ _set:
 			depth-=s->count();
 			s=s->prev();
 		}
-		if (s==NULL) return false;
-		ret._object.gc_release(*ret._vm);
-		ret._update_vm(vm);
-		ret._object.reset();
-		ret._object.set_object(vm->allocate_stack_element(se));
+		if (s == NULL) return {};
+		exec_variable tmp;
+		tmp.set_object(vm->allocate_stack_element(se));
+		owca_global glob{ *vm, tmp };
 		se->set_element(s->peek_frame_indexed(depth));
-		return true;
+		return glob;
 	}
 
 }

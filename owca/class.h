@@ -52,7 +52,6 @@ namespace owca {
 			DLLEXPORT void _write(const __owca__::exec_variable &);
 			DLLEXPORT void _read(__owca__::exec_variable &val) const;
 			DLLEXPORT obj_constructor(__owca__::internal_class &ic_, const owca_string &ident_);
-			DLLEXPORT void operator = (const obj_constructor &);
 		public:
 			obj_constructor(obj_constructor &&) = default;
 			using __owca__::obj_constructor_function::operator =;
@@ -61,7 +60,7 @@ namespace owca {
 		template <class A> void set_struct() {
 			_set_struct(__owca__::structinfo::make<A>());
 		}
-		DLLEXPORT owca_function_return_value construct(owca_global &);
+		DLLEXPORT owca_global construct();
 		DLLEXPORT void add_inheritance(const owca_global &g);
 	};
 }

@@ -19,18 +19,15 @@ namespace owca {
 		return ci->normal_params_count+ci->list_params_count;
 	}
 
-	bool owca_parameters::check_parameter_count(owca_global &exception_object, unsigned int pcountmin, unsigned int pcountmax) const
+	void owca_parameters::check_parameter_count(unsigned int pcountmin, unsigned int pcountmax) const
 	{
 		if (pcountmax==MAX) pcountmax=pcountmin;
 		if (count()<pcountmin) {
-			vm->owner_vm->construct_builtin_exception(ExceptionCode::NOT_ENOUGH_PARAMETERS,OWCA_ERROR_FORMAT("not enough parameters given"));
-			return false;
+			throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::NOT_ENOUGH_PARAMETERS,OWCA_ERROR_FORMAT2("not enough parameters given, got %1, at least %2", std::to_string(count()), std::to_string(pcountmin))) };
 		}
 		if (count()>pcountmax) {
-			vm->owner_vm->construct_builtin_exception(ExceptionCode::TOO_MANY_PARAMETERS,OWCA_ERROR_FORMAT("too many parameters given"));
-			return false;
+			throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::TOO_MANY_PARAMETERS,OWCA_ERROR_FORMAT2("too many parameters given, got %1, expected at most %2", std::to_string(count()), std::to_string(pcountmax))) };
 		}
-		return true;
 	}
 
 	owca_global owca_parameters::get(unsigned int index) const
@@ -91,7 +88,7 @@ namespace owca {
 		return false;
 	}
 
-	bool owca_parameters::get_keyword_arguments(owca_global &exception_object, unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used, bool *required) const
+	void owca_parameters::get_keyword_arguments(unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used, bool *required) const
 	{
 		if (used) for(unsigned int i=0;i<count;++i) used[i]=false;
 
@@ -104,9 +101,8 @@ namespace owca {
 			else {
 				if (count>0) {
 required_:
-					exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,
-							OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[0].str()));
-					return false;
+					throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,
+							OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[0].str())) };
 				}
 			}
 		}
@@ -119,8 +115,7 @@ required_:
 				exec_variable *v=ci->map->ident_get(identificators[i]._ss);
 				if (v==NULL) {
 					if (!required || required[i]) {
-						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[i].str()));
-						return false;
+						throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("missing keyword parameter %1",identificators[i].str())) };
 					}
 					if (used) used[i]=false;
 				}
@@ -143,12 +138,10 @@ required_:
 								goto cont;
 							}
 						}
-						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("unused keyword parameter %1",k.get_string()->str()));
-						return false;
+						throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("unused keyword parameter %1",k.get_string()->str())) };
 					}
 					else {
-						exception_object=vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("keyword parameter is not a string"));
-						return false;
+						throw owca_exception{ vm->owner_vm->construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("keyword parameter is not a string")) };
 					}
 cont: ;
 				}
@@ -156,16 +149,13 @@ cont: ;
 			if (arg_count != NULL)
 				*arg_count = usedcount;
 		}
-
-		return true;
 	}
 
-	bool owca_parameters::get_arguments(owca_global &exception_object, unsigned int *arg_count, owca_global *params, unsigned int mincount, unsigned int maxcount) const
+	void owca_parameters::get_arguments(unsigned int *arg_count, owca_global *params, unsigned int mincount, unsigned int maxcount) const
 	{
 		if (maxcount==MAX) maxcount=mincount;
 
-		if (!check_parameter_count(exception_object, mincount, maxcount))
-			return false;
+		check_parameter_count(mincount, maxcount);
 
 		unsigned int index = 0;
 		for(index=0;index<ci->normal_params_count;++index) {
@@ -184,7 +174,6 @@ cont: ;
 
 		if (arg_count != NULL)
 			*arg_count = index;
-		return true;
 	}
 }
 

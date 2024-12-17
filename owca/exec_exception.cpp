@@ -75,35 +75,48 @@ namespace owca {
 		return _exception_object.object_is();
 	}
 
-	static owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
-	{
-		owca_global z,res;
-		owca_function_return_value r=exc.get_member(z,member);
+	//static owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
+	//{
+	//	owca_global z,res;
+	//	owca_function_return_value r=exc.get_member(z,member);
 
-		if (r==owca_function_return_value::RETURN_VALUE) {
-			if (param>=0) {
-				r=z.call(res,param);
-			}
-			else {
-				r=z.call(res);
-			}
+	//	if (r==owca_function_return_value::RETURN_VALUE) {
+	//		if (param>=0) {
+	//			r=z.call(res,param);
+	//		}
+	//		else {
+	//			r=z.call(res);
+	//		}
 
-			if (r==owca_function_return_value::RETURN_VALUE) return res;
+	//		if (r==owca_function_return_value::RETURN_VALUE) return res;
+	//	}
+	//	return owca_global();
+	//}
+
+	owca_exception::owca_exception(owca_global exception_object) : _exception_object(std::move(exception_object)) {
+		RCASSERT(has_exception_object());
+
+		try {
+			auto res = _exception_object.get_member("code").call();
+			_code = (ExceptionCode)res.int_get();
+			res = _exception_object.get_member("message");
+			_message = res.string_get().str();
 		}
-		return owca_global();
+		catch (std::exception &e) {
+			throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "failed to retrieve exception's data from object of type " + _exception_object.type_str() + ": " + e.what());
+		}
 	}
 
 	std::vector<owca_exception::StacktraceElem> owca_exception::stacktrace() const {
 		if (!has_exception_object()) return {};
 
 		try {
-			auto res=execute(*_exception_object.vm(),_exception_object,"size");
-			owca_int lines_count=res.int_is() ? res.int_get() : 0;
+			auto lines_count=_exception_object.get_member("size").call().int_get();
 			std::vector<owca_exception::StacktraceElem> ret_value;
 			ret_value.reserve(lines_count);
 
 			for(unsigned int i=0;i<lines_count;++i) {
-				owca_global e=execute(*_exception_object.vm(),_exception_object,"$read_1",i);
+				auto e = _exception_object.get_member("$read_1").call(i);
 				owca_tuple t=e.tuple_get();
 
 				std::string function_name=t.get(0).str();
@@ -115,8 +128,8 @@ namespace owca {
 
 			return ret_value;
 		}
-		catch (...) {
-			RCASSERT(false);
+		catch (std::exception &e) {
+			throw owca_exception(ExceptionCode::INVALID_PARAM_TYPE, "failed to retrieve exception's data from object of type " + _exception_object.type_str() + ": " + e.what());
 		}
 	}
 

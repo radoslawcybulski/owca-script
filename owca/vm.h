@@ -57,7 +57,7 @@ namespace owca {
 
 		DLLEXPORT void set_print_function(void (*printfnc)(const std::string &));
 		DLLEXPORT owca_global construct_builtin_exception(ExceptionCode code, const std::string &txt);
-		DLLEXPORT owca_function_return_value compile(owca_global &execresult, owca_namespace &result, owca_message_list &errorswarnings, const owca_source_file &fs);
+		DLLEXPORT void compile(owca_namespace &nspace, owca_message_list &errorswarnings, const owca_source_file &fs);
 		DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs);
 
 		template <class A> std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs, A itbegin, A itend)
@@ -79,10 +79,10 @@ namespace owca {
 			return compile_impl(errorswarnings,fs,cmpidentiterclass(itbegin,itend));
 		}
 		DLLEXPORT void run_gc();
-		DLLEXPORT owca_function_return_value resume_execution(void);
+		//DLLEXPORT owca_function_return_value resume_execution(void);
 
 		DLLEXPORT unsigned int stack_get_depth_count() const;
-		DLLEXPORT bool stack_get_element(owca_global &ret, unsigned int depth);
+		DLLEXPORT owca_global stack_get_element(unsigned int depth);
 
 		DLLEXPORT owca_global string(const std::string &t) const;
 		DLLEXPORT owca_global string(const char *) const;

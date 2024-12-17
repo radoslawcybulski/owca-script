@@ -133,28 +133,10 @@ static tr_error_elem parse_error_decl(const char *buf)
 	return t;
 }
 
-static owca_global execute(owca_vm &vm, const owca_global &exc, const std::string &member, int param=-1)
+static unsigned int parse_exception(const owca_global &exc, ExceptionCode type, const std::string &name, unsigned int lines[10], unsigned int lines_count)
 {
-	owca_global z,res;
-	owca_function_return_value r=exc.get_member(z,member);
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	if (param>=0) {
-		r=z.call(res,param);
-	}
-	else {
-		r=z.call(res);
-	}
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	return res;
-}
-
-
-static unsigned int parse_exception(owca_global &exc, ExceptionCode type, const std::string &name, unsigned int lines[10], unsigned int lines_count)
-{
-	owca_global res=execute(*exc.vm(),exc,"code");
-	ExceptionCode code=(ExceptionCode)res.int_get();
-	res=execute(*exc.vm(),exc,"size");
-	owca_int linecount=res.int_get();
+	ExceptionCode code=(ExceptionCode)exc.get_member("code").call().int_get();
+	auto linecount = exc.get_member("size").call().int_get();
 
 	if (code!=type) {
 		return __LINE__;
@@ -163,16 +145,12 @@ static unsigned int parse_exception(owca_global &exc, ExceptionCode type, const 
 		return __LINE__;
 	}
 
-
 	std::vector<unsigned int> exclines(lines_count);
 
 	for(unsigned int i=0;i<lines_count;++i) {
-		owca_global e=execute(*exc.vm(),exc,"$read_1",i);
-		
-		res=execute(*exc.vm(),e,"$read_1",1);
-		RCASSERT(res.string_get()=="" || res.string_get()=="main.ys");
-		res=execute(*exc.vm(),e,"$read_1",2);
-		exclines[i]=(unsigned int)res.int_get();
+		auto e = exc.get_member("$read_1").call(i);
+		RCASSERT(e.get_member("$read_1").call(1).string_get()=="main.ys");
+		exclines[i]=(unsigned int)e.get_member("$read_1").call(2).int_get();
 	}
 	for(unsigned int i=0;i<lines_count;++i) {
 		if (exclines[i]!=lines[i]) {
@@ -317,26 +295,23 @@ static unsigned int test_file(const char *filename)
 		owca::owca_vm vm;
 		owca::owca_message_list ml;
 		bool success=false;
-		owca::owca_global res;
 		owca::owca_global gnspace=vm.create_namespace("main.ys");
 		owca::owca_namespace nspace=gnspace.namespace_get();
 
 		vm.set_print_function(test_files_printfunction);
 		
-		owca_function_return_value r=vm.compile(res,nspace,ml,owca::owca_source_file_Text(test_file_text));
-		vm.run_gc();
-		switch(r.type()) {
-		case owca_function_return_value::RETURN_VALUE:
-			RCASSERT(res.no_value_is());
-			break;
-		case owca_function_return_value::EXCEPTION: {
-			unsigned int v=parse_exception(res,tr_exception_type,tr_exception_name,tr_exception_lines,tr_exception_lines_count);
-			if (tr!=TR_EXCEPTION_CREATE) {
-				return __LINE__;
-			}
-			return v; }
-		default:
-			RCASSERT(0);
+		try {
+			vm.compile(nspace, ml, owca::owca_source_file_Text(test_file_text));
+			vm.run_gc();
+		}
+		catch (owca_exception& oe) {
+			if (!oe.has_exception_object()) return __LINE__;
+			if (tr!=TR_EXCEPTION_CODE) return __LINE__;
+			return parse_exception(oe.exception_object(), tr_exception_type, tr_exception_name, tr_exception_lines, tr_exception_lines_count);
+		}
+		catch (std::exception& e) {
+			printf("got exception: %s\n", e.what());
+			return __LINE__;
 		}
 
 		if (ml.has_errors()) {
@@ -370,44 +345,32 @@ print_errors:
 			for(owca::owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 				RCASSERT(!it->is_error());
 			}
-			{
+			try {
 				owca::owca_global f=nspace["main"];
-
 				RCASSERT(f.function_is());
-				r=f.call(res);
+				auto res = f.call();
 				vm.run_gc();
-				f=owca::owca_global();
+				f = owca::owca_global();
 				vm.run_gc();
-			}
 
-			switch(r.type()) {
-			case owca_function_return_value::RETURN_VALUE: {
-				std::string z=res.str();
-				//printf("value returned is %s\n",z.c_str());
-				if (!res.string_is() || tr!=TR_VALUE || z!=tr_value) {
-					printf("value return is '%s', needed '%s'\n",z.c_str(),tr_value.c_str());
-					return __LINE__;
-				}
-				if (tr!=TR_VALUE) {
-					return __LINE__;
-				}
-				break; }
-			case owca_function_return_value::EXCEPTION: {
-				vm.run_gc();
-				if (tr!=TR_EXCEPTION_CODE) {
-					return __LINE__;
-				}
-				unsigned int v=parse_exception(res,tr_exception_type,tr_exception_name,tr_exception_lines,tr_exception_lines_count);
+				if (!res.string_is()) return __LINE__;
+				if (tr != TR_VALUE) return __LINE__;
+				if (res.string_get() != tr_value) return __LINE__;
+			}
+			catch (owca_exception& oe) {
+				if (!oe.has_exception_object()) return __LINE__;
+				if (tr!=TR_EXCEPTION_CODE) return __LINE__;
+				unsigned int v=parse_exception(oe.exception_object(), tr_exception_type, tr_exception_name, tr_exception_lines, tr_exception_lines_count);
 				if (v!=0) {
 					return v;
 				}
-				break; }
-			default:
-				RCASSERT(0);
+			}
+			catch(std::exception &e) {
+				printf("got exception: %s\n", e.what());
+				return __LINE__;
 			}
 		}
 
-		res=owca::owca_global();
 		vm.run_gc();
 		nspace.clear();
 		vm.run_gc();

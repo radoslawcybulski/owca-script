@@ -12,7 +12,7 @@ void printfunction(const std::string &txt)
 std::string load_file_as_string(const char *file_name)
 {	
 	FILE *fl = fopen(file_name,"rb");
-	std::string source_code;	
+	std::string source_code;
 	if (fl) {
 		std::list<std::string> text;
 		unsigned int totalsize = 0;
@@ -51,7 +51,6 @@ bool run_file_1(const char *file_name)
 	try {
 		owca::owca_vm vm;            // virtual machine object itself
 		owca::owca_message_list ml;   // list of compilation errors and warnings
-		owca::owca_global res;       // placeholder for owca values
 		owca::owca_global gnspace;   // this will hold owca namespace - result of compilation
 		owca::owca_namespace nspace; // C++ helper when accessing owca namespace
 
@@ -74,33 +73,21 @@ bool run_file_1(const char *file_name)
 		// are put into namespace nspace
 		// vm.compile function returns object, which tells You how the code compilation
 		// (or execution) went
-		owca_function_return_value r = vm.compile(res, nspace, ml, owca::owca_source_file_Text(source_code.c_str()));
+		vm.compile(nspace, ml, owca::owca_source_file_Text(source_code.c_str()));
 		
-		// owca doesnt run the garbage collector itself for now, so run it once a while
-		vm.run_gc();
-
-		// only those values can be returned from vm.compile function
-		switch(r.type()) {
-		case owca_function_return_value::RETURN_VALUE:
-			// vm.compile will never returns this
-			// as global scope cant return value
-			break;
-		case owca_function_return_value::EXCEPTION:
-			// an exception was raised, when executing some code in global scope
-			// res object will bear an actual exception object, which 
-			// You can inspect for stack trace, exception code and message and so on
-			break;
-		}
-
 		if (ml.has_errors() || ml.has_warnings()) {
 			for (owca::owca_message_list::T it = ml.begin(); it != ml.end(); ++it) {
 				printf("%5d:      %s\n",it->line(),it->text().c_str());
 			}
 		}
-		return !ml.has_errors() && r.type() != owca_function_return_value::EXCEPTION;
+
+		// owca doesnt run the garbage collector itself for now, so run it once a while
+		vm.run_gc();
+
+		return !ml.has_errors();
 	}
-	catch (owca_exception e) {
-		printf("%s exception\n",e.message().c_str());
+	catch (const std::exception &e) {
+		printf("exception %s\n",e.what());
 		return false;
 	}
 }

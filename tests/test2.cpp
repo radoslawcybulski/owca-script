@@ -13,10 +13,8 @@ using namespace owca;
 void test_object_init(owca_vm &vm, owca_vm &vm2, owca_namespace &nspace, owca_namespace &nspace2)
 {
 	owca_message_list ml;
-	owca_global rv;
-	owca_function_return_value r;
 
-	r=vm.compile(rv,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class A:\n"
 		"	function $init(v):\n"
 		"		self.aa=v\n"
@@ -41,7 +39,6 @@ void test_object_init(owca_vm &vm, owca_vm &vm2, owca_namespace &nspace, owca_na
 		"b=B()\n"
 		"ff=f.bind(f)\n"
 		));
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE && rv.no_value_is());
 
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
@@ -49,7 +46,7 @@ void test_object_init(owca_vm &vm, owca_vm &vm2, owca_namespace &nspace, owca_na
 		}
 		RCASSERT(0);
 	}
-	r=vm2.compile(rv,nspace2,ml,owca_source_file_Text(
+	vm2.compile(nspace2,ml,owca_source_file_Text(
 		"class A:\n"
 		"	function $init(v): self.aa=v\n"
 		"	function $str(): return self.aa\n"
@@ -73,7 +70,6 @@ void test_object_init(owca_vm &vm, owca_vm &vm2, owca_namespace &nspace, owca_na
 		"b=B()\n"
 		"ff=f.bind(f)\n"
 		));
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE && rv.no_value_is());
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -131,26 +127,30 @@ void test_object()
 				vm.run_gc();
 			}
 
-			owca_global A=nspace["A"],a,am,am2;
-			RCASSERT(A.call(a,"dfgh")==owca_function_return_value::RETURN_VALUE);
+			owca_global A=nspace["A"];
+			auto a = A.call("dfgh");
 
-			RCASSERT(a.get_member(am,"abc")==owca_function_return_value::RETURN_VALUE);
+			a.get_member("abc");
 			//RCASSERT(am.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==ExceptionCode::MISSING_MEMBER);
-			RCASSERT(a.set_member(am,"abc","qwer")==owca_function_return_value::RETURN_VALUE && am.string_get()=="qwer");
-			RCASSERT(a.set_member(am,"abc",746)==owca_function_return_value::RETURN_VALUE && am.int_get()==746);
-			RCASSERT(a.get_member(am,"abc")==owca_function_return_value::RETURN_VALUE && am.int_get()==746);
-			RCASSERT(a.set_member(am,"abc",9999)==owca_function_return_value::RETURN_VALUE && am.int_get()==9999);
-			RCASSERT(a.get_member(am,"abc")==owca_function_return_value::RETURN_VALUE && am.int_get()==9999);
+			RCASSERT(a.set_member("abc","qwer").string_get()=="qwer");
+			RCASSERT(a.set_member("abc",746).int_get()==746);
+			RCASSERT(a.get_member("abc").int_get()==746);
+			RCASSERT(a.set_member("abc",9999).int_get()==9999);
+			RCASSERT(a.get_member("abc").int_get()==9999);
 
-			RCASSERT(a.get_member(am,"def")==owca_function_return_value::RETURN_VALUE);
+			a.get_member("def");
 
-			RCASSERT(a.set_member(am,"$abc",1)==owca_function_return_value::EXCEPTION);
-			RCASSERT(am.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==(int)ExceptionCode::NOT_LVALUE);
+			try {
+				a.set_member("$abc", 1);
+				RCASSERT(false);
+			}
+			catch (owca_exception& oe) {
+				RCASSERT(oe.code() == ExceptionCode::NOT_LVALUE);
+			}
 
 			{
-				owca_global g;
-				RCASSERT(a.get_member(g,"$str")==owca_function_return_value::RETURN_VALUE);
-				RCASSERT(g.call(g)==owca_function_return_value::RETURN_VALUE);
+				auto f = a.get_member("$str");
+				auto g = f.call();
 
 				RCASSERT(g.string_get()=="dfgh");
 				RCASSERT(g.string_get()[0]=='d');
@@ -159,12 +159,10 @@ void test_object()
 				RCASSERT(g.string_get()[-2]=='g');
 			}
 			{
-				owca_global g;
-				RCASSERT(a.get_member(g, "b") == owca_function_return_value::RETURN_VALUE);
-				RCASSERT(g.call(g) == owca_function_return_value::RETURN_VALUE);
+				auto f = a.get_member("b");
+				auto g = f.call();
 
-				RCASSERT(g.get_member(am, "size") == owca_function_return_value::RETURN_VALUE);
-				RCASSERT(am.call(am) == owca_function_return_value::RETURN_VALUE && am.int_get() == 4);
+				RCASSERT(g.get_member("size").call().int_get() == 4);
 
 				{
 					owca_list l = g.list_get();
@@ -179,26 +177,28 @@ void test_object()
 						RCASSERT(0);
 					}
 					catch (owca_exception &exc) {
+						(void)exc;
 					}
 					try {
 						l.get(4);
 						RCASSERT(0);
 					}
 					catch (owca_exception &exc) {
+						(void)exc;
 					}
 					try {
 						l.set(4, "123");
 						RCASSERT(0);
 					}
 					catch (owca_exception &exc) {
+						(void)exc;
 					}
 				}
 
 				{
 					a = nspace["$tuple"];
-					RCASSERT(a.call(a, g) == owca_function_return_value::RETURN_VALUE);
-					RCASSERT(a.get_member(am, "size") == owca_function_return_value::RETURN_VALUE);
-					RCASSERT(am.call(am) == owca_function_return_value::RETURN_VALUE && am.int_get() == 4);
+					a = a.call(g);
+					RCASSERT(a.get_member("size").call().int_get() == 4);
 
 					owca_tuple l = a.tuple_get();
 					RCASSERT(l.size() == 4);
@@ -212,18 +212,20 @@ void test_object()
 						RCASSERT(0);
 					}
 					catch (owca_exception &exc) {
+						(void)exc;
 					}
 					try {
 						l.get(4);
 						RCASSERT(0);
 					}
 					catch (owca_exception &exc) {
+						(void)exc;
 					}
 				}
 			}
 			
-			am="abc";
-			RCASSERT(am.get_member(am, "size") == owca_function_return_value::RETURN_VALUE);
+			owca_global am="abc";
+			RCASSERT(am.get_member("size").call().int_get() == 3);
 			//RCASSERT(am.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==ExceptionCode::NOT_LVALUE);
 		}
 		__owca__::exec_ref_counter_enable(true);
@@ -237,59 +239,66 @@ void test_object()
 			owca_namespace nspace=gnspace.namespace_get(),nspace2=gnspace2.namespace_get();
 			test_object_init(vm,vm2,nspace,nspace2);
 			owca_global A=nspace["A"],A2=nspace2["A"];
-			owca_global a,b,am,am2;
 			
-			RCASSERT(A.call(a,"abc")==owca_function_return_value::RETURN_VALUE);
-			RCASSERT(A2.call(b,"def")==owca_function_return_value::RETURN_VALUE);
+			auto a = A.call("abc");
+			auto b = A2.call("def");
 			owca_global c="ghi";
 			owca_global r(vm);
 
 			try {
-				r.set_member(am,"abc",b);
+				r.set_member("abc",b);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 
 			try {
-				r.call(am,b);
+				r.call(b);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 
 			try {
-				r.call(am,a,b);
+				r.call(a,b);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 			try {
-				r.call(am,b,a);
+				r.call(b,a);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 
 			try {
-				r.call(am,a,a,b);
+				r.call(a,a,b);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 			try {
-				r.call(am,a,b,a);
+				r.call(a,b,a);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 			try {
-				r.call(am,b,a,a);
+				r.call(b,a,a);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 
 			owca_call_parameters cp;
 			cp.parameters.push_back(a);
 			cp.parameters.push_back(b);
 			try {
-				r.call(am,cp);
+				r.call(cp);
 				RCASSERT(0);
 			} catch(owca_exception &exc) {
+				(void)exc;
 			}
 		}
 		__owca__::exec_ref_counter_enable(true);
@@ -304,11 +313,11 @@ void test_object()
 void test_namespace()
 {
 	owca_vm vm;
-	owca_global gnspace=vm.create_namespace("main.ys"),res;
+	owca_global gnspace=vm.create_namespace("main.ys");
 	owca_namespace nspace=gnspace.namespace_get();
 	owca_message_list ml;
 	
-	RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"throw=false\n"
 		"class T1:\n"
 		"	function $init(v): self.v=v\n"
@@ -417,53 +426,60 @@ void test_namespace()
 		"	yield '1'+a+b+p[0]+p[1]+m['c']+m['2']\n"
 		"	yield '2'+a+b+p[0]+p[1]+m['c']+m['2']\n"
 		"	yield '3'+a+b+p[0]+p[1]+m['c']+m['2']\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
 		}
 		RCASSERT(0);
 	}
-	owca_global r,am,am2;
+	//owca_global r,am,am2;
 
-	am=nspace["t1"];
-	RCASSERT(am.call(am2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(am2.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==(int)ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+	owca_global am=nspace["t1"];
+	try {
+		am.call();
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+	}
 
 	am=nspace["t2"];
-	RCASSERT(am.call(am2,"abc")==owca_function_return_value::RETURN_VALUE);
+	auto am2 = am.call("abc");
 
 	am=nspace["t3"];
-	RCASSERT(am.call(am2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(am2.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==(int)ExceptionCode::USER);
+	try {
+		am.call();
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
 
 	am=nspace["t4"];
-	RCASSERT(am.call(r)==owca_function_return_value::RETURN_VALUE);
+	auto r = am.call();
 	RCASSERT(r.string_get()=="ok");
 
 	am=nspace["t5"];
-	RCASSERT(am.call(am2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(am2.get_member(am2,"code")==owca_function_return_value::RETURN_VALUE && am2.call(am2)==owca_function_return_value::RETURN_VALUE && am2.int_get()==(int)ExceptionCode::TOO_MANY_PARAMETERS);
+	try {
+		am.call();
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
 
 	am=nspace["t6"];
-	RCASSERT(am.call(r)==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(r.string_get()=="ok");
+	RCASSERT(am.call().string_get()=="ok");
 
 	am=nspace["t7"];
-	RCASSERT(am.call(r)==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(r.string_get()=="ok");
+	RCASSERT(am.call().string_get()=="ok");
 
 	am=nspace["t8"];
-	RCASSERT(am.call(r)==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(r.string_get()=="ok");
+	RCASSERT(am.call().string_get()=="ok");
 
 	am=nspace["t9"];
-	RCASSERT(am.call(r)==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(r.string_get()=="ok");
+	RCASSERT(am.call().string_get()=="ok");
 
 	am=nspace["t10"];
-	RCASSERT(am.call(r,"abc")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(r.string_get()=="abc");
+	RCASSERT(am.call("abc").string_get()=="abc");
 
 	{
 		owca_call_parameters cp;
@@ -472,14 +488,10 @@ void test_namespace()
 		cp.parameters.push_back("c");
 		cp.parameters.push_back("d");
 		am=nspace["t11"];
-		RCASSERT(am.call(r,cp)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="1abcd");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="2abcd");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="3abcd");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
+		RCASSERT(am.call(cp).call().string_get()=="1abcd");
+		RCASSERT(r.call().string_get()=="2abcd");
+		RCASSERT(r.call().string_get()=="3abcd");
+		r.call();
 	}
 
 	{
@@ -488,10 +500,9 @@ void test_namespace()
 			lst.list_get().push_back("c");
 			lst.list_get().push_back("d");
 			owca_global mp=vm.map();
-			owca_global wr1,am;
-			RCASSERT(mp.get_member(wr1,"$write_1")==owca_function_return_value::RETURN_VALUE);
-			RCASSERT(wr1.call(am,"c","e")==owca_function_return_value::RETURN_VALUE);
-			RCASSERT(wr1.call(am,"2","f")==owca_function_return_value::RETURN_VALUE);
+			auto wr1 = mp.get_member("$write_1");
+			wr1.call("c","e");
+			wr1.call("2","f");
 
 			owca_call_parameters yp;
 			yp.parameters.push_back("a");
@@ -499,110 +510,57 @@ void test_namespace()
 			yp.list_parameter=lst;
 			yp.map_parameter=mp;
 			am=nspace["t12"];
-			RCASSERT(am.call(r,yp)==owca_function_return_value::RETURN_VALUE);
+			r = am.call(yp);
 		}
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="1abcdef");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="2abcdef");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(am2.string_get()=="3abcdef");
-		RCASSERT(r.call(am2)==owca_function_return_value::RETURN_VALUE);
+		RCASSERT(r.call().string_get()=="1abcdef");
+		RCASSERT(r.call().string_get()=="2abcdef");
+		RCASSERT(r.call().string_get()=="3abcdef");
+		r.call();
 	}
 }
 
-static owca_function_return_value func_param_0(owca_global &retval, owca_namespace &nspace)
+static owca_global func_param_0(owca_namespace &nspace)
 {
-	retval="qwerty";
-	return owca_function_return_value::RETURN_VALUE;
+	return "qwerty";
 }
 
-static owca_function_return_value func_param_1(owca_global &retval, owca_namespace &nspace, const owca_global &p1)
+static owca_global func_param_1(owca_namespace &nspace, const owca_global &p1)
 {
-	retval=p1;
-	return owca_function_return_value::RETURN_VALUE;
+	return p1;
 }
 
-static owca_function_return_value func_param_2(owca_global &retval, owca_namespace &nspace, const owca_global &p1, const owca_global &p2)
+static owca_global func_param_2(owca_namespace &nspace, const owca_global &p1, const owca_global &p2)
 {
-	owca_function_return_value r;
-	owca_global z;
-
-	r=p1.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(retval,p2);
-	if (r==owca_function_return_value::EXCEPTION) { return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	
-	return owca_function_return_value::RETURN_VALUE;
+	auto z = p1.get_member("$add");
+	return z.call(p2);
 }
 
-static owca_function_return_value func_param_3(owca_global &retval, owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3)
+static owca_global func_param_3(owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3)
 {
-	owca_function_return_value r;
-	owca_global z;
-
-	r=p1.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(z,p2);
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	
-	r=z.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(retval,p3);
-	if (r==owca_function_return_value::EXCEPTION) { return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	return owca_function_return_value::RETURN_VALUE;
+	auto z = p1.get_member("$add");
+	z = z.call(p2);
+	z = z.get_member("$add");
+	return z.call(p3);
 }
 
-static owca_function_return_value func_param_4(owca_global &retval, owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4)
+static owca_global func_param_4(owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4)
 {
-	owca_function_return_value r;
-	owca_global z;
-
-	r=p1.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(z,p2);
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	
-	r=z.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(z,p3);
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-	
-	r=z.get_member(z,"$add");
-	if (r==owca_function_return_value::EXCEPTION) { retval=z; return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	r=z.call(retval,p4);
-	if (r==owca_function_return_value::EXCEPTION) { return owca_function_return_value::EXCEPTION; }
-	RCASSERT(r==owca_function_return_value::RETURN_VALUE);
-
-	return owca_function_return_value::RETURN_VALUE;
+	auto z = p1.get_member("$add");
+	z = z.call(p2);
+	z=z.get_member("$add");
+	z=z.call(p3);
+	z=z.get_member("$add");
+	return z.call(p4);
 }
 
 void test_object_2()
 {
 	owca_vm vm;
-	owca_global gnspace=vm.create_namespace("main.ys"),ret;
+	owca_global gnspace=vm.create_namespace("main.ys");
 	owca_namespace nspace=gnspace.namespace_get();
 	owca_message_list ml;
 
-	RCASSERT(vm.compile(ret,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class E:\n"
 		"	function $req(v): return $str(v)+'f'\n"
 		"	function $eq(v): return $str(v)+'e'\n"
@@ -761,7 +719,7 @@ void test_object_2()
 		"test1_c=test1.bind(test1_b)\n"
 		"test1_e=test1.bind(e)\n"
 		"test1_d=test1.bind(test1_e)\n"
-		))==owca_function_return_value::RETURN_VALUE);
+			));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -770,7 +728,6 @@ void test_object_2()
 	}
 	owca_global e=nspace["e"],f=nspace["f"],s1=nspace["s1"],s2=nspace["s2"],s3=nspace["s3"],s1s2=nspace["s1s2"];
 	owca_global t1=nspace["t1"],t2=nspace["t2"],t3=nspace["t3"],a,b,am;
-	ExceptionCode exccode;
 
 	nspace["func_param_0"].set(func_param_0);
 	nspace["func_param_1"].set(func_param_1,"p1");
@@ -786,8 +743,13 @@ void test_object_2()
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(t1);
 		cp.parameters.push_back(s2);
-		RCASSERT(nspace["test_call_4"].call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+		try {
+			nspace["test_call_4"].call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+		}
 	}
 	{
 		owca_call_parameters cp;
@@ -795,89 +757,92 @@ void test_object_2()
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back("p1");
 		cp.parameters.push_back(s2);
-		RCASSERT(nspace["test_call_4"].call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::PARAM_ASSIGNED_TWICE);
+		try {
+			nspace["test_call_4"].call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::PARAM_ASSIGNED_TWICE);
+		}
 	}
 
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_0"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwerty");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_1"],s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2"],s1,s2)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3"],s1,s2,s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefabc");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_0"]).string_get()=="qwerty");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_1"],s1).string_get()=="abc");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_2"],s1,s2).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_3"],s1,s2,s1).string_get()=="abcdefabc");
 
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_0"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)(exccode=(ExceptionCode)am.int_get()))==ExceptionCode::TOO_MANY_PARAMETERS);
+	try {
+		nspace["test_call_3"].call(nspace["func_param_0"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
 	
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_1"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_1"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2"],s1,s2,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-
-	{
-		owca_call_parameters cp;
-		cp.parameters.push_back(nspace["func_param_3"]);
-		cp.parameters.push_back(s1);
-		cp.parameters.push_back(s2);
-		cp.parameters.push_back(s1);
-		cp.parameters.push_back(s2);
-		RCASSERT(nspace["test_call_3"].call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-
+	try {
+		nspace["test_call_3"].call(nspace["func_param_1"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
 	}
 
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_3_"],"abc","def","ghi")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_2_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_1_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_3"].call(a,nspace["func_param_1_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
+	try {
+		nspace["test_call_3"].call(nspace["func_param_1"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
 
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_0"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwerty");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_1"],s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2"],s1,s2)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3"],s1,s2,s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefabc");
+	try {
+		nspace["test_call_3"].call(nspace["func_param_2"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
 
+	try {
+		nspace["test_call_3"].call(nspace["func_param_2"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
 
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_0"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_1"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_1"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	try {
+		nspace["test_call_3"].call(nspace["func_param_2"],s1,s2,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
 
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2"],s1,s2,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	try {
+		nspace["test_call_3"].call(nspace["func_param_3"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+
+	try {
+		nspace["test_call_3"].call(nspace["func_param_3"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+
+	try {
+		nspace["test_call_3"].call(nspace["func_param_3"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+
 	{
 		owca_call_parameters cp;
 		cp.parameters.push_back(nspace["func_param_3"]);
@@ -885,46 +850,192 @@ void test_object_2()
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s2);
-		RCASSERT(nspace["test_call_2"].call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
+		try {
+			nspace["test_call_3"].call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+		}
+	}
+
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_3_"]).string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_3_"],"abc").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_3_"],"abc","def").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_3_"],"abc","def","ghi").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_2_"]).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_2_"],"abc").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_2_"],"abc","def").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_1_"]).string_get()=="abc");
+	RCASSERT(nspace["test_call_3"].call(nspace["func_param_1_"],"abc").string_get()=="abc");
+
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_0"]).string_get()=="qwerty");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_1"],s1).string_get()=="abc");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_2"],s1,s2).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_3"],s1,s2,s1).string_get()=="abcdefabc");
+
+
+	try {
+		nspace["test_call_2"].call(nspace["func_param_0"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_1"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_1"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_2"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_2"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+
+	try {
+		nspace["test_call_2"].call(nspace["func_param_2"],s1,s2,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_3"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_3"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_2"].call(nspace["func_param_3"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	{
+		owca_call_parameters cp;
+		cp.parameters.push_back(nspace["func_param_3"]);
+		cp.parameters.push_back(s1);
+		cp.parameters.push_back(s2);
+		cp.parameters.push_back(s1);
+		cp.parameters.push_back(s2);
+		try {
+			nspace["test_call_2"].call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+		}
 	}
 
 
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_3_"],"abc","def","ghi")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_2_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_1_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_2"].call(a,nspace["func_param_1_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_3_"]).string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_3_"],"abc").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_3_"],"abc","def").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_3_"],"abc","def","ghi").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_2_"]).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_2_"],"abc").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_2_"],"abc","def").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_1_"]).string_get()=="abc");
+	RCASSERT(nspace["test_call_2"].call(nspace["func_param_1_"],"abc").string_get()=="abc");
 
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_0"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwerty");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_1"],s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2"],s1,s2)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3"],s1,s2,s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefabc");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_0"]).string_get()=="qwerty");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_1"],s1).string_get()=="abc");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_2"],s1,s2).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_3"],s1,s2,s1).string_get()=="abcdefabc");
 
 
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_0"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_1"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_1"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	try {
+		nspace["test_call_1"].call(nspace["func_param_0"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_1"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_1"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_2"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_2"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
 
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2"],s1,s2,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3"])==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3"],s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3"],s1,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	try {
+		nspace["test_call_1"].call(nspace["func_param_2"],s1,s2,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_3"]);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_3"],s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
+	try {
+		nspace["test_call_1"].call(nspace["func_param_3"],s1,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::NOT_ENOUGH_PARAMETERS);
+	}
 
 	{
 		owca_call_parameters cp;
@@ -933,54 +1044,109 @@ void test_object_2()
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s2);
-		RCASSERT(nspace["test_call_1"].call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::TOO_MANY_PARAMETERS);
+		try {
+			nspace["test_call_1"].call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::TOO_MANY_PARAMETERS);
+		}
 	}
 
 	//RCASSERT(nspace["test_call_1"](nspace["func_param_3_"]).string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_3_"],"abc","def","ghi")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdefghi");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_2_"],"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_1_"])==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(nspace["test_call_1"].call(a,nspace["func_param_1_"],"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_3_"],"abc").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_3_"],"abc","def").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_3_"],"abc","def","ghi").string_get()=="abcdefghi");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_2_"]).string_get()=="abcdef");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_2_"],"abc").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_2_"],"abc","def").string_get()=="abcdef");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_1_"]).string_get()=="abc");
+	RCASSERT(nspace["test_call_1"].call(nspace["func_param_1_"],"abc").string_get()=="abc");
 
-	RCASSERT(nspace["test_mul"].call(a,2,"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabc");
-	RCASSERT(nspace["test_mul"].call(a,2,s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabc");
-	RCASSERT(nspace["test_mul"].call(a,2.0,"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabc");
-	RCASSERT(nspace["test_mul"].call(a,2.0,s1)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabc");
-	RCASSERT(nspace["test_mul"].call(a,"abc",2.0)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabc");
+	RCASSERT(nspace["test_mul"].call(2,"abc").string_get()=="abcabc");
+	RCASSERT(nspace["test_mul"].call(2,s1).string_get()=="abcabc");
+	RCASSERT(nspace["test_mul"].call(2.0,"abc").string_get()=="abcabc");
+	RCASSERT(nspace["test_mul"].call(2.0,s1).string_get()=="abcabc");
+	RCASSERT(nspace["test_mul"].call("abc",2.0).string_get()=="abcabc");
 
-	RCASSERT(nspace["test_mul"].call(a,2.5,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call(2.5,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test_mul"].call(a,2.5,"abc")==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call(2.5,"abc");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test_mul"].call(a,s1,2.5)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call(s1,2.5);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test_mul"].call(a,"abc",2.5)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call("abc",2.5);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test_mul"].call(a,"abc",-2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INTEGER_OUT_OF_BOUNDS);
-	RCASSERT(nspace["test_mul"].call(a,"abc",-2.0)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INTEGER_OUT_OF_BOUNDS);
-	RCASSERT(nspace["test_mul"].call(a,"abc",f)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call("abc",-2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INTEGER_OUT_OF_BOUNDS);
+	}
+	try {
+		nspace["test_mul"].call("abc",-2.0);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INTEGER_OUT_OF_BOUNDS);
+	}
+	try {
+		nspace["test_mul"].call("abc",f);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test_mul"].call(a,s1,-2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INTEGER_OUT_OF_BOUNDS);
-	RCASSERT(nspace["test_mul"].call(a,s1,-2.0)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INTEGER_OUT_OF_BOUNDS);
-	RCASSERT(nspace["test_mul"].call(a,s1,f)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["test_mul"].call(s1,-2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INTEGER_OUT_OF_BOUNDS);
+	}
+	try {
+		nspace["test_mul"].call(s1,-2.0);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INTEGER_OUT_OF_BOUNDS);
+	}
+	try {
+		nspace["test_mul"].call(s1,f);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
-	RCASSERT(nspace["test5"].call(a,"abc",s1,"def",s2)==owca_function_return_value::RETURN_VALUE && a.string_get()=="ok");
-	RCASSERT(nspace["test_add"].call(a,"abc","def")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcdef");
+	RCASSERT(nspace["test5"].call("abc",s1,"def",s2).string_get()=="ok");
+	RCASSERT(nspace["test_add"].call("abc","def").string_get()=="abcdef");
 
 	a=nspace["test1"];
 	RCASSERT(a.function_obj().null_is());
@@ -996,40 +1162,88 @@ void test_object_2()
 		owca_global().call(a);
 		RCASSERT(0);
 	} catch(owca_exception &exc) {
+		(void)exc;
 	}
 
 	b=owca_global(vm);
-	RCASSERT(b.call(a)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
-	RCASSERT(b.call(a,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
-	RCASSERT(b.call(a,s1,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
-	RCASSERT(b.call(a,s1,s1,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
-	RCASSERT(b.call(a,s1,s1,s1,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
-	{
-		owca_call_parameters cp;
-		cp.parameters.push_back(s1);
-		RCASSERT(b.call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		b.call();
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
+	try {
+		b.call(s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
+	try {
+		b.call(s1,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
+	try {
+		b.call(s1,s1,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
+	try {
+		b.call(s1,s1,s1,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
 	}
 
-	RCASSERT(e.get_member(a,"f2")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(a,s1,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
 
-	RCASSERT(e.get_member(a,"f3")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(a,s1,s1,s1)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
+	{
+		owca_call_parameters cp;
+		cp.parameters.push_back(s1);
+		try {
+			b.call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+		}
+	}
 
-	RCASSERT(e.get_member(a,"f4")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(a,s1,s1,s2,s2)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
+	a = e.get_member("f2");
+	try {
+		a.call(s1,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
 
-	RCASSERT(e.get_member(a,"f4_")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(a,s1,s1,s2,s2)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabcdefdef");
+	a = e.get_member("f3");
+	try {
+		a.call(s1,s1,s1);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
+
+	a = e.get_member("f4");
+	try {
+		a.call(s1,s1,s2,s2);
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
+
+	a = e.get_member("f4_");
+	RCASSERT(a.call(s1,s1,s2,s2).string_get()=="abcabcdefdef");
 
 	{
 		owca_call_parameters cp;
@@ -1038,11 +1252,16 @@ void test_object_2()
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s1);
-		RCASSERT(e.get_member(a,"f5")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
-		RCASSERT(e.get_member(a,"f5_")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabcdefdefabc");
+		a = e.get_member("f5");
+		try {
+			a.call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::USER);
+		}
+		a = e.get_member("f5_");
+		RCASSERT(a.call(cp).string_get()=="abcabcdefdefabc");
 	}
 
 	{
@@ -1053,11 +1272,16 @@ void test_object_2()
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s1);
-		RCASSERT(e.get_member(a,"f6")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
-		RCASSERT(e.get_member(a,"f6_")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabcdefdefabcabc");
+		a = e.get_member("f6");
+		try {
+			a.call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::USER);
+		}
+		a = e.get_member("f6_");
+		RCASSERT(a.call(cp).string_get()=="abcabcdefdefabcabc");
 	}
 
 	{
@@ -1069,11 +1293,16 @@ void test_object_2()
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s2);
-		RCASSERT(e.get_member(a,"f7")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
-		RCASSERT(e.get_member(a,"f7_")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabcdefdefabcabcdef");
+		a = e.get_member("f7");
+		try {
+			a.call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::USER);
+		}
+		a = e.get_member("f7_");
+		RCASSERT(a.call(cp).string_get()=="abcabcdefdefabcabcdef");
 	}
 
 	{
@@ -1086,11 +1315,16 @@ void test_object_2()
 		cp.parameters.push_back(s1);
 		cp.parameters.push_back(s2);
 		cp.parameters.push_back(s2);
-		RCASSERT(e.get_member(a,"f8")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
-		RCASSERT(e.get_member(a,"f8_")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(a.call(a,cp)==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcabcdefdefabcabcdefdef");
+		a = e.get_member("f8");
+		try {
+			a.call(cp);
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::USER);
+		}
+		a = e.get_member("f8_");
+		RCASSERT(a.call(cp).string_get()=="abcabcdefdefabcabcdefdef");
 	}
 
 	try {
@@ -1098,12 +1332,14 @@ void test_object_2()
 		g.function_bind(nspace["test1"]);
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 	try {
 		owca_global g;
 		g.function_obj();
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 
 	s1.type();
@@ -1117,6 +1353,7 @@ void test_object_2()
 		a.string_get()[-5];
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 	RCASSERT(a.string_get().get(0,3)=="abc");
 	RCASSERT(a.string_get().get(-3,-1)=="ab");
@@ -1125,8 +1362,8 @@ void test_object_2()
 	RCASSERT(a.string_get().get(2,1)=="");
 	RCASSERT(a.string_get().get(6,8)=="");
 
-	RCASSERT(nspace["test4"].call(a,"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="ok");
-	RCASSERT(nspace["test3"].call(a,"abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="ok");
+	RCASSERT(nspace["test4"].call("abc").string_get()=="ok");
+	RCASSERT(nspace["test3"].call("abc").string_get()=="ok");
 
 	a=s1;
 	RCASSERT(a.string_get()[0]=='a');
@@ -1135,6 +1372,7 @@ void test_object_2()
 		a.string_get()[-5];
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 	RCASSERT(a.string_get().get(0,3)=="abc");
 	RCASSERT(a.string_get().get(-3,-1)=="ab");
@@ -1147,71 +1385,100 @@ void test_object_2()
 		e.string_get().get(1,2);
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 
-	RCASSERT(t1.get_member(a,"v")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abc");
-	RCASSERT(t1.get_member(a,"__qwe__")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(owca_global(vm).get_member(a,"__qwe__")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(owca_global(vm).set_member(a,"__qwe__","qwe")==owca_function_return_value::RETURN_VALUE);
+	RCASSERT(t1.get_member("v").string_get()=="abc");
+	a = t1.get_member("__qwe__");
+	owca_global(vm).get_member("__qwe__");
+	owca_global(vm).set_member("__qwe__","qwe");
 	try {
-		owca_global().get_member(a,"__qwe__");
+		owca_global().get_member("__qwe__");
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 	try {
-		owca_global().set_member(a,"__qwe__","qwe");
+		owca_global().set_member("__qwe__","qwe");
 		RCASSERT(0);
 	} catch(owca_exception &e) {
+		(void)e;
 	}
 
-	RCASSERT(e.get_member(a,"r")==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
+	try {
+		e.get_member("r");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
 
-	RCASSERT(e.set_member(a,"w","rty")==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::USER);
+	try {
+		e.set_member("w","rty");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::USER);
+	}
 
 
 	a=nspace["$int"];
-	RCASSERT(a.get_member(a,"$new")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(b,"-123")==owca_function_return_value::RETURN_VALUE && b.int_get()==-123);
-	RCASSERT(a.call(b,"- 123")==owca_function_return_value::EXCEPTION);
-	RCASSERT(b.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	a = a.get_member("$new");
+	RCASSERT(a.call("-123").int_get()==-123);
+	try {
+		a.call("- 123");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
 	a=nspace["$real"];
-	RCASSERT(a.get_member(a,"$new")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(b,"-123.0")==owca_function_return_value::RETURN_VALUE && b.real_get()==-123.0);
-	RCASSERT(a.call(b,"- 123.0")==owca_function_return_value::EXCEPTION);
-	RCASSERT(b.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	a = a.get_member("$new");
+	RCASSERT(a.call("-123.0").real_get()==-123.0);
+	try {
+		a.call("- 123.0");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 
 	a=nspace["$str"];
-	RCASSERT(a.get_member(a,"$new")==owca_function_return_value::RETURN_VALUE);
-	RCASSERT(a.call(b,"abcdef")==owca_function_return_value::RETURN_VALUE && b.string_get()=="abcdef");
+	a = a.get_member("$new");
+	RCASSERT(a.call("abcdef").string_get()=="abcdef");
 
-	RCASSERT(nspace["test1"].call(a,b)==owca_function_return_value::RETURN_VALUE && a.int_get()==1);
-	RCASSERT(nspace["test2"].call(a)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	RCASSERT(nspace["test1"].call(b).int_get()==1);
+	try {
+		nspace["test2"].call();
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 }
 
-static owca_function_return_value func_param_strings(owca_global &retval, owca_namespace &nspace, owca_int mode, const owca_global &s1, const owca_global &s2)
+static owca_global func_param_strings(owca_namespace &nspace, owca_int mode, const owca_global &s1, const owca_global &s2)
 {
 	switch(mode) {
-	case 31: retval=s1.string_get().get(s2.int_get(),s2.int_get()+1); break;
-	case 32: retval=s1.string_get().get(s2.int_get(),s2.int_get()<-4 ? s2.int_get()+4 : s1.string_get().character_count()); break;
+	case 31: return s1.string_get().get(s2.int_get(),s2.int_get()+1); break;
+	case 32: return s1.string_get().get(s2.int_get(),s2.int_get()<-4 ? s2.int_get()+4 : s1.string_get().character_count()); break;
 	case 33: 
 		try {
-			retval=(owca_int)s1.string_get()[s2.int_get()]; 
+			return (owca_int)s1.string_get()[s2.int_get()]; 
 		} catch(owca_exception &exc) {
-			retval="_exception_";
+			(void)exc;
+			return "_exception_";
 		}
 		break;
-	case 41: retval=s1.string_get().hash()==s2.int_get(); break;
-	case 42: retval=s1.string_get().str(); break;
-	case 43: retval=s1.string_get().character_count()==s2.int_get(); break;
-	case 44: retval=s1.string_get(); break;
+	case 41: return s1.string_get().hash()==s2.int_get(); break;
+	case 42: return s1.string_get().str(); break;
+	case 43: return s1.string_get().character_count()==s2.int_get(); break;
+	case 44: return s1.string_get(); break;
 	default:
 		RCASSERT(0);
 	}
-	return owca_function_return_value::RETURN_VALUE;
+	return "_failed_";
 }
 //
 static void test_2_printfunction(const std::string &s)
@@ -1227,7 +1494,7 @@ void test_object_3()
 	owca_namespace nspace=gnspace.namespace_get();
 	
 	nspace["fnc"].set(func_param_strings,"mode","p1","p2");
-	RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class exp_:\n"
 		"	function $str(): return 'exception'\n"
 		"exp=exp_()\n"
@@ -1265,7 +1532,7 @@ void test_object_3()
 		"				$print('exception')\n"
 		"				return false\n"
 		"	return true\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -1273,83 +1540,80 @@ void test_object_3()
 		RCASSERT(0);
 	}
 	vm.set_print_function(test_2_printfunction);
-	RCASSERT(nspace["main"].call(res)==owca_function_return_value::RETURN_VALUE && res.bool_get()==true);
+	RCASSERT(nspace["main"].call().bool_get()==true);
 }
 
 
 
 
-static owca_function_return_value func_param_other(owca_global &retval, owca_namespace &nspace, const owca_parameters &parameters)
+static owca_global func_param_other(owca_namespace &nspace, const owca_parameters &parameters)
 {
-	owca_global params[5];
-
-	if (!parameters.get_arguments(retval,NULL,params,5,5) || !parameters.get_keyword_arguments(retval,NULL,NULL,NULL,0)) return owca_function_return_value::EXCEPTION;
-	int mode=(int)params[0].int_get();
-	owca_global &p1=params[1];
-	owca_global &p2=params[2];
-	owca_global &p3=params[3];
-	owca_global &p4=params[4];
-
 	try {
-		switch(mode) {
-		case   1: retval=p1.tuple_get()[p2.int_get()]; break;
-		case   2: retval=p1.tuple_get().get(p2.int_get()); break;
-		case   3: retval=p1.tuple_get().get(p2.int_get(),p3.int_get()); break;
-		case   4: retval=p1.tuple_get().size(); break;
-		case   5: retval=p1.tuple_get(); break;
-		case   6: retval=p1.tuple_get().clone(); break;
+		owca_global params[5];
 
-		case 101: retval=p1.list_get()[p2.int_get()]; break;
-		case 102: retval=p1.list_get().size(); break;
-		case 103: retval=p1.list_get().get(p2.int_get()); break;
-		case 104: retval=p1.list_get().get(p2.int_get(),p3.int_get()); break;
+		parameters.get_arguments(NULL,params,5,5);
+		int mode=(int)params[0].int_get();
+		owca_global &p1=params[1];
+		owca_global &p2=params[2];
+		owca_global &p3=params[3];
+		owca_global &p4=params[4];
+
+		switch(mode) {
+		case   1: return p1.tuple_get()[p2.int_get()]; break;
+		case   2: return p1.tuple_get().get(p2.int_get()); break;
+		case   3: return p1.tuple_get().get(p2.int_get(),p3.int_get()); break;
+		case   4: return p1.tuple_get().size(); break;
+		case   5: return p1.tuple_get(); break;
+		case   6: return p1.tuple_get().clone(); break;
+
+		case 101: return p1.list_get()[p2.int_get()]; break;
+		case 102: return p1.list_get().size(); break;
+		case 103: return p1.list_get().get(p2.int_get()); break;
+		case 104: return p1.list_get().get(p2.int_get(),p3.int_get()); break;
 		case 105:
 			p1.list_get()[p2.int_get()]=p3;
-			retval=p1;
-			break;
-		case 106: p1.list_get().set(p2.int_get(),p3); retval=p1; break;
-		case 108: p1.list_get().resize((unsigned int)p2.int_get()); retval=p1; break;
-		case 109: retval=p1.list_get(); break;
-		case 110: retval=p1.list_get().clone(); break;
+			return p1;
+		case 106: p1.list_get().set(p2.int_get(),p3); return p1; break;
+		case 108: p1.list_get().resize((unsigned int)p2.int_get()); return p1; break;
+		case 109: return p1.list_get(); break;
+		case 110: return p1.list_get().clone(); break;
 
-		case 114: p1.list_get().clear(); retval=p1; break;
+		case 114: p1.list_get().clear(); return p1; break;
 
-		case 131: p1.list_get().push_front(p2); retval=p1; break;
-		case 132: p1.list_get().push_back(p2); retval=p1; break;
-		case 133: p1.list_get().insert(p2.int_get(),p3); retval=p1; break;
-		case 134: retval=p1.list_get().pop_front(); break;
-		case 135: retval=p1.list_get().pop_back(); break;
-		case 136: retval=p1.list_get().pop(p2.int_get()); break;
+		case 131: p1.list_get().push_front(p2); return p1; break;
+		case 132: p1.list_get().push_back(p2); return p1; break;
+		case 133: p1.list_get().insert(p2.int_get(),p3); return p1; break;
+		case 134: return p1.list_get().pop_front(); break;
+		case 135: return p1.list_get().pop_back(); break;
+		case 136: return p1.list_get().pop(p2.int_get()); break;
 
-		case 203: retval=p1.map_get(); break;
-		case 204: retval=p1.map_get().clone(); break;
-		case 205: retval=p1.map_get().size(); break;
+		case 203: return p1.map_get(); break;
+		case 204: return p1.map_get().clone(); break;
+		case 205: return p1.map_get().size(); break;
 		case 206: {
 			owca_global g=nspace.vm().map();
-			owca_global insert;
-			RCASSERT(g.get_member(insert,"$write_1")==owca_function_return_value::RETURN_VALUE);
+			auto insert = g.get_member("$write_1");
 			owca_map_iterator mi;
 			owca_map mp=p1.map_get();
 			owca_global key,value;
 
 			while(mp.next(mi,key,value)) {
-				owca_global z;
-				RCASSERT(insert.call(z,key,value)==owca_function_return_value::RETURN_VALUE);
+				insert.call(key,value);
 			}
-			retval=g; 
+			return g; 
 			break; }
 		case 207:
 			p1.map_get().clear();
-			retval=p1;
+			return p1;
 			break;
 		default:
 			RCASSERT(0);
 		}
 	} catch(owca_exception &exc) {
-		retval="_exception_";
+		(void)exc;
+		return "_exception_";
 	}
-
-	return owca_function_return_value::RETURN_VALUE;
+	return "_failed_";
 }
 
 //
@@ -1361,10 +1625,7 @@ void test_object_4()
 	owca_namespace nspace=gnspace.namespace_get();
 
 	nspace["fnc"].set(func_param_other);
-	RCASSERT(vm.compile(ret,nspace,ml,owca_source_file_Text(
-
-
-
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class exp_:\n"
 		"	function $str(): return 'exp'\n"
 		"	pass\n"
@@ -1454,7 +1715,7 @@ void test_object_4()
 		"	for q = $range(input.size()):\n"
 		"		f(q)\n"
 		"	return true\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -1462,7 +1723,7 @@ void test_object_4()
 		RCASSERT(0);
 	}
 	vm.set_print_function(test_2_printfunction);
-	RCASSERT(nspace["main"].call(ret)==owca_function_return_value::RETURN_VALUE && ret.bool_get()==true);
+	RCASSERT(nspace["main"].call().bool_get()==true);
 }
 
 void test_object_5()
@@ -1473,7 +1734,7 @@ void test_object_5()
 	owca_global gnspace=vm.create_namespace("main.ys"),res;
 	owca_namespace nspace=gnspace.namespace_get();
 
-	RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"function f():\n"
 		"	yield 'a'\n"
 		"class T: pass\n"
@@ -1488,7 +1749,7 @@ void test_object_5()
 		"c2=f\n"
 		"d2=f.bind(f)\n"
 		"t2=T()\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -1514,19 +1775,22 @@ void test_object_5()
 
 	g1=nspace["t1"];
 	try {
-		g1.set_member(res,"",14);
+		g1.set_member("",14);
 		RCASSERT(0);
 	} catch(owca_exception &exc) {
+		(void)exc;
 	}
 	try {
-		g1.set_member(res," ",14);
+		g1.set_member(" ",14);
 		RCASSERT(0);
 	} catch(owca_exception &exc) {
+		(void)exc;
 	}
 	try {
-		g1.set_member(res,"9a",14);
+		g1.set_member("9a",14);
 		RCASSERT(0);
 	} catch(owca_exception &exc) {
+		(void)exc;
 	}
 }
 
@@ -1537,7 +1801,7 @@ void test_object_6()
 	owca_global gnspace=vm.create_namespace("main.ys"),res;
 	owca_namespace nspace=gnspace.namespace_get();
 
-	RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class T:\n"
 		"	function read  f1(): return 'qwe'\n"
 		"	function read  f2(): return\n"
@@ -1552,7 +1816,7 @@ void test_object_6()
 		"	return $str(self)\n"
 		"t=T()\n"
 		"\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -1577,35 +1841,35 @@ void test_object_6()
 
 	{
 		owca_global g1=nspace["t"],a,am;
-		RCASSERT(g1.get_member(a,"f1")==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwe");
-		RCASSERT(g1.get_member(a,"f2")==owca_function_return_value::RETURN_VALUE && a.null_is());
+		RCASSERT(g1.get_member("f1").string_get()=="qwe");
+		RCASSERT(g1.get_member("f2").null_is());
 
 		owca_global g(vm);
-		RCASSERT(g.set_member(a,"qwe","rty")==owca_function_return_value::RETURN_VALUE);
+		g.set_member("qwe","rty");
 		//RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::NOT_LVALUE);
 
-		RCASSERT(g1.set_member(a,"f1","asd")==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwe");
-		RCASSERT(g1.set_member(a,"f2","asd")==owca_function_return_value::RETURN_VALUE && a.null_is());
+		RCASSERT(g1.set_member("f1","asd").string_get()=="qwe");
+		RCASSERT(g1.set_member("f2","asd").null_is());
 	}
 
 	{
 		std::string ident="Z";
 		owca_global g1=nspace["t"],a,am;
-		RCASSERT(g1.get_member(a,ident)==owca_function_return_value::RETURN_VALUE);
+		g1.get_member(ident);
 		//RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::MISSING_MEMBER);
 	}
 
 	{
-		owca_global g=nspace["k1"],z,a,g2;
+		owca_global g=nspace["k1"],z,a;
 		z=g.function_bind("qwe");
 		z=z.function_bind("qwe");
-		RCASSERT(z.call(a)==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwe");
+		RCASSERT(z.call().string_get()=="qwe");
 		RCASSERT(z.function_obj().string_get()=="qwe");
 		g=nspace["k2"];
-		RCASSERT(nspace["K1"].call(g2,"asd")==owca_function_return_value::RETURN_VALUE);
+		auto g2 = nspace["K1"].call("asd");
 		z=g.function_bind(g2);
 		z=z.function_bind(g2);
-		RCASSERT(z.call(a)==owca_function_return_value::RETURN_VALUE && a.string_get()=="asd");
+		RCASSERT(z.call().string_get()=="asd");
 	}
 }
 
@@ -1615,9 +1879,8 @@ void test_object_7()
 	owca_vm vm;
 	owca_global gnspace=vm.create_namespace("main.ys"),res,a,am;
 	owca_namespace nspace=gnspace.namespace_get();
-	ExceptionCode exccode;
 
-	RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(
+	vm.compile(nspace,ml,owca_source_file_Text(
 		"class T:\n"
 		"	function read f(): return 'qwe'\n"
 		"	function write f(v): return v+'qwe'\n"
@@ -1638,7 +1901,7 @@ void test_object_7()
 		"	return z\n"
 		"t=T()\n"
 		"\n"
-		))==owca_function_return_value::RETURN_VALUE);
+		));
 	if (ml.has_errors() || ml.has_warnings()) {
 		for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 			printf("%5d:      %s\n",it->line(),it->text().c_str());
@@ -1647,75 +1910,80 @@ void test_object_7()
 	}
 	vm.set_print_function(test_2_printfunction);
 
-	RCASSERT(nspace["k1"].call(a)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+	try {
+		nspace["k1"].call();
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::KEYWORD_PARAM_NOT_STRING);
+	}
 
-	RCASSERT(nspace["k2"].call(a)==owca_function_return_value::RETURN_VALUE && a.string_get()=="q w r t");
-	RCASSERT(nspace["k3"].call(a)==owca_function_return_value::RETURN_VALUE && a.string_get()=="q_w_r_t");
-	RCASSERT(nspace["k4"].call(a)==owca_function_return_value::RETURN_VALUE && a.string_get()=="258");
-	RCASSERT(nspace["$memberget"].call(a,nspace["t"],"f")==owca_function_return_value::RETURN_VALUE && a.string_get()=="qwe");
-	RCASSERT(nspace["$memberset"].call(a,nspace["t"],"f","abc")==owca_function_return_value::RETURN_VALUE && a.string_get()=="abcqwe");
-	
-	RCASSERT(nspace["$memberset"].call(a,4,"abc","qwe")==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::MISSING_MEMBER);
+	RCASSERT(nspace["k2"].call().string_get()=="q w r t");
+	RCASSERT(nspace["k3"].call().string_get()=="q_w_r_t");
+	RCASSERT(nspace["k4"].call().string_get()=="258");
+	RCASSERT(nspace["$memberget"].call(nspace["t"],"f").string_get()=="qwe");
+	RCASSERT(nspace["$memberset"].call(nspace["t"],"f","abc").string_get()=="abcqwe");
+	try {
+		nspace["$memberset"].call(4,"abc","qwe");
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::MISSING_MEMBER);
+	}
 
-	RCASSERT(nspace["k5"].call(a)==owca_function_return_value::EXCEPTION);
-	RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+	try {
+		nspace["k5"].call();
+		RCASSERT(0);
+	}
+	catch (owca_exception& oe) {
+		RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+	}
 }
 
 struct test_user_fncs_str {
-	//static owca_function_return_value func_param_other(owca_global &retval, owca_namespace &nspace, const owca_parameters &parameters)
-	static owca_function_return_value fnc_1(owca_global &retval, const owca_global &ll, owca_namespace &nspace)
+	//static owca_global func_param_other(owca_namespace &nspace, const owca_parameters &parameters)
+	static owca_global fnc_1(const owca_global &ll, owca_namespace &nspace)
 	{
-		retval=ll;
-		return owca_function_return_value::RETURN_VALUE;
+		return ll;
 	}
-	static owca_function_return_value fnc_2(owca_global &retval, const owca_global &ll, owca_namespace &nspace)
+	static owca_global fnc_2(const owca_global &ll, owca_namespace &nspace)
 	{
-		retval=nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,"");
-		return owca_function_return_value::EXCEPTION;
+		throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,"") };
 	}
-	static owca_function_return_value fnc_3(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
+	static owca_global fnc_3(const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
 	{
-		retval=p1;
-		return owca_function_return_value::RETURN_VALUE;
+		return p1;
 	}
-	static owca_function_return_value fnc_4(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
+	static owca_global fnc_4(const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
 	{
 		owca_global z=nspace["$exception"];
-		RCASSERT(z.call(retval,"",(owca_int)ExceptionCode::INVALID_PARAM_TYPE)==owca_function_return_value::RETURN_VALUE);
-		return owca_function_return_value::EXCEPTION;
+		auto val = z.call("",(owca_int)ExceptionCode::INVALID_PARAM_TYPE);
+		throw owca_exception{ std::move(val) };
 	}
-	static owca_function_return_value fnc_5(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
+	static owca_global fnc_5(const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
 	{
 		owca_global z=p1.function_bind(ll);
-		return z.call(retval);
+		return z.call();
 	}
-	static owca_function_return_value fnc_6(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
+	static owca_global fnc_6(const owca_global &ll, owca_namespace &nspace, const owca_global &p1)
 	{
-		retval=p1;
-		return owca_function_return_value::RETURN_VALUE;
+		return p1;
 	}
-	static owca_function_return_value fnc_7(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_string &p1)
+	static owca_global fnc_7(const owca_global &ll, owca_namespace &nspace, const owca_string &p1)
 	{
-		retval=p1;
-		return owca_function_return_value::RETURN_VALUE;
+		return p1;
 	}
-	static owca_function_return_value fnc_8(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_string &p1, const owca_string &p2)
+	static owca_global fnc_8(const owca_global &ll, owca_namespace &nspace, const owca_string &p1, const owca_string &p2)
 	{
-		owca_global z;
-		RCASSERT(owca_global(p1).get_member(z,"$add")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(z.call(retval,p2)==owca_function_return_value::RETURN_VALUE);
-		return owca_function_return_value::RETURN_VALUE;
+		auto z = owca_global(p1).get_member("$add");
+		return z.call(p2);
 	}
-	static owca_function_return_value fnc_9(owca_global &retval, const owca_global &ll, owca_namespace &nspace, const owca_string &p1, const owca_string &p2, const owca_string &p3)
+	static owca_global fnc_9(const owca_global &ll, owca_namespace &nspace, const owca_string &p1, const owca_string &p2, const owca_string &p3)
 	{
-		owca_global z;
-		RCASSERT(owca_global(p1).get_member(z,"$add")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(z.call(z,p2)==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(z.get_member(z,"$add")==owca_function_return_value::RETURN_VALUE);
-		RCASSERT(z.call(retval,p3)==owca_function_return_value::RETURN_VALUE);
-		return owca_function_return_value::RETURN_VALUE;
+		auto z = owca_global(p1).get_member("$add");
+		z = z.call(p2);
+		z = z.get_member("$add");
+		return z.call(p3);
 	}
 };
 
@@ -1726,7 +1994,6 @@ void test_user_fncs()
 		owca_message_list ml;
 		owca_global gnspace=vm.create_namespace("main.ys"),res,a,am;
 		owca_namespace nspace=gnspace.namespace_get();
-		ExceptionCode exccode;
 
 		nspace["fnc_1"].set(test_user_fncs_str::fnc_1);
 		nspace["fnc_2"].set(test_user_fncs_str::fnc_2);
@@ -1766,7 +2033,7 @@ void test_user_fncs()
 			"	return fnc_9(a,b,c)\n"
 			;
 
-		RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(tcode))==owca_function_return_value::RETURN_VALUE);
+		vm.compile(nspace,ml,owca_source_file_Text(tcode));
 
 		if (ml.has_errors()) {
 			for(owca_message_list::T it=ml.begin();it!=ml.end();++it) {
@@ -1776,29 +2043,44 @@ void test_user_fncs()
 			return;
 		}
 
-		RCASSERT(nspace["test_1"].call(res)==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
+		RCASSERT(nspace["test_1"].call().string_get()=="ok");
 
-		RCASSERT(nspace["test_2"].call(res)==owca_function_return_value::EXCEPTION);
-		RCASSERT(res.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+		try {
+			nspace["test_2"].call(res);
+			RCASSERT(false);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+		}
 
-		RCASSERT(nspace["test_3"].call(res)==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
+		RCASSERT(nspace["test_3"].call().string_get()=="ok");
 
-		RCASSERT(nspace["test_4"].call(res)==owca_function_return_value::EXCEPTION);
-		RCASSERT(res.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+		try {
+			nspace["test_4"].call();
+			RCASSERT(false);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+		}
 
-		RCASSERT(nspace["test_5"].call(res,nspace["test_3"])==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
+		RCASSERT(nspace["test_5"].call(nspace["test_3"]).string_get()=="ok");
 
-		RCASSERT(nspace["test_5"].call(res,nspace["test_4"])==owca_function_return_value::EXCEPTION);
-		RCASSERT(res.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::INVALID_PARAM_TYPE);
+		try {
+			nspace["test_5"].call( nspace["test_4"]);
+			RCASSERT(false);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.code() == ExceptionCode::INVALID_PARAM_TYPE);
+		}
 
-		RCASSERT(nspace["test_6"].call(res)==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
-		RCASSERT(nspace["test_6"].call(res,"abc")==owca_function_return_value::RETURN_VALUE && res.string_get()=="abc");
+		RCASSERT(nspace["test_6"].call().string_get()=="ok");
+		RCASSERT(nspace["test_6"].call("abc").string_get()=="abc");
 
-		RCASSERT(nspace["test_7"].call(res)==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
+		RCASSERT(nspace["test_7"].call().string_get()=="ok");
 
-		RCASSERT(nspace["test_8"].call(res,"o","k")==owca_function_return_value::RETURN_VALUE && res.string_get()=="ok");
+		RCASSERT(nspace["test_8"].call("o","k").string_get()=="ok");
 
-		RCASSERT(nspace["test_9"].call(res,"o","k","a")==owca_function_return_value::RETURN_VALUE && res.string_get()=="oka");
+		RCASSERT(nspace["test_9"].call("o","k","a").string_get()=="oka");
 	}
 }
 
@@ -1830,29 +2112,24 @@ struct matrix_struct : public owca_object_base<matrix_struct> {
 	}
 };
 
-static owca_function_return_value matrix_init(owca_global &retval, matrix_struct *ms, owca_namespace &nspace, const owca_parameters &params)
+static owca_global matrix_init(matrix_struct *ms, owca_namespace &nspace, const owca_parameters &params)
 {
 	unsigned int width,height;
 
 	if (params.count()==0) {
-		nspace.vm().construct_builtin_exception(ExceptionCode::NOT_ENOUGH_PARAMETERS,OWCA_ERROR_FORMAT("not enough parameters"));
-		return owca_function_return_value::EXCEPTION;
+		throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::NOT_ENOUGH_PARAMETERS,OWCA_ERROR_FORMAT("not enough parameters")) };
 	}
 
 	if (params.count()==2 && (params.get(0).int_is() || params.get(0).real_is()) && (params.get(1).int_is() || params.get(1).real_is())) {
 		owca_int ww,hh;
 
-		if (!params.convert_parameters(retval,ww,hh)) {
-			return owca_function_return_value::EXCEPTION;
-		}
+		params.convert_parameters(ww, hh);
 
 		if (ww<=0) {
-			nspace.vm().construct_builtin_exception(ExceptionCode::INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT("column count is negative or zero"));
-			return owca_function_return_value::EXCEPTION;
+			throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT1("column count (%1) is negative or zero", std::to_string(ww))) };
 		}
 		if (hh<=0) {
-			nspace.vm().construct_builtin_exception(ExceptionCode::INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT("row count is negative or zero"));
-			return owca_function_return_value::EXCEPTION;
+			throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INTEGER_OUT_OF_BOUNDS,OWCA_ERROR_FORMAT1("row count (%1) is negative or zero", std::to_string(hh))) };
 		}
 
 		delete [] ms->data;
@@ -1870,19 +2147,16 @@ static owca_function_return_value matrix_init(owca_global &retval, matrix_struct
 			if (g.list_is()) w=g.list_get().size();
 			else if (g.tuple_is()) w=g.tuple_get().size();
 			else {
-				nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("parameter is not a list or tuple of real values"));
-				return owca_function_return_value::EXCEPTION;
+				throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter %1 is not a list or tuple of real values, got %2", std::to_string(i + 1), g.str())) };
 			}
 			if (i==0) {
 				if (w==0) {
-					nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("empty list / tuple used"));
-					return owca_function_return_value::EXCEPTION;
+					throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("empty list / tuple used for parameter %1", std::to_string(i + 1))) };
 				}
 				width=w;
 			}
 			else if (w!=width) {
-				nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("list / tuples of different width used"));
-				return owca_function_return_value::EXCEPTION;
+				throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT3("parameter %1 is a list / tuples of unexpected (%2) length - expected %3", std::to_string(i + 1), std::to_string(w), std::to_string(width))) };
 			}
 		}
 
@@ -1897,9 +2171,8 @@ static owca_function_return_value matrix_init(owca_global &retval, matrix_struct
 				for(unsigned int w=0;w<width;++w) {
 					owca_real v;
 					if (!l[w].get(v)) {
-						nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter at row %1, column %2 is not a real value",int_to_string(h+1),int_to_string(w+1)));
 						delete data;
-						return owca_function_return_value::EXCEPTION;						
+						throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter at row %1, column %2 is not a real value",int_to_string(h + 1),int_to_string(w + 1))) };
 					}
 					data[h*width+w]=v;
 				}
@@ -1911,9 +2184,8 @@ static owca_function_return_value matrix_init(owca_global &retval, matrix_struct
 				for(unsigned int w=0;w<width;++w) {
 					owca_real v;
 					if (!t[w].get(v)) {
-						nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter at row %1, column %2 is not a real value",int_to_string(h+1),int_to_string(w+1)));
 						delete data;
-						return owca_function_return_value::EXCEPTION;						
+						throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter at row %1, column %2 is not a real value",int_to_string(h + 1),int_to_string(w + 1))) };
 					}
 					data[h*width+w]=v;
 				}
@@ -1924,30 +2196,26 @@ static owca_function_return_value matrix_init(owca_global &retval, matrix_struct
 		ms->width=width;
 		ms->height=height;
 	}
-	retval.null_set(true);
-	return owca_function_return_value::RETURN_VALUE;
+	return owca_local::null_no_value;
 }
 
-static owca_function_return_value matrix_width_read(owca_global &ret, matrix_struct *ms, owca_namespace &nspace)
+static owca_global matrix_width_read(matrix_struct *ms, owca_namespace &nspace)
 {
-	ret=ms->width;
-	return owca_function_return_value::RETURN_VALUE;
+	return ms->width;
 }
 
-static owca_function_return_value matrix_height_read(owca_global &ret, matrix_struct *ms, owca_namespace &nspace)
+static owca_global matrix_height_read(matrix_struct *ms, owca_namespace &nspace)
 {
-	ret=ms->height;
-	return owca_function_return_value::RETURN_VALUE;
+	return ms->height;
 }
 
-static owca_function_return_value matrix_add(owca_global &ret, matrix_struct *left, owca_namespace &nspace, matrix_struct *right)
+static owca_global matrix_add(matrix_struct *left, owca_namespace &nspace, matrix_struct *right)
 {
 	if (left->width!=right->width || left->height!=right->height) {
-		nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("matrixes dimensions are different!"));
-		return owca_function_return_value::EXCEPTION;
+		throw owca_exception{ nspace.vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("matrixes dimensions are different!")) };
 	}
 
-	RCASSERT(nspace.vm().executing_function().function_member_of().call(ret,left->height,left->width)==owca_function_return_value::RETURN_VALUE);
+	auto ret = nspace.vm().executing_function().function_member_of().call(left->height,left->width);
 	matrix_struct *r;
 	RCASSERT(ret.get(r));
 
@@ -1955,10 +2223,10 @@ static owca_function_return_value matrix_add(owca_global &ret, matrix_struct *le
 		r->data[i]=left->data[i]+right->data[i];
 	}
 
-	return owca_function_return_value::RETURN_VALUE;
+	return ret;
 }
 
-static owca_function_return_value matrix_str(owca_global &ret, matrix_struct *self, owca_namespace &nspace)
+static owca_global matrix_str(matrix_struct *self, owca_namespace &nspace)
 {
 	owca_string_buffer sb;
 	char buf[64];
@@ -1975,27 +2243,17 @@ static owca_function_return_value matrix_str(owca_global &ret, matrix_struct *se
 		if (h==self->height-1) sb << " ]";
 		sb << '\n';
 	}
-	ret=sb.get(nspace.vm());
-
-	return owca_function_return_value::RETURN_VALUE;
+	return sb.get(nspace.vm());
 }
 
 class proxy_call : public owca_user_function_base_object {
 	unsigned int index;
 public:
-	proxy_call() : index(0) { 
+	proxy_call() : owca_user_function_base_object(false), index(0) { 
 		catch_exceptions(false);
 	}
-	owca_function_return_value run(owca_global &retval, bool is_exception) {
-		switch(index) {
-		case 0:
-			index = 1;
-			return parameters.parameter(0).prepare_call(retval);
-		case 1:
-			break;
-		}
-		retval.null_set(true);
-		return owca_function_return_value::RETURN_VALUE;
+	owca_global run() {
+		return parameters.parameter(0).call();
 	}
 };
 
@@ -2003,48 +2261,44 @@ class matrix_gen : public owca_user_function_base_object {
 	matrix_struct *ms;
 	owca_int w,h;
 public:
-	matrix_gen() { 
+	matrix_gen() : owca_user_function_base_object(true) { 
 		catch_exceptions(false);
 	}
-	owca_function_return_value initialize(owca_global &retval) {
+	owca_global initialize(owca_global &retval) {
 		if (!self.get(ms)) {
-			retval=vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("self is not of type matrix"));
-			return owca_function_return_value::EXCEPTION;
+			throw owca_exception{ vm().construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT("self is not of type matrix")) };
 		}
 		w=h=0;
-		return owca_function_return_value::CREATE_GENERATOR;
+		return {};
 	}
-	owca_function_return_value run(owca_global &retval, bool is_exception) {
-		RCASSERT(!is_exception);
+	owca_global run() {
 		if (h >= ms->height) {
-			retval.null_set(true);
-			return owca_function_return_value::RETURN_VALUE;
+			return owca_local::null_no_value;
 		}
-		retval=ms->data[w+h*ms->width];
+		auto v = ms->data[w+h*ms->width];
 		++w;
 		if (w>=ms->width) {
 			++h;
 			w=0;
 		}
-		return owca_function_return_value::RETURN_VALUE;
+		return v;
 	}
 };
 
-owca_function_return_value invalid_operator_function_fast_self(owca_global &ret, const owca_global &self, owca_namespace &nspace, const owca_parameters &params) { ret=0; return owca_function_return_value::RETURN_VALUE; }
-owca_function_return_value invalid_operator_function_fast     (owca_global &ret, owca_namespace &nspace, const owca_parameters &params) { ret=0; return owca_function_return_value::RETURN_VALUE; }
-owca_function_return_value invalid_operator_function_fast_0   (owca_global &ret, owca_namespace &nspace) { ret=0; return owca_function_return_value::RETURN_VALUE; }
-owca_function_return_value invalid_operator_function_fast_1   (owca_global &ret, owca_namespace &nspace, const owca_global &p1) { ret=0; return owca_function_return_value::RETURN_VALUE; }
-owca_function_return_value invalid_operator_function_fast_2   (owca_global &ret, owca_namespace &nspace, const owca_global &p1, const owca_global &p2) { ret=0; return owca_function_return_value::RETURN_VALUE; }
-owca_function_return_value invalid_operator_function_fast_3   (owca_global &ret, owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3) { ret=0; return owca_function_return_value::RETURN_VALUE; }
+owca_global invalid_operator_function_fast_self(const owca_global &self, owca_namespace &nspace, const owca_parameters &params) { return 0; }
+owca_global invalid_operator_function_fast(owca_namespace& nspace, const owca_parameters& params) { return 0; }
+owca_global invalid_operator_function_fast_0(owca_namespace& nspace) { return 0; }
+owca_global invalid_operator_function_fast_1   (owca_namespace &nspace, const owca_global &p1) { return 0; }
+owca_global invalid_operator_function_fast_2   (owca_namespace &nspace, const owca_global &p1, const owca_global &p2) { return 0; }
+owca_global invalid_operator_function_fast_3   (owca_namespace &nspace, const owca_global &p1, const owca_global &p2, const owca_global &p3) { return 0; }
 
 void test_class()
 {
 	owca_vm vm;
-	ExceptionCode exccode;
 
 	{
 		owca_message_list ml;
-		owca_global gnspace=vm.create_namespace("main.ys"),res;
+		owca_global gnspace=vm.create_namespace("main.ys");
 		owca_namespace nspace=gnspace.namespace_get();
 		nspace["proxy_call"].set<proxy_call>();
 
@@ -2056,7 +2310,7 @@ void test_class()
 			"	return 'ok'\n"
 			;
 
-		RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(tcode))==owca_function_return_value::RETURN_VALUE);
+		vm.compile(nspace,ml,owca_source_file_Text(tcode));
 		vm.set_print_function(test_2_printfunction);
 
 		if (ml.has_errors()) {
@@ -2066,7 +2320,7 @@ void test_class()
 			RCASSERT(0);
 			return;
 		}
-		RCASSERT(nspace["test"].call(res)==owca_function_return_value::RETURN_VALUE);
+		auto res = nspace["test"].call();
 		printf("return value: %s\n",res.string_get().str().c_str());
 		RCASSERT(res.string_get()=="ok");			
 	}
@@ -2075,48 +2329,84 @@ void test_class()
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast);
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_global gnspace=vm.create_namespace("main.ys"),a,am;
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast_self);
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_global gnspace=vm.create_namespace("main.ys"),a,am;
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast_0);
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_global gnspace=vm.create_namespace("main.ys"),a,am;
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast_1,"q");
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_global gnspace=vm.create_namespace("main.ys"),a,am;
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast_2,"q","w");
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_global gnspace=vm.create_namespace("main.ys"),a,am;
 		owca_namespace nspace=gnspace.namespace_get();
 		owca_class cls(nspace,"matrix");
 		cls["$add"].set(invalid_operator_function_fast_3,"q","w","e");
-		RCASSERT(cls.construct(a)==owca_function_return_value::EXCEPTION);
-		RCASSERT(a.get_member(am,"code")==owca_function_return_value::RETURN_VALUE && am.call(am)==owca_function_return_value::RETURN_VALUE && (exccode=(ExceptionCode)am.int_get())==ExceptionCode::CLASS_CREATION);
+		try {
+			a = cls.construct();
+			RCASSERT(0);
+		}
+		catch (owca_exception& oe) {
+			RCASSERT(oe.has_exception_object());
+			RCASSERT(oe.code() == ExceptionCode::CLASS_CREATION);
+		}
 	}
 	{
 		owca_message_list ml;
@@ -2132,7 +2422,7 @@ void test_class()
 		cls["$add"].set(matrix_add,"other");
 		cls["print"].set<matrix_gen>();
 
-		RCASSERT(cls.construct(res)==owca_function_return_value::RETURN_VALUE);
+		res = cls.construct();
 		nspace["matrix"]=res;
 
 		static const char *tcode=
@@ -2178,7 +2468,7 @@ void test_class()
 			"a=4"
 			;
 
-		RCASSERT(vm.compile(res,nspace,ml,owca_source_file_Text(tcode))==owca_function_return_value::RETURN_VALUE);
+		vm.compile(nspace,ml,owca_source_file_Text(tcode));
 		vm.set_print_function(test_2_printfunction);
 
 		if (ml.has_errors()) {
@@ -2188,7 +2478,7 @@ void test_class()
 			RCASSERT(0);
 			return;
 		}
-		RCASSERT(nspace["test"].call(res)==owca_function_return_value::RETURN_VALUE);
+		res = nspace["test"].call();
 		printf("return value: %s\n",res.string_get().str().c_str());
 		RCASSERT(res.string_get()=="ok");			
 	}
@@ -2198,24 +2488,21 @@ void test_class()
 namespace error_1 {
 	static bool test_val = false;
 	static owca_global fnc;
-	static owca_function_return_value f2(owca_global &ret, owca_namespace &nspace, const owca_string &p1)
+	static owca_global f2(owca_namespace &nspace, const owca_string &p1)
 	{
 		test_val = (p1 == "qa");
-		ret = p1.str() + "b";
-		return owca_function_return_value::RETURN_VALUE;
+		return p1.str() + "b";
 	}
-	static owca_function_return_value f3(owca_global &ret, owca_namespace &nspace, const owca_global &p1)
+	static owca_global f3(owca_namespace &nspace, const owca_global &p1)
 	{
 		RCASSERT(p1.function_is());
 		fnc = p1;
-		ret.null_set(true);
-		return owca_function_return_value::RETURN_VALUE;
+		return owca_local::null_no_value;
 	}
 
 	static void test()
 	{
 		owca_vm vm;
-		ExceptionCode exccode;
 
 		{
 			owca_message_list ml;
@@ -2248,13 +2535,11 @@ namespace error_1 {
 				owca_global gnspace2 = nspace.copy("main2.ys");
 				owca_namespace nspace2 = gnspace2.namespace_get();
 
-				auto res_type = nspace2.apply_code(res, tmp);
-				RCASSERT(res_type == owca_function_return_value::RETURN_VALUE);
+				nspace2.apply_code(tmp);
 				vm.run_gc();
 			}
 
-			auto t = fnc.call(res, "q");
-			RCASSERT(t == owca_function_return_value::RETURN_VALUE);
+			res = fnc.call("q");
 			RCASSERT(res.string_is() && res.string_get() == "qab");
 			vm.run_gc();
 		}
@@ -2276,7 +2561,7 @@ namespace error_2 {
     static const char *name_array[] = {
 		"c",
 	};
-	static owca_function_return_value c(owca_global &ret, owca_namespace &nspace, const owca_string &p1)
+	static owca_global c(owca_namespace &nspace, const owca_string &p1)
 	{
         RCASSERT(p1 == "abc");
 
@@ -2289,18 +2574,15 @@ namespace error_2 {
         RCASSERT(!code.empty());
 
 	    owca_global result;
-	    auto res = ns.apply_code(result, code);
-        RCASSERT(res == owca_function_return_value::RETURN_VALUE);
+	    ns.apply_code(code);
 
-        ret = namespace_object;
         nspace.vm().run_gc();
-		return owca_function_return_value::RETURN_VALUE;
+		return namespace_object;
 	}
 
 	static void test()
 	{
 		owca_vm vm;
-		ExceptionCode exccode;
 
 		vm.set_print_function(test_2_printfunction);
 		{
@@ -2318,8 +2600,7 @@ namespace error_2 {
 				RCASSERT(0);
 				return;
 			}
-            auto tmp2 = nspace.apply_code(res,tmp);
-            RCASSERT(tmp2 == owca_function_return_value::RETURN_VALUE);
+            nspace.apply_code(tmp);
 			vm.run_gc();
 		}
 		return;
@@ -2341,18 +2622,18 @@ int main()
 	SetUnhandledExceptionFilter(global_exception_filter);
 #endif
 
-	//test_object();
-	//test_object_2();
-	//test_object_3();
-	//test_object_4();
-	//test_object_5();
-	//test_object_6();
-	//test_object_7();
-	//test_namespace();
-	//test_user_fncs();
-	//test_class();
+	test_object();
+	test_object_2();
+	test_object_3();
+	test_object_4();
+	test_object_5();
+	test_object_6();
+	test_object_7();
+	test_namespace();
+	test_user_fncs();
+	test_class();
 
-	//error_1::test();
+	error_1::test();
 	error_2::test();
 
 	return 0;

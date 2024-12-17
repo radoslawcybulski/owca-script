@@ -11,6 +11,7 @@
 #include "compile_visible_items.h"
 #include "executionreturnvalue.h"
 #include "debug_interface.h"
+#include "executionstackreturnvalue.h"
 #include <memory>
 
 namespace owca {
@@ -385,10 +386,34 @@ namespace owca {
 			DebugInterface* debug_interface = nullptr;
 
 			void register_opcode_data(opcode_data *opc) { opcode_datas.push_back(opc); }
-			executionreturnvalue execute_stack(void);
+			void execute_stack();
+			//void raise_if_needed(executionreturnvalue);
 
-			void push_execution_stack(vm_execution_stack *st=NULL);
-			void pop_execution_stack();
+			struct StackPopper {
+				virtual_machine* vm;
+
+				StackPopper(virtual_machine* vm) : vm(vm) {}
+				StackPopper(const StackPopper&) = delete;
+				StackPopper(StackPopper&& other) : vm(other.vm) { other.vm = nullptr; }
+
+				StackPopper &operator = (const StackPopper&) = delete;
+				StackPopper& operator = (StackPopper&& other) {
+					if (this != &other) {
+						if (vm) vm->pop_execution_stack_impl();
+						vm = other.vm;
+						other.vm = nullptr;
+					}
+					return *this;
+				}
+
+				~StackPopper() {
+					if (vm) 
+						vm->pop_execution_stack_impl();
+				}
+			};
+			StackPopper push_execution_stack(vm_execution_stack *st=NULL);
+			void push_execution_stack_impl(vm_execution_stack *st=NULL);
+			void pop_execution_stack_impl();
 			bool has_execution_stack(void) const { return execution_stack != NULL; }
 			vm_execution_stack_elem_internal *push_execution_stack_frame_internal(unsigned int stack_data_size, unsigned int temporary_variables);
 			DLLEXPORT bool push_execution_stack_frame(vm_execution_stack_elem_base *sf);
@@ -462,7 +487,9 @@ namespace owca {
 			//void _raise_from_user(ExceptionCode code, const std::string &txt);
 			//void _raise_from_user(ExceptionCode code);
 			DLLEXPORT void _raise(ExceptionCode code, exec_object *exctype, const std::string &txt);
+			DLLEXPORT void _raise(ExceptionCode code, const std::string &txt);
 			DLLEXPORT void _prepare_construct_exception(ExceptionCode code, exec_object *exctype, const std::string &txt);
+
 			// params
 
 			void raise_class_creation(const std::string &);
@@ -608,13 +635,6 @@ namespace owca {
 				vm.vislockers=vm.vislockers->prev;
 			}
 			void gc_mark(gc_iteration &);
-		};
-
-		class vmstack {
-			virtual_machine &vm;
-		public:
-			vmstack(virtual_machine &vm_);
-			~vmstack();
 		};
 	}
 }

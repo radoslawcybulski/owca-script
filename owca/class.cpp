@@ -47,19 +47,17 @@ namespace owca {
 		ic->_setstructure(type);
 	}
 
-	owca_function_return_value owca_class::construct(owca_global &ret)
+	owca_global owca_class::construct()
 	{
-		__owca__::vmstack _vmstack(ic->vm);
+		auto pop = ic->vm.push_execution_stack();
 		__owca__::exec_object *o;
 		std::string rt=ic->create(o);
 		if (!rt.empty()) {
-			ret=ic->vm.owner_vm->construct_builtin_exception(ExceptionCode::CLASS_CREATION,rt);
-			return owca_function_return_value::EXCEPTION;
+			throw owca_exception{ ExceptionCode::CLASS_CREATION,std::move(rt) };
 		}
-		ret._object.gc_release(*ret._vm);
-		ret._update_vm(&ic->vm);
-		ret._object.set_object(o);
-		return owca_function_return_value::RETURN_VALUE;
+		__owca__::exec_variable tmp;
+		tmp.set_object(o);
+		return { ic->vm, tmp };
 	}
 
 	void owca_class::add_inheritance(const owca_global &g)

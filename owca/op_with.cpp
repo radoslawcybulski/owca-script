@@ -151,18 +151,15 @@ namespace owca { namespace __owca__ {
 
 	void op_flow_with::_release_resources(virtual_machine &vm) // this will call exit functions even in case of generator object being deleted without completing first
 	{
-		vmstack _vmstack(vm);
+		auto pop = vm.push_execution_stack();
 
 		while(callvars_prepare(vm)) {
-			executionreturnvalue r=vm.execute_stack();
-			switch(r) {
-			case VME_EXCEPTION:
-			case VME_VALUE:
+			try {
+				vm.execute_stack();
+			}
+			catch (...) {
 				tmp.gc_release(vm);
 				tmp.reset();
-				break;
-			default:
-				RCASSERT(0);
 			}
 		}
 		tmp.gc_release(vm);

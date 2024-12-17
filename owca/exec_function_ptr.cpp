@@ -545,15 +545,15 @@ process:
 	//	ret=((function)userptr)(n);
 	//}
 
-	void user_function_t__spec::call(owca_global &ret) {
+	owca_global user_function_t__spec::call() {
 		owca_namespace n=fnc->ynamespace()->generate();
-		frv=((function)userptr)(ret,n,_generate_parameters(*vm,cp));
+		return ((function)userptr)(n,_generate_parameters(*vm,cp));
 	}
 
-	void user_function_t0_spec::call(owca_global &ret)
+	owca_global user_function_t0_spec::call()
 	{
 		owca_namespace n=fnc->ynamespace()->generate();
-		frv=((function)userptr)(ret,n);
+		return ((function)userptr)(n);
 	}
 } }
 

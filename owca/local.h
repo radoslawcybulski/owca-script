@@ -27,8 +27,8 @@ namespace owca {
 		class internal_class;
 		class virtual_machine;
 		class obj_constructor_base;
-		class owca_internal_string;
 		class local_obj_constructor;
+		class owca_internal_string;
 		class exec_namespace;
 
 		template <class A, class B, bool RETVAL> class user_function_base;
@@ -83,12 +83,13 @@ namespace owca {
 		void _check_vm(const owca_local &) const;
 		void _check_vm(__owca__::virtual_machine *) const;
 
-		void _call_prepare_after(owca_global &result) const;
-		owca_function_return_value _call(owca_global &result, const __owca__::exec_variable &fncval, const __owca__::exec_variable *params, unsigned int size) const;
-		owca_function_return_value _call(owca_global &result, const __owca__::exec_variable &fncval, const __owca__::exec_variable *params, unsigned int size, const __owca__::exec_variable &list, const __owca__::exec_variable &map) const;
-		owca_function_return_value _call(owca_global &result, const __owca__::exec_variable &fncval, const __owca__::callparams &cp) const;
-		owca_function_return_value _finalize_get_set_member(owca_function_return_value r) const;
+		owca_global _call(const __owca__::exec_variable *params, unsigned int size) const;
+		owca_global _call(const __owca__::exec_variable *params, unsigned int size, const __owca__::exec_variable &list, const __owca__::exec_variable &map) const;
+		owca_global _call(const __owca__::callparams &cp) const;
 		void _execute(void) const;
+
+		void _prepare_get_member(const owca_string &member) const;
+		void _prepare_set_member(const owca_string &member, const owca_global &val) const;
 	public:
 		owca_local(bool b) : _vm(NULL) { _object.set_bool(b); }
 		DLLEXPORT owca_local(char c);
@@ -111,24 +112,15 @@ namespace owca {
 		DLLEXPORT const owca_local &operator = (const owca_local &);
 
 		DLLEXPORT owca_vm *vm() const;
-		DLLEXPORT owca_function_return_value get_member(owca_global &result, const owca_string &member) const;
-		DLLEXPORT owca_function_return_value set_member(owca_global &result, const owca_string &member, const owca_global &val) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_global &p1) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_global &p1, const owca_global &p2) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_call_parameters &cp) const;
-		DLLEXPORT owca_function_return_value call(owca_global &result, const owca_parameters &cp) const;
-		DLLEXPORT owca_function_return_value prepare_get_member(owca_global &result, const owca_string &member) const;
-		DLLEXPORT owca_function_return_value prepare_set_member(owca_global &result, const owca_string &member, const owca_global &val) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_global &p1) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_call_parameters &cp) const;
-		DLLEXPORT owca_function_return_value prepare_call(owca_global &result, const owca_parameters &cp) const;
+		DLLEXPORT owca_global get_member(const owca_string &member) const;
+		DLLEXPORT owca_global set_member(const owca_string &member, const owca_global &val) const;
+		DLLEXPORT owca_global call() const;
+		DLLEXPORT owca_global call(const owca_global &p1) const;
+		DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2) const;
+		DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
+		DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
+		DLLEXPORT owca_global call(const owca_call_parameters &cp) const;
+		DLLEXPORT owca_global call(const owca_parameters &cp) const;
 
 		DLLEXPORT void bind(owca_vm &vm);
 		DLLEXPORT owca_global type() const;
@@ -197,20 +189,19 @@ namespace owca {
 
 		DLLEXPORT void gc_mark(const gc_iteration &g) const;
 
-		DLLEXPORT static owca_local null;
+		DLLEXPORT static owca_local null, null_no_value;
 
-		template <class A, typename VM> bool convert(owca_global &exception_object, VM &vm, A &a, const char *pname) {
+		template <class A, typename VM> void convert(VM &vm, A &a, const char *pname) {
 			static const char *typenames[]={
 				"a string","an integer","a real","a boolean","a list","a map","a tuple" };
-			if (get(a)) return true;
+			if (get(a)) return;
 			if (__owca__::__type_name__<A>::INDEX!=0xff) {
 				const char *tname=typenames[__owca__::__type_name__<A>::INDEX];
-				exception_object = vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname));
+				throw owca_exception{ vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname)) };
 			}
 			else {
-				exception_object = vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname));
+				throw owca_exception{ vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname)) };
 			}
-			return false;
 		}
 	};
 }

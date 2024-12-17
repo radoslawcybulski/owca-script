@@ -169,25 +169,28 @@ namespace owca { namespace __owca__ {
 
 	obj_constructor_base::~obj_constructor_base() { RCASSERT(used); }
 
-	owca_function_return_value obj_constructor_base::get_member(owca_global &res, const owca_string &callobject) const { return read().get_member(res,callobject); }
-	owca_function_return_value obj_constructor_base::set_member(owca_global &res, const owca_string &callobject, const owca_global &val) const { return read().set_member(res,callobject,val); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res) const { return read().call(res); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_global &p1) const { return read().call(res,p1); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_global &p1, const owca_global &p2) const { return read().call(res,p1,p2); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3) const { return read().call(res,p1,p2,p3); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const { return read().call(res,p1,p2,p3,p4); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_call_parameters &cp) const { return read().call(res,cp); }
-	owca_function_return_value obj_constructor_base::call(owca_global &res, const owca_parameters &cp) const { return read().call(res,cp); }
+	local_obj_constructor obj_constructor_base::operator [] (const std::string& name) {
+		return local_obj_constructor{ *this, name };
+	}
 
-	owca_function_return_value obj_constructor_base::prepare_get_member(owca_global &res, const owca_string &callobject) const { return read().prepare_get_member(res,callobject); }
-	owca_function_return_value obj_constructor_base::prepare_set_member(owca_global &res, const owca_string &callobject, const owca_global &val) const { return read().prepare_set_member(res,callobject,val); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res) const { return read().prepare_call(res); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_global &p1) const { return read().prepare_call(res,p1); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2) const { return read().prepare_call(res,p1,p2); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3) const { return read().prepare_call(res,p1,p2,p3); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const { return read().prepare_call(res,p1,p2,p3,p4); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_call_parameters &cp) const { return read().prepare_call(res,cp); }
-	owca_function_return_value obj_constructor_base::prepare_call(owca_global &res, const owca_parameters &cp) const { return read().prepare_call(res,cp); }
+	void local_obj_constructor::_write(const __owca__::exec_variable &val) {
+		self.set_member(member, { self._vm, val });
+	}
+	void local_obj_constructor::_read(__owca__::exec_variable& val) const {
+		auto tmp = self.get_member(member);
+		val = tmp._object;
+		tmp._object.reset();
+	}
+
+	owca_global obj_constructor_base::get_member(const owca_string &member) const { return read().get_member(member); }
+	owca_global obj_constructor_base::set_member(const owca_string &member, const owca_global &val) const { return read().set_member(member,val); }
+	owca_global obj_constructor_base::call() const { return read().call(); }
+	owca_global obj_constructor_base::call(const owca_global &p1) const { return read().call(p1); }
+	owca_global obj_constructor_base::call(const owca_global &p1, const owca_global &p2) const { return read().call(p1,p2); }
+	owca_global obj_constructor_base::call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const { return read().call(p1,p2,p3); }
+	owca_global obj_constructor_base::call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const { return read().call(p1,p2,p3,p4); }
+	owca_global obj_constructor_base::call(const owca_call_parameters &cp) const { return read().call(cp); }
+	owca_global obj_constructor_base::call(const owca_parameters &cp) const { return read().call(cp); }
 
 } }
 

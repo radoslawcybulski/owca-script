@@ -274,28 +274,27 @@ namespace owca {
 
 	class returnvalue;
 
-	class owca_function_return_value {
-	public:
-		enum state_t {
-			_NONE,
-			RETURN_VALUE,
-			CREATE_GENERATOR,
-			COROUTINE_STOP,
-			EXCEPTION,
-			FUNCTION_CALL,
-		};
-	private:
-		state_t _state;
-	public:
-		owca_function_return_value(state_t t=_NONE) : _state(t) { }
-		explicit owca_function_return_value(__owca__::executionreturnvalue);
-		bool operator == (state_t t) const { return _state==t; }
-		bool operator != (state_t t) const { return _state!=t; }
-		friend bool operator == (state_t t, const owca_function_return_value &c) { return t==c._state; }
-		friend bool operator != (state_t t, const owca_function_return_value &c) { return t!=c._state; }
+	//class owca_function_return_value {
+	//public:
+	//	enum state_t {
+	//		_NONE,
+	//		RETURN_VALUE,
+	//		CREATE_GENERATOR,
+	//		COROUTINE_STOP,
+	//		FUNCTION_CALL,
+	//	};
+	//private:
+	//	state_t _state;
+	//public:
+	//	owca_function_return_value(state_t t=_NONE) : _state(t) { }
+	//	explicit owca_function_return_value(__owca__::executionreturnvalue);
+	//	bool operator == (state_t t) const { return _state==t; }
+	//	bool operator != (state_t t) const { return _state!=t; }
+	//	friend bool operator == (state_t t, const owca_function_return_value &c) { return t==c._state; }
+	//	friend bool operator != (state_t t, const owca_function_return_value &c) { return t!=c._state; }
 
-		state_t type() const { return _state; }
-	};
+	//	state_t type() const { return _state; }
+	//};
 
 	class owca_user_function_base_object : private __owca__::vm_execution_stack_elem_external_self__ {
 	public:
@@ -304,14 +303,21 @@ namespace owca {
 
 		owca_local self;
 		owca_parameters parameters;
+		const bool generator;
 
 		using __owca__::vm_execution_stack_elem_base::show_in_exception_stack;
 		using __owca__::vm_execution_stack_elem_base::catch_exceptions;
 	protected:
-		owca_user_function_base_object() { }
+		owca_user_function_base_object(bool generator) : generator(generator) { }
 
-		virtual owca_function_return_value initialize(owca_global &retval) { return run(retval,false); }
-		virtual owca_function_return_value run(owca_global &retval, bool is_exception)=0;
+		virtual owca_global initialize() { return run(); }
+		virtual owca_global run()=0;
+
+		enum class ExceptionHandled {
+			No,
+			Yes
+		};
+		virtual ExceptionHandled exception_thrown(const owca_global&) { return ExceptionHandled::No; }
 		DLLEXPORT owca_vm &vm() const;
 		template <class A> bool convert_self(owca_global &ret, A &ptr) {
 			return self.convert(ret,vm(),ptr,"self");
@@ -320,11 +326,9 @@ namespace owca {
 		DLLEXPORT void _mark_gc(const gc_iteration &gc) const override;
 		DLLEXPORT void _release_resources(__owca__::virtual_machine &vm) override;
 	private:
-		owca_global tmp_return_value;
-
-		__owca__::executionstackreturnvalue parse(owca_function_return_value frv);
-		DLLEXPORT __owca__::executionstackreturnvalue first_time_execute(__owca__::executionstackreturnvalue mode);
-		DLLEXPORT __owca__::executionstackreturnvalue execute(__owca__::executionstackreturnvalue r);
+		__owca__::executionstackreturnvalue first_time_execute(__owca__::executionstackreturnvalue mode);
+		__owca__::executionstackreturnvalue execute(__owca__::executionstackreturnvalue r);
+		__owca__::executionstackreturnvalue parse_owca_exc(owca_exception& oe);
 	};
 
 }

@@ -1526,6 +1526,10 @@ cont:
 			case ExceptionCode::KEYWORD_PARAM_NOT_STRING:
 			case ExceptionCode::MISSING_VALUE_PARAMETER:
 			case ExceptionCode::MISSING_KEY_PARAMETER:
+			case ExceptionCode::NOT_A_TYPE:
+			case ExceptionCode::INVALID_UTF8_STRING:
+			case ExceptionCode::EMPTY_LIST:
+			case ExceptionCode::CODE_FAILED_TO_VALIDATE:
 				return class_exception_param;
 			case ExceptionCode::DIVISION_BY_ZERO:
 			case ExceptionCode::OVERFLOW:
@@ -1564,11 +1568,14 @@ cont:
 		void virtual_machine::_raise_from_user(const exec_variable &g)
 		{
 			if (g.mode()!=VAR_OBJECT || !g.get_object()->type()->inherit_from(class_exception)) {
-				push_execution_stack();
-				raise_invalid_param(g,class_exception);
-				executionreturnvalue r=execute_stack();
-				pop_execution_stack();
-				RCASSERT(r==VME_EXCEPTION);
+				try {
+					auto pop = push_execution_stack();
+					raise_invalid_param(g, class_exception);
+					RCASSERT(execution_stack->peek_frame()->return_handling_mode==vm_execution_stack_elem_base::RETURN_HANDLING_OPERATOR_RETURN_INIT_EXCEPTION);
+					execution_stack->peek_frame()->return_handling_mode=vm_execution_stack_elem_base::RETURN_HANDLING_NONE;
+					execute_stack();
+				}
+				catch (owca_exception &) {}
 				execution_exception_object_thrown=execution_exception_object_temp.get_object();
 				execution_exception_object_temp.reset();
 			}
@@ -1591,6 +1598,11 @@ cont:
 			execution_exception_object_temp.gc_release(*this);
 			execution_exception_object_temp.reset();
 			RCASSERT(prepare_call_function(&execution_exception_object_temp,execution_exception_parameters[0],&execution_exception_parameters[1],2));
+		}
+
+		RCLMFUNCTION void virtual_machine::_raise(ExceptionCode code, const std::string& txt)
+		{
+			_raise(code, _raise_get_exception_type(code), txt);
 		}
 
 		RCLMFUNCTION void virtual_machine::_raise(ExceptionCode code, exec_object *exctype, const std::string &txt)
@@ -2370,15 +2382,15 @@ cont:
 		//		r = execute_stack();
 		//	}
 		//}
-		executionreturnvalue virtual_machine::execute_stack()
+		void virtual_machine::execute_stack()
 		{
 			RCASSERT(execution_stack && execution_stack->index>=0);
-
+			RCASSERT(!execution_stack->coroutine_object());
 			vm_execution_stack *finishstack=execution_stack;
-			while(finishstack->coroutine_object()) {
-				finishstack=finishstack->prev();
-				RCASSERT(finishstack);
-			}
+			//while(finishstack->coroutine_object()) {
+			//	finishstack=finishstack->prev();
+			//	RCASSERT(finishstack);
+			//}
 
 			executionstackreturnvalue r=executionstackreturnvalue::OK;
 			exec_variable *returnval=finishstack->peek_frame_indexed(0)->return_value;
@@ -2686,21 +2698,19 @@ update_oper:
 			}
 			switch(r.type()) {
 			case executionstackreturnvalue::OK:
-				return VME_VALUE;
+				return;
 			case executionstackreturnvalue::RETURN:
-				return VME_VALUE;
-			case executionstackreturnvalue::EXCEPTION:
-				returnval->gc_release(*this);
-				returnval->set_object(execution_exception_object_thrown);
-				execution_exception_object_thrown=NULL;
-				return VME_EXCEPTION;
-			case executionstackreturnvalue::FUNCTION_CALL:
-				RCASSERT(0);
-				break;
+				return;
+			case executionstackreturnvalue::EXCEPTION: {
+				exec_variable tmp;
+				tmp.set_object(execution_exception_object_thrown);
+				auto oe = owca_exception{ owca_global{ *this, tmp } };
+				execution_exception_object_thrown = nullptr;
+				throw oe;
+			}
 			default:
 				RCASSERT(0);
 			}
-			return VME_VALUE;
 		}
 
 		//vm_execution_stack *virtual_machine::create_execution_stack()
@@ -2710,7 +2720,13 @@ update_oper:
 		//	return s;
 		//}
 
-		void virtual_machine::push_execution_stack(vm_execution_stack *st)
+		virtual_machine::StackPopper virtual_machine::push_execution_stack(vm_execution_stack* st)
+		{
+			push_execution_stack_impl(st);
+			return { this };
+		}
+
+		void virtual_machine::push_execution_stack_impl(vm_execution_stack *st)
 		{
 			if (st==NULL) {
 				st=new (allocate_memory(sizeof(vm_execution_stack),typeid(vm_execution_stack))) vm_execution_stack();
@@ -2722,7 +2738,7 @@ update_oper:
 			execution_stack=st;
 		}
 
-		void virtual_machine::pop_execution_stack()
+		void virtual_machine::pop_execution_stack_impl()
 		{
 			vm_execution_stack *st=execution_stack;
 			execution_stack=execution_stack->prev_stack;
@@ -4353,14 +4369,27 @@ unsupported:
 			RCASSERT(used[0] && used[1]);
 		}
 
-		vmstack::vmstack(virtual_machine &vm_) : vm(vm_)
+		std::string __exception_format3(const char *msg, const std::string &p1, const std::string &p2, const std::string &p3)
 		{
-			vm.push_execution_stack();
-		}
+			std::string z;
+			bool used[3] = { false, false, false };
 
-		vmstack::~vmstack()
-		{
-			vm.pop_execution_stack();
+			for (;;) {
+				const char *ptr = __find(msg);
+				z += std::string(msg, ptr - msg);
+				if (*ptr == 0) return z;
+				msg = ptr + 1;
+				switch (*msg) {
+				case '1': z += p1; used[0] = true; break;
+				case '2': z += p2; used[1] = true; break;
+				case '3': z += p3; used[2] = true; break;
+				case '%': z += '%'; break;
+				default:
+					RCASSERT(0);
+				}
+				++msg;
+			}
+			RCASSERT(used[0] && used[1] && used[2]);
 		}
 	}
 }

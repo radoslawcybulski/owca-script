@@ -24,10 +24,8 @@ namespace owca {
 	class owca_map;
 	class owca_list;
 	class owca_tuple;
-	class owca_function_return_value;
 
 	namespace __owca__ {
-		class local_obj_constructor;
 		struct callparams;
 		struct defval;
 		class exec_object;
@@ -52,6 +50,7 @@ namespace owca {
 		};
 		class obj_constructor_base : protected obj_constructor_base_used {
 		private:
+			friend class local_obj_constructor;
 			friend class owca_class;
 			friend class virtual_machine;
 			static owca_vm &__get(virtual_machine &);
@@ -97,7 +96,8 @@ namespace owca {
 			DLLEXPORT const std::string &operator = (const std::string &);
 
 			DLLEXPORT const owca_local &operator = (const owca_local &l);
-			DLLEXPORT __owca__::local_obj_constructor operator [] (const std::string &name);
+
+			DLLEXPORT local_obj_constructor operator [] (const std::string& name);
 
 			DLLEXPORT owca_global type() const;
 
@@ -140,24 +140,15 @@ namespace owca {
 			}
 			DLLEXPORT std::string str() const;
 
-			DLLEXPORT owca_function_return_value get_member(owca_global &res, const owca_string &callobject) const;
-			DLLEXPORT owca_function_return_value set_member(owca_global &res, const owca_string &callobject, const owca_global &val) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_global &p1) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_global &p1, const owca_global &p2) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_call_parameters &cp) const;
-			DLLEXPORT owca_function_return_value call(owca_global &res, const owca_parameters &cp) const;
-			DLLEXPORT owca_function_return_value prepare_get_member(owca_global &res, const owca_string &callobject) const;
-			DLLEXPORT owca_function_return_value prepare_set_member(owca_global &res, const owca_string &callobject, const owca_global &val) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_global &p1) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_call_parameters &cp) const;
-			DLLEXPORT owca_function_return_value prepare_call(owca_global &res, const owca_parameters &cp) const;
+			DLLEXPORT owca_global get_member(const owca_string &member) const;
+			DLLEXPORT owca_global set_member(const owca_string &member, const owca_global &val) const;
+			DLLEXPORT owca_global call() const;
+			DLLEXPORT owca_global call(const owca_global &p1) const;
+			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2) const;
+			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
+			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
+			DLLEXPORT owca_global call(const owca_call_parameters &cp) const;
+			DLLEXPORT owca_global call(const owca_parameters &cp) const;
 
 			template <class A> A *member_data() const { A *p = nullptr; read().get(p); return p; }
 		};
@@ -188,7 +179,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			void set(owca_function_return_value(*fnc)(owca_global &retval, owca_namespace &ns, const owca_parameters &)) {
+			void set(owca_global(*fnc)(owca_namespace &ns, const owca_parameters &)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function__<user_function_t__spec>(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -196,7 +187,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			void set(owca_function_return_value (*fnc)(owca_global &retval, owca_namespace &ns)) {
+			void set(owca_global (*fnc)(owca_namespace &ns)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_0<user_function_t0_spec>(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -204,7 +195,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class A> void set(owca_function_return_value (*fnc)(owca_global &retval, owca_namespace &ns,A), const std::string &n1, const defval &d1=defval()) {
+			template <class A> void set(owca_global (*fnc)(owca_namespace &ns,A), const std::string &n1, const defval &d1=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_1<user_function_t1_spec<A> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,d1));
@@ -212,7 +203,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class A, class B> void set(owca_function_return_value (*fnc)(owca_global &retval, owca_namespace &ns,A,B), const std::string &n1, const std::string &n2, const defval &d1=defval(), const defval &d2=defval()) {
+			template <class A, class B> void set(owca_global (*fnc)(owca_namespace &ns,A,B), const std::string &n1, const std::string &n2, const defval &d1=defval(), const defval &d2=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_2<user_function_t2_spec<A,B> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,n2,d1,d2));
@@ -220,7 +211,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class A, class B, class C> void set(owca_function_return_value (*fnc)(owca_global &retval, owca_namespace &ns,A,B,C), const std::string &n1, const std::string &n2, const std::string &n3, const defval &d1=defval(), const defval &d2=defval(), const defval &d3=defval()) {
+			template <class A, class B, class C> void set(owca_global (*fnc)(owca_namespace &ns,A,B,C), const std::string &n1, const std::string &n2, const std::string &n3, const defval &d1=defval(), const defval &d2=defval(), const defval &d3=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_3<user_function_t3_spec<A,B,C> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,n2,n3,d1,d2,d3));
@@ -229,7 +220,7 @@ namespace owca {
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
 
-			template <class SELF> void set(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns, const owca_parameters &)) {
+			template <class SELF> void set(owca_global (*fnc)(SELF,owca_namespace &ns, const owca_parameters &)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function__<user_function_s__spec<SELF> >(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -237,7 +228,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class SELF> void set(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns)) {
+			template <class SELF> void set(owca_global (*fnc)(SELF,owca_namespace &ns)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_0<user_function_s0_spec<SELF> >(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -245,7 +236,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class SELF, class A> void set(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns,A), const std::string &n1, const defval &d1=defval()) {
+			template <class SELF, class A> void set(owca_global (*fnc)(SELF,owca_namespace &ns,A), const std::string &n1, const defval &d1=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_1<user_function_s1_spec<SELF,A> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,d1));
@@ -253,7 +244,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class SELF, class A, class B> void set(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns,A,B), const std::string &n1, const std::string &n2, const defval &d1=defval(), const defval &d2=defval()) {
+			template <class SELF, class A, class B> void set(owca_global (*fnc)(SELF,owca_namespace &ns,A,B), const std::string &n1, const std::string &n2, const defval &d1=defval(), const defval &d2=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_2<user_function_s2_spec<SELF,A,B> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,n2,d1,d2));
@@ -261,7 +252,7 @@ namespace owca {
 				write(v);
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
-			template <class SELF, class A, class B, class C> void set(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns,A,B,C), const std::string &n1, const std::string &n2, const std::string &n3, const defval &d1=defval(), const defval &d2=defval(), const defval &d3=defval()) {
+			template <class SELF, class A, class B, class C> void set(owca_global (*fnc)(SELF,owca_namespace &ns,A,B,C), const std::string &n1, const std::string &n2, const std::string &n3, const defval &d1=defval(), const defval &d2=defval(), const defval &d3=defval()) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_function_fast(exec_function_ptr::generate_user_function_3<user_function_s3_spec<SELF,A,B,C> >(_vm,owca_string(&_vm,name),(void*)(fnc),n1,n2,n3,d1,d2,d3));
@@ -270,7 +261,7 @@ namespace owca {
 				v.get_function_fast().fnc->gc_release(_vm);
 			}
 
-			template <class SELF> void set_property(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns)) {
+			template <class SELF> void set_property(owca_global (*fnc)(SELF,owca_namespace &ns)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_property(exec_function_ptr::generate_property_r<user_function_s0_spec<SELF> >(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -278,7 +269,7 @@ namespace owca {
 				write(v);
 				v.get_property()->gc_release(_vm);
 			}
-			template <class SELF, class A> void set_property(owca_function_return_value (*fnc)(owca_global &retval, SELF,owca_namespace &ns,A)) {
+			template <class SELF, class A> void set_property(owca_global (*fnc)(SELF,owca_namespace &ns,A)) {
 				exec_variable v;
 				assert(sizeof(fnc) <= sizeof(void*));
 				v.set_property(exec_function_ptr::generate_property_w<user_function_s1_spec<SELF,A> >(_vm,owca_string(&_vm,name),(void*)(fnc)));
@@ -286,7 +277,7 @@ namespace owca {
 				write(v);
 				v.get_property()->gc_release(_vm);
 			}
-			template <class SELF, class A> void set_property(owca_function_return_value (*read)(owca_global &retval, SELF,owca_namespace &ns), owca_function_return_value (*write)(owca_global &retval, SELF,owca_namespace &ns,A)) {
+			template <class SELF, class A> void set_property(owca_global (*read)(SELF,owca_namespace &ns), owca_global (*write)(SELF,owca_namespace &ns,A)) {
 				exec_variable v;
 				assert(sizeof(read) <= sizeof(void*));
 				assert(sizeof(write) <= sizeof(void*));
@@ -296,6 +287,17 @@ namespace owca {
 				write(v);
 				v.get_property()->gc_release(_vm);
 			}
+		};
+
+		class local_obj_constructor : public __owca__::obj_constructor_base {
+			obj_constructor_base& self;
+			const owca_string& member;
+			DLLEXPORT void _write(const __owca__::exec_variable &);
+			DLLEXPORT void _read(__owca__::exec_variable &val) const;
+		public:
+			local_obj_constructor(obj_constructor_base& self, const owca_string& member) : obj_constructor_base(self._vm, member._ss), self(self), member(member) {}
+			local_obj_constructor(local_obj_constructor &&) = default;
+			using __owca__::obj_constructor_base::operator =;
 		};
 	}
 }

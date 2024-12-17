@@ -87,11 +87,13 @@ namespace owca {
 			return bool(opcode_validator::validate(vm,data,execution_data));
 		}
 
-		owca_function_return_value exec_namespace::apply_code(exec_variable &result, opcode_data *opcodes)
+		void exec_namespace::apply_code(opcode_data *opcodes)
 		{
-			vm.push_execution_stack();
-			vm.prepare_call_opcodes_entry(&result,this,opcodes);
-			return vm.owner_vm->resume_execution();
+			exec_variable tmp;
+			auto pop = vm.push_execution_stack();
+			vm.prepare_call_opcodes_entry(&tmp,this,opcodes);
+			vm.execute_stack();
+			tmp.gc_release(vm);
 		}
 
 		bool exec_namespace::get_variable(owca_internal_string *name, exec_variable &v)
@@ -572,7 +574,7 @@ done:
 				case 0: {
 					vm_execution_stack *st=vm->execution_stack;
 					while(st) {
-						if (vm->execution_stack->coroutine_object()) {
+						if (st->coroutine_object()) {
 							vm->raise_cant_resume_from_coroutine();
 							return executionstackreturnvalue::FUNCTION_CALL;
 						}
