@@ -25,7 +25,7 @@ static bool cmp(const char *s1, const char *s2)
 }
 
 enum testresult {
-	TR_NONE,TR_VALUE,TR_ERROR,TR_EXCEPTION_CODE,TR_EXCEPTION_CREATE
+	TR_NONE,TR_VALUE,TR_ERROR,TR_EXCEPTION_CODE,TR_EXCEPTION_COMPILATION
 };
 
 struct tr_error_elem {
@@ -249,7 +249,7 @@ static unsigned int test_file(const char *filename)
 			else if (cmp(buf,"+++compilation_exception ")) {
 				// compilation_exception 11 INVALID_PARAM_TYPE 2
 				// 22
-				tr=TR_EXCEPTION_CREATE;
+				tr=TR_EXCEPTION_COMPILATION;
 				char exc_text[64];
 				unsigned int lines[10];
 				char cc=0;
@@ -305,8 +305,12 @@ static unsigned int test_file(const char *filename)
 			vm.run_gc();
 		}
 		catch (owca_exception& oe) {
-			if (!oe.has_exception_object()) return __LINE__;
-			if (tr!=TR_EXCEPTION_CODE) return __LINE__;
+			if (!oe.has_exception_object()) {
+				return __LINE__;
+			}
+			if (tr != TR_EXCEPTION_COMPILATION) {
+				return __LINE__;
+			}
 			return parse_exception(oe.exception_object(), tr_exception_type, tr_exception_name, tr_exception_lines, tr_exception_lines_count);
 		}
 		catch (std::exception& e) {
@@ -339,7 +343,7 @@ print_errors:
 			}
 		}
 		else {
-			if (tr==TR_ERROR || tr==TR_EXCEPTION_CREATE) {
+			if (tr==TR_ERROR || tr==TR_EXCEPTION_COMPILATION) {
 				return __LINE__;
 			}
 			for(owca::owca_message_list::T it=ml.begin();it!=ml.end();++it) {
@@ -353,13 +357,23 @@ print_errors:
 				f = owca::owca_global();
 				vm.run_gc();
 
-				if (!res.string_is()) return __LINE__;
-				if (tr != TR_VALUE) return __LINE__;
-				if (res.string_get() != tr_value) return __LINE__;
+				if (!res.string_is()) {
+					return __LINE__;
+				}
+				if (tr != TR_VALUE) {
+					return __LINE__;
+				}
+				if (res.string_get() != tr_value) {
+					return __LINE__;
+				}
 			}
 			catch (owca_exception& oe) {
-				if (!oe.has_exception_object()) return __LINE__;
-				if (tr!=TR_EXCEPTION_CODE) return __LINE__;
+				if (!oe.has_exception_object()) {
+					return __LINE__;
+				}
+				if (tr != TR_EXCEPTION_CODE) {
+					return __LINE__;
+				}
 				unsigned int v=parse_exception(oe.exception_object(), tr_exception_type, tr_exception_name, tr_exception_lines, tr_exception_lines_count);
 				if (v!=0) {
 					return v;
@@ -410,6 +424,9 @@ int main(int argc, const char **argv)
 		owca::__owca__::tree_base::check_blocks();
 		owca::__owca__::exec_base_id::check_blocks();
 #endif
+		if (line!=0) {
+			printf("test failed in line %d\n", line);
+		}
 
 #if defined(_WIN32) && defined(RCDEBUGSTUDIO)
 		if (line!=0) {

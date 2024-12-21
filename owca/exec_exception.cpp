@@ -99,7 +99,7 @@ namespace owca {
 		try {
 			auto res = _exception_object.get_member("code").call();
 			_code = (ExceptionCode)res.int_get();
-			res = _exception_object.get_member("message");
+			res = _exception_object.get_member("text").call();
 			_message = res.string_get().str();
 		}
 		catch (std::exception &e) {

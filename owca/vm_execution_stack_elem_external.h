@@ -54,12 +54,6 @@ namespace owca {
 		struct vm_execution_stack_elem_external_base : public vm_execution_stack_elem_base {
 			virtual_machine *vm;
 			const void *userptr;
-			const exec_variable *param_array;
-
-			vm_execution_stack_elem_external_base() : param_array(NULL) { }
-			~vm_execution_stack_elem_external_base() { delete [] param_array; }
-
-			void set_param_array(const exec_variable *pm) { param_array=pm; }
 
 			DLLEXPORT executionstackreturnvalue first_time_execute(executionstackreturnvalue mode);
 

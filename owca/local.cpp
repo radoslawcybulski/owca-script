@@ -667,9 +667,7 @@ namespace owca {
 	{
 		exec_variable tmp;
 		auto pop = _vm->push_execution_stack();
-		if (_vm->prepare_call_function(&tmp, _object, params, size)) {
-			_vm->execution_stack->peek_frame()->set_param_array(params);
-		}
+		_vm->prepare_call_function(&tmp, _object, params, size);
 		_vm->execute_stack();
 		return { *_vm, tmp };
 	}
@@ -679,9 +677,7 @@ namespace owca {
 		__owca__::virtual_machine::keyword_param_iterator empty;
 		exec_variable tmp;
 		auto pop = _vm->push_execution_stack();
-		if (_vm->prepare_call_function(&tmp, _object, list.mode() == VAR_NULL ? NULL : &list, map.mode() == VAR_NULL ? NULL : &map, empty, params, size, NULL)) {
-			_vm->execution_stack->peek_frame()->set_param_array(params);
-		}
+		_vm->prepare_call_function(&tmp, _object, list.mode() == VAR_NULL ? NULL : &list, map.mode() == VAR_NULL ? NULL : &map, empty, params, size, NULL);
 		_vm->execute_stack();
 		return { *_vm, tmp };
 	}

@@ -69,7 +69,6 @@ namespace owca {
 
 			virtual executionstackreturnvalue first_time_execute(executionstackreturnvalue mode)=0;
 			virtual executionstackreturnvalue execute(executionstackreturnvalue)=0;
-			virtual void set_param_array(const exec_variable *pm) { delete [] pm; }
 
 			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
 			DLLEXPORT void _release_resources(virtual_machine &vm);
