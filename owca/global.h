@@ -55,6 +55,8 @@ namespace owca {
 		owca_global(char b) : _next(NULL),_prev(NULL),owca_local(b) { if (_vm) _attach(); }
 		owca_global(unsigned int i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
 		owca_global(int i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
+		owca_global(unsigned long i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
+		owca_global(long i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
 		owca_global(unsigned long long i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
 		owca_global(long long i) : _next(NULL),_prev(NULL),owca_local(i) { if (_vm) _attach(); }
 		owca_global(double r) : _next(NULL),_prev(NULL),owca_local(r) { if (_vm) _attach(); }

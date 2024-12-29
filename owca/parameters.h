@@ -37,7 +37,7 @@ namespace owca {
 		void convert_parameters_impl(unsigned int) const {}
 		template <typename A, typename ... B> void convert_parameters_impl(unsigned int index, A& a, B & ... b) const {
 			auto val = get(index);
-			val.convert(*vm->owner_vm, a, std::to_string(index + 1).c_str());
+			val.convert(a, std::to_string(index + 1).c_str());
 			convert_parameters_impl(index + 1, b...);
 		}
 

@@ -202,7 +202,7 @@ namespace owca {
 			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_3 ptr, const void *userptr);
 			DLLEXPORT static exec_property *_property_write(virtual_machine &vm, exec_function_ptr *r, exec_function_ptr *w);
 		public:
-			template <class A> static exec_function_ptr *generate_user_function(virtual_machine &vm, owca_string &name) {
+			template <class A> static exec_function_ptr *generate_user_function(virtual_machine &vm, const owca_string &name) {
 				//RCASSERT(dynamic_cast<owca_user_function_base_object*>((A*)NULL));
 				exec_function_ptr *f=_function_create(vm,name,0);
 				_function_set_function(f,A::template create<A>,NULL);
@@ -385,7 +385,8 @@ namespace owca {
 			typedef owca_global (*function)(owca_namespace &ns, A);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(ns,this->p1);
 			}
 		};
 		template <class A, class B> struct user_function_t2_spec : public user_function_base_simple<vm_execution_stack_elem_external_t2<A,B>,user_function_t2_spec<A,B> > {
@@ -393,7 +394,8 @@ namespace owca {
 			typedef owca_global (*function)(owca_namespace &ns,A,B);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1,this->p2);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(ns,this->p1,this->p2);
 			}
 		};
 		template <class A, class B, class C> struct user_function_t3_spec : public user_function_base_simple<vm_execution_stack_elem_external_t3<A,B,C>,user_function_t3_spec<A,B,C> > {
@@ -401,7 +403,8 @@ namespace owca {
 			typedef owca_global (*function)(owca_namespace &ns,A,B,C);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(ns,this->p1,this->p2,this->p3);
 			}
 		};
 		template <class SELF> struct user_function_s__spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t<SELF>,user_function_s__spec<SELF> > {
@@ -409,7 +412,8 @@ namespace owca {
 			typedef owca_global (*function)(SELF,owca_namespace &ns, const owca_parameters &);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),_generate_parameters(*this->vm,this->cp));
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(this->self,ns,_generate_parameters(*this->vm,this->cp));
 			}
 		};
 		template <class SELF> struct user_function_s0_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t0<SELF>,user_function_s0_spec<SELF> > {
@@ -417,7 +421,8 @@ namespace owca {
 			typedef owca_global (*function)(SELF,owca_namespace &ns);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate());
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(this->self,ns);
 			}
 		};
 		template <class SELF, class A> struct user_function_s1_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t1<SELF,A>,user_function_s1_spec<SELF,A> > {
@@ -425,7 +430,8 @@ namespace owca {
 			typedef owca_global (*function)(SELF,owca_namespace &ns, A);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(this->self,ns,this->p1);
 			}
 		};
 		template <class SELF, class A, class B> struct user_function_s2_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t2<SELF,A,B>,user_function_s2_spec<SELF,A,B> > {
@@ -433,7 +439,8 @@ namespace owca {
 			typedef owca_global (*function)(SELF,owca_namespace &ns,A,B);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(this->self,ns,this->p1,this->p2);
 			}
 		};
 		template <class SELF, class A, class B, class C> struct user_function_s3_spec : public user_function_base_simple<vm_execution_stack_elem_external_self_t3<SELF,A,B,C>,user_function_s3_spec<SELF,A,B,C> > {
@@ -441,7 +448,8 @@ namespace owca {
 			typedef owca_global (*function)(SELF,owca_namespace &ns,A,B,C);
 
 			inline owca_global call() {
-				return ((function)this->userptr)(this->self,this->fnc->ynamespace()->generate(),this->p1,this->p2,this->p3);
+				auto ns = this->fnc->ynamespace()->generate();
+				return ((function)this->userptr)(this->self,ns,this->p1,this->p2,this->p3);
 			}
 		};
 

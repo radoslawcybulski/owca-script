@@ -7,12 +7,14 @@
 #include "exec_string.h"
 #include <stdarg.h>
 
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 namespace owca {
 #ifdef RCDEBUG
     namespace __owca__ {
-        void debug_printf(char *txt, ...) {
+        void debug_printf(const char *txt, ...) {
 			va_list vl;
 			va_start(vl,txt);
 			char buf[256 * 64];

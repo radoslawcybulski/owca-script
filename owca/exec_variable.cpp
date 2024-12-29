@@ -22,9 +22,9 @@ namespace owca { namespace __owca__ {
 
 	exec_variable_location exec_variable_location::invalid;
 
-	defval::defval(char *c) : type(STRING)
+	defval::defval(const char *c) : type(STRING)
 	{
-		char *e=c;
+		const char *e=c;
 		while(*e) ++e;
 
 		unsigned int index = 0;

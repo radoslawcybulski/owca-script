@@ -4,7 +4,10 @@
 #include "stdafx.h"
 #include "base.h"
 #include "rcy.h"
-#include <windows.h>
+#if defined _WIN32 || defined _WIN64
+#include <Windows.h>
+#endif
+
 #undef min
 #undef max
 

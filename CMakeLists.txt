@@ -7,6 +7,7 @@ enable_testing()
 
 set(BUILD_SHARED_LIBS ON)
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if(WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
@@ -16,14 +17,17 @@ endif()
 file(GLOB_RECURSE src owca/*.cpp)
 file(GLOB_RECURSE hdr owca/*.h)
 add_library(owca_objects OBJECT ${src} ${hdr})
+target_include_directories(owca_objects PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 #target_compile_definitions(owca_objects PUBLIC RCDEBUG_IN_VS=1)
 #target_compile_definitions(owca_objects PUBLIC RCDEBUG=1)
 #target_compile_definitions(owca_objects PUBLIC RCDEBUG_EXECUTION=1)
 
-add_library(owca_shared SHARED ${src} ${hdr})
+add_library(owca_shared SHARED owca/empty.cpp)
+target_link_libraries(owca_shared PUBLIC owca_objects)
 target_include_directories(owca_shared PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(owca_static STATIC ${src} ${hdr})
+add_library(owca_static STATIC owca/empty.cpp)
+target_include_directories(owca_static PUBLIC owca_objects)
 target_include_directories(owca_static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(test1 tests/test1.cpp)

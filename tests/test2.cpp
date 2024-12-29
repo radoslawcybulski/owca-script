@@ -1,10 +1,8 @@
-#define DLLEXPORT
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "owca.h"
 #include "owca/base.h"
 #include "owca/exec_base.h"
-#include <windows.h>
 #undef min
 #undef max
 

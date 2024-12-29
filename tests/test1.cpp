@@ -1,10 +1,8 @@
-#define DLLEXPORT
-
 #include "owca/base.h"
 #include "owca.h"
 #include "owca/exec_base.h"
 #include "owca/debug_time_it.h"
-#include <windows.h>
+
 #undef min
 #undef max
 

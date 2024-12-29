@@ -860,6 +860,10 @@ namespace owca {
 		return _call(*cp.ci);
 	}
 
+	owca_exception owca_local::_construct_invalid_param_exception(std::string msg)
+	{
+		return owca_exception{ ExceptionCode::INVALID_PARAM_TYPE, std::move(msg) };
+	}
 	//bool owca_local::convert(owca_global &exception_object, owca_vm &vm, owca_int &a, const char *pname, owca_int minval, owca_int maxval)
 	//{
 	//	if (!convert(exception_object,vm,a,pname)) return false;

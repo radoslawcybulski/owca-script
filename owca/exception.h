@@ -73,10 +73,10 @@ namespace owca {
 			owca_int line;
 		};
 		const std::string &message() const { return _message; }
-		const char* what() const { return _message.c_str(); }
-		auto code() const { return _code; }
-		const auto& exception_object() const { return _exception_object; }
-		auto take_exception_object() { return std::move(_exception_object); }
+		const char* what() const noexcept { return _message.c_str(); }
+		ExceptionCode code() const { return _code; }
+		const owca_global& exception_object() const { return _exception_object; }
+		owca_global take_exception_object() { return std::move(_exception_object); }
 		bool has_exception_object() const;
 		std::vector<StacktraceElem> stacktrace() const;
 

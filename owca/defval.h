@@ -29,7 +29,7 @@ namespace owca {
 			defval(double rr) : type(REAL) { data.r=rr; }
 			defval(long double rr) : type(REAL) { data.r=rr; }
 			defval(bool b) : type(BOOL) { data.b=b; }
-			DLLEXPORT defval(char *c);
+			DLLEXPORT defval(const char *c);
 			defval() : type(NONE) { }
 			DLLEXPORT ~defval();
 			DLLEXPORT void get(exec_variable &r) const;

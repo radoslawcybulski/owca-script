@@ -46,9 +46,9 @@
 namespace owca {
     namespace __owca__ {
 #ifdef RCDEBUG
-        DLLEXPORT void debug_printf(char *, ...);
+        DLLEXPORT void debug_printf(const char *, ...);
 #else
-        inline void debug_printf(char *, ...) { }
+        inline void debug_printf(const char *, ...) { }
 #endif
     }
 }

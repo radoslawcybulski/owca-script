@@ -21,6 +21,7 @@ namespace owca {
 	class owca_string_buffer;
 	class owca_namespace;
 	class owca_user_function_base_object;
+	class owca_exception;
 	namespace __owca__ {
 		struct defval;
 		class exec_variable;
@@ -90,6 +91,8 @@ namespace owca {
 
 		void _prepare_get_member(const owca_string &member) const;
 		void _prepare_set_member(const owca_string &member, const owca_global &val) const;
+
+		static owca_exception _construct_invalid_param_exception(std::string msg);
 	public:
 		owca_local(bool b) : _vm(NULL) { _object.set_bool(b); }
 		DLLEXPORT owca_local(char c);
@@ -97,6 +100,8 @@ namespace owca {
 		owca_local(int i) : _vm(NULL) { _object.set_int(i); }
 		owca_local(unsigned long long i) : _vm(NULL) { _object.set_int(i); }
 		owca_local(long long i) : _vm(NULL) { _object.set_int(i); }
+		owca_local(unsigned long i) : _vm(NULL) { _object.set_int(i); }
+		owca_local(long i) : _vm(NULL) { _object.set_int(i); }
 		owca_local(double r) : _vm(NULL) { _object.set_real(r); }
 		owca_local(long double r) : _vm(NULL) { _object.set_real(r); }
 		DLLEXPORT owca_local(const char *);
@@ -191,16 +196,16 @@ namespace owca {
 
 		DLLEXPORT static owca_local null, null_no_value;
 
-		template <class A, typename VM> void convert(VM &vm, A &a, const char *pname) {
+		template <class A> void convert(A &a, const char *pname) {
 			static const char *typenames[]={
 				"a string","an integer","a real","a boolean","a list","a map","a tuple" };
 			if (get(a)) return;
 			if (__owca__::__type_name__<A>::INDEX!=0xff) {
 				const char *tname=typenames[__owca__::__type_name__<A>::INDEX];
-				throw owca_exception{ vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname)) };
+				throw _construct_invalid_param_exception(OWCA_ERROR_FORMAT2("parameter %1 is not %2",pname,tname));
 			}
 			else {
-				throw owca_exception{ vm.construct_builtin_exception(ExceptionCode::INVALID_PARAM_TYPE,OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname)) };
+				throw _construct_invalid_param_exception(OWCA_ERROR_FORMAT1("parameter %1 is of an invalid type", pname));
 			}
 		}
 	};

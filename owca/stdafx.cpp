@@ -75,10 +75,6 @@ namespace owca {
 
 #endif
 
-#if defined _WIN32 || defined _WIN64
-#include <Windows.h>
-#endif
-
 void debugprint(const char *txt, ...)
 {
 	va_list args;

@@ -1,4 +1,3 @@
-#define DLLEXPORT
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "owca\base.h"
