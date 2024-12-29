@@ -58,7 +58,7 @@ namespace owca {
 		CPP_EXCEPTION_IN_USER_CODE,
 		USER=1024,
 	};
-	DLLEXPORT std::string to_string(ExceptionCode);
+	OWCA_SCRIPT_DLLEXPORT std::string to_string(ExceptionCode);
 
 	class owca_exception : public std::exception {
 		owca_global _exception_object;

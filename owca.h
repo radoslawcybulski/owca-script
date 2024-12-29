@@ -1,8 +1,25 @@
 #ifndef _RC_Y_H
 #define _RC_Y_H
 
-#ifndef DLLEXPORT
-#define DLLEXPORT
+#ifndef OWCA_SCRIPT_DLLEXPORT
+
+    #if defined(_MSC_VER)
+        //  Microsoft 
+        #define OWCA_SCRIPT_EXPORT __declspec(dllexport)
+        #define OWCA_SCRIPT_IMPORT __declspec(dllimport)
+    #else
+        //  GCC
+        #define OWCA_SCRIPT_EXPORT __attribute__((visibility("default")))
+        #define OWCA_SCRIPT_IMPORT
+
+    #endif
+
+    #ifdef OWCA_SCRIPT_BUILDING
+        #define OWCA_SCRIPT_DLLEXPORT OWCA_SCRIPT_EXPORT
+    #else
+        #define OWCA_SCRIPT_DLLEXPORT OWCA_SCRIPT_IMPORT
+    #endif
+
 #endif
 
 #include "owca/debug_assert.h"

@@ -75,9 +75,9 @@ namespace owca { namespace __owca__ {
 		}
 		void reset() { set_null(); }
 
-		DLLEXPORT void gc_acquire() const;
-		DLLEXPORT void gc_release(virtual_machine &);
-		DLLEXPORT void gc_mark(const gc_iteration &gc) const;
+		OWCA_SCRIPT_DLLEXPORT void gc_acquire() const;
+		OWCA_SCRIPT_DLLEXPORT void gc_release(virtual_machine &);
+		OWCA_SCRIPT_DLLEXPORT void gc_mark(const gc_iteration &gc) const;
 
 		bool type(exectype tp) const;
 		bool type(exec_object *tp) const;

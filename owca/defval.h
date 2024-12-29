@@ -29,10 +29,10 @@ namespace owca {
 			defval(double rr) : type(REAL) { data.r=rr; }
 			defval(long double rr) : type(REAL) { data.r=rr; }
 			defval(bool b) : type(BOOL) { data.b=b; }
-			DLLEXPORT defval(const char *c);
+			OWCA_SCRIPT_DLLEXPORT defval(const char *c);
 			defval() : type(NONE) { }
-			DLLEXPORT ~defval();
-			DLLEXPORT void get(exec_variable &r) const;
+			OWCA_SCRIPT_DLLEXPORT ~defval();
+			OWCA_SCRIPT_DLLEXPORT void get(exec_variable &r) const;
 		};
 		extern defval dv_null,dv_unused,dv_no_param_given;
 	}

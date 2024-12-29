@@ -84,19 +84,19 @@ namespace owca {
 		struct callparams;
 	}
 
-	DLLEXPORT std::string ptr_to_string(void *ptr);
-	DLLEXPORT std::string int_to_string(owca_int l, unsigned int base=10, bool upper=false);
-	DLLEXPORT std::string real_to_string(owca_real l);
-	DLLEXPORT bool to_int(owca_int &retval, const char *txt, unsigned int size, unsigned int base);
-	DLLEXPORT bool to_real(owca_real &retval, const char *txt, unsigned int size);
+	OWCA_SCRIPT_DLLEXPORT std::string ptr_to_string(void *ptr);
+	OWCA_SCRIPT_DLLEXPORT std::string int_to_string(owca_int l, unsigned int base=10, bool upper=false);
+	OWCA_SCRIPT_DLLEXPORT std::string real_to_string(owca_real l);
+	OWCA_SCRIPT_DLLEXPORT bool to_int(owca_int &retval, const char *txt, unsigned int size, unsigned int base);
+	OWCA_SCRIPT_DLLEXPORT bool to_real(owca_real &retval, const char *txt, unsigned int size);
 }
 
 namespace owca {
 	namespace __owca__ {
-		DLLEXPORT std::string __exception_format(const char *msg);
-		DLLEXPORT std::string __exception_format1(const char *msg, const std::string &p1);
-		DLLEXPORT std::string __exception_format2(const char *msg, const std::string &p1, const std::string &p2);
-		DLLEXPORT std::string __exception_format3(const char *msg, const std::string &p1, const std::string &p2, const std::string &p3);
+		OWCA_SCRIPT_DLLEXPORT std::string __exception_format(const char *msg);
+		OWCA_SCRIPT_DLLEXPORT std::string __exception_format1(const char *msg, const std::string &p1);
+		OWCA_SCRIPT_DLLEXPORT std::string __exception_format2(const char *msg, const std::string &p1, const std::string &p2);
+		OWCA_SCRIPT_DLLEXPORT std::string __exception_format3(const char *msg, const std::string &p1, const std::string &p2, const std::string &p3);
 
 		void debug_check_memory(void);
 	}

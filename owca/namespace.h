@@ -29,10 +29,10 @@ namespace owca {
 		class obj_constructor : public __owca__::obj_constructor_function {
 			friend class owca_namespace;
 			owca_global g;
-			DLLEXPORT void _write(const __owca__::exec_variable &);
-			DLLEXPORT void _read(__owca__::exec_variable &val) const;
-			DLLEXPORT obj_constructor(owca_namespace &ns_, __owca__::owca_internal_string *name_);
-			DLLEXPORT void operator = (const obj_constructor &);
+			OWCA_SCRIPT_DLLEXPORT void _write(const __owca__::exec_variable &);
+			OWCA_SCRIPT_DLLEXPORT void _read(__owca__::exec_variable &val) const;
+			OWCA_SCRIPT_DLLEXPORT obj_constructor(owca_namespace &ns_, __owca__::owca_internal_string *name_);
+			OWCA_SCRIPT_DLLEXPORT void operator = (const obj_constructor &);
 		public:
 			obj_constructor(obj_constructor &&) = default;
 
@@ -40,15 +40,15 @@ namespace owca {
 		};
 
 		friend class obj_constructor;
-		DLLEXPORT obj_constructor operator [] (const owca_string &);
+		OWCA_SCRIPT_DLLEXPORT obj_constructor operator [] (const owca_string &);
 
 		bool not_bound() const { return ns==NULL; }
-		DLLEXPORT void clear();
-        DLLEXPORT owca_global copy(std::string file_name);
-		DLLEXPORT void apply_code(const std::vector<unsigned char> &);
-		DLLEXPORT bool validate_code(const std::vector<unsigned char> &) const;
-		DLLEXPORT owca_vm &vm();
-        DLLEXPORT std::string get_file_name() const;
+		OWCA_SCRIPT_DLLEXPORT void clear();
+        OWCA_SCRIPT_DLLEXPORT owca_global copy(std::string file_name);
+		OWCA_SCRIPT_DLLEXPORT void apply_code(const std::vector<unsigned char> &);
+		OWCA_SCRIPT_DLLEXPORT bool validate_code(const std::vector<unsigned char> &) const;
+		OWCA_SCRIPT_DLLEXPORT owca_vm &vm();
+        OWCA_SCRIPT_DLLEXPORT std::string get_file_name() const;
 	};
 }
 

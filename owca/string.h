@@ -38,62 +38,62 @@ namespace owca {
 		__owca__::owca_internal_string *_ss;
 		__owca__::virtual_machine *_vm;
 		bool _destroy;
-		DLLEXPORT unsigned int _update_index(owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int _update_index(owca_int index) const;
 		owca_string(__owca__::virtual_machine *vm, __owca__::owca_internal_string *s) : _vm(vm),_ss(s),_destroy(false) { }
 	public:
 		owca_string() : _ss(NULL),_vm(NULL),_destroy(false) { }
-		DLLEXPORT owca_string(const char *);
-		DLLEXPORT owca_string(const char *, size_t size);
-		DLLEXPORT owca_string(const std::string &s);
-		DLLEXPORT owca_string(const owca_string &);
-		DLLEXPORT ~owca_string();
+		OWCA_SCRIPT_DLLEXPORT owca_string(const char *);
+		OWCA_SCRIPT_DLLEXPORT owca_string(const char *, size_t size);
+		OWCA_SCRIPT_DLLEXPORT owca_string(const std::string &s);
+		OWCA_SCRIPT_DLLEXPORT owca_string(const owca_string &);
+		OWCA_SCRIPT_DLLEXPORT ~owca_string();
 		bool not_bound() const { return _ss == NULL; }
 
 		bool empty(void) const { return data_size() == 0; }
 
-		DLLEXPORT owca_string &operator = (const owca_string &);
-		DLLEXPORT bool operator == (const owca_string &s) const;
-		DLLEXPORT bool operator != (const owca_string &s) const;
-		DLLEXPORT bool operator >= (const owca_string &s) const;
-		DLLEXPORT bool operator <= (const owca_string &s) const;
-		DLLEXPORT bool operator >  (const owca_string &s) const;
-		DLLEXPORT bool operator <  (const owca_string &s) const;
-		DLLEXPORT bool operator == (const char *s) const;
-		DLLEXPORT bool operator != (const char *s) const;
-		DLLEXPORT bool operator >= (const char *s) const;
-		DLLEXPORT bool operator <= (const char *s) const;
-		DLLEXPORT bool operator >  (const char *s) const;
-		DLLEXPORT bool operator <  (const char *s) const;
-		DLLEXPORT bool operator == (const std::string &s) const;
-		DLLEXPORT bool operator != (const std::string &s) const;
-		DLLEXPORT bool operator >= (const std::string &s) const;
-		DLLEXPORT bool operator <= (const std::string &s) const;
-		DLLEXPORT bool operator >  (const std::string &s) const;
-		DLLEXPORT bool operator <  (const std::string &s) const;
-		DLLEXPORT friend bool operator == (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator != (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator >= (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator <= (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator >  (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator <  (const std::string &p, const owca_string &s);
-		DLLEXPORT friend bool operator == (const char *p, const owca_string &s);
-		DLLEXPORT friend bool operator != (const char *p, const owca_string &s);
-		DLLEXPORT friend bool operator >= (const char *p, const owca_string &s);
-		DLLEXPORT friend bool operator <= (const char *p, const owca_string &s);
-		DLLEXPORT friend bool operator >  (const char *p, const owca_string &s);
-		DLLEXPORT friend bool operator <  (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT owca_string &operator = (const owca_string &);
+		OWCA_SCRIPT_DLLEXPORT bool operator == (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator != (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >= (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <= (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >  (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <  (const owca_string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator == (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator != (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >= (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <= (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >  (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <  (const char *s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator == (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator != (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >= (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <= (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator >  (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT bool operator <  (const std::string &s) const;
+		OWCA_SCRIPT_DLLEXPORT friend bool operator == (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator != (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator >= (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator <= (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator >  (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator <  (const std::string &p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator == (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator != (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator >= (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator <= (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator >  (const char *p, const owca_string &s);
+		OWCA_SCRIPT_DLLEXPORT friend bool operator <  (const char *p, const owca_string &s);
 
-		DLLEXPORT unsigned int operator [] (owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int operator [] (owca_int index) const;
 
-		DLLEXPORT unsigned int character_count() const;
-		DLLEXPORT unsigned int data_size() const;
-		DLLEXPORT const char *data() const;
-		DLLEXPORT unsigned int hash() const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int character_count() const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int data_size() const;
+		OWCA_SCRIPT_DLLEXPORT const char *data() const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int hash() const;
 
-		DLLEXPORT owca_string get(owca_int from, owca_int to) const;
-		DLLEXPORT owca_string get(owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT owca_string get(owca_int from, owca_int to) const;
+		OWCA_SCRIPT_DLLEXPORT owca_string get(owca_int index) const;
 
-		DLLEXPORT std::string str() const;
+		OWCA_SCRIPT_DLLEXPORT std::string str() const;
 	};
 
 	class owca_string_buffer {
@@ -106,19 +106,19 @@ namespace owca {
 		elem root,*act;
 		unsigned int size;
 
-		DLLEXPORT void _add(const void *ptr, unsigned int size);
+		OWCA_SCRIPT_DLLEXPORT void _add(const void *ptr, unsigned int size);
 	public:
-		DLLEXPORT owca_string_buffer();
-		DLLEXPORT ~owca_string_buffer();
+		OWCA_SCRIPT_DLLEXPORT owca_string_buffer();
+		OWCA_SCRIPT_DLLEXPORT ~owca_string_buffer();
 
-		DLLEXPORT owca_string_buffer &operator << (char c);
-		DLLEXPORT owca_string_buffer &operator << (const char *c);
-		DLLEXPORT owca_string_buffer &operator << (const std::string &);
-		DLLEXPORT owca_string_buffer &operator << (const owca_string &);
+		OWCA_SCRIPT_DLLEXPORT owca_string_buffer &operator << (char c);
+		OWCA_SCRIPT_DLLEXPORT owca_string_buffer &operator << (const char *c);
+		OWCA_SCRIPT_DLLEXPORT owca_string_buffer &operator << (const std::string &);
+		OWCA_SCRIPT_DLLEXPORT owca_string_buffer &operator << (const owca_string &);
 
-		DLLEXPORT void add(const char *ptr, unsigned int size) { _add(ptr,size); }
-		DLLEXPORT owca_global get(owca_vm &vm) const;
-		DLLEXPORT void clear(void);
+		OWCA_SCRIPT_DLLEXPORT void add(const char *ptr, unsigned int size) { _add(ptr,size); }
+		OWCA_SCRIPT_DLLEXPORT owca_global get(owca_vm &vm) const;
+		OWCA_SCRIPT_DLLEXPORT void clear(void);
 	};
 }
 

@@ -54,7 +54,7 @@ namespace owca {
 
 			vm_execution_stack_elem_base() : r(returnvalueflow::FIN),return_handling_mode(RETURN_HANDLING_NONE),_options(OPTION_FIRST_TIME_RUN),
 							init_object(NULL),oper_2_values(NULL),fnc(NULL) { }
-			DLLEXPORT ~vm_execution_stack_elem_base();
+			OWCA_SCRIPT_DLLEXPORT ~vm_execution_stack_elem_base();
 
 			bool catch_exceptions() const { return (_options & OPTION_CATCH_EXCEPTIONS)!=0; }
 			void catch_exceptions(bool q) { if (q) _options|=OPTION_CATCH_EXCEPTIONS; else _options&=~OPTION_CATCH_EXCEPTIONS; }
@@ -70,8 +70,8 @@ namespace owca {
 			virtual executionstackreturnvalue first_time_execute(executionstackreturnvalue mode)=0;
 			virtual executionstackreturnvalue execute(executionstackreturnvalue)=0;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 			virtual bool internal_frame() const { return false; }
 		};
 

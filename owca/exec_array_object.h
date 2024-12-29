@@ -21,9 +21,9 @@ namespace owca { namespace __owca__ {
 		~exec_array_object() { RCASSERT(vars==NULL); }
 
 		exec_variable *ptr() const { return vars; }
-		DLLEXPORT exec_variable &get(unsigned int index);
+		OWCA_SCRIPT_DLLEXPORT exec_variable &get(unsigned int index);
 
-		DLLEXPORT void resize(virtual_machine &vm, unsigned int newsize);
+		OWCA_SCRIPT_DLLEXPORT void resize(virtual_machine &vm, unsigned int newsize);
 		void swap(exec_array_object *);
 		unsigned int size() const { return size_; }
 

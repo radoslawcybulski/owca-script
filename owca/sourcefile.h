@@ -23,8 +23,8 @@ namespace owca {
 		const char *end;
 	public:
 		owca_source_file_Text(const char *txt_, unsigned int len) : txt(txt_), end(txt_ + len) { }
-		DLLEXPORT owca_source_file_Text(const char *txt_);
-		DLLEXPORT int next_line(const char *&src) const;
+		OWCA_SCRIPT_DLLEXPORT owca_source_file_Text(const char *txt_);
+		OWCA_SCRIPT_DLLEXPORT int next_line(const char *&src) const;
 	};
 
 	class owca_source_file_Text_array : public owca_source_file {
@@ -32,8 +32,8 @@ namespace owca {
 		unsigned int cnt;
 		mutable unsigned int index;
 	public:
-		DLLEXPORT owca_source_file_Text_array(const char **txt_, unsigned int cnt_=std::numeric_limits<unsigned int>::max());
-		DLLEXPORT int next_line(const char *&src) const;
+		OWCA_SCRIPT_DLLEXPORT owca_source_file_Text_array(const char **txt_, unsigned int cnt_=std::numeric_limits<unsigned int>::max());
+		OWCA_SCRIPT_DLLEXPORT int next_line(const char *&src) const;
 	};
 
 }

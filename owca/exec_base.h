@@ -33,13 +33,13 @@ namespace owca {
 #ifdef RCDEBUG
 			unsigned int debug_ident;
 		public:
-			DLLEXPORT exec_base_id();
+			OWCA_SCRIPT_DLLEXPORT exec_base_id();
 			unsigned int get_debug_ident() const { return debug_ident; }
 #else
 		public:
-			DLLEXPORT exec_base_id();
+			OWCA_SCRIPT_DLLEXPORT exec_base_id();
 #endif
-			DLLEXPORT virtual ~exec_base_id();
+			OWCA_SCRIPT_DLLEXPORT virtual ~exec_base_id();
 
 #ifdef RCDEBUG_MEMORY_BLOCKS
 			const unsigned int _memory_id;
@@ -51,8 +51,8 @@ namespace owca {
 			friend void exec_ref_counter_remove(exec_base_exist *);
 			friend void exec_ref_counter_finalize();
 		public:
-			DLLEXPORT exec_base_exist();
-			DLLEXPORT virtual ~exec_base_exist();
+			OWCA_SCRIPT_DLLEXPORT exec_base_exist();
+			OWCA_SCRIPT_DLLEXPORT virtual ~exec_base_exist();
 		};
 		class exec_base_refcount : public exec_base_exist {
 		private:
@@ -60,9 +60,9 @@ namespace owca {
 		protected:
 			unsigned int _refcnt;
 
-			DLLEXPORT virtual void _destroy(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT virtual void _destroy(virtual_machine &vm);
 			virtual void _release_resources(virtual_machine &vm)=0;
-			DLLEXPORT virtual void _link_to_destroy(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT virtual void _link_to_destroy(virtual_machine &vm);
 			virtual ~exec_base_refcount() {
 				RCASSERT(_refcnt==0 || _refcnt==0x80000000);
 			}
@@ -71,9 +71,9 @@ namespace owca {
 			bool _memorygc;
 #endif
 			//exec_base_refcount(unsigned int initval);
-			DLLEXPORT exec_base_refcount();
-			DLLEXPORT void _gc_acquire();
-			DLLEXPORT void _gc_release(virtual_machine &);
+			OWCA_SCRIPT_DLLEXPORT exec_base_refcount();
+			OWCA_SCRIPT_DLLEXPORT void _gc_acquire();
+			OWCA_SCRIPT_DLLEXPORT void _gc_release(virtual_machine &);
 			void gc_acquire() {
 #ifdef RCDEBUG_GC
 				RCASSERT((_refcnt!=0 && _memorygc) || (_refcnt==0 && !_memorygc));
@@ -96,10 +96,10 @@ namespace owca {
 			exec_base *_gc_next,*_gc_prev;
 			mutable gc_iteration_value _prev;
 		protected:
-			DLLEXPORT void _destroy(virtual_machine &vm);
-			DLLEXPORT void _delay_destruction(virtual_machine &vm);
-			DLLEXPORT void _link_to_destroy(virtual_machine &vm);
-			DLLEXPORT void _unlink(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _destroy(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _delay_destruction(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _link_to_destroy(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _unlink(virtual_machine &vm);
 			virtual void _mark_gc(const gc_iteration &gc) const=0;
 			virtual bool is_type() const { return false; }
 			virtual ~exec_base() {}
@@ -109,9 +109,9 @@ namespace owca {
 			}
 #ifdef RCDEBUG_GC
 			unsigned int get_debug_gc_count() const { return _debug_cnt_gc; }
-			DLLEXPORT std::string _debug_text() const;
+			OWCA_SCRIPT_DLLEXPORT std::string _debug_text() const;
 #endif
-			DLLEXPORT void _gc_mark(const gc_iteration &gi) const;
+			OWCA_SCRIPT_DLLEXPORT void _gc_mark(const gc_iteration &gi) const;
 			void gc_mark(const gc_iteration &gi) const {
 #ifdef RCDEBUG_GC
 				RCASSERT((_refcnt!=0 && _memorygc) || (_refcnt==0 && !_memorygc));

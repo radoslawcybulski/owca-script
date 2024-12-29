@@ -60,24 +60,24 @@ namespace owca {
 			owca_internal_string *name;
 			virtual void _read(__owca__::exec_variable &val) const=0;
 			virtual void _write(const __owca__::exec_variable &)=0;
-			DLLEXPORT owca_global read() const;
+			OWCA_SCRIPT_DLLEXPORT owca_global read() const;
 			void write(const exec_variable &val) { used=true; _write(val); }
-			DLLEXPORT static exec_variable &_get_var(owca_global &g);
-			DLLEXPORT void _update_vm(owca_global &g);
+			OWCA_SCRIPT_DLLEXPORT static exec_variable &_get_var(owca_global &g);
+			OWCA_SCRIPT_DLLEXPORT void _update_vm(owca_global &g);
 		static bool _is_oper(const char *_name) { return _name[0]=='$' && _name!=std::string("$init") && _name!=std::string("$call"); }
 
 		private:
-			DLLEXPORT obj_constructor_base() = delete;
+			OWCA_SCRIPT_DLLEXPORT obj_constructor_base() = delete;
 		protected:
 			obj_constructor_base(virtual_machine &vm_, owca_internal_string *ident_) : _vm(vm_),name(ident_) { }
-			DLLEXPORT obj_constructor_base(obj_constructor_base &&) = default;
+			OWCA_SCRIPT_DLLEXPORT obj_constructor_base(obj_constructor_base &&) = default;
 
-			DLLEXPORT void set(exec_object *o);
-			DLLEXPORT void set(exec_function_ptr *o);
-			DLLEXPORT void set(exec_property *o);
+			OWCA_SCRIPT_DLLEXPORT void set(exec_object *o);
+			OWCA_SCRIPT_DLLEXPORT void set(exec_function_ptr *o);
+			OWCA_SCRIPT_DLLEXPORT void set(exec_property *o);
 		public:
-			DLLEXPORT virtual ~obj_constructor_base();
-			DLLEXPORT operator const owca_global &();
+			OWCA_SCRIPT_DLLEXPORT virtual ~obj_constructor_base();
+			OWCA_SCRIPT_DLLEXPORT operator const owca_global &();
 
 #define Z(a) a operator = (a i) { int_set((owca_int)i); return i; }
 			Z(unsigned long int);
@@ -91,64 +91,64 @@ namespace owca {
 			Z(double);
 			Z(long double);
 #undef Z
-			DLLEXPORT bool operator = (bool b);
-			DLLEXPORT const char *operator = (const char *);
-			DLLEXPORT const std::string &operator = (const std::string &);
+			OWCA_SCRIPT_DLLEXPORT bool operator = (bool b);
+			OWCA_SCRIPT_DLLEXPORT const char *operator = (const char *);
+			OWCA_SCRIPT_DLLEXPORT const std::string &operator = (const std::string &);
 
-			DLLEXPORT const owca_local &operator = (const owca_local &l);
+			OWCA_SCRIPT_DLLEXPORT const owca_local &operator = (const owca_local &l);
 
-			DLLEXPORT local_obj_constructor operator [] (const std::string& name);
+			OWCA_SCRIPT_DLLEXPORT local_obj_constructor operator [] (const std::string& name);
 
-			DLLEXPORT owca_global type() const;
+			OWCA_SCRIPT_DLLEXPORT owca_global type() const;
 
-			DLLEXPORT bool map_is() const;
-			DLLEXPORT owca_map map_get() const;
-			DLLEXPORT void map_set(const owca_map &);
-			DLLEXPORT bool list_is() const;
-			DLLEXPORT owca_list list_get() const;
-			DLLEXPORT void list_set(const owca_list &);
-			DLLEXPORT bool tuple_is() const;
-			DLLEXPORT owca_tuple tuple_get() const;
-			DLLEXPORT void tuple_set(const owca_tuple &);
+			OWCA_SCRIPT_DLLEXPORT bool map_is() const;
+			OWCA_SCRIPT_DLLEXPORT owca_map map_get() const;
+			OWCA_SCRIPT_DLLEXPORT void map_set(const owca_map &);
+			OWCA_SCRIPT_DLLEXPORT bool list_is() const;
+			OWCA_SCRIPT_DLLEXPORT owca_list list_get() const;
+			OWCA_SCRIPT_DLLEXPORT void list_set(const owca_list &);
+			OWCA_SCRIPT_DLLEXPORT bool tuple_is() const;
+			OWCA_SCRIPT_DLLEXPORT owca_tuple tuple_get() const;
+			OWCA_SCRIPT_DLLEXPORT void tuple_set(const owca_tuple &);
 
-			DLLEXPORT bool bool_is() const;
-			DLLEXPORT bool bool_get() const;
-			DLLEXPORT void bool_set(bool b);
-			DLLEXPORT bool string_is() const;
-			DLLEXPORT void string_set(const char *);
-			DLLEXPORT void string_set(const char *, unsigned int size);
-			DLLEXPORT void string_set(const std::string &);
-			DLLEXPORT const char *string_get(unsigned int &sz) const;
-			DLLEXPORT owca_string string_get() const;
-			DLLEXPORT void int_set(owca_int i);
-			DLLEXPORT owca_int int_get() const;
-			DLLEXPORT bool int_is() const;
-			DLLEXPORT void real_set(owca_real r);
-			DLLEXPORT owca_real real_get() const;
-			DLLEXPORT bool real_is() const;
-			DLLEXPORT void null_set();
-			DLLEXPORT bool null_is() const;
-			DLLEXPORT bool function_is() const;
-			DLLEXPORT owca_global function_bind(const owca_local &obj) const;
-			DLLEXPORT owca_global function_obj() const;
-			DLLEXPORT bool is(const owca_local &) const;
-			DLLEXPORT bool type_is() const;
-			DLLEXPORT owca_string type_name() const;
+			OWCA_SCRIPT_DLLEXPORT bool bool_is() const;
+			OWCA_SCRIPT_DLLEXPORT bool bool_get() const;
+			OWCA_SCRIPT_DLLEXPORT void bool_set(bool b);
+			OWCA_SCRIPT_DLLEXPORT bool string_is() const;
+			OWCA_SCRIPT_DLLEXPORT void string_set(const char *);
+			OWCA_SCRIPT_DLLEXPORT void string_set(const char *, unsigned int size);
+			OWCA_SCRIPT_DLLEXPORT void string_set(const std::string &);
+			OWCA_SCRIPT_DLLEXPORT const char *string_get(unsigned int &sz) const;
+			OWCA_SCRIPT_DLLEXPORT owca_string string_get() const;
+			OWCA_SCRIPT_DLLEXPORT void int_set(owca_int i);
+			OWCA_SCRIPT_DLLEXPORT owca_int int_get() const;
+			OWCA_SCRIPT_DLLEXPORT bool int_is() const;
+			OWCA_SCRIPT_DLLEXPORT void real_set(owca_real r);
+			OWCA_SCRIPT_DLLEXPORT owca_real real_get() const;
+			OWCA_SCRIPT_DLLEXPORT bool real_is() const;
+			OWCA_SCRIPT_DLLEXPORT void null_set();
+			OWCA_SCRIPT_DLLEXPORT bool null_is() const;
+			OWCA_SCRIPT_DLLEXPORT bool function_is() const;
+			OWCA_SCRIPT_DLLEXPORT owca_global function_bind(const owca_local &obj) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global function_obj() const;
+			OWCA_SCRIPT_DLLEXPORT bool is(const owca_local &) const;
+			OWCA_SCRIPT_DLLEXPORT bool type_is() const;
+			OWCA_SCRIPT_DLLEXPORT owca_string type_name() const;
 
 			template <class A> bool get(A &a) const {
 				return read().get(a);
 			}
-			DLLEXPORT std::string str() const;
+			OWCA_SCRIPT_DLLEXPORT std::string str() const;
 
-			DLLEXPORT owca_global get_member(const owca_string &member) const;
-			DLLEXPORT owca_global set_member(const owca_string &member, const owca_global &val) const;
-			DLLEXPORT owca_global call() const;
-			DLLEXPORT owca_global call(const owca_global &p1) const;
-			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2) const;
-			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
-			DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
-			DLLEXPORT owca_global call(const owca_call_parameters &cp) const;
-			DLLEXPORT owca_global call(const owca_parameters &cp) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global get_member(const owca_string &member) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global set_member(const owca_string &member, const owca_global &val) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call() const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_global &p1) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_global &p1, const owca_global &p2, const owca_global &p3, const owca_global &p4) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_call_parameters &cp) const;
+			OWCA_SCRIPT_DLLEXPORT owca_global call(const owca_parameters &cp) const;
 
 			template <class A> A *member_data() const { A *p = nullptr; read().get(p); return p; }
 		};
@@ -162,10 +162,10 @@ namespace owca {
 		protected:
 			exec_namespace *nspace;
 
-			DLLEXPORT obj_constructor_function(exec_namespace *ns, owca_internal_string *ident);
+			OWCA_SCRIPT_DLLEXPORT obj_constructor_function(exec_namespace *ns, owca_internal_string *ident);
 			using obj_constructor_base::set;
 		public:
-			DLLEXPORT obj_constructor_function(obj_constructor_function &&) = default;
+			OWCA_SCRIPT_DLLEXPORT obj_constructor_function(obj_constructor_function &&) = default;
 
 			~obj_constructor_function() {
 				if (!used) read();
@@ -292,8 +292,8 @@ namespace owca {
 		class local_obj_constructor : public __owca__::obj_constructor_base {
 			obj_constructor_base& self;
 			const owca_string& member;
-			DLLEXPORT void _write(const __owca__::exec_variable &);
-			DLLEXPORT void _read(__owca__::exec_variable &val) const;
+			OWCA_SCRIPT_DLLEXPORT void _write(const __owca__::exec_variable &);
+			OWCA_SCRIPT_DLLEXPORT void _read(__owca__::exec_variable &val) const;
 		public:
 			local_obj_constructor(obj_constructor_base& self, const owca_string& member) : obj_constructor_base(self._vm, member._ss), self(self), member(member) {}
 			local_obj_constructor(local_obj_constructor &&) = default;

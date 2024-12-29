@@ -9,7 +9,7 @@ namespace owca {
 		protected:
 			compile_visible_items() : builtinindex(0) { }
 		public:
-			DLLEXPORT virtual const char *builtinget() const;
+			OWCA_SCRIPT_DLLEXPORT virtual const char *builtinget() const;
 			virtual const char *get(unsigned int &) const = 0;
 		};
 	}

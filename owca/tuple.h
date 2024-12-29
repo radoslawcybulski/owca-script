@@ -24,19 +24,19 @@ namespace owca {
 		__owca__::exec_object *obj;
 		__owca__::virtual_machine *vm;
 
-		DLLEXPORT unsigned int _update_index(owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int _update_index(owca_int index) const;
 	public:
 		owca_tuple() : vm(NULL),obj(NULL),to(NULL) { }
 		bool not_bound() const { return to==NULL; }
 		bool empty(void) const { return size() == 0; }
 
-		DLLEXPORT unsigned int size() const;
-		DLLEXPORT owca_global clone() const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int size() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global clone() const;
 
-		DLLEXPORT owca_global get(owca_int index) const;
-		DLLEXPORT owca_global get(owca_int from, owca_int to) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global get(owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global get(owca_int from, owca_int to) const;
 
-		DLLEXPORT owca_global operator [] (owca_int index) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global operator [] (owca_int index) const;
 	};
 }
 

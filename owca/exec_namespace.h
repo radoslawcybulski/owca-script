@@ -58,15 +58,15 @@ namespace owca {
 			exec_stack_variables *variables;
             owca_internal_string *file_name;
 
-			DLLEXPORT unsigned int _insert_variable(owca_internal_string *);
+			OWCA_SCRIPT_DLLEXPORT unsigned int _insert_variable(owca_internal_string *);
 		protected:
-			DLLEXPORT void _release_resources(virtual_machine &vm);
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
 		public:
 			virtual_machine &vm;
 
-            DLLEXPORT exec_namespace(virtual_machine &vm_, owca_internal_string *file_name);
-			DLLEXPORT ~exec_namespace();
+            OWCA_SCRIPT_DLLEXPORT exec_namespace(virtual_machine &vm_, owca_internal_string *file_name);
+			OWCA_SCRIPT_DLLEXPORT ~exec_namespace();
 
 			void init();
 			int insert_variable(owca_internal_string *ident, const exec_variable &v); // <0 - ident is readonly and value already exists
@@ -76,7 +76,7 @@ namespace owca {
 			bool validate_code_and_prepare_for_execution(const std::vector<unsigned char> &data, opcode_data *execution_data = NULL);
 
             exec_namespace *copy(owca_internal_string *file_name);
-			DLLEXPORT owca_namespace generate();
+			OWCA_SCRIPT_DLLEXPORT owca_namespace generate();
             owca_internal_string *get_file_name() { return file_name; }
 
 			void gc_acquire() { _gc_acquire(); }

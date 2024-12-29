@@ -22,7 +22,7 @@ namespace owca {
 
 namespace owca {
 	namespace __owca__ {
-		DLLEXPORT owca_parameters _generate_parameters(virtual_machine &vm, const __owca__::callparams &ci_);
+		OWCA_SCRIPT_DLLEXPORT owca_parameters _generate_parameters(virtual_machine &vm, const __owca__::callparams &ci_);
 
 	}
 }
@@ -121,7 +121,7 @@ namespace owca {
 			exec_object *classobject() const { return classobject_; }
 			functionmode mode() const { return mode_; }
 			exec_namespace *ynamespace() const { return nspace_; }
-			DLLEXPORT void set_namespace(exec_namespace *n);
+			OWCA_SCRIPT_DLLEXPORT void set_namespace(exec_namespace *n);
 			std::string declared_filename() const;
 			unsigned int declared_file_line() const;
 
@@ -186,21 +186,21 @@ namespace owca {
 			void _mark_gc(const gc_iteration &gc) const;
 			void _release_resources(virtual_machine &vm);
 		private:
-			DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const defval &d0);
-			DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const std::string &nn1, const defval &d0, const defval &d1);
-			DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const std::string &nn1, const std::string &nn2, const defval &d0, const defval &d1, const defval &d2);
-			DLLEXPORT static exec_function_ptr *_function_create(virtual_machine &vm, const owca_string &name, unsigned int paramcnt);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack__ ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_0 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_1 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_2 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_3 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self__ ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_0 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_1 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_2 ptr, const void *userptr);
-			DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_3 ptr, const void *userptr);
-			DLLEXPORT static exec_property *_property_write(virtual_machine &vm, exec_function_ptr *r, exec_function_ptr *w);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const defval &d0);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const std::string &nn1, const defval &d0, const defval &d1);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_params(exec_function_ptr *f, virtual_machine &vm, const std::string &nn0, const std::string &nn1, const std::string &nn2, const defval &d0, const defval &d1, const defval &d2);
+			OWCA_SCRIPT_DLLEXPORT static exec_function_ptr *_function_create(virtual_machine &vm, const owca_string &name, unsigned int paramcnt);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack__ ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_0 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_1 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_2 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_3 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self__ ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_0 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_1 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_2 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static void _function_set_function(exec_function_ptr *f, exec_function_create_external_stack_self_3 ptr, const void *userptr);
+			OWCA_SCRIPT_DLLEXPORT static exec_property *_property_write(virtual_machine &vm, exec_function_ptr *r, exec_function_ptr *w);
 		public:
 			template <class A> static exec_function_ptr *generate_user_function(virtual_machine &vm, const owca_string &name) {
 				//RCASSERT(dynamic_cast<owca_user_function_base_object*>((A*)NULL));
@@ -372,13 +372,13 @@ namespace owca {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
 
 			typedef owca_global (*function)(owca_namespace &ns, const owca_parameters &);
-			DLLEXPORT owca_global call();
+			OWCA_SCRIPT_DLLEXPORT owca_global call();
 		};
 		struct user_function_t0_spec : public user_function_base_simple<vm_execution_stack_elem_external_0,user_function_t0_spec > {
 			enum { FUNCTION_OBJECT_PARAMS_0 };
 
 			typedef owca_global (*function)(owca_namespace &ns);
-			DLLEXPORT owca_global call();
+			OWCA_SCRIPT_DLLEXPORT owca_global call();
 		};
 		template <class A> struct user_function_t1_spec : public user_function_base_simple<vm_execution_stack_elem_external_t1<A>,user_function_t1_spec<A> > {
 			enum { FUNCTION_OBJECT_PARAMS_1 };

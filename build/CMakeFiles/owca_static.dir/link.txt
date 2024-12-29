@@ -1,2 +1,0 @@
-/usr/bin/ar qc libowca_static.a CMakeFiles/owca_static.dir/owca/empty.cpp.o
-/usr/bin/ranlib libowca_static.a

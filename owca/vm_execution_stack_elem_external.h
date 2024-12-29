@@ -55,7 +55,7 @@ namespace owca {
 			virtual_machine *vm;
 			const void *userptr;
 
-			DLLEXPORT executionstackreturnvalue first_time_execute(executionstackreturnvalue mode);
+			OWCA_SCRIPT_DLLEXPORT executionstackreturnvalue first_time_execute(executionstackreturnvalue mode);
 
 			template <class A> static A *_create(virtual_machine &vm, const void *ptr)  {
                 void *mem_ptr = vm.allocate_memory(sizeof(A),typeid(A));
@@ -77,8 +77,8 @@ namespace owca {
 		struct vm_execution_stack_elem_external_0 : public vm_execution_stack_elem_external_base {
 			static const unsigned int paramcount=0;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			template <class A> static vm_execution_stack_elem_external_0 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
 		};
@@ -87,8 +87,8 @@ namespace owca {
 			static const unsigned int paramcount=1;
 			exec_variable v_params[1];
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_1() { v_params[0].reset(); }
 			template <class A> static vm_execution_stack_elem_external_1 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -98,8 +98,8 @@ namespace owca {
 			static const unsigned int paramcount=2;
 			exec_variable v_params[2];
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_2() { v_params[0].reset(); v_params[1].reset(); }
 			template <class A> static vm_execution_stack_elem_external_2 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -109,8 +109,8 @@ namespace owca {
 			static const unsigned int paramcount=3;
 			exec_variable v_params[3];
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_3() { v_params[0].reset(); v_params[1].reset(); v_params[2].reset(); }
 			template <class A> static vm_execution_stack_elem_external_3 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -122,8 +122,8 @@ namespace owca {
 
 			vm_execution_stack_elem_external__() : mapobject(NULL) { }
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			template <class A> static vm_execution_stack_elem_external__ *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
 		};
@@ -131,8 +131,8 @@ namespace owca {
 		struct vm_execution_stack_elem_external_self_0 : public vm_execution_stack_elem_external_0 {
 			exec_variable v_self;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_self_0() { v_self.reset(); }
 			template <class A> static vm_execution_stack_elem_external_self_0 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -141,8 +141,8 @@ namespace owca {
 		struct vm_execution_stack_elem_external_self_1 : public vm_execution_stack_elem_external_1 {
 			exec_variable v_self;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_self_1() { v_self.reset(); }
 			template <class A> static vm_execution_stack_elem_external_self_1 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -151,8 +151,8 @@ namespace owca {
 		struct vm_execution_stack_elem_external_self_2 : public vm_execution_stack_elem_external_2 {
 			exec_variable v_self;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_self_2() { v_self.reset(); }
 			template <class A> static vm_execution_stack_elem_external_self_2 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -161,8 +161,8 @@ namespace owca {
 		struct vm_execution_stack_elem_external_self_3 : public vm_execution_stack_elem_external_3 {
 			exec_variable v_self;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_self_3() { v_self.reset(); }
 			template <class A> static vm_execution_stack_elem_external_self_3 *create(virtual_machine &vm, const void *ptr) { return _create<A>(vm,ptr); }
@@ -172,8 +172,8 @@ namespace owca {
 			friend class exec_function_ptr;
 			exec_variable v_self;
 
-			DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
-			DLLEXPORT void _release_resources(virtual_machine &vm);
+			OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const;
+			OWCA_SCRIPT_DLLEXPORT void _release_resources(virtual_machine &vm);
 
 			vm_execution_stack_elem_external_self__() { v_self.reset(); }
 			template <class A> static vm_execution_stack_elem_external_self__ *create(virtual_machine &vm, const void *ptr) { return (vm_execution_stack_elem_external_self__*)_create<A>(vm,ptr); }
@@ -312,13 +312,13 @@ namespace owca {
 			Yes
 		};
 		virtual ExceptionHandled exception_thrown(const owca_global&) { return ExceptionHandled::No; }
-		DLLEXPORT owca_vm &vm() const;
+		OWCA_SCRIPT_DLLEXPORT owca_vm &vm() const;
 		template <class A> bool convert_self(owca_global &ret, A &ptr) {
 			return self.convert(ret,vm(),ptr,"self");
 		}
 
-		DLLEXPORT void _mark_gc(const gc_iteration &gc) const override;
-		DLLEXPORT void _release_resources(__owca__::virtual_machine &vm) override;
+		OWCA_SCRIPT_DLLEXPORT void _mark_gc(const gc_iteration &gc) const override;
+		OWCA_SCRIPT_DLLEXPORT void _release_resources(__owca__::virtual_machine &vm) override;
 	private:
 		__owca__::executionstackreturnvalue first_time_execute(__owca__::executionstackreturnvalue mode);
 		__owca__::executionstackreturnvalue execute(__owca__::executionstackreturnvalue r);

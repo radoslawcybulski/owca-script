@@ -37,17 +37,17 @@ namespace owca {
 		friend class owca_tuple;
 		friend class owca_string;
 		friend class owca_class;
-		DLLEXPORT void _attach();
-		DLLEXPORT void _detach();
+		OWCA_SCRIPT_DLLEXPORT void _attach();
+		OWCA_SCRIPT_DLLEXPORT void _detach();
 		owca_global *_next,*_prev;
-		DLLEXPORT virtual void _update_vm(__owca__::virtual_machine *vm);
+		OWCA_SCRIPT_DLLEXPORT virtual void _update_vm(__owca__::virtual_machine *vm);
 		owca_global(__owca__::virtual_machine &vm_) : owca_local(&vm_) { _attach(); }
 		owca_global(__owca__::virtual_machine *vm_) : owca_local(vm_) { if (_vm) _attach(); }
 		owca_global(__owca__::virtual_machine &vm_, const __owca__::exec_variable &object_) : owca_local(vm_,object_) { _attach(); }
 		owca_global(__owca__::exectype etyp) : owca_local(etyp),_next(NULL),_prev(NULL) { }
 	public:
 		owca_global() : _next(NULL),_prev(NULL) { }
-		DLLEXPORT owca_global(owca_vm &vm);
+		OWCA_SCRIPT_DLLEXPORT owca_global(owca_vm &vm);
 		owca_global(const owca_local &l) : _next(NULL),_prev(NULL),owca_local(l) { if (_vm) _attach(); }
 		owca_global(const owca_global &l) : _next(NULL),_prev(NULL),owca_local(l) { if (_vm) _attach(); }
 		~owca_global() { if (_vm) _detach(); }

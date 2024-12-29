@@ -38,12 +38,12 @@ namespace owca {
 
 		bool empty(void) const { return size() == 0; }
 
-		DLLEXPORT unsigned int size() const;
-		DLLEXPORT void clear();
+		OWCA_SCRIPT_DLLEXPORT unsigned int size() const;
+		OWCA_SCRIPT_DLLEXPORT void clear();
 
-		DLLEXPORT owca_global clone() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global clone() const;
 
-		DLLEXPORT bool next(owca_map_iterator &, owca_global &key, owca_global &value) const;
+		OWCA_SCRIPT_DLLEXPORT bool next(owca_map_iterator &, owca_global &key, owca_global &value) const;
 	};
 
 }

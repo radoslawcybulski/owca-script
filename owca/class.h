@@ -39,29 +39,29 @@ namespace owca {
 	class owca_class {
 		__owca__::internal_class *ic;
 
-		DLLEXPORT void _set_struct(__owca__::structinfo type);
+		OWCA_SCRIPT_DLLEXPORT void _set_struct(__owca__::structinfo type);
 	public:
-		DLLEXPORT owca_class(owca_namespace &nspace, const std::string &name);
-		DLLEXPORT ~owca_class();
+		OWCA_SCRIPT_DLLEXPORT owca_class(owca_namespace &nspace, const std::string &name);
+		OWCA_SCRIPT_DLLEXPORT ~owca_class();
 
 		class obj_constructor : public __owca__::obj_constructor_function {
 			friend class owca_class;
 			friend class __owca__::internal_class;
 			__owca__::internal_class &ic;
 			owca_global g;
-			DLLEXPORT void _write(const __owca__::exec_variable &);
-			DLLEXPORT void _read(__owca__::exec_variable &val) const;
-			DLLEXPORT obj_constructor(__owca__::internal_class &ic_, const owca_string &ident_);
+			OWCA_SCRIPT_DLLEXPORT void _write(const __owca__::exec_variable &);
+			OWCA_SCRIPT_DLLEXPORT void _read(__owca__::exec_variable &val) const;
+			OWCA_SCRIPT_DLLEXPORT obj_constructor(__owca__::internal_class &ic_, const owca_string &ident_);
 		public:
 			obj_constructor(obj_constructor &&) = default;
 			using __owca__::obj_constructor_function::operator =;
 		};
-		DLLEXPORT obj_constructor operator [] (const owca_string &ident);
+		OWCA_SCRIPT_DLLEXPORT obj_constructor operator [] (const owca_string &ident);
 		template <class A> void set_struct() {
 			_set_struct(__owca__::structinfo::make<A>());
 		}
-		DLLEXPORT owca_global construct();
-		DLLEXPORT void add_inheritance(const owca_global &g);
+		OWCA_SCRIPT_DLLEXPORT owca_global construct();
+		OWCA_SCRIPT_DLLEXPORT void add_inheritance(const owca_global &g);
 	};
 }
 

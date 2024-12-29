@@ -20,7 +20,7 @@ namespace owca { namespace __owca__ {
 
 		unsigned int size() const { return size_; }
 		const exec_variable *ptr() const;
-		DLLEXPORT exec_variable &get(unsigned int index);
+		OWCA_SCRIPT_DLLEXPORT exec_variable &get(unsigned int index);
 		const exec_variable &get(unsigned int index) const;
 
 		//void _create(virtual_machine &, unsigned int oversize);

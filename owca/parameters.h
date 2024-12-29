@@ -15,7 +15,7 @@ namespace owca {
 		struct callparams;
 		class virtual_machine;
 		class obj_constructor_base;
-		DLLEXPORT owca_parameters _generate_parameters(virtual_machine &vm, const __owca__::callparams &ci);
+		OWCA_SCRIPT_DLLEXPORT owca_parameters _generate_parameters(virtual_machine &vm, const __owca__::callparams &ci);
 	}
 	class owca_user_function_base_object;
 }
@@ -33,7 +33,7 @@ namespace owca {
 			ci=&ci_;
 		}
 
-		DLLEXPORT void check_parameter_count(unsigned int min_count, unsigned int max_count=MAX) const; // false if exception thrown
+		OWCA_SCRIPT_DLLEXPORT void check_parameter_count(unsigned int min_count, unsigned int max_count=MAX) const; // false if exception thrown
 		void convert_parameters_impl(unsigned int) const {}
 		template <typename A, typename ... B> void convert_parameters_impl(unsigned int index, A& a, B & ... b) const {
 			auto val = get(index);
@@ -50,16 +50,16 @@ namespace owca {
 
 		static const unsigned int MAX=0xffffffff;
 
-		DLLEXPORT unsigned int parameters_count() const;
-		DLLEXPORT unsigned int list_parameters_count() const;
-		DLLEXPORT owca_global parameter(unsigned int index) const;
-		DLLEXPORT owca_global list_parameter(unsigned int index) const;
-		DLLEXPORT bool map_parameter(map_iterator &mi, owca_global &key, owca_global &value) const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int parameters_count() const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int list_parameters_count() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global parameter(unsigned int index) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global list_parameter(unsigned int index) const;
+		OWCA_SCRIPT_DLLEXPORT bool map_parameter(map_iterator &mi, owca_global &key, owca_global &value) const;
 
-		DLLEXPORT unsigned int count() const;
-		DLLEXPORT owca_global get(unsigned int index) const;
-		DLLEXPORT void get_arguments(unsigned int *arg_count, owca_global *values, unsigned int mincount, unsigned int maxcount=MAX) const;
-		DLLEXPORT void get_keyword_arguments(unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used = NULL, bool *required = NULL) const;
+		OWCA_SCRIPT_DLLEXPORT unsigned int count() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global get(unsigned int index) const;
+		OWCA_SCRIPT_DLLEXPORT void get_arguments(unsigned int *arg_count, owca_global *values, unsigned int mincount, unsigned int maxcount=MAX) const;
+		OWCA_SCRIPT_DLLEXPORT void get_keyword_arguments(unsigned int *arg_count, owca_global *values, const owca_string *identificators, unsigned int count, bool *used = NULL, bool *required = NULL) const;
 		//void get(std::vector<owca_global> &params, std::vector<owca_global> &keyparams, unsigned int mincount, unsigned int maxcount, const owca_string *keyidents, unsigned int keyidentscount) const;
 
 

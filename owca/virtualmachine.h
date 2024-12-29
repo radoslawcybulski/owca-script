@@ -292,12 +292,12 @@ namespace owca {
 			owca_global *vars;
 			//// check for failed allocation!
 			void purge_memory();
-			DLLEXPORT void _allocated(exec_base *b);
-			DLLEXPORT void *_allocate_memory(unsigned int size);
+			OWCA_SCRIPT_DLLEXPORT void _allocated(exec_base *b);
+			OWCA_SCRIPT_DLLEXPORT void *_allocate_memory(unsigned int size);
 #ifdef RCDEBUG
-			DLLEXPORT void *allocate_memory(unsigned int size, const std::type_info &ti);
+			OWCA_SCRIPT_DLLEXPORT void *allocate_memory(unsigned int size, const std::type_info &ti);
 #else
-			DLLEXPORT void *allocate_memory(unsigned int size, const std::type_info &ti) { return _allocate_memory(size); }
+			OWCA_SCRIPT_DLLEXPORT void *allocate_memory(unsigned int size, const std::type_info &ti) { return _allocate_memory(size); }
 #endif
 			void free_memory(void *);
 			template <class A> A *allocate_template(unsigned int oversize)
@@ -322,21 +322,21 @@ namespace owca {
 			exec_stack_variables *allocate_stack_variables(unsigned int size, exec_function_ptr *owner);
 			owca_internal_string *allocate_string() { return allocate_string(NULL,0,0); } // empty string
 			owca_internal_string *allocate_string(const char *data, unsigned int size, unsigned int char_count);
-			DLLEXPORT owca_internal_string *allocate_string(std::string s);
+			OWCA_SCRIPT_DLLEXPORT owca_internal_string *allocate_string(std::string s);
 			owca_internal_string *allocate_string(owca_internal_string_nongc *s);
 			//owca_internal_string *allocate_string(const owca_string &s);
 			owca_internal_string *identificator(operatorcodes oper);
 			exec_namespace *allocate_namespace(owca_internal_string *file_name);
 			exec_object *allocate_type(exec_class_object *&);
-			DLLEXPORT exec_object *allocate_tuple(exec_tuple_object *&, unsigned int varcount);
-			DLLEXPORT exec_object *allocate_array(exec_array_object *&);
+			OWCA_SCRIPT_DLLEXPORT exec_object *allocate_tuple(exec_tuple_object *&, unsigned int varcount);
+			OWCA_SCRIPT_DLLEXPORT exec_object *allocate_array(exec_array_object *&);
 			exec_object *allocate_map(exec_map_object *&);
 			exec_object *allocate_set(exec_set_object *&);
 			exec_object *allocate_stack_element(exec_stack_element_object *&);
 			exec_object *allocate_object(exec_object *type, unsigned int oversize);
 			exec_weakref_object *allocate_weakref_object(exec_object *par);
 			//exec_object *allocate_typeobject();
-			DLLEXPORT void *_data_from_object(exec_object *o, const structid_type &type) const;
+			OWCA_SCRIPT_DLLEXPORT void *_data_from_object(exec_object *o, const structid_type &type) const;
 			template <class A> A *data_from_object(exec_object *o) const { return (A*)_data_from_object(o,structinfo::structid<A*>()); }
 			void _registerstructid(structid_type structid, exec_object *type);
 			exec_object *find_type(structid_type type) const;
@@ -375,7 +375,7 @@ namespace owca {
 			void (*printfnc)(const std::string &);
 			void set_print_function(void (*fnc)(const std::string &)) { printfnc=fnc; }
 			owca_int id(const exec_variable &v) const;
-			DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs, const compile_visible_items &visible_names);
+			OWCA_SCRIPT_DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs, const compile_visible_items &visible_names);
 			static std::string to_stdstring_type(const exec_variable &r);
 			static std::string to_stdstring_type_short(const exec_variable &r);
 			std::string to_stdstring_type(exec_object *type);
@@ -416,7 +416,7 @@ namespace owca {
 			void pop_execution_stack_impl();
 			bool has_execution_stack(void) const { return execution_stack != NULL; }
 			vm_execution_stack_elem_internal *push_execution_stack_frame_internal(unsigned int stack_data_size, unsigned int temporary_variables);
-			DLLEXPORT bool push_execution_stack_frame(vm_execution_stack_elem_base *sf);
+			OWCA_SCRIPT_DLLEXPORT bool push_execution_stack_frame(vm_execution_stack_elem_base *sf);
 			void push_frame_returning_bool_value(bool value, exec_variable *return_value, exec_function_ptr *fnc);
 
 			template <class A> bool convert(A &ptr, const exec_variable &v);
@@ -424,20 +424,20 @@ namespace owca {
 				return v.mode()==VAR_OBJECT && (ptr=data_from_object<A>(v.get_object()))!=NULL;
 			}
 		private:
-			DLLEXPORT bool _convert(owca_string &s, const exec_variable &v);
-			DLLEXPORT bool _convert(owca_internal_string *&s, const exec_variable &v);
-			DLLEXPORT bool _convert(owca_int &s, const exec_variable &v);
-			DLLEXPORT bool _convert(bool &s, const exec_variable &v);
-			DLLEXPORT bool _convert(owca_real &s, const exec_variable &v);
-			DLLEXPORT bool _convert(null &s, const exec_variable &v);
-			DLLEXPORT bool _convert(unifunction &s, const exec_variable &v);
-			DLLEXPORT bool _convert(vm_execution_stack_elem_base *&s, const exec_variable &v);
-			DLLEXPORT bool _convert(exec_class_object *&s, const exec_variable &v);
-			DLLEXPORT bool _convert(exec_property *&s, const exec_variable &v);
-			DLLEXPORT bool _convert(owca_local &s, const exec_variable &v);
-			DLLEXPORT bool _convert(owca_global &s, const exec_variable &v);
-			DLLEXPORT bool _convert(exec_weakref_object *&s, const exec_variable &v);
-			DLLEXPORT bool _convert(exec_object *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_string &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_internal_string *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_int &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(bool &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_real &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(null &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(unifunction &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(vm_execution_stack_elem_base *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(exec_class_object *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(exec_property *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_local &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(owca_global &s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(exec_weakref_object *&s, const exec_variable &v);
+			OWCA_SCRIPT_DLLEXPORT bool _convert(exec_object *&s, const exec_variable &v);
 		public:
 			bool convert(owca_string &s, const exec_variable &v) { return _convert(s,v); }
 			bool convert(owca_internal_string *&s, const exec_variable &v) { return _convert(s,v); }
@@ -479,16 +479,16 @@ namespace owca {
 			exec_variable execution_exception_object_temp;
 			exec_variable execution_exception_parameters[3];
 
-			DLLEXPORT bool exception_thrown() const;
-			DLLEXPORT exec_object *_raise_get_exception_type(ExceptionCode code);
+			OWCA_SCRIPT_DLLEXPORT bool exception_thrown() const;
+			OWCA_SCRIPT_DLLEXPORT exec_object *_raise_get_exception_type(ExceptionCode code);
 
-			DLLEXPORT bool ensure_no_map_params(exec_map_object *mp);
-			DLLEXPORT void _raise_from_user(const exec_variable &);
+			OWCA_SCRIPT_DLLEXPORT bool ensure_no_map_params(exec_map_object *mp);
+			OWCA_SCRIPT_DLLEXPORT void _raise_from_user(const exec_variable &);
 			//void _raise_from_user(ExceptionCode code, const std::string &txt);
 			//void _raise_from_user(ExceptionCode code);
-			DLLEXPORT void _raise(ExceptionCode code, exec_object *exctype, const std::string &txt);
-			DLLEXPORT void _raise(ExceptionCode code, const std::string &txt);
-			DLLEXPORT void _prepare_construct_exception(ExceptionCode code, exec_object *exctype, const std::string &txt);
+			OWCA_SCRIPT_DLLEXPORT void _raise(ExceptionCode code, exec_object *exctype, const std::string &txt);
+			OWCA_SCRIPT_DLLEXPORT void _raise(ExceptionCode code, const std::string &txt);
+			OWCA_SCRIPT_DLLEXPORT void _prepare_construct_exception(ExceptionCode code, exec_object *exctype, const std::string &txt);
 
 			// params
 
@@ -537,12 +537,12 @@ namespace owca {
 			void raise_cant_insert();
 			void raise_key_not_found();
 			void raise_no_coroutine_to_stop();
-			DLLEXPORT void raise_cant_stop_from_within_user_function();
+			OWCA_SCRIPT_DLLEXPORT void raise_cant_stop_from_within_user_function();
 			void raise_cant_resume_from_coroutine();
 			void raise_cant_resume_normal_function();
 			void raise_cant_resume_fnished_coroutine();
-			DLLEXPORT void raise_cant_stop_coroutine_from_user_function();
-			DLLEXPORT void raise_cant_create_generator_from_user_function();
+			OWCA_SCRIPT_DLLEXPORT void raise_cant_stop_coroutine_from_user_function();
+			OWCA_SCRIPT_DLLEXPORT void raise_cant_create_generator_from_user_function();
 
 			bool calculate_iter_next(exec_variable *retval, const exec_variable &param);
 			bool calculate_eq(exec_variable *retval, const exec_variable *params);

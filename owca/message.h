@@ -14,7 +14,7 @@ namespace owca {
 }
 
 namespace owca {
-	DLLEXPORT const char *owca_message_type_text(owca_message_type mt);
+	OWCA_SCRIPT_DLLEXPORT const char *owca_message_type_text(owca_message_type mt);
 
 	class owca_message {
 		owca_message_type mt;
@@ -29,7 +29,7 @@ namespace owca {
 		unsigned int line() const { return line_; }
 		owca_message_type type() const { return mt; }
         const std::string &param() const { return param_; }
-		DLLEXPORT std::string text() const;
+		OWCA_SCRIPT_DLLEXPORT std::string text() const;
 		bool is_error() const { return mt>YMESSAGE_ERROR_BEGIN && mt<YMESSAGE_ERROR_END; }
 		bool is_warning() const { return mt>YMESSAGE_WARNING_BEGIN && mt<YMESSAGE_WARNING_END; }
 	};

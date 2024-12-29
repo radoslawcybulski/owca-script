@@ -44,21 +44,21 @@ namespace owca {
 		friend class owca_user_function_base_object;
 
 		__owca__::virtual_machine *vm;
-		DLLEXPORT owca_vm(const owca_vm &);
-		DLLEXPORT void operator = (const owca_vm &);
-		DLLEXPORT void _set(__owca__::exec_variable &dst, const owca_local &l) const;
+		OWCA_SCRIPT_DLLEXPORT owca_vm(const owca_vm &);
+		OWCA_SCRIPT_DLLEXPORT void operator = (const owca_vm &);
+		OWCA_SCRIPT_DLLEXPORT void _set(__owca__::exec_variable &dst, const owca_local &l) const;
 
-		DLLEXPORT std::vector<unsigned char> compile_impl(owca_message_list &errorswarnings, const owca_source_file &fs, const __owca__::compile_visible_items &);
-		DLLEXPORT __owca__::exec_object *allocate_array(__owca__::exec_array_object *&oo) const;
-		DLLEXPORT __owca__::exec_object *allocate_tuple(__owca__::exec_tuple_object *&oo, unsigned int size) const;
+		OWCA_SCRIPT_DLLEXPORT std::vector<unsigned char> compile_impl(owca_message_list &errorswarnings, const owca_source_file &fs, const __owca__::compile_visible_items &);
+		OWCA_SCRIPT_DLLEXPORT __owca__::exec_object *allocate_array(__owca__::exec_array_object *&oo) const;
+		OWCA_SCRIPT_DLLEXPORT __owca__::exec_object *allocate_tuple(__owca__::exec_tuple_object *&oo, unsigned int size) const;
 	public:
-		DLLEXPORT owca_vm();
-		DLLEXPORT virtual ~owca_vm();
+		OWCA_SCRIPT_DLLEXPORT owca_vm();
+		OWCA_SCRIPT_DLLEXPORT virtual ~owca_vm();
 
-		DLLEXPORT void set_print_function(void (*printfnc)(const std::string &));
-		DLLEXPORT owca_global construct_builtin_exception(ExceptionCode code, const std::string &txt);
-		DLLEXPORT void compile(owca_namespace &nspace, owca_message_list &errorswarnings, const owca_source_file &fs);
-		DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs);
+		OWCA_SCRIPT_DLLEXPORT void set_print_function(void (*printfnc)(const std::string &));
+		OWCA_SCRIPT_DLLEXPORT owca_global construct_builtin_exception(ExceptionCode code, const std::string &txt);
+		OWCA_SCRIPT_DLLEXPORT void compile(owca_namespace &nspace, owca_message_list &errorswarnings, const owca_source_file &fs);
+		OWCA_SCRIPT_DLLEXPORT std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs);
 
 		template <class A> std::vector<unsigned char> compile(owca_message_list &errorswarnings, const owca_source_file &fs, A itbegin, A itend)
 		{
@@ -78,15 +78,15 @@ namespace owca {
 			};
 			return compile_impl(errorswarnings,fs,cmpidentiterclass(itbegin,itend));
 		}
-		DLLEXPORT void run_gc();
-		//DLLEXPORT owca_function_return_value resume_execution(void);
+		OWCA_SCRIPT_DLLEXPORT void run_gc();
+		//OWCA_SCRIPT_DLLEXPORT owca_function_return_value resume_execution(void);
 
-		DLLEXPORT unsigned int stack_get_depth_count() const;
-		DLLEXPORT owca_global stack_get_element(unsigned int depth);
+		OWCA_SCRIPT_DLLEXPORT unsigned int stack_get_depth_count() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global stack_get_element(unsigned int depth);
 
-		DLLEXPORT owca_global string(const std::string &t) const;
-		DLLEXPORT owca_global string(const char *) const;
-		DLLEXPORT owca_global string(const char *, unsigned int len) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global string(const std::string &t) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global string(const char *) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global string(const char *, unsigned int len) const;
 		template <class A> owca_global list(A begin, A end) const {
 			size_t size=std::distance(begin,end);
 			__owca__::exec_array_object *oo;
@@ -109,10 +109,10 @@ namespace owca {
 			return ret;
 		}
 		owca_global tuple() const { return tuple((owca_global*)0,(owca_global*)0); }
-		DLLEXPORT owca_global map() const;
+		OWCA_SCRIPT_DLLEXPORT owca_global map() const;
 
-		DLLEXPORT owca_global executing_function();
-		DLLEXPORT owca_global create_namespace(const std::string &file_name) const;
+		OWCA_SCRIPT_DLLEXPORT owca_global executing_function();
+		OWCA_SCRIPT_DLLEXPORT owca_global create_namespace(const std::string &file_name) const;
 	};
 }
 #endif

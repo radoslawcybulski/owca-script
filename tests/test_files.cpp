@@ -1,7 +1,8 @@
 #define _CRT_SECURE_NO_WARNINGS
 
-#include "owca\base.h"
-#include "owca\tree_base.h"
+#include "owca.h"
+#include "owca/base.h"
+#include "owca/tree_base.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -10,7 +11,6 @@
 #undef min
 #undef max
 
-#include "owca.h"
 //#include "message.h"
 //#include "exception.h"
 
@@ -318,12 +318,13 @@ static unsigned int test_file(const char *filename)
 		}
 
 		if (ml.has_errors()) {
+			unsigned int i;
+			
 			if (tr!=TR_ERROR) {
 				return __LINE__;
 			}
 
 			for(owca::owca_message_list::T it=ml.begin();it!=ml.end();++it) if (it->is_error()) {
-				unsigned int i;
 				for(i=0;i<tr_error.size();++i) if (!tr_error[i].used && tr_error[i].line==it->line() && tr_error[i].type==it->type()) {
 					tr_error[i].used=true;
 					break;
@@ -332,7 +333,7 @@ static unsigned int test_file(const char *filename)
 					goto print_errors;
 				}
 			}
-			for(unsigned int i=0;i<tr_error.size();++i) if (!tr_error[i].used) {
+			for(i=0;i<tr_error.size();++i) if (!tr_error[i].used) {
 print_errors:
 				for(owca::owca_message_list::T it=ml.begin();it!=ml.end();++it) {
 					printf("%5d:      %s\n",it->line(),it->text().c_str());

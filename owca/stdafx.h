@@ -7,8 +7,25 @@
 
 #pragma once
 
-#ifndef DLLEXPORT
-#define DLLEXPORT
+#ifndef OWCA_SCRIPT_DLLEXPORT
+
+    #if defined(_MSC_VER)
+        //  Microsoft 
+        #define OWCA_SCRIPT_EXPORT __declspec(dllexport)
+        #define OWCA_SCRIPT_IMPORT __declspec(dllimport)
+    #else
+        //  GCC
+        #define OWCA_SCRIPT_EXPORT __attribute__((visibility("default")))
+        #define OWCA_SCRIPT_IMPORT
+
+    #endif
+
+    #ifdef OWCA_SCRIPT_BUILDING
+        #define OWCA_SCRIPT_DLLEXPORT OWCA_SCRIPT_EXPORT
+    #else
+        #define OWCA_SCRIPT_DLLEXPORT OWCA_SCRIPT_IMPORT
+    #endif
+
 #endif
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -46,7 +63,7 @@
 namespace owca {
     namespace __owca__ {
 #ifdef RCDEBUG
-        DLLEXPORT void debug_printf(const char *, ...);
+        OWCA_SCRIPT_DLLEXPORT void debug_printf(const char *, ...);
 #else
         inline void debug_printf(const char *, ...) { }
 #endif
