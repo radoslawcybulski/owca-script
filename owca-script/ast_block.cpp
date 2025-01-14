@@ -19,6 +19,19 @@ namespace OwcaScript::Internal {
 		}
 	};
 
+	void AstBlock::calculate_size(CodeBufferSizeCalculator &ei) const {
+		if (children.size() == 1)
+			return children[0]->calculate_size(ei);
+
+		ei.code_buffer.preallocate<ImplBlock>(line);
+		if (children.empty()) {
+			return;
+		}
+		ei.code_buffer.preallocate_array<ImplStat*>(children.size());
+		for(auto i = 0u; i < children.size(); ++i) {
+			children[i]->calculate_size(ei);
+		}
+	}
 	ImplStat* AstBlock::emit(EmitInfo& ei) {
 		if (children.size() == 1)
 			return children[0]->emit(ei);

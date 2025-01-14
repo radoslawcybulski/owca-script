@@ -51,7 +51,7 @@ namespace OwcaScript::Internal {
 			if (lf) {
 				return OwcaFloat{ -lf->internal_value() };
 			}
-			vm.vm->throw_not_a_number(l.type());
+			VM::get(vm).throw_not_a_number(l.type());
 			assert(false);
 			return {};
 		}
@@ -66,8 +66,16 @@ namespace OwcaScript::Internal {
 
 	}
 
+	void AstExprOper1::calculate_size(CodeBufferSizeCalculator& ei) const
+	{
+		switch (kind) {
+		case Kind::BinNeg: ei.code_buffer.preallocate<ImplExprBinNeg>(line); break;
+		case Kind::LogNot: ei.code_buffer.preallocate<ImplExprLogNot>(line); break;
+		case Kind::Negate: ei.code_buffer.preallocate<ImplExprNegate>(line); break;
+		}
+		left->calculate_size(ei);
+	}
 	ImplExpr* AstExprOper1::emit(EmitInfo& ei) {
-
 		switch (kind) {
 		case Kind::BinNeg: return make<ImplExprBinNeg>(ei, line, left);
 		case Kind::LogNot: return make<ImplExprLogNot>(ei, line, left);

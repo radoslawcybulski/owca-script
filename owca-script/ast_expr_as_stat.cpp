@@ -17,6 +17,10 @@ namespace OwcaScript::Internal {
 		}
 	};
 
+	void AstExprAsStat::calculate_size(CodeBufferSizeCalculator &ei) const {
+		ei.code_buffer.preallocate<ImplExprAsStat>(line);
+		child->calculate_size(ei);
+	}
 	ImplStat* AstExprAsStat::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprAsStat>(line);
 		auto val = child->emit(ei);

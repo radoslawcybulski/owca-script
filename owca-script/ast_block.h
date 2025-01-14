@@ -13,6 +13,7 @@ namespace OwcaScript {
 			AstBlock(Line line, std::vector<std::unique_ptr<AstStat>> children) : AstStat(line), children(std::move(children)) {}
 
 			ImplStat* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

@@ -10,54 +10,17 @@ namespace OwcaScript {
 	class OwcaFunctions;
 	namespace Internal {
 		class VM;
-		class ImplExprDiv;
-		class ImplExprMod;
-		class ImplExprCompare;
-		class ImplExprNegate;
-		class ImplExprCall;
-		class ImplExprIndex;
-		class ImplExprMember;
-		class ImplExprIdentifier;
-		class ImplExprCreateMap;
-		class ImplExprCreateSet;
-		class ImplExprCreateArray;
-		class ImplExprFunction;
-		class ImplExprMul;
-		class ImplExprIndexRead;
-		class ImplExprIndexWrite;
 	}
 
 	class OwcaVM {
 		friend class Internal::VM;
-		friend class OwcaValue;
-		friend class Internal::ImplExprDiv;
-		friend class Internal::ImplExprMod;
-		friend class Internal::ImplExprCompare;
-		friend class Internal::ImplExprNegate;
-		friend class Internal::ImplExprCall;
-		friend class Internal::ImplExprIndex;
-		friend class Internal::ImplExprMember;
-		friend class Internal::ImplExprIdentifier;
-		friend class Internal::ImplExprCreateMap;
-		friend class Internal::ImplExprCreateSet;
-		friend class Internal::ImplExprCreateArray;
-		friend class Internal::ImplExprFunction;
-		friend class Internal::ImplExprMul;
-		friend class Internal::ImplExprIndexRead;
-		friend class Internal::ImplExprIndexWrite;
-		friend class OwcaFunctions;
 
 		std::shared_ptr<Internal::VM> vm;
 
 		OwcaVM(std::shared_ptr<Internal::VM> vm) : vm(std::move(vm)) {}
 	public:
 		OwcaVM();
-		OwcaVM(const OwcaVM&) = delete;
-		OwcaVM(OwcaVM&&);
 		~OwcaVM();
-
-		OwcaVM& operator = (const OwcaVM&) = delete;
-		OwcaVM& operator = (OwcaVM&&);
 
 		class CompilationFailed : public std::exception {
 			std::string filename_;

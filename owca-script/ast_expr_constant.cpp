@@ -54,16 +54,37 @@ namespace OwcaScript::Internal {
 	class ImplExprConstantString : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
-		OwcaStringInternal value;
+		OwcaString value;
 
-		void init(OwcaStringInternal value) {
+		void init(OwcaString value) {
 			this->value = std::move(value);
 		}
 		OwcaValue execute(OwcaVM &vm) const override {
-			return OwcaString{ value };
+			return value;
 		}
 	};
 
+	void AstExprConstant::calculate_size(CodeBufferSizeCalculator &ei) const {
+		return value.visit(
+			[&](OwcaEmpty) {
+				ei.code_buffer.preallocate<ImplExprConstantEmpty>(line);
+			},
+			[&](OwcaBool o) {
+				ei.code_buffer.preallocate<ImplExprConstantBool>(line);
+			},
+			[&](OwcaInt o) {
+				ei.code_buffer.preallocate<ImplExprConstantInt>(line);
+			},
+			[&](OwcaFloat o) {
+				ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
+			},
+			[&](OwcaString o) {
+				ei.code_buffer.preallocate<ImplExprConstantString>(line);
+			},
+			[&](const auto&) {
+				assert(false);
+			}
+		);	}
 	ImplExpr* AstExprConstant::emit(EmitInfo& ei) {
 		return value.visit(
 			[&](OwcaEmpty) -> ImplExpr* {
@@ -91,9 +112,8 @@ namespace OwcaScript::Internal {
 			},
 			[&](OwcaString o) -> ImplExpr* {
 				auto ret = ei.code_buffer.preallocate<ImplExprConstantString>(line);
-				ret->init(o.internal_value());
+				ret->init(std::move(o));
 				return ret;
-
 			},
 			[&](const auto&) -> ImplExpr* {
 				assert(false);

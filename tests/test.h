@@ -11,6 +11,7 @@ bool operator == (OwcaScript::OwcaString, OwcaScript::OwcaString);
 
 class SimpleTest : public testing::Test {
 public:
+	void SetUp();
 	void TearDown() {
 		ASSERT_EQ(OwcaScript::Internal::AllocationBase::get_currently_remaining_allocations(), 0);
 	}

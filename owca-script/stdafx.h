@@ -16,5 +16,6 @@
 #include <tuple>
 #include <limits>
 #include <charconv>
+#include <sstream>
 
 #endif

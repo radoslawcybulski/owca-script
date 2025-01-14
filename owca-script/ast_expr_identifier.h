@@ -25,6 +25,7 @@ namespace OwcaScript {
 			bool is_function_write() const { return function_write; }
 
 			ImplExpr* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

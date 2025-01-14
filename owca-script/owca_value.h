@@ -8,6 +8,7 @@
 #include "owca_string.h"
 #include "owca_functions.h"
 #include "owca_range.h"
+#include "owca_map.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -20,12 +21,13 @@ namespace OwcaScript {
 		Float,
 		String,
 		Functions,
+		Map,
 	};
 
 	class OwcaEmpty {};
 
 	class OwcaValue {
-		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -36,6 +38,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaFloat value) : value_(value) {}
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
+		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
@@ -46,8 +49,11 @@ namespace OwcaScript {
 		OwcaBool as_bool(OwcaVM &) const;
 		OwcaInt as_int(OwcaVM &) const;
 		OwcaFloat as_float(OwcaVM &) const;
-		OwcaString as_string(OwcaVM &) const;
+		const OwcaString &as_string(OwcaVM &) const;
+		OwcaString &as_string(OwcaVM &);
 		OwcaFunctions as_functions(OwcaVM &) const;
+		OwcaMap &as_map(OwcaVM &);
+		const OwcaMap &as_map(OwcaVM &) const;
 
 		std::string_view type() const;
 		std::string to_string() const;

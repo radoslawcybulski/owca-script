@@ -16,6 +16,7 @@ namespace OwcaScript {
 			AstExprMember(Line line, std::unique_ptr<AstExpr> value, std::string member, std::unique_ptr<AstExpr> value_to_write = nullptr) : AstExpr (line), member(std::move(member)), value(std::move(value)), value_to_write(std::move(value_to_write)) {}
 
 			ImplExpr* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

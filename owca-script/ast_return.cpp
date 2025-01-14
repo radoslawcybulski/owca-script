@@ -24,6 +24,13 @@ namespace OwcaScript::Internal {
 		}
 	};
 
+	void AstReturn::calculate_size(CodeBufferSizeCalculator &ei) const
+	{
+		ei.code_buffer.preallocate<ImplReturn>(line);
+		if (value) {
+			value->calculate_size(ei);
+		}
+	}
 	ImplStat* AstReturn::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplReturn>(line);
 		ImplExpr* v = nullptr;

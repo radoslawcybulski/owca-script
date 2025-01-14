@@ -14,6 +14,7 @@ namespace OwcaScript {
 			AstReturn(Line line, std::unique_ptr<AstExpr> value = nullptr) : AstStat(line), value(std::move(value)) {}
 
 			ImplStat* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

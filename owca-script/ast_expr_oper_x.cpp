@@ -26,7 +26,7 @@ namespace OwcaScript::Internal {
 			for(auto i = 1u; i < args.size(); ++i) {
 				arguments.push_back(args[i]->execute(vm));
 			}
-			return vm.vm->execute_call(std::move(f), std::move(arguments));
+			return VM::get(vm).execute_call(std::move(f), std::move(arguments));
 		}
 	};
 	class ImplExprCreateArray : public ImplExprOperXBase {
@@ -39,7 +39,7 @@ namespace OwcaScript::Internal {
 			for(auto &a : args) {
 				arguments.push_back(a->execute(vm));
 			}
-			return vm.vm->create_array(std::move(arguments));
+			return VM::get(vm).create_array(std::move(arguments));
 		}
 	};
 	class ImplExprCreateSet : public ImplExprOperXBase {
@@ -52,7 +52,7 @@ namespace OwcaScript::Internal {
 			for(auto &a : args) {
 				arguments.push_back(a->execute(vm));
 			}
-			return vm.vm->create_set(std::move(arguments));
+			return VM::get(vm).create_set(std::move(arguments));
 		}
 	};
 	class ImplExprCreateMap : public ImplExprOperXBase {
@@ -65,7 +65,7 @@ namespace OwcaScript::Internal {
 			for(auto &a : args) {
 				arguments.push_back(a->execute(vm));
 			}
-			return vm.vm->create_map(std::move(arguments));
+			return VM::get(vm).create_map(std::move(arguments));
 		}
 	};
 
@@ -78,7 +78,19 @@ namespace OwcaScript::Internal {
 		ret->init(tmp);
 		return ret;
 	}
-
+	void AstExprOperX::calculate_size(CodeBufferSizeCalculator& ei) const
+	{
+		switch (kind) {
+		case Kind::Call: ei.code_buffer.preallocate<ImplExprCall>(line); break;
+		case Kind::CreateArray: ei.code_buffer.preallocate<ImplExprCreateArray>(line); break;
+		case Kind::CreateSet: ei.code_buffer.preallocate<ImplExprCreateSet>(line); break;
+		case Kind::CreateMap: ei.code_buffer.preallocate<ImplExprCreateMap>(line); break;
+		}
+		ei.code_buffer.preallocate_array<ImplExpr*>(args.size());
+		for (auto i = 0u; i < args.size(); ++i) {
+			args[i]->calculate_size(ei);
+		}
+	}
 	ImplExpr* AstExprOperX::emit(EmitInfo& ei) {
 		switch (kind) {
 		case Kind::Call: return make<ImplExprCall>(ei, line, args);

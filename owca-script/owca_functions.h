@@ -23,6 +23,8 @@ namespace OwcaScript {
 		void add(Internal::RuntimeFunction);
 	public:
 		OwcaFunctions(OwcaVM &);
+
+		std::string_view name() const;
 	};
 }
 

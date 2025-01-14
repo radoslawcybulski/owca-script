@@ -18,10 +18,10 @@ namespace OwcaScript::Internal {
 		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "raise", "try", "catch", "and", "or", "not"
 	} };
 	static std::string_view operators_2[] = {
-			">=", "<=", "=>"
+			">=", "<=", "=>", "==", "!="
 	};
 	static std::string_view operators_1 = {
-			"+-*/%&|^='\";"
+			"+-*/%&|^='\";[](){}<>:,"
 	};
 	struct CompilationError {};
 
@@ -55,7 +55,7 @@ namespace OwcaScript::Internal {
 	}
 	Line AstCompiler::skip_ws()
 	{
-		while (!eof() && content[content_offset] <= ' ') {
+		while (content_offset < content.size() && content[content_offset] <= ' ') {
 			if (content[content_offset] == '\n') {
 				content_line.line++;
 			}
@@ -143,6 +143,7 @@ namespace OwcaScript::Internal {
 	{
 		auto [line, tok] = preview();
 		content_offset += tok.size();
+		skip_ws();
 		return { line, tok };
 	}
 	Line AstCompiler::consume(std::string_view txt)
@@ -152,6 +153,7 @@ namespace OwcaScript::Internal {
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected `{}`", tok, txt));
 		}
 		content_offset += tok.size();
+		skip_ws();
 		return line;
 	}
 	bool AstCompiler::is_keyword(std::string_view txt) const
@@ -253,12 +255,14 @@ namespace OwcaScript::Internal {
 			}
 		}
 		if (base == 0) {
+			bool all = true;
 			for (auto& q : text) {
-				if (q >= '0' && q <= '9') {
-					base = 10;
+				if (q < '0' || q > '9') {
+					all = false;
 					break;
 				}
 			}
+			if (all) base = 10;
 		}
 
 		if (base > 0) {
@@ -333,12 +337,14 @@ namespace OwcaScript::Internal {
 			std::vector<std::unique_ptr<AstExpr>> values;
 			bool map = true;
 
+			AllowRangeSet allow_range_set{ allow_range, false };
+
 			while (preview().second != "}") {
 				if (!values.empty()) {
 					consume(",");
 				}
 				if (!values.empty() && preview().second == "}") break;
-				auto v = compile_expression_no_assign();
+				auto v = compile_expression_no_assign(false);
 				values.push_back(std::move(v));
 				if (values.size() == 1) {
 					if (preview().second == ":") {
@@ -350,9 +356,8 @@ namespace OwcaScript::Internal {
 				}
 				if (map) {
 					consume(":");
-					values.push_back(compile_expression_no_assign());
+					values.push_back(compile_expression_no_assign(false));
 				}
-				values.push_back(compile_expression_no_assign());
 			}
 			consume("}");
 			return std::make_unique<AstExprOperX>(line, map ? AstExprOperX::Kind::CreateMap : AstExprOperX::Kind::CreateSet, std::move(values));
@@ -477,9 +482,22 @@ namespace OwcaScript::Internal {
 		}
 		return left;
 	}
-	std::unique_ptr<AstExpr> AstCompiler::compile_expr_compare()
+	std::unique_ptr<AstExpr> AstCompiler::compile_expr_range()
 	{
 		auto left = compile_expr_bitwise();
+		if (allow_range) {
+			auto tok = preview().second;
+			if (tok == ":") {
+				auto [line, tok] = consume();
+				auto right = compile_expr_bitwise();
+				left = std::make_unique<AstExprOper2>(line, AstExprOper2::Kind::MakeRange, std::move(left), std::move(right));
+			}
+		}
+		return left;
+	}
+	std::unique_ptr<AstExpr> AstCompiler::compile_expr_compare()
+	{
+		auto left = compile_expr_range();
 		std::vector<std::tuple<AstExprCompare::Kind, Line, std::unique_ptr<AstExpr>>> nexts;
 		while (true) {
 			auto tok = preview().second;
@@ -524,8 +542,9 @@ namespace OwcaScript::Internal {
 		return left;
 	}
 
-	std::unique_ptr<AstExpr> AstCompiler::compile_expression_no_assign()
+	std::unique_ptr<AstExpr> AstCompiler::compile_expression_no_assign(bool allow_ranges_val)
 	{
+		AllowRangeSet allow_range_set{ allow_ranges_val, false };
 		return compile_expr_log_or();
 	}
 
@@ -634,7 +653,7 @@ namespace OwcaScript::Internal {
 			}
 		}
 		consume(")");
-		auto f = std::make_unique<AstFunction>(line, func_name, std::move(param_names), functions_stack.back());
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, std::move(param_names), functions_stack.back());
 		struct PopOnExit {
 			AstCompiler* self;
 			~PopOnExit() {
@@ -823,12 +842,14 @@ namespace OwcaScript::Internal {
 			return nullptr;
 		}
 
-		auto code_buffer = std::make_unique<CodeBuffer>();
+		auto code_buffer_size_calc = CodeBufferSizeCalculator{};
+		root->calculate_size(code_buffer_size_calc);
 
-		auto emit_info = AstBase::EmitInfo{};
+		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ code_buffer_size_calc.get_total_size() } };
 		root->emit(emit_info);
-		emit_info.code_buffer.resize_for_final_output();
-		root->emit(emit_info);
+
+		emit_info.code_buffer.validate_size(code_buffer_size_calc.get_total_size());
+
 		return std::make_shared<CodeBuffer>(std::move(emit_info.code_buffer));
 	}
 }

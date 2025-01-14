@@ -3,6 +3,8 @@
 #include "owca_exception.h"
 #include "vm.h"
 #include "owca_vm.h"
+#include "owca_value.h"
+#include "dictionary.h"
 
 namespace OwcaScript::Internal {
 	class ImplExprOper2 : public ImplExpr {
@@ -89,6 +91,16 @@ namespace OwcaScript::Internal {
 			return OwcaInt{ l >> r };
 		}
 	};
+	class ImplExprMakeRange : public ImplExprOper2 {
+	public:
+		using ImplExprOper2::ImplExprOper2;
+
+		OwcaValue execute(OwcaVM &vm) const override {
+			auto l = left->execute(vm).convert_to_int(vm);
+			auto r = right->execute(vm).convert_to_int(vm);
+			return OwcaRange{ OwcaInt{ l }, OwcaInt{ r } };
+		}
+	};
 	class ImplExprAdd : public ImplExprOper2 {
 	public:
 		using ImplExprOper2::ImplExprOper2;
@@ -142,7 +154,7 @@ namespace OwcaScript::Internal {
 
 		static std::string mul_string(OwcaVM &vm, std::string_view s, OwcaIntInternal mul) {
 			if (mul < 0)
-				vm.vm->throw_invalid_operand_for_mul_string(std::to_string(mul));
+				Internal::VM::get(vm).throw_invalid_operand_for_mul_string(std::to_string(mul));
 			std::string res;
 			res.reserve(s.size() * mul);
 			for (OwcaIntInternal i = 0; i < mul; ++i) {
@@ -188,7 +200,7 @@ namespace OwcaScript::Internal {
 				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
 				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
 				if (rfloat == 0) {
-					vm.vm->throw_division_by_zero();
+					Internal::VM::get(vm).throw_division_by_zero();
 				}
 				auto val = lfloat + rfloat;
 
@@ -198,6 +210,7 @@ namespace OwcaScript::Internal {
 				}
 				return OwcaFloat{ val };
 			}
+			assert(false);
 		}
 	};
 	class ImplExprMod : public ImplExprOper2 {
@@ -208,7 +221,7 @@ namespace OwcaScript::Internal {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			if (r == 0) {
-				vm.vm->throw_mod_division_by_zero();
+				VM::get(vm).throw_mod_division_by_zero();
 			}
 			return OwcaInt{ l % r };
 		}
@@ -249,14 +262,14 @@ namespace OwcaScript::Internal {
 				[&](const OwcaString& o) -> OwcaValue {
 					const auto size = (OwcaIntInternal)o.internal_value().size();
 					if (size != o.internal_value().size()) {
-						vm.vm->throw_index_out_of_range(std::format("string size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value().size(), std::numeric_limits<OwcaIntInternal>::max()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("string size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value().size(), std::numeric_limits<OwcaIntInternal>::max()));
 					}
 					update_key(vm, key, size);
-					key.visit(
+					return key.visit(
 						[&](OwcaInt k) {
 							auto v = k.internal_value();
 							if (v < 0 || v >= size)
-								vm.vm->throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", orig_key, size));
+								Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", orig_key, size));
 							return OwcaString{ o.internal_value().substr(v, 1) };
 						},
 						[&](OwcaRange k) {
@@ -268,16 +281,21 @@ namespace OwcaScript::Internal {
 							return OwcaString{ o.internal_value().substr(v1, v2 - v1) };
 						},
 						[&](const auto&) -> OwcaString {
-							vm.vm->throw_value_not_indexable(v.type(), key.type());
+							Internal::VM::get(vm).throw_value_not_indexable(v.type(), key.type());
+							assert(false);
+							return {};
 						}
 					);
 				},
+				[&](const OwcaMap& o) -> OwcaValue {
+					return o.dictionary->dict.read(vm, key);
+				},
 				[&](const auto&) -> OwcaValue {
-					vm.vm->throw_value_not_indexable(v.type());
+					Internal::VM::get(vm).throw_value_not_indexable(v.type());
+					assert(false);
+					return {};
 				}
 			);
-
-
 		}
 	};
 	class ImplExprIndexWrite : public ImplExprOper2 {
@@ -285,12 +303,23 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		OwcaValue execute(OwcaVM &vm) const override {
-			auto l = left->execute(vm).convert_to_int(vm);
-			auto r = right->execute(vm).convert_to_int(vm);
-			if (r == 0) {
-				vm.vm->throw_mod_division_by_zero();
-			}
-			return OwcaInt{ l % r };
+			auto v = left->execute(vm);
+			auto key = right->execute(vm);
+			auto value = third->execute(vm);
+
+			auto orig_key = key;
+
+			return v.visit(
+				[&](const OwcaMap& o) -> OwcaValue {
+					o.dictionary->dict.write(vm, key, std::move(value));
+					return {};
+				},
+				[&](const auto&) -> OwcaValue {
+					Internal::VM::get(vm).throw_value_not_indexable(v.type());
+					assert(false);
+					return {};
+				}
+			);
 		}
 	};
 
@@ -300,15 +329,41 @@ namespace OwcaScript::Internal {
 		auto ret = ei.code_buffer.preallocate<T>(line);
 		auto l = left->emit(ei);
 		auto r = right->emit(ei);
-		ImplExpr* t;
+		ImplExpr* t = nullptr;
 		if (third) t = third->emit(ei);
 		ret->init(l, r, t);
 		return ret;
 
 	}
+	void AstExprOper2::calculate_size(CodeBufferSizeCalculator &ei) const
+	{
+		switch (kind_) {
+		case Kind::LogOr: ei.code_buffer.preallocate<ImplExprLogOr>(line); break;
+		case Kind::LogAnd: ei.code_buffer.preallocate<ImplExprLogAnd>(line); break;
+		case Kind::BinOr: ei.code_buffer.preallocate<ImplExprBinOr>(line); break;
+		case Kind::BinAnd: ei.code_buffer.preallocate<ImplExprBinAnd>(line); break;
+		case Kind::BinXor: ei.code_buffer.preallocate<ImplExprBinXor>(line); break;
+		case Kind::BinLShift: ei.code_buffer.preallocate<ImplExprBinLShift>(line); break;
+		case Kind::BinRShift: ei.code_buffer.preallocate<ImplExprBinRShift>(line); break;
+		case Kind::Add: ei.code_buffer.preallocate<ImplExprAdd>(line); break;
+		case Kind::Sub: ei.code_buffer.preallocate<ImplExprSub>(line); break;
+		case Kind::Mul: ei.code_buffer.preallocate<ImplExprMul>(line); break;
+		case Kind::Div: ei.code_buffer.preallocate<ImplExprDiv>(line); break;
+		case Kind::Mod: ei.code_buffer.preallocate<ImplExprMod>(line); break;
+		case Kind::MakeRange: ei.code_buffer.preallocate<ImplExprMakeRange>(line); break;
+		case Kind::IndexRead: ei.code_buffer.preallocate<ImplExprIndexRead>(line); break;
+		case Kind::IndexWrite:
+			assert(third != nullptr);
+			ei.code_buffer.preallocate<ImplExprIndexWrite>(line);
+			break;
+		}
+
+		left->calculate_size(ei);
+		right->calculate_size(ei);
+		if (third) third->calculate_size(ei);
+	}
 
 	ImplExpr* AstExprOper2::emit(EmitInfo& ei) {
-
 		switch (kind_) {
 		case Kind::LogOr: return make<ImplExprLogOr>(ei, line, left, right);
 		case Kind::LogAnd: return make<ImplExprLogAnd>(ei, line, left, right);
@@ -322,10 +377,11 @@ namespace OwcaScript::Internal {
 		case Kind::Mul: return make<ImplExprMul>(ei, line, left, right);
 		case Kind::Div: return make<ImplExprDiv>(ei, line, left, right);
 		case Kind::Mod: return make<ImplExprMod>(ei, line, left, right);
-		case Kind::IndexRead: return make<ImplExprMod>(ei, line, left, right);
+		case Kind::MakeRange: return make<ImplExprMakeRange>(ei, line, left, right);
+		case Kind::IndexRead: return make<ImplExprIndexRead>(ei, line, left, right);
 		case Kind::IndexWrite:
 			assert(third != nullptr);
-			return make<ImplExprMod>(ei, line, left, right, third);
+			return make<ImplExprIndexWrite>(ei, line, left, right, third);
 		}
 		assert(false);
 		return nullptr;

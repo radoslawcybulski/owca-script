@@ -21,12 +21,19 @@ namespace OwcaScript::Internal {
 		OwcaValue execute(OwcaVM &vm) const override {
 			if (value_to_write) {
 				auto v = value_to_write->execute(vm);
-				vm.vm->set_identifier(index, v);
+				VM::get(vm).set_identifier(index, v);
 				return v;
 			}
-			return vm.vm->get_identifier(index);
+			return VM::get(vm).get_identifier(index);
 		}
 	};
+	void AstExprIdentifier::calculate_size(CodeBufferSizeCalculator& ei) const
+	{
+		ei.code_buffer.preallocate<ImplExprIdentifier>(line);
+		ei.code_buffer.allocate(identifier_);
+		if (value_to_write) value_to_write->calculate_size(ei);
+	}
+
 	ImplExpr* AstExprIdentifier::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprIdentifier>(line);
 		auto str = ei.code_buffer.allocate(identifier_);

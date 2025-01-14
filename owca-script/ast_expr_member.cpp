@@ -18,12 +18,18 @@ namespace OwcaScript::Internal {
 		}
 		OwcaValue execute(OwcaVM &vm) const override {
 			auto v = value->execute(vm);
-			vm.vm->throw_missing_member(v.type(), identifier);
+			VM::get(vm).throw_missing_member(v.type(), identifier);
 			assert(false);
 			return {};
 		}
 	};
 
+	void AstExprMember::calculate_size(CodeBufferSizeCalculator& ei) const
+	{
+		ei.code_buffer.preallocate<ImplExprMember>(line);
+		ei.code_buffer.allocate(member);
+		value->calculate_size(ei);
+	}
 	ImplExpr* AstExprMember::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprMember>(line);
 		auto mem = ei.code_buffer.allocate(member);

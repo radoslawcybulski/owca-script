@@ -8,6 +8,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
+		enum class Result {
+			False, True, NotExec
+		};
+
 		ImplExpr* first;
 		std::span<std::tuple<AstExprCompare::Kind, Line, ImplExpr*>> nexts;
 
@@ -16,9 +20,6 @@ namespace OwcaScript::Internal {
 			this->nexts = nexts;
 		}
 
-		enum class Result {
-			False, True, NotExec
-		};
 		static bool compare_impl2(AstExprCompare::Kind kind, const auto &left, const auto &right) {
 			switch (kind) {
 			case AstExprCompare::Kind::Eq: return left == right;
@@ -33,6 +34,7 @@ namespace OwcaScript::Internal {
 			return false;
 		}
 		static Result compare_impl(AstExprCompare::Kind kind, const auto& left, const auto& right) {
+			if (kind == AstExprCompare::Kind::Is) return Result::NotExec;
 			return compare_impl2(kind, left, right) ? Result::True : Result::False;
 		}
 		static Result compare_split(OwcaVM&, AstExprCompare::Kind kind, const OwcaEmpty& l, const OwcaEmpty& r) {
@@ -62,7 +64,7 @@ namespace OwcaScript::Internal {
 			for (auto i = 0u; i < nexts.size(); ++i) {
 				auto [kind, compare_line, next_value] = nexts[i];
 				auto right = next_value->execute(vm);
-				vm.vm->update_execution_line(compare_line);
+				VM::get(vm).update_execution_line(compare_line);
 
 				auto res = left.visit(
 					[&](const auto& ll) {
@@ -94,21 +96,50 @@ namespace OwcaScript::Internal {
 					return OwcaBool{ false };
 				}
 
-				vm.vm->throw_cant_compare(kind, left.type(), right.type());
+				VM::get(vm).throw_cant_compare(kind, left.type(), right.type());
 			}
 			return OwcaBool{ true };
 		}
 	};
 
+	bool AstExprCompare::compare_equal(OwcaVM& vm, const OwcaValue& left, const OwcaValue& right)
+	{
+		auto res = left.visit(
+			[&](const auto& ll) {
+				return right.visit(
+					[&](const auto& rr) {
+						return ImplExprCompare::compare_split(vm, AstExprCompare::Kind::Eq, ll, rr);
+					}
+				);
+			}
+		);
+		switch (res) {
+		case ImplExprCompare::Result::True: return true;
+		case ImplExprCompare::Result::False: return false;
+		case ImplExprCompare::Result::NotExec: break;
+		}
+		VM::get(vm).throw_cant_compare(AstExprCompare::Kind::Eq, left.type(), right.type());
+		assert(false);
+		return false;
+	}
+
+	void AstExprCompare::calculate_size(CodeBufferSizeCalculator &ei) const {
+		ei.code_buffer.preallocate<ImplExprCompare>(line);
+		first->calculate_size(ei);
+		ei.code_buffer.preallocate_array<std::tuple<AstExprCompare::Kind, Line, ImplExpr*>>(nexts.size());
+		for (auto i = 0u; i < nexts.size(); ++i) {
+			std::get<2>(nexts[i])->calculate_size(ei);
+		}
+	}
 	ImplExpr* AstExprCompare::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprCompare>(line);
+		auto f = first->emit(ei);
 		auto arr = ei.code_buffer.preallocate_array<std::tuple<AstExprCompare::Kind, Line, ImplExpr*>>(nexts.size());
 		for (auto i = 0u; i < nexts.size(); ++i) {
 			std::get<0>(arr[i]) = std::get<0>(nexts[i]);
 			std::get<1>(arr[i]) = std::get<1>(nexts[i]);
 			std::get<2>(arr[i]) = std::get<2>(nexts[i])->emit(ei);
 		}
-		auto f = first->emit(ei);
 		ret->init(f, arr);
 		return ret;
 	}

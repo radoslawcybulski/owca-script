@@ -14,7 +14,7 @@ namespace OwcaScript {
 			};
 		
 		private:
-			std::string_view name_;
+			std::string name_;
 			std::vector<std::string> params;
 			std::vector<CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
@@ -22,7 +22,7 @@ namespace OwcaScript {
 			AstFunction* owner_function = nullptr;
 
 		public:
-			AstFunction(Line line, std::string_view name, std::vector<std::string> params, AstFunction* owner_function) : AstExpr(line), name_(name), params(std::move(params)), owner_function(owner_function) {}
+			AstFunction(Line line, std::string name, std::vector<std::string> params, AstFunction* owner_function) : AstExpr(line), name_(std::move(name)), params(std::move(params)), owner_function(owner_function) {}
 
 			auto name() const { return name_; }
 			void update_body(std::unique_ptr<AstStat> body) {
@@ -36,6 +36,7 @@ namespace OwcaScript {
 			}
 			const auto& parameters() const { return params; }
 			ImplExpr* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

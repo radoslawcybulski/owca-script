@@ -22,6 +22,7 @@ namespace OwcaScript {
 			AstExprOper1(Line line, Kind kind, std::unique_ptr<AstExpr> left) : AstExpr (line), left(std::move(left)), kind(kind) {}
 
 			ImplExpr* emit(EmitInfo& ei) override;
+			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

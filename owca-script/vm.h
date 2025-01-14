@@ -60,6 +60,8 @@ namespace OwcaScript {
 			void throw_wrong_type(std::string_view type, std::string_view expected);
 			void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
 			void throw_invalid_operand_for_mul_string(std::string_view val);
+			void throw_missing_key(std::string_view key);
+			void throw_not_hashable(std::string_view type);
 
 			void update_execution_line(Line);
 			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values = {});
@@ -68,6 +70,9 @@ namespace OwcaScript {
 			OwcaValue create_map(std::vector<OwcaValue> arguments);
 			OwcaValue create_set(std::vector<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
+			bool compare_values(const OwcaValue& left, const OwcaValue& right);
+			size_t calculate_hash(const OwcaValue&);
+
 			void set_identifier(unsigned int index, OwcaValue value);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;
 			void run_gc();
@@ -82,6 +87,8 @@ namespace OwcaScript {
 				p2->prev->next = p2->next->prev = p2;
 				return p2;
 			}
+
+			static VM& get(const OwcaVM& v);
 		};
 	}
 }

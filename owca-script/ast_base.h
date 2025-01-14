@@ -26,6 +26,7 @@ namespace OwcaScript {
 			virtual ~AstBase() = default;
 
 			virtual ImplBase* emit(EmitInfo& ei) = 0;
+			virtual void calculate_size(CodeBufferSizeCalculator &) const = 0;
 			virtual void visit(AstVisitor&) = 0;
 			virtual void visit_children(AstVisitor&) = 0;
 		};

@@ -7,12 +7,17 @@
 namespace OwcaScript {
 	OwcaFunctions::OwcaFunctions(OwcaVM& vm)
 	{
-		functions = vm.vm->allocate<Internal::RuntimeFunctions>();
+		functions = Internal::VM::get(vm).allocate<Internal::RuntimeFunctions>();
 	}
 
 	void OwcaFunctions::add(Internal::RuntimeFunction rf)
 	{
 		auto pc = rf.param_count;
 		functions->functions[pc] = std::move(rf);
+	}
+
+	std::string_view OwcaFunctions::name() const
+	{
+		return functions->name;
 	}
 }

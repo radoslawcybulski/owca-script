@@ -20,6 +20,19 @@ namespace OwcaScript {
 			std::vector<std::unique_ptr<AstBase>> *bases_allocated = nullptr;
 			std::vector<AstFunction*> functions_stack;
 			bool continue_ = true;
+			bool allow_range = true;
+			struct AllowRangeSet {
+				bool& allow_range;
+				bool old_value;
+
+				AllowRangeSet(bool& allow_range, bool new_val) : allow_range(allow_range) {
+					old_value = allow_range;
+					allow_range = new_val;
+				}
+				~AllowRangeSet() {
+					allow_range = old_value;
+				}
+			};
 
 			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
@@ -53,10 +66,11 @@ namespace OwcaScript {
 			std::unique_ptr<AstExpr> compile_expr_mul_div_mod();
 			std::unique_ptr<AstExpr> compile_expr_add_sub();
 			std::unique_ptr<AstExpr> compile_expr_bitwise();
+			std::unique_ptr<AstExpr> compile_expr_range();
 			std::unique_ptr<AstExpr> compile_expr_compare();
 			std::unique_ptr<AstExpr> compile_expr_log_and();
 			std::unique_ptr<AstExpr> compile_expr_log_or();
-			std::unique_ptr<AstExpr> compile_expression_no_assign();
+			std::unique_ptr<AstExpr> compile_expression_no_assign(bool allow_ranges_val = true);
 			std::unique_ptr<AstExpr> compile_expression();
 			std::unique_ptr<AstStat> compile_expression_as_stat();
 			std::unique_ptr<AstStat> compile_block();

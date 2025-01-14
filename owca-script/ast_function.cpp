@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
 		{
 			RuntimeFunction rt;
 			rt.body = body;
-			rt.code = vm.vm->currently_running_code();
+			rt.code = VM::get(vm).currently_running_code();
 			rt.copy_from_parents = copy_from_parents;
 			rt.identifier_names = identifier_names;
 			rt.name = name;
@@ -38,7 +38,7 @@ namespace OwcaScript::Internal {
 
 			rt.values_from_parents.reserve(copy_from_parents.size());
 			for (auto c : copy_from_parents) {
-				rt.values_from_parents.push_back(vm.vm->get_identifier(c.index_in_parent));
+				rt.values_from_parents.push_back(VM::get(vm).get_identifier(c.index_in_parent));
 			}
 			auto of = OwcaFunctions{ vm };
 			of.add(std::move(rt));
@@ -47,6 +47,17 @@ namespace OwcaScript::Internal {
 		}
 	};
 
+	void AstFunction::calculate_size(CodeBufferSizeCalculator &ei) const
+	{
+		ei.code_buffer.preallocate<ImplExprFunction>(line);
+		ei.code_buffer.allocate(name_);
+		ei.code_buffer.preallocate_array<CopyFromParent>(copy_from_parents.size());
+		ei.code_buffer.preallocate_array<std::string_view>(identifier_names.size());
+		for (auto i = 0u; i < identifier_names.size(); ++i) {
+			ei.code_buffer.allocate(identifier_names[i]);
+		}
+		body->calculate_size(ei);
+	}
 
 	ImplExpr* AstFunction::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprFunction>(line);

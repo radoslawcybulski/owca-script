@@ -7,6 +7,7 @@
 #include "owca_vm.h"
 #include "owca_value.h"
 #include "flow_control.h"
+#include "dictionary.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -14,6 +15,11 @@ namespace OwcaScript::Internal {
 	}
 	VM::~VM() {
 		run_gc();
+	}
+
+	VM& VM::get(const OwcaVM& v)
+	{
+		return *v.vm;
 	}
 
 	void VM::throw_division_by_zero()
@@ -90,6 +96,16 @@ namespace OwcaScript::Internal {
 	}
 
 	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
+	{
+		assert(false);
+	}
+
+	void VM::throw_missing_key(std::string_view key)
+	{
+		assert(false);
+	}
+
+	void VM::throw_not_hashable(std::string_view type)
 	{
 		assert(false);
 	}
@@ -196,8 +212,12 @@ namespace OwcaScript::Internal {
 	}
 	OwcaValue VM::create_map(std::vector<OwcaValue> arguments)
 	{
-		assert(false);
-		return {};
+		auto ds = allocate<DictionaryShared>();
+		auto vm = OwcaVM{ shared_from_this() };
+		for (auto i = 0u; i < arguments.size(); i += 2) {
+			ds->dict.write(vm, arguments[i], std::move(arguments[i + 1]));
+		}
+		return OwcaValue{ OwcaMap{ ds } };
 	}
 	OwcaValue VM::create_set(std::vector<OwcaValue> arguments)
 	{
@@ -221,6 +241,34 @@ namespace OwcaScript::Internal {
 		auto& s = stacktrace.back();
 		return s.runtime_function->code;
 	}
+	bool VM::compare_values(const OwcaValue& left, const OwcaValue& right)
+	{
+		auto vm = OwcaVM{ shared_from_this() };
+		return AstExprCompare::compare_equal(vm, left, right);
+	}
+	size_t VM::calculate_hash(const OwcaValue& value) {
+		auto vm = OwcaVM{ shared_from_this() };
+		static auto calc_hash = [](const auto& q) {
+			return std::hash<std::remove_cvref_t<decltype(q)>>()(q);
+			};
+		return value.visit(
+			[](const OwcaEmpty& o) -> size_t { return 3; },
+			[](const OwcaRange& o) -> size_t { 
+				return calc_hash(o.lower().internal_value()) * 1009 + calc_hash(o.upper().internal_value()) + 4;
+			},
+			[](const OwcaInt& o) -> size_t { return calc_hash(o.internal_value()) * 1013 + 5; },
+			[](const OwcaFloat& o) -> size_t { return calc_hash(o.internal_value()) * 1019 + 6; },
+			[](const OwcaBool& o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
+			[](const OwcaString& o) -> size_t { return calc_hash(o.internal_value()) * 1031 + 8; },
+			[](const OwcaFunctions& o) -> size_t { return calc_hash(o.name()) * 1033 + 9; },
+			[&](const OwcaMap& o) -> size_t {
+				throw_not_hashable(value.type());
+				assert(false);
+				return 0;
+			}
+		);
+	}
+
 	void VM::run_gc() {
 		assert(stacktrace.empty());
 
