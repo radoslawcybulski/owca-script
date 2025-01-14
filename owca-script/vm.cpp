@@ -84,6 +84,16 @@ namespace OwcaScript::Internal {
 		assert(false);
 	}
 
+	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
+	{
+		assert(false);
+	}
+
+	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
+	{
+		assert(false);
+	}
+
 	void VM::update_execution_line(Line line)
 	{
 		stacktrace.back().line = line;

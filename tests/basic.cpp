@@ -14,3 +14,12 @@ TEST_F(SimpleTest, simple)
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 14);
 }
+
+TEST_F(SimpleTest, string)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", "return 'qwe' + 'rty';");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).internal_value(), "qwerty");
+}
+

@@ -22,6 +22,7 @@ namespace OwcaScript {
 		class ImplExprCreateSet;
 		class ImplExprCreateArray;
 		class ImplExprFunction;
+		class ImplExprMul;
 	}
 
 	class OwcaVM {
@@ -39,6 +40,7 @@ namespace OwcaScript {
 		friend class Internal::ImplExprCreateSet;
 		friend class Internal::ImplExprCreateArray;
 		friend class Internal::ImplExprFunction;
+		friend class Internal::ImplExprMul;
 		friend class OwcaFunctions;
 
 		std::shared_ptr<Internal::VM> vm;

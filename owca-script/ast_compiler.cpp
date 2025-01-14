@@ -70,15 +70,11 @@ namespace OwcaScript::Internal {
 		++content_offset;
 		while (!eof()) {
 			auto d = content[content_offset];
-			if (d == first) break;
-			if (d == '\\') {
-				++content_offset;
-				d = content[content_offset];
-				if (d == '\n') {
-					continue_ = false;
-					add_error_and_throw(OwcaErrorKind::StringContainsEndOfLineCharacter, filename_, content_line, "string contains end of line character");
-				}
+			if (d == '\n') {
+				continue_ = false;
+				add_error_and_throw(OwcaErrorKind::StringContainsEndOfLineCharacter, filename_, content_line, "string contains end of line character");
 			}
+			if (d == first) break;
 			++content_offset;
 		}
 		++content_offset;
@@ -147,7 +143,6 @@ namespace OwcaScript::Internal {
 	{
 		auto [line, tok] = preview();
 		content_offset += tok.size();
-		skip_ws();
 		return { line, tok };
 	}
 	Line AstCompiler::consume(std::string_view txt)
@@ -157,7 +152,6 @@ namespace OwcaScript::Internal {
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected `{}`", tok, txt));
 		}
 		content_offset += tok.size();
-		skip_ws();
 		return line;
 	}
 	bool AstCompiler::is_keyword(std::string_view txt) const
@@ -313,6 +307,9 @@ namespace OwcaScript::Internal {
 				add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("unexpected keyword `{}`", tok));
 			}
 			return std::make_unique<AstExprIdentifier>(line, tok);
+		}
+		if (tok[0] == '\'' || tok[0] == '"') {
+			return std::make_unique<AstExprConstant>(line, OwcaString{ std::string{ tok.substr(1, tok.size() - 2) } });
 		}
 		if (tok == "(") {
 			auto v = compile_expression_no_assign();

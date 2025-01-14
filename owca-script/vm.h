@@ -58,6 +58,8 @@ namespace OwcaScript {
 			void throw_not_callable(std::string_view type);
 			void throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);
 			void throw_wrong_type(std::string_view type, std::string_view expected);
+			void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
+			void throw_invalid_operand_for_mul_string(std::string_view val);
 
 			void update_execution_line(Line);
 			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values = {});

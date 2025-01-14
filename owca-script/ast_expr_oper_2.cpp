@@ -92,17 +92,25 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		OwcaValue execute(OwcaVM &vm) const override {
-			auto [ li, lf ] = left->execute(vm).get_int_or_float();
-			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
-			auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-			auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-			auto val = lfloat + rfloat;
+			auto l = left->execute(vm);
+			auto r = right->execute(vm);
+			auto [ li, lf ] = l.get_int_or_float();
+			auto [ ri, rf ] = r.get_int_or_float();
+			if ((li || lf) && (ri || rf)) {
+				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
+				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
+				auto val = lfloat + rfloat;
 
-			if (li && ri) {
-				auto val2 = li->internal_value() + ri->internal_value();
-				if (val == val2) return OwcaInt{ val2 };
+				if (li && ri) {
+					auto val2 = li->internal_value() + ri->internal_value();
+					if (val == val2) return OwcaInt{ val2 };
+				}
+				return OwcaFloat{ val };
 			}
-			return OwcaFloat{ val };
+			if (l.kind() == OwcaValueKind::String && r.kind() == OwcaValueKind::String) {
+				return OwcaString{ l.as_string(vm).internal_value() + r.as_string(vm).internal_value() };
+			}
+			assert(false);
 		}
 	};
 	class ImplExprSub : public ImplExprOper2 {
@@ -110,35 +118,61 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		OwcaValue execute(OwcaVM &vm) const override {
-			auto [ li, lf ] = left->execute(vm).get_int_or_float();
-			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
-			auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-			auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-			auto val = lfloat - rfloat;
+			auto [li, lf] = left->execute(vm).get_int_or_float();
+			auto [ri, rf] = right->execute(vm).get_int_or_float();
+			if ((li || lf) && (ri || rf)) {
+				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
+				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
+				auto val = lfloat - rfloat;
 
-			if (li && ri) {
-				auto val2 = li->internal_value() - ri->internal_value();
-				if (val == val2) return OwcaInt{ val2 };
+				if (li && ri) {
+					auto val2 = li->internal_value() - ri->internal_value();
+					if (val == val2) return OwcaInt{ val2 };
+				}
+				return OwcaFloat{ val };
 			}
-			return OwcaFloat{ val };
+			assert(false);
 		}
 	};
 	class ImplExprMul : public ImplExprOper2 {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
-			auto [ li, lf ] = left->execute(vm).get_int_or_float();
-			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
-			auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-			auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-			auto val = lfloat * rfloat;
-
-			if (li && ri) {
-				auto val2 = li->internal_value() * ri->internal_value();
-				if (val == val2) return OwcaInt{ val2 };
+		static std::string mul_string(OwcaVM &vm, std::string_view s, OwcaIntInternal mul) {
+			if (mul < 0)
+				vm.vm->throw_invalid_operand_for_mul_string(std::to_string(mul));
+			std::string res;
+			res.reserve(s.size() * mul);
+			for (OwcaIntInternal i = 0; i < mul; ++i) {
+				res += s;
 			}
-			return OwcaFloat{ val };
+			return res;
+		}
+		OwcaValue execute(OwcaVM &vm) const override {
+			auto l = left->execute(vm);
+			auto r = right->execute(vm);
+			auto [ li, lf ] = l.get_int_or_float();
+			auto [ ri, rf ] = r.get_int_or_float();
+			if ((li || lf) && (ri || rf)) {
+				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
+				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
+				auto val = lfloat * rfloat;
+
+				if (li && ri) {
+					auto val2 = li->internal_value() * ri->internal_value();
+					if (val == val2) return OwcaInt{ val2 };
+				}
+				return OwcaFloat{ val };
+			}
+			if (l.kind() == OwcaValueKind::String && (ri || rf)) {
+				auto rr = r.convert_to_int(vm);
+				return OwcaString{ mul_string(vm, l.as_string(vm).internal_value(), rr) };
+			}
+			if ((li || lf) && r.kind() == OwcaValueKind::String) {
+				auto ll = l.convert_to_int(vm);
+				return OwcaString{ mul_string(vm, r.as_string(vm).internal_value(), ll) };
+			}
+			assert(false);
 		}
 	};
 	class ImplExprDiv : public ImplExprOper2 {
@@ -148,18 +182,20 @@ namespace OwcaScript::Internal {
 		OwcaValue execute(OwcaVM &vm) const override {
 			auto [ li, lf ] = left->execute(vm).get_int_or_float();
 			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
-			auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-			auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-			if (rfloat == 0) {
-				vm.vm->throw_division_by_zero();
-			}
-			auto val = lfloat + rfloat;
+			if ((li || lf) && (ri || rf)) {
+				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
+				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
+				if (rfloat == 0) {
+					vm.vm->throw_division_by_zero();
+				}
+				auto val = lfloat + rfloat;
 
-			if (li && ri) {
-				auto val2 = li->internal_value() + ri->internal_value();
-				if (val == val2) return OwcaInt{ val2 };
+				if (li && ri) {
+					auto val2 = li->internal_value() + ri->internal_value();
+					if (val == val2) return OwcaInt{ val2 };
+				}
+				return OwcaFloat{ val };
 			}
-			return OwcaFloat{ val };
 		}
 	};
 	class ImplExprMod : public ImplExprOper2 {
