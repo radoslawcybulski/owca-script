@@ -11,10 +11,12 @@ namespace OwcaScript::Internal {
 
 		ImplExpr* left;
 		ImplExpr* right;
+		ImplExpr* third = nullptr;
 
-		void init(ImplExpr* left, ImplExpr* right) {
+		void init(ImplExpr* left, ImplExpr* right, ImplExpr* third = nullptr) {
 			this->left = left;
 			this->right = right;
+			this->third = third;
 		}
 	};
 	class ImplExprLogOr : public ImplExprOper2 {
@@ -211,21 +213,103 @@ namespace OwcaScript::Internal {
 			return OwcaInt{ l % r };
 		}
 	};
+	class ImplExprIndexRead : public ImplExprOper2 {
+	public:
+		using ImplExprOper2::ImplExprOper2;
+
+		static void update_key(OwcaVM &vm, OwcaValue& key, OwcaIntInternal size) {
+			key.visit(
+				[&](OwcaFloat o) {
+					auto v = key.convert_to_int(vm);
+					if (v < 0) v += size;
+					key = OwcaInt{ v };
+				},
+				[&](OwcaInt o) {
+					auto v = o.internal_value();
+					if (v < 0) v += size;
+					key = OwcaInt{ v };
+				},
+				[&](OwcaRange o) {
+					auto [v1, v2] = o.internal_values();
+					if (v1 < 0) v1 += size;
+					if (v2 < 0) v2 += size;
+					key = OwcaRange{ OwcaInt{ v1 }, OwcaInt{ v2 } };
+				},
+				[&](const auto&) {}
+			);
+		}
+
+		OwcaValue execute(OwcaVM &vm) const override {
+			auto v = left->execute(vm);
+			auto key = right->execute(vm);
+
+			auto orig_key = key;
+
+			return v.visit(
+				[&](const OwcaString& o) -> OwcaValue {
+					const auto size = (OwcaIntInternal)o.internal_value().size();
+					if (size != o.internal_value().size()) {
+						vm.vm->throw_index_out_of_range(std::format("string size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value().size(), std::numeric_limits<OwcaIntInternal>::max()));
+					}
+					update_key(vm, key, size);
+					key.visit(
+						[&](OwcaInt k) {
+							auto v = k.internal_value();
+							if (v < 0 || v >= size)
+								vm.vm->throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", orig_key, size));
+							return OwcaString{ o.internal_value().substr(v, 1) };
+						},
+						[&](OwcaRange k) {
+							auto [v1, v2] = k.internal_values();
+							if (v2 <= v1)
+								return OwcaString{ "" };
+							if (v1 < 0) v1 = 0;
+							if (v2 > size) v2 = size;
+							return OwcaString{ o.internal_value().substr(v1, v2 - v1) };
+						},
+						[&](const auto&) -> OwcaString {
+							vm.vm->throw_value_not_indexable(v.type(), key.type());
+						}
+					);
+				},
+				[&](const auto&) -> OwcaValue {
+					vm.vm->throw_value_not_indexable(v.type());
+				}
+			);
 
 
-	template <typename T> static ImplExpr* make(AstBase::EmitInfo& ei, Line line, const std::unique_ptr<AstExpr>& left, const std::unique_ptr<AstExpr>& right)
+		}
+	};
+	class ImplExprIndexWrite : public ImplExprOper2 {
+	public:
+		using ImplExprOper2::ImplExprOper2;
+
+		OwcaValue execute(OwcaVM &vm) const override {
+			auto l = left->execute(vm).convert_to_int(vm);
+			auto r = right->execute(vm).convert_to_int(vm);
+			if (r == 0) {
+				vm.vm->throw_mod_division_by_zero();
+			}
+			return OwcaInt{ l % r };
+		}
+	};
+
+
+	template <typename T> static ImplExpr* make(AstBase::EmitInfo& ei, Line line, const std::unique_ptr<AstExpr>& left, const std::unique_ptr<AstExpr>& right, const std::unique_ptr<AstExpr>& third = nullptr)
 	{
 		auto ret = ei.code_buffer.preallocate<T>(line);
 		auto l = left->emit(ei);
 		auto r = right->emit(ei);
-		ret->init(l, r);
+		ImplExpr* t;
+		if (third) t = third->emit(ei);
+		ret->init(l, r, t);
 		return ret;
 
 	}
 
 	ImplExpr* AstExprOper2::emit(EmitInfo& ei) {
 
-		switch (kind) {
+		switch (kind_) {
 		case Kind::LogOr: return make<ImplExprLogOr>(ei, line, left, right);
 		case Kind::LogAnd: return make<ImplExprLogAnd>(ei, line, left, right);
 		case Kind::BinOr: return make<ImplExprBinOr>(ei, line, left, right);
@@ -238,6 +322,10 @@ namespace OwcaScript::Internal {
 		case Kind::Mul: return make<ImplExprMul>(ei, line, left, right);
 		case Kind::Div: return make<ImplExprDiv>(ei, line, left, right);
 		case Kind::Mod: return make<ImplExprMod>(ei, line, left, right);
+		case Kind::IndexRead: return make<ImplExprMod>(ei, line, left, right);
+		case Kind::IndexWrite:
+			assert(third != nullptr);
+			return make<ImplExprMod>(ei, line, left, right, third);
 		}
 		assert(false);
 		return nullptr;
@@ -247,5 +335,9 @@ namespace OwcaScript::Internal {
 	void AstExprOper2::visit_children(AstVisitor& vis) {
 		left->visit(vis);
 		right->visit(vis);
+	}
+	void AstExprOper2::update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third) {
+		kind_ = new_kind;
+		this->third = std::move(third);
 	}
 }

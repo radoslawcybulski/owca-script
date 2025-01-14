@@ -385,22 +385,10 @@ namespace OwcaScript::Internal {
 				left = std::make_unique<AstExprOperX>(line, AstExprOperX::Kind::Call, std::move(args));
 			}
 			else if (tok == "[") {
-				std::vector<std::unique_ptr<AstExpr>> args;
-				args.push_back(std::move(left));
 				auto line = consume().first;
-
-				while (true) {
-					if (!args.empty()) {
-						consume(",");
-					}
-					args.push_back(compile_expression_no_assign());
-					if (preview().second == "]") break;
-				}
-				auto line2 = consume("]");
-				if (args.size() > 2) {
-					add_error_and_throw(OwcaErrorKind::TooManyArgumentsForIndexing, filename_, line2, std::format("too many arguments ({}) for index operation - only 1 and 2 is allowed", args.size()));
-				}
-				left = std::make_unique<AstExprOperX>(line, AstExprOperX::Kind::Index, std::move(args));
+				auto key = compile_expression_no_assign();
+				consume("]");
+				left = std::make_unique<AstExprOper2>(line, AstExprOper2::Kind::IndexRead, std::move(left), std::move(key));
 			}
 			else if (tok == ".") {
 				auto line = consume().first;
@@ -556,6 +544,14 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstExprMember &o) override {
 			o.update_value_to_write(std::move(right));
+		}
+		void apply(AstExprOper2 &o) override {
+			if (o.kind() == AstExprOper2::Kind::IndexRead) {
+				o.update_value_to_write(AstExprOper2::Kind::IndexWrite, std::move(right));
+			}
+			else {
+				apply(static_cast<AstExpr&>(o));
+			}
 		}
 	};
 

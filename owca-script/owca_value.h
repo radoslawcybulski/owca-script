@@ -7,12 +7,14 @@
 #include "owca_float.h"
 #include "owca_string.h"
 #include "owca_functions.h"
+#include "owca_range.h"
 
 namespace OwcaScript {
 	class OwcaVM;
 
 	enum class OwcaValueKind {
 		Empty,
+		Range,
 		Bool,
 		Int,
 		Float,
@@ -23,11 +25,12 @@ namespace OwcaScript {
 	class OwcaEmpty {};
 
 	class OwcaValue {
-		std::variant<OwcaEmpty, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
 		OwcaValue(OwcaEmpty value) : value_(value) {}
+		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
 		OwcaValue(OwcaInt value) : value_(value) {}
 		OwcaValue(OwcaFloat value) : value_(value) {}
@@ -39,6 +42,7 @@ namespace OwcaScript {
 		OwcaIntInternal convert_to_int(OwcaVM &) const;
 		OwcaFloatInternal convert_to_float(OwcaVM &) const;
 		bool is_true() const;
+		OwcaRange as_range(OwcaVM &) const;
 		OwcaBool as_bool(OwcaVM &) const;
 		OwcaInt as_int(OwcaVM &) const;
 		OwcaFloat as_float(OwcaVM &) const;
@@ -53,6 +57,23 @@ namespace OwcaScript {
 				using F::operator()...;
 			};
 			return std::visit(overloaded{std::forward<F>(fns)...}, value_);
+		}
+	};
+}
+
+namespace std {
+	template <>
+	struct formatter<OwcaScript::OwcaValue>
+	{
+		template <typename FormatContext>
+		auto format(OwcaScript::OwcaValue v, FormatContext& ctx) const
+		{
+			return format_to(ctx.out(), "{}", v.to_string());  
+		}
+		template<class ParseContext>
+		constexpr ParseContext::iterator parse(ParseContext& ctx)
+		{
+			return ctx.begin();
 		}
 	};
 }

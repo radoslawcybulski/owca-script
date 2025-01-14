@@ -29,53 +29,6 @@ namespace OwcaScript::Internal {
 			return vm.vm->execute_call(std::move(f), std::move(arguments));
 		}
 	};
-	class ImplExprIndex : public ImplExprOperXBase {
-	public:
-		using ImplExprOperXBase::ImplExprOperXBase;
-
-		OwcaValue execute(OwcaVM &vm) const override {
-			std::optional<OwcaIntInternal> a2;
-
-			assert(args.size() == 2 || args.size() == 3);
-			auto v = args[0]->execute(vm);
-			auto a1 = args[1]->execute(vm).convert_to_int(vm);
-			if (args.size() == 3)
-				a2 = args[2]->execute(vm).convert_to_int(vm);
-
-			auto orig_a1 = a1;
-			auto orig_a2 = a2;
-			return v.visit(
-				[&](const OwcaString& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.internal_value().size();
-					if (size != o.internal_value().size()) {
-						vm.vm->throw_index_out_of_range(std::format("string size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value().size(), std::numeric_limits<OwcaIntInternal>::max()));
-					}
-					if (a1 < 0) a1 += size;
-					if (a2 && *a2 < 0) *a2 += size;
-
-					if (a2) {
-						if (a1 < 0 || a1 >= size) {
-							vm.vm->throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", orig_a1, size));
-						}
-						if (*a2 < 0 || *a2 >= size) {
-							vm.vm->throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", *orig_a2, size));
-						}
-						if (*a2 < a1) return OwcaString{ "" };
-						return OwcaString{ o.internal_value().substr(a1, *a2 - a1) };
-					}
-					else {
-						if (a1 < 0 || a1 >= size) {
-							vm.vm->throw_index_out_of_range(std::format("index value {} is out of range for string of size {}", orig_a1, size));
-						}
-						return OwcaString{ o.internal_value().substr(a1, 1) };
-					}
-				},
-				[&](const auto&) -> OwcaValue {
-					vm.vm->throw_value_not_indexable(v.type());
-				}
-			);
-		}
-	};
 	class ImplExprCreateArray : public ImplExprOperXBase {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
@@ -129,7 +82,6 @@ namespace OwcaScript::Internal {
 	ImplExpr* AstExprOperX::emit(EmitInfo& ei) {
 		switch (kind) {
 		case Kind::Call: return make<ImplExprCall>(ei, line, args);
-		case Kind::Index: return make<ImplExprCall>(ei, line, args);
 		case Kind::CreateArray: return make<ImplExprCreateArray>(ei, line, args);
 		case Kind::CreateSet: return make<ImplExprCreateSet>(ei, line, args);
 		case Kind::CreateMap: return make<ImplExprCreateMap>(ei, line, args);

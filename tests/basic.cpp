@@ -23,3 +23,12 @@ TEST_F(SimpleTest, string)
 	ASSERT_EQ(val.as_string(vm).internal_value(), "qwerty");
 }
 
+TEST_F(SimpleTest, range)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return 'qwerty'[2..4];
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).internal_value(), "er");
+}

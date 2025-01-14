@@ -43,6 +43,7 @@ namespace OwcaScript {
 	{
 		return visit(
 			[](const OwcaEmpty&) { return false; },
+			[](const OwcaRange&) { return true; },
 			[](const OwcaInt& o) { return o.internal_value() != 0; },
 			[](const OwcaFloat& o) { return o.internal_value() != 0; },
 			[](const OwcaBool &o) { return o.internal_value(); },
@@ -51,6 +52,12 @@ namespace OwcaScript {
 		);
 	}
 
+	OwcaRange OwcaValue::as_range(OwcaVM &vm) const
+	{
+		if (kind() != OwcaValueKind::Range)
+			vm.vm->throw_wrong_type(type(), "range");
+		return std::get<OwcaRange>(value_);
+	}
 	OwcaBool OwcaValue::as_bool(OwcaVM &vm) const
 	{
 		if (kind() != OwcaValueKind::Bool)
@@ -81,11 +88,11 @@ namespace OwcaScript {
 			vm.vm->throw_wrong_type(type(), "function-set");
 		return std::get<OwcaFunctions>(value_);
 	}
-
 	std::string_view OwcaValue::type() const
 	{
 		return visit(
 			[](const OwcaEmpty&) -> std::string_view { return "nul"; },
+			[](const OwcaRange&) -> std::string_view { return "range"; },
 			[](const OwcaInt&) -> std::string_view { return "integer"; },
 			[](const OwcaFloat&) -> std::string_view { return "floating point number"; },
 			[](const OwcaBool&) -> std::string_view { return "bool"; },
@@ -98,6 +105,7 @@ namespace OwcaScript {
 	{
 		return visit(
 			[](const OwcaEmpty &o) -> std::string { return "nul"; },
+			[](const OwcaRange &o) -> std::string { return std::format("{}..{}", o.lower().internal_value(), o.upper().internal_value()); },
 			[](const OwcaInt &o) -> std::string { return std::to_string(o.internal_value()); },
 			[](const OwcaFloat &o) -> std::string { return std::to_string(o.internal_value()); },
 			[](const OwcaBool &o) -> std::string { return o.internal_value() ? "true" : "false"; },

@@ -53,7 +53,7 @@ namespace OwcaScript {
 			void throw_not_a_number(std::string_view type);
 			void throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right);
 			void throw_index_out_of_range(std::string msg);
-			void throw_value_not_indexable(std::string_view type);
+			void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
 			void throw_missing_member(std::string_view type, std::string_view ident);
 			void throw_not_callable(std::string_view type);
 			void throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);

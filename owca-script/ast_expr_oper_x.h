@@ -9,8 +9,6 @@ namespace OwcaScript {
 		class AstExprOperX : public AstExpr {
 		public:
 			enum class Kind {
-				Index,
-				IndexWrite,
 				Call,
 				CreateArray,
 				CreateSet,

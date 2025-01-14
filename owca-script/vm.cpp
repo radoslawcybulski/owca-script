@@ -59,7 +59,7 @@ namespace OwcaScript::Internal {
 		assert(false);
 	}
 
-	void VM::throw_value_not_indexable(std::string_view type)
+	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
 		assert(false);
 	}

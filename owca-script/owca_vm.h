@@ -23,6 +23,8 @@ namespace OwcaScript {
 		class ImplExprCreateArray;
 		class ImplExprFunction;
 		class ImplExprMul;
+		class ImplExprIndexRead;
+		class ImplExprIndexWrite;
 	}
 
 	class OwcaVM {
@@ -41,6 +43,8 @@ namespace OwcaScript {
 		friend class Internal::ImplExprCreateArray;
 		friend class Internal::ImplExprFunction;
 		friend class Internal::ImplExprMul;
+		friend class Internal::ImplExprIndexRead;
+		friend class Internal::ImplExprIndexWrite;
 		friend class OwcaFunctions;
 
 		std::shared_ptr<Internal::VM> vm;
