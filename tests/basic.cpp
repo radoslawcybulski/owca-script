@@ -63,3 +63,16 @@ return foo(1, 2);
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
 }
+TEST_F(SimpleTest, external_vars)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return q + b + c;
+)", std::vector<std::string>{ "q", "b", "c" });
+	auto val = vm.execute(code, { {
+		{ "q", OwcaInt{ 1 }},
+		{ "b", OwcaInt{ 2 }},
+		{ "c", OwcaInt{ 3 }},
+		} });
+	ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+}

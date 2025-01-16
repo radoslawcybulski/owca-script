@@ -63,7 +63,7 @@ namespace OwcaScript {
 			void throw_not_hashable(std::string_view type);
 
 			void update_execution_line(Line);
-			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values = {});
+			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>* values);
 			OwcaValue execute_call(OwcaValue func, std::vector<OwcaValue> arguments);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
 			OwcaValue create_map(std::vector<OwcaValue> arguments);

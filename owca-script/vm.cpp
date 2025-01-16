@@ -166,7 +166,7 @@ namespace OwcaScript::Internal {
 			});
 	}
 
-	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> &values)
+	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> *values)
 	{
 		auto vm = OwcaVM{ shared_from_this() };
 		OwcaValue val;
@@ -189,10 +189,12 @@ namespace OwcaScript::Internal {
 					value_index_map[sf.identifier_names[i]] = i;
 				}
 
-				for (auto& it : values) {
-					auto it2 = value_index_map.find(it.first);
-					if (it2 != value_index_map.end()) {
-						set_identifier(it2->second, it.second);
+				if (values) {
+					for (auto& it : *values) {
+						auto it2 = value_index_map.find(it.first);
+						if (it2 != value_index_map.end()) {
+							set_identifier(it2->second, it.second);
+						}
 					}
 				}
 			},

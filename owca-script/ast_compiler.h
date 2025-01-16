@@ -85,12 +85,12 @@ namespace OwcaScript {
 
 			struct Phase2;
 			struct RewriteAsWrite;
-			void compile_phase_2(AstFunction& root);
+			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
 		public:
 			AstCompiler(std::string filename_, std::string content, const OwcaVM::NativeCodeProvider& native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(native_code_provider) {}
 
 			const auto& filename() const { return filename_; }
-			std::shared_ptr<CodeBuffer> compile();
+			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});
 			auto take_error_messages() const { return std::move(error_messages_); }
 		};
 	}

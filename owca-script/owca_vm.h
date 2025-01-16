@@ -46,7 +46,9 @@ namespace OwcaScript {
 		};
 
 		OwcaCode compile(std::string filename, std::string content, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
-		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values = {});
+		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
+		OwcaValue execute(const OwcaCode&);
+		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
 		void run_gc();
 	};
 }

@@ -775,13 +775,12 @@ namespace OwcaScript::Internal {
 			}
 		};
 		std::unordered_map<AstFunction*, Stack> stacks;
+		std::span<const std::string> additional_variables;
 		Stack* current_stack = nullptr;
 		bool first_run = true;
 		AstCompiler* compiler;
 
-		Phase2(AstCompiler* compiler) : compiler(compiler) {
-
-		}
+		Phase2(AstCompiler* compiler, std::span<const std::string> additional_variables) : additional_variables(additional_variables), compiler(compiler) {}
 
 		using AstVisitor::apply;
 		void apply(AstBase &o) override {
@@ -816,6 +815,10 @@ namespace OwcaScript::Internal {
 			current_stack = &st;
 
 			if (first_run) {
+				if (current_stack->parent == nullptr) {
+					for (auto& ident : additional_variables)
+						current_stack->define_identifier(ident);
+				}
 				for (auto& p : o.parameters()) {
 					current_stack->define_identifier(p);
 				}
@@ -832,16 +835,16 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstCompiler::compile_phase_2(AstFunction &root)
+	void AstCompiler::compile_phase_2(AstFunction &root, std::span<const std::string> additional_variables)
 	{
-		auto p = Phase2{ this };
+		auto p = Phase2{ this, additional_variables };
 		p.first_run = true;
 		root.visit(p);
 		p.first_run = false;
 		root.visit(p);
 	}
 
-	std::shared_ptr<CodeBuffer> AstCompiler::compile()
+	std::shared_ptr<CodeBuffer> AstCompiler::compile(std::span<const std::string> additional_variables)
 	{
 		auto root = compile_main_block();
 		if (!error_messages_.empty()) {
@@ -850,7 +853,7 @@ namespace OwcaScript::Internal {
 		}
 		assert(root);
 
-		compile_phase_2(*root);
+		compile_phase_2(*root, additional_variables);
 		if (!error_messages_.empty()) {
 			return nullptr;
 		}
