@@ -57,7 +57,7 @@ TEST_F(SimpleTest, native_func)
 		}
 	};
 	auto code = vm.compile("test.os", R"(
-function foo(a, b);
+function native foo(a, b);
 return foo(1, 2);
 )", Provider{});
 	auto val = vm.execute(code);
@@ -75,4 +75,62 @@ return q + b + c;
 		{ "c", OwcaInt{ 3 }},
 		} });
 	ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+}
+TEST_F(SimpleTest, class_)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+class A {
+	function __init__(self, a, b, c) {
+		self.value = a + b + c;
+	}
+}
+return A(q, b, c);
+)", std::vector<std::string>{ "q", "b", "c" });
+	auto val = vm.execute(code, { {
+		{ "q", OwcaInt{ 1 }},
+		{ "b", OwcaInt{ 2 }},
+		{ "c", OwcaInt{ 3 }},
+		} });
+	auto val2 = val.member(vm, "value");
+	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+}
+
+TEST_F(SimpleTest, native_class)
+{
+	OwcaVM vm;
+	struct Provider : public OwcaVM::NativeCodeProvider {
+		struct NCI : public OwcaClass::NativeClassInterface {
+			void initialize_storage(void* ptr, size_t s) override {
+				*(std::uint64_t*)ptr = 1234;
+			}
+			void destroy_storage(void* ptr, size_t s) override {
+			}
+			void gc_mark_members(void* ptr, size_t s, GenerationGC generation_gc) override {
+			}
+			size_t native_storage_size() override {
+				return 8;
+			}
+		};
+		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name) const override {
+			if (name == "A")
+				return std::make_unique<NCI>();
+			return nullptr;
+		}
+	};
+	auto code = vm.compile("test.os", R"(
+class native A {
+	function __init__(self, a, b, c) {
+		self.value = a + b + c;
+	}
+}
+return A(q, b, c);
+)", std::vector<std::string>{ "q", "b", "c" }, Provider{});
+	auto val = vm.execute(code, { {
+		{ "q", OwcaInt{ 1 }},
+		{ "b", OwcaInt{ 2 }},
+		{ "c", OwcaInt{ 3 }},
+		} });
+	auto val2 = val.member(vm, "value");
+	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
 }

@@ -45,5 +45,7 @@ namespace OwcaScript::Internal {
 	}
 	void AstExprIdentifier::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {
+		if (value_to_write)
+			value_to_write->visit(vis);
 	}
 }

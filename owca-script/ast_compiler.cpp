@@ -12,16 +12,17 @@
 #include "ast_expr_constant.h"
 #include "ast_expr_identifier.h"
 #include "ast_return.h"
+#include "ast_class.h"
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
-		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "raise", "try", "catch", "and", "or", "not"
+		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "raise", "try", "catch", "and", "or", "not", "native"
 	} };
 	static std::string_view operators_2[] = {
 			">=", "<=", "=>", "==", "!="
 	};
 	static std::string_view operators_1 = {
-			"+-*/%&|^='\";[](){}<>:,"
+			"+-*/%&|^='\";[](){}<>:,."
 	};
 	struct CompilationError {};
 
@@ -629,10 +630,68 @@ namespace OwcaScript::Internal {
 		return std::make_unique<AstBlock>(start_line, std::move(temp));
 	}
 
+	std::unique_ptr<AstClass> AstCompiler::compile_class_raw()
+	{
+		auto line = consume("class");
+		auto [line2, class_name] = consume();
+		bool use_native = false;
+		if (class_name == "native" && preview().second != "(") {
+			auto [l, f] = consume();
+			line2 = l;
+			class_name = f;
+			use_native = true;
+		}
+		if (!is_identifier(class_name)) {
+			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected class' name, got `{}`", class_name));
+		}
+		std::vector<std::unique_ptr<AstExpr>> base_classes;
+		std::vector<std::unique_ptr<AstFunction>> members;
+
+		if (preview().second == "(") {
+			consume("(");
+			while (true) {
+				if (!base_classes.empty()) {
+					consume(",");
+				}
+
+				base_classes.push_back(compile_expression_no_assign());
+				if (preview().second == ")") break;
+			}
+			consume(")");
+		}
+		consume("{");
+		while (preview().second != "}") {
+			auto f = compile_function_raw();
+			members.push_back(std::move(f));
+		}
+		consume("}");
+
+		std::unique_ptr<OwcaClass::NativeClassInterface> native;
+		if (use_native) {
+			auto res = native_code_provider.native_class(class_name);
+			if (!res) {
+				add_error(OwcaErrorKind::MissingNativeFunction, filename_, line, std::format("missing native class {}", class_name));
+			}
+			else {
+				native = std::move(res);
+			}
+		}
+
+		auto c = std::make_unique<AstClass>(line, std::string{ class_name }, std::move(base_classes), std::move(members), std::move(native));
+		return c;
+	}
+
 	std::unique_ptr<AstFunction> AstCompiler::compile_function_raw()
 	{
 		auto line = consume("function");
 		auto [line2, func_name] = consume();
+		bool use_native = false;
+		if (func_name == "native" && preview().second != "(") {
+			auto [ l, f] = consume();
+			line2 = l;
+			func_name = f;
+			use_native = true;
+		}
 		if (!is_identifier(func_name)) {
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier for function name, got `{}`", func_name));
 		}
@@ -640,6 +699,8 @@ namespace OwcaScript::Internal {
 
 		consume("(");
 		if (preview().second != ")") {
+			std::unordered_set<std::string> idents;
+
 			while (true) {
 				if (!param_names.empty()) {
 					consume(",");
@@ -649,13 +710,26 @@ namespace OwcaScript::Internal {
 					add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line3, std::format("expected identifier for function's parameter name, got `{}`", p_name));
 				}
 				param_names.push_back(std::string{ p_name });
+				if (!idents.insert(std::string{ p_name }).second) {
+					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line3, std::format("reused function's parameter name `{}`", p_name));
+				}
 				if (preview().second == ")") break;
+			}
+			for (auto i = 1u; i < param_names.size(); ++i) {
+				if (param_names[i] == "self") {
+					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line2, std::format("only first argument might be `self`, not {}", i));
+				}
 			}
 		}
 		consume(")");
 		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, std::move(param_names));
-		if (preview().second == ";") {
+		if (use_native) {
+			auto [txt_line, txt] = preview();
+			if (txt == "{") {
+				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, txt_line, "native function can't have body");
+			}
 			consume(";");
+
 			auto nf = native_code_provider.native_function(func_name, f->parameters());
 			if (!nf) {
 				add_error(OwcaErrorKind::MissingNativeFunction, filename_, line, std::format("missing native function {}", func_name));
@@ -702,6 +776,17 @@ namespace OwcaScript::Internal {
 		return f2;
 	}
 
+	std::unique_ptr<AstStat> AstCompiler::compile_class()
+	{
+		auto f = compile_class_raw();
+		auto line = f->line;
+		auto fi = std::make_unique<AstExprIdentifier>(line, f->name());
+		fi->update_value_to_write(std::move(f));
+		fi->set_function_write();
+		auto f2 = std::make_unique<AstExprAsStat>(line, std::move(fi));
+		return f2;
+	}
+
 	std::unique_ptr<AstStat> AstCompiler::compile_stat()
 	{
 		if (eof())
@@ -709,6 +794,7 @@ namespace OwcaScript::Internal {
 
 		auto [ line, tok ] = preview();
 		if (tok == "function") return compile_function();
+		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
 		if (tok == "{") return compile_block();
 		return compile_expression_as_stat();

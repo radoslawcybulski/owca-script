@@ -26,7 +26,7 @@ namespace OwcaScript::Internal {
 			for(auto i = 1u; i < args.size(); ++i) {
 				arguments.push_back(args[i]->execute(vm));
 			}
-			return VM::get(vm).execute_call(std::move(f), std::move(arguments));
+			return VM::get(vm).execute_call(std::move(f), arguments);
 		}
 	};
 	class ImplExprCreateArray : public ImplExprOperXBase {

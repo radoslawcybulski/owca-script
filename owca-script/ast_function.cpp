@@ -39,8 +39,10 @@ namespace OwcaScript::Internal {
 			for (auto c : copy_from_parents) {
 				sf.values_from_parents.push_back(VM::get(vm).get_identifier(c.index_in_parent));
 			}
-			auto of = OwcaFunctions{ vm };
-			of.add(RuntimeFunction{ std::move(sf), std::move(code), name, line, param_count });
+			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(sf), std::move(code), name, line, param_count, !identifier_names.empty() && identifier_names[0] == "self");
+			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name);
+			rfs->functions[rf->param_count] = rf;
+			auto of = OwcaFunctions{ rfs };
 
 			return of;
 		}
@@ -68,8 +70,10 @@ namespace OwcaScript::Internal {
 			auto code = VM::get(vm).currently_running_code();
 			assert(code);
 			
-			auto of = OwcaFunctions{ vm };
-			of.add(RuntimeFunction{ std::move(nf), std::move(code), name, line, (unsigned int)parameter_names.size() });
+			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(nf), std::move(code), name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
+			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name);
+			rfs->functions[rf->param_count] = rf;
+			auto of = OwcaFunctions{ rfs };
 
 			return of;
 		}
@@ -131,6 +135,7 @@ namespace OwcaScript::Internal {
 
 	void AstFunction::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstFunction::visit_children(AstVisitor& vis) {
-		body->visit(vis);
+		if (body)
+			body->visit(vis);
 	}
 }

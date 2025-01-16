@@ -17,6 +17,7 @@ namespace OwcaScript {
 		SyntaxError,
 		StringContainsEndOfLineCharacter,
 		MissingNativeFunction,
+		InvalidIdentifier,
 		_Count
 	};
 	class OwcaErrorMessage {

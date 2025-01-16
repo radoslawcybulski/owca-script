@@ -10,7 +10,7 @@ namespace OwcaScript {
 	namespace Internal {
 		class CodeBuffer;
 
-		struct RuntimeFunction {
+		struct RuntimeFunction : public AllocationBase {
 			struct ScriptFunction {
 				std::vector<OwcaValue> values_from_parents;
 				std::span<AstFunction::CopyFromParent> copy_from_parents;
@@ -26,9 +26,10 @@ namespace OwcaScript {
 			std::string_view name;
 			Line fileline;
 			unsigned int param_count = 0;
+			bool is_method = false;
 
-			RuntimeFunction(std::variant<ScriptFunction, NativeFunction> data, std::shared_ptr<CodeBuffer> code, std::string_view name, Line fileline, unsigned int param_count) :
-				code(std::move(code)), data(std::move(data)), name(name), fileline(fileline), param_count(param_count) {}
+			RuntimeFunction(std::variant<ScriptFunction, NativeFunction> data, std::shared_ptr<CodeBuffer> code, std::string_view name, Line fileline, unsigned int param_count, bool is_method) :
+				code(std::move(code)), data(std::move(data)), name(name), fileline(fileline), param_count(param_count), is_method(is_method) {}
 
 			template <typename ... F> auto visit(F &&...fns) {
 				struct overloaded : F... {
@@ -42,11 +43,17 @@ namespace OwcaScript {
 				};
 				return std::visit(overloaded{std::forward<F>(fns)...}, data);
 			}
+
+			std::string_view type() const override;
+			std::string to_string() const override;
+			void gc_mark(VM &vm, GenerationGC generation_gc) override;
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
-			std::unordered_map<unsigned int, RuntimeFunction> functions;
+			std::unordered_map<unsigned int, RuntimeFunction*> functions;
 			std::string_view name;
+
+			RuntimeFunctions(std::string_view name) : name(name) {}
 
 			std::string_view type() const override;
 			std::string to_string() const override;

@@ -4,6 +4,7 @@
 #include "vm.h"
 #include "owca_vm.h"
 #include "runtime_function.h"
+#include "object.h"
 
 namespace OwcaScript {
 	std::pair<const OwcaInt*, const OwcaFloat*> OwcaValue::get_int_or_float() const
@@ -49,7 +50,9 @@ namespace OwcaScript {
 			[](const OwcaBool &o) { return o.internal_value(); },
 			[](const OwcaString &o) { return !o.internal_value().empty(); },
 			[](const OwcaFunctions&) { return true; },
-			[](const OwcaMap &o) { return o.size() != 0; }
+			[](const OwcaMap &o) { return o.size() != 0; },
+			[](const OwcaClass &o) { return true; },
+			[](const OwcaObject &o) { return true; }
 		);
 	}
 
@@ -83,29 +86,29 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "string");
 		return std::get<OwcaString>(value_);
 	}
-	OwcaString &OwcaValue::as_string(OwcaVM &vm)
-	{
-		if (kind() != OwcaValueKind::String)
-			Internal::VM::get(vm).throw_wrong_type(type(), "string");
-		return std::get<OwcaString>(value_);
-	}
 	OwcaFunctions OwcaValue::as_functions(OwcaVM &vm) const
 	{
 		if (kind() != OwcaValueKind::Functions)
 			Internal::VM::get(vm).throw_wrong_type(type(), "function-set");
 		return std::get<OwcaFunctions>(value_);
 	}
-	OwcaMap &OwcaValue::as_map(OwcaVM &vm)
+	OwcaMap OwcaValue::as_map(OwcaVM &vm) const
 	{
 		if (kind() != OwcaValueKind::Map)
 			Internal::VM::get(vm).throw_wrong_type(type(), "map");
 		return std::get<OwcaMap>(value_);
 	}
-	const OwcaMap &OwcaValue::as_map(OwcaVM &vm) const
+	OwcaClass OwcaValue::as_class(OwcaVM &vm) const
 	{
-		if (kind() != OwcaValueKind::Map)
-			Internal::VM::get(vm).throw_wrong_type(type(), "map");
-		return std::get<OwcaMap>(value_);
+		if (kind() != OwcaValueKind::Class)
+			Internal::VM::get(vm).throw_wrong_type(type(), "class");
+		return std::get<OwcaClass>(value_);
+	}
+	OwcaObject OwcaValue::as_object(OwcaVM &vm) const
+	{
+		if (kind() != OwcaValueKind::Object)
+			Internal::VM::get(vm).throw_wrong_type(type(), "object");
+		return std::get<OwcaObject>(value_);
 	}
 
 	std::string_view OwcaValue::type() const
@@ -118,8 +121,10 @@ namespace OwcaScript {
 			[](const OwcaBool&) -> std::string_view { return "bool"; },
 			[](const OwcaString&) -> std::string_view { return "string"; },
 			[](const OwcaFunctions &o) -> std::string_view { return o.functions->type(); },
-			[](const OwcaMap &o) -> std::string_view { return "dictionary"; }
-		);
+			[](const OwcaMap &o) -> std::string_view { return "dictionary"; },
+			[](const OwcaClass &o) -> std::string_view { return "class"; },
+			[](const OwcaObject &o) -> std::string_view { return o.object->type(); }
+			);
 	}
 
 	std::string OwcaValue::to_string() const
@@ -132,7 +137,19 @@ namespace OwcaScript {
 			[](const OwcaBool &o) -> std::string { return o.internal_value() ? "true" : "false"; },
 			[](const OwcaString &o) -> std::string { return std::format("'{}'", o.internal_value()); },
 			[](const OwcaFunctions &o) -> std::string { return o.functions->to_string(); },
-			[](const OwcaMap &o) -> std::string { return o.to_string(); }
-		);
+			[](const OwcaMap &o) -> std::string { return o.to_string(); },
+			[](const OwcaClass &o) -> std::string { return o.to_string(); },
+			[](const OwcaObject &o) -> std::string { return o.to_string(); }
+			);
+	}
+
+	OwcaValue OwcaValue::member(OwcaVM& vm, const std::string& key) const
+	{
+		return Internal::VM::get(vm).member(*this, key);
+	}
+
+	void OwcaValue::member(OwcaVM& vm, const std::string& key, OwcaValue val)
+	{
+		return Internal::VM::get(vm).member(*this, key, std::move(val));
 	}
 }

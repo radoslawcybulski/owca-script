@@ -3,11 +3,23 @@
 
 #include "stdafx.h"
 #include "owca_error_message.h"
+#include "owca_class.h"
 
 namespace OwcaScript {
 	class OwcaCode;
 	class OwcaValue;
 	class OwcaFunctions;
+
+	class GenerationGC {
+		unsigned int value;
+	
+	public:
+		explicit GenerationGC(unsigned int value) : value(value) {}
+
+		bool operator == (GenerationGC other) const { return value == other.value; }
+		bool operator != (GenerationGC other) const { return !(*this == other); }
+	};
+
 	namespace Internal {
 		class VM;
 	}
@@ -43,6 +55,7 @@ namespace OwcaScript {
 
 			using Function = std::function<OwcaValue(OwcaVM &, std::span<OwcaValue>)>;
 			virtual std::optional<Function> native_function(std::string_view name, std::span<const std::string> param_names) const { return std::nullopt; }
+			virtual std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name) const { return nullptr; }
 		};
 
 		OwcaCode compile(std::string filename, std::string content, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
@@ -50,6 +63,7 @@ namespace OwcaScript {
 		OwcaValue execute(const OwcaCode&);
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
 		void run_gc();
+		void gc_mark(const OwcaValue&, GenerationGC);
 	};
 }
 

@@ -5,7 +5,7 @@
 #include "owca_vm.h"
 
 namespace OwcaScript::Internal {
-	class ImplExprMember : public ImplExpr {
+	class ImplExprMemberRead : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
 
@@ -18,20 +18,53 @@ namespace OwcaScript::Internal {
 		}
 		OwcaValue execute(OwcaVM &vm) const override {
 			auto v = value->execute(vm);
-			VM::get(vm).throw_missing_member(v.type(), identifier);
-			assert(false);
+			return VM::get(vm).member(v, std::string{ identifier });
+		}
+	};
+	class ImplExprMemberWrite : public ImplExpr {
+	public:
+		using ImplExpr::ImplExpr;
+
+		std::string_view identifier;
+		ImplExpr* value, *value_to_write;
+
+		void init(ImplExpr* value, std::string_view identifier, ImplExpr* value_to_write) {
+			this->value = value;
+			this->value_to_write = value_to_write;
+			this->identifier = identifier;
+		}
+		OwcaValue execute(OwcaVM &vm) const override {
+			auto vw = value_to_write->execute(vm);
+			auto v = value->execute(vm);
+			VM::get(vm).member(v, std::string{ identifier }, std::move(vw));
 			return {};
 		}
 	};
 
 	void AstExprMember::calculate_size(CodeBufferSizeCalculator& ei) const
 	{
-		ei.code_buffer.preallocate<ImplExprMember>(line);
-		ei.code_buffer.allocate(member);
-		value->calculate_size(ei);
+		if (value_to_write) {
+			ei.code_buffer.preallocate<ImplExprMemberWrite>(line);
+			ei.code_buffer.allocate(member);
+			value_to_write->calculate_size(ei);
+			value->calculate_size(ei);
+		}
+		else {
+			ei.code_buffer.preallocate<ImplExprMemberRead>(line);
+			ei.code_buffer.allocate(member);
+			value->calculate_size(ei);
+		}
 	}
 	ImplExpr* AstExprMember::emit(EmitInfo& ei) {
-		auto ret = ei.code_buffer.preallocate<ImplExprMember>(line);
+		if (value_to_write) {
+			auto ret = ei.code_buffer.preallocate<ImplExprMemberWrite>(line);
+			auto mem = ei.code_buffer.allocate(member);
+			auto vw = value_to_write->emit(ei);
+			auto v = value->emit(ei);
+			ret->init(v, mem, vw);
+			return ret;
+		}
+		auto ret = ei.code_buffer.preallocate<ImplExprMemberRead>(line);
 		auto mem = ei.code_buffer.allocate(member);
 		auto v = value->emit(ei);
 		ret->init(v, mem);
@@ -40,5 +73,7 @@ namespace OwcaScript::Internal {
 	void AstExprMember::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprMember::visit_children(AstVisitor& vis) {
 		value->visit(vis);
+		if (value_to_write)
+			value_to_write->visit(vis);
 	}
 }

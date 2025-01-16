@@ -9,9 +9,15 @@
 #include "owca_functions.h"
 #include "owca_range.h"
 #include "owca_map.h"
+#include "owca_class.h"
+#include "owca_object.h"
 
 namespace OwcaScript {
 	class OwcaVM;
+
+	namespace Internal {
+		class VM;
+	}
 
 	enum class OwcaValueKind {
 		Empty,
@@ -22,12 +28,16 @@ namespace OwcaScript {
 		String,
 		Functions,
 		Map,
+		Class,
+		Object,
 	};
 
 	class OwcaEmpty {};
 
 	class OwcaValue {
-		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap> value_ = OwcaEmpty{};
+		friend class Internal::VM;
+
+		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -39,6 +49,8 @@ namespace OwcaScript {
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
 		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
+		OwcaValue(OwcaClass value) : value_(std::move(value)) {}
+		OwcaValue(OwcaObject value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
@@ -50,13 +62,16 @@ namespace OwcaScript {
 		OwcaInt as_int(OwcaVM &) const;
 		OwcaFloat as_float(OwcaVM &) const;
 		const OwcaString &as_string(OwcaVM &) const;
-		OwcaString &as_string(OwcaVM &);
 		OwcaFunctions as_functions(OwcaVM &) const;
-		OwcaMap &as_map(OwcaVM &);
-		const OwcaMap &as_map(OwcaVM &) const;
+		OwcaMap as_map(OwcaVM &) const;
+		OwcaClass as_class(OwcaVM &) const;
+		OwcaObject as_object(OwcaVM &) const;
 
 		std::string_view type() const;
 		std::string to_string() const;
+
+		OwcaValue member(OwcaVM& vm, const std::string& key) const;
+		void member(OwcaVM& vm, const std::string& key, OwcaValue val);
 
 		template <typename ... F> auto visit(F &&...fns) const {
 			struct overloaded : F... {

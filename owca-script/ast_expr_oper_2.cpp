@@ -391,6 +391,8 @@ namespace OwcaScript::Internal {
 	void AstExprOper2::visit_children(AstVisitor& vis) {
 		left->visit(vis);
 		right->visit(vis);
+		if (third)
+			third->visit(vis);
 	}
 	void AstExprOper2::update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third) {
 		kind_ = new_kind;

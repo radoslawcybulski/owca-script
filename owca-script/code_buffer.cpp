@@ -21,6 +21,10 @@ namespace OwcaScript::Internal {
 		assert(storage.size() == size);
 		assert(offset == size);
 	}
+
+	void CodeBuffer::register_native_interface(std::unique_ptr<OwcaClass::NativeClassInterface> native) {
+		native_interfaces.push_back(std::move(native));
+	}
 }
 
 #include <Windows.h>

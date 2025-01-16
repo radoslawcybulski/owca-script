@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "line.h"
+#include "owca_class.h"
 
 namespace OwcaScript {
 	void check_memory();
@@ -14,6 +15,7 @@ namespace OwcaScript {
 		class CodeBuffer {
 			std::string filename_;
 			std::vector<char> storage;
+			std::vector<std::unique_ptr<OwcaClass::NativeClassInterface>> native_interfaces;
 			size_t offset = 0;
 
 			char* get_ptr(size_t size, size_t align) {
@@ -43,6 +45,7 @@ namespace OwcaScript {
 				return std::span{ (T*)p, sz };
 			}
 			const ImplExpr* root() const { return (const ImplExpr*)storage.data(); }
+			void register_native_interface(std::unique_ptr<OwcaClass::NativeClassInterface> native);
 		};
 
 		class CodeBufferSizeCalculator {

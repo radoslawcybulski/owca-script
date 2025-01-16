@@ -8,6 +8,7 @@
 #include "owca_value.h"
 #include "flow_control.h"
 #include "dictionary.h"
+#include "object.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -22,92 +23,120 @@ namespace OwcaScript::Internal {
 		return *v.vm;
 	}
 
-	void VM::throw_division_by_zero()
+	void VM::throw_division_by_zero() const
 	{
 		assert(false);
 	}
 
-	void VM::throw_mod_division_by_zero()
+	void VM::throw_mod_division_by_zero() const
 	{
 		assert(false);
 	}
 
-	void VM::throw_cant_convert_to_float(std::string_view type)
+	void VM::throw_cant_convert_to_float(std::string_view type) const
 	{
 		assert(false);
 		//throw OwcaException{ std::format("can't convert value of type `{}` to floating point", type()) };
 	}
 
-	void VM::throw_cant_convert_to_integer(OwcaFloatInternal val)
+	void VM::throw_cant_convert_to_integer(OwcaFloatInternal val) const
 	{
 		assert(false);
 		//throw OwcaException{ std::format("can't convert value `{}` to integer - the conversion would loose data", f) };
 	}
 
-	void VM::throw_cant_convert_to_integer(std::string_view type)
+	void VM::throw_cant_convert_to_integer(std::string_view type) const
 	{
 		assert(false);
 		// throw OwcaException{ std::format("can't convert value of type `{}` to integer", type()) };
 	}
 
-	void VM::throw_not_a_number(std::string_view type)
+	void VM::throw_not_a_number(std::string_view type) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right)
+	void VM::throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_index_out_of_range(std::string msg)
+	void VM::throw_index_out_of_range(std::string msg) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type)
+	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_missing_member(std::string_view type, std::string_view ident)
+	void VM::throw_missing_member(std::string_view type, std::string_view ident) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_not_callable(std::string_view type)
+	void VM::throw_cant_call(std::string_view msg) const
+	{
+		assert(false);
+	}
+
+	void VM::throw_not_callable(std::string_view type) const
 	{
 		assert(false);
 	}
 	
-	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int)
+	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_wrong_type(std::string_view type, std::string_view expected)
+	void VM::throw_wrong_type(std::string_view type, std::string_view expected) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
+	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
+	void VM::throw_invalid_operand_for_mul_string(std::string_view val) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_missing_key(std::string_view key)
+	void VM::throw_missing_key(std::string_view key) const
 	{
 		assert(false);
 	}
 
-	void VM::throw_not_hashable(std::string_view type)
+	void VM::throw_not_hashable(std::string_view type) const
 	{
 		assert(false);
+	}
+
+	void VM::value_cant_have_fields(std::string_view type) const
+	{
+		assert(false);
+	}
+
+	OwcaValue VM::member(const OwcaValue& val, const std::string& key)
+	{
+		if (val.kind() == OwcaValueKind::Object) {
+			auto vm = OwcaVM{ shared_from_this() };
+			return std::get<OwcaObject>(val.value_).member(vm, key);
+		}
+		assert(false);
+		return {};
+	}
+
+	void VM::member(OwcaValue& val, const std::string& key, OwcaValue value)
+	{
+		if (val.kind() != OwcaValueKind::Object) {
+			value_cant_have_fields(val.type());
+		}
+		std::get<OwcaObject>(val.value_).member(key, std::move(value));
 	}
 
 	void VM::update_execution_line(Line line)
@@ -115,19 +144,22 @@ namespace OwcaScript::Internal {
 		stacktrace.back().line = line;
 	}
 
-	VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index)
+	VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value)
 	{
-		auto it = runtime_functions->functions.find(index);
+		auto it = runtime_functions->functions.find(index + (has_self_value ? 1 : 0));
 		if (it == runtime_functions->functions.end()) {
-			auto tmp = std::string{ "function " };
-			tmp += runtime_functions->name;
-			throw_not_callable_wrong_number_of_params(std::move(tmp), index);
+			it = runtime_functions->functions.find(index);
+			if (it == runtime_functions->functions.end() || it->second->is_method) {
+				auto tmp = std::string{ "function " };
+				tmp += runtime_functions->name;
+				throw_not_callable_wrong_number_of_params(std::move(tmp), index);
+			}
 		}
 
-		stacktrace.push_back({ it->second.fileline });
+		stacktrace.push_back({ it->second->fileline });
 		auto& s = stacktrace.back();
 		s.runtime_functions = runtime_functions;
-		s.runtime_function = &it->second;
+		s.runtime_function = it->second;
 		s.runtime_function->visit(
 			[&](const RuntimeFunction::NativeFunction& nf) {
 				s.values.resize(nf.parameter_names.size());
@@ -174,13 +206,13 @@ namespace OwcaScript::Internal {
 			stacktrace.push_back({ oc.code_->root()->line });
 			auto pop_stack = PopStack{ this };
 			RuntimeFunction::ScriptFunction sf;
-			RuntimeFunction rt_temp{ std::move(sf), oc.code_, "", Line{ 0 }, 0 };
+			RuntimeFunction rt_temp{ std::move(sf), oc.code_, "", Line{ 0 }, 0, false };
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute(vm);
 		}
 		assert(val.kind() == OwcaValueKind::Functions);
 		auto functions = val.as_functions(vm);
-		auto pop_stack = prepare_exec(functions.functions, 0);
+		auto pop_stack = prepare_exec(functions.functions, 0, false);
 		auto& s = stacktrace.back();
 		s.runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
@@ -211,20 +243,61 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 	}
-	OwcaValue VM::execute_call(OwcaValue func, std::vector<OwcaValue> arguments)
+	OwcaValue VM::execute_call(const OwcaValue &func, std::span<OwcaValue> arguments)
 	{
-		if (func.kind() != OwcaValueKind::Functions) {
-			throw_not_callable(func.type());
-		}
-		auto vm = OwcaVM{ shared_from_this() };
-		auto runtime_functions = func.as_functions(vm).functions;
-		auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size());
-		auto& s = stacktrace.back();
-		for (auto i = 0u; i < s.runtime_function->param_count; ++i) {
-			s.values[i] = std::move(arguments[i]);
-		}
+		return func.visit(
+			[&](const OwcaFunctions& of) -> OwcaValue {
+				auto vm = OwcaVM{ shared_from_this() };
+				auto runtime_functions = func.as_functions(vm).functions;
+				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self_object != nullptr);
+				auto& s = stacktrace.back();
+				bool self = s.runtime_function->is_method;
+				if (self) {
+					if (of.self_object) {
+						s.values[0] = OwcaObject{ of.self_object };
+					}
+					else {
+						throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));
+					}
+				}
+				for (auto i = (self ? 1u : 0u); i < s.runtime_function->param_count; ++i) {
+					s.values[i] = arguments[i - (self ? 1u : 0u)];
+				}
 
-		return execute();
+				return execute();
+			},
+			[&](const OwcaClass& oc) -> OwcaValue {
+				auto vm = OwcaVM{ shared_from_this() };
+				auto cls = func.as_class(vm).object;
+
+				auto obj = allocate<Object>(cls->native_storage_total, cls);
+
+				auto it = cls->values.find("__init__");
+				if (it == cls->values.end()) {
+					if (!arguments.empty()) {
+						throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {}", cls->type_, arguments.size()));
+					}
+				}
+				else {
+					auto of = it->second.as_functions(vm);
+					auto it2 = of.functions->functions.find((unsigned int)(1 + arguments.size()));
+					if (it2 == of.functions->functions.end()) {
+						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->type_, 1 + arguments.size()));
+					}
+					else {
+						auto of2 = OwcaFunctions{ of.functions, obj };
+						execute_call(of2, arguments);
+					}
+				}
+
+				return OwcaObject{ obj };
+			},
+			[&](const auto&) -> OwcaValue {
+				throw_not_callable(func.type());
+				assert(false);
+				return {};
+			}
+		);
 	}
 	OwcaValue VM::create_array(std::vector<OwcaValue> arguments)
 	{
@@ -233,7 +306,7 @@ namespace OwcaScript::Internal {
 	}
 	OwcaValue VM::create_map(std::vector<OwcaValue> arguments)
 	{
-		auto ds = allocate<DictionaryShared>();
+		auto ds = allocate<DictionaryShared>(0);
 		auto vm = OwcaVM{ shared_from_this() };
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(vm, arguments[i], std::move(arguments[i + 1]));
@@ -267,6 +340,19 @@ namespace OwcaScript::Internal {
 		auto vm = OwcaVM{ shared_from_this() };
 		return AstExprCompare::compare_equal(vm, left, right);
 	}
+	
+	Class* VM::ensure_is_class(const OwcaValue&v)
+	{
+		auto vm = OwcaVM{ shared_from_this() };
+		return v.as_class(vm).object;
+	}
+
+	Object* VM::ensure_is_object(const OwcaValue&v)
+	{
+		auto vm = OwcaVM{ shared_from_this() };
+		return v.as_object(vm).object;
+	}
+
 	size_t VM::calculate_hash(const OwcaValue& value) {
 		auto vm = OwcaVM{ shared_from_this() };
 		static auto calc_hash = [](const auto& q) {
@@ -286,6 +372,14 @@ namespace OwcaScript::Internal {
 				throw_not_hashable(value.type());
 				assert(false);
 				return 0;
+			},
+			[&](const OwcaClass& o) -> size_t {
+				return std::hash<void*>()(o.object) * 1009;
+			},
+			[&](const OwcaObject& o) -> size_t {
+				throw_not_hashable(value.type());
+				assert(false);
+				return 0;
 			}
 		);
 	}
@@ -295,6 +389,11 @@ namespace OwcaScript::Internal {
 
 		auto ggc = GenerationGC{ ++generation_gc };
 		// mark
+		for (auto& s : stacktrace) {
+			gc_mark(s.runtime_function, ggc);
+			gc_mark(s.runtime_functions, ggc);
+			gc_mark(s.values, ggc);
+		}
 		
 		// sweep
 		AllocationBase *valid = &root_allocated_memory;
@@ -311,11 +410,30 @@ namespace OwcaScript::Internal {
 		}
 	}
 
+	void VM::gc_mark(AllocationBase* ptr, GenerationGC ggc)
+	{
+		if (ptr->last_gc_mark != ggc) {
+			ptr->last_gc_mark = ggc;
+			ptr->gc_mark(*this, ggc);
+		}
+	}
+
 	void VM::gc_mark(const OwcaValue& o, GenerationGC ggc)
 	{
 		o.visit(
 			[&](const OwcaFunctions& s) {
-				s.functions->gc_mark(*this, ggc);
+				gc_mark(s.functions, ggc);
+				if (s.self_object)
+					gc_mark(s.self_object, ggc);
+			},
+			[&](const OwcaMap& s) {
+				gc_mark(s.dictionary, ggc);
+			},
+			[&](const OwcaClass& s) {
+				gc_mark(s.object, ggc);
+			},
+			[&](const OwcaObject& s) {
+				gc_mark(s.object, ggc);
 			},
 			[&](const auto&) {}
 			);

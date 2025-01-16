@@ -2,6 +2,7 @@
 #define RC_OWCA_SCRIPT_ALLOCATION_H
 
 #include "stdafx.h"
+#include "owca_vm.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -9,14 +10,6 @@ namespace OwcaScript {
 	namespace Internal {
 		class VM;
 
-		struct GenerationGC {
-			unsigned int value;
-
-			explicit GenerationGC(unsigned int value) : value(value) {}
-
-			bool operator == (GenerationGC other) const { return value == other.value; }
-			bool operator != (GenerationGC other) const { return !(*this == other); }
-		};
 		struct AllocationBase {
 #ifdef _DEBUG
 			AllocationBase();
@@ -41,8 +34,12 @@ namespace OwcaScript {
 			static unsigned int get_currently_remaining_allocations();
 		};
 		struct AllocationEmpty : public AllocationBase {
+			friend class VM;
+
 			std::string_view type() const override { return ""; }
 			std::string to_string() const override { return ""; }
+
+		private:
 			void gc_mark(VM &vm, GenerationGC generation_gc) {}
 		};
 	}

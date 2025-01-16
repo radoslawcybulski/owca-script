@@ -10,6 +10,7 @@
 #include "ast_expr_oper_2.h"
 #include "ast_expr_oper_x.h"
 #include "ast_function.h"
+#include "ast_class.h"
 
 namespace OwcaScript::Internal {
 	void AstVisitor::apply(AstExpr &o)
@@ -68,6 +69,11 @@ namespace OwcaScript::Internal {
 	}
 
 	void AstVisitor::apply(AstFunction &o)
+	{
+		apply(static_cast<AstExpr&>(o));
+	}
+
+	void AstVisitor::apply(AstClass &o)
 	{
 		apply(static_cast<AstExpr&>(o));
 	}
