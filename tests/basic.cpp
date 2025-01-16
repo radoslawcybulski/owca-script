@@ -42,3 +42,24 @@ return v['a'] + v['b'];
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
 }
+TEST_F(SimpleTest, native_func)
+{
+	OwcaVM vm;
+	struct Provider : public OwcaVM::NativeCodeProvider {
+		std::optional<Function> native_function(std::string_view name, std::span<const std::string> param_names) const override {
+			if (name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
+				return [](OwcaVM& vm, std::span<OwcaValue> args) -> OwcaValue {
+					assert(args.size() == 2);
+					return OwcaInt{ args[0].convert_to_int(vm) + args[1].convert_to_int(vm) };
+					};
+			}
+			return std::nullopt;
+		}
+	};
+	auto code = vm.compile("test.os", R"(
+function foo(a, b);
+return foo(1, 2);
+)", Provider{});
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
+}

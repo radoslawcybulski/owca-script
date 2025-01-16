@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "ast_base.h"
+#include "owca_vm.h"
 
 namespace OwcaScript {
 	namespace Internal {
@@ -19,12 +20,15 @@ namespace OwcaScript {
 			std::vector<CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
 			std::unique_ptr<AstStat> body;
-			AstFunction* owner_function = nullptr;
+			OwcaVM::NativeCodeProvider::Function native_function;
 
 		public:
-			AstFunction(Line line, std::string name, std::vector<std::string> params, AstFunction* owner_function) : AstExpr(line), name_(std::move(name)), params(std::move(params)), owner_function(owner_function) {}
+			AstFunction(Line line, std::string name, std::vector<std::string> params) : AstExpr(line), name_(std::move(name)), params(std::move(params)) {}
 
-			auto name() const { return name_; }
+			const auto &name() const { return name_; }
+			void update_native_function(OwcaVM::NativeCodeProvider::Function native_function) {
+				this->native_function = std::move(native_function);
+			}
 			void update_body(std::unique_ptr<AstStat> body) {
 				this->body = std::move(body);
 			}

@@ -12,7 +12,10 @@ namespace OwcaScript::Internal {
 	void RuntimeFunctions::gc_mark(VM &vm, GenerationGC generation_gc) {
 		for (auto& it : functions) {
 			auto& rt = it.second;
-			vm.gc_mark(rt.values_from_parents, generation_gc);
+			rt.visit([&](RuntimeFunction::ScriptFunction& s) {
+				vm.gc_mark(s.values_from_parents, generation_gc);
+				},
+				[](const auto&) {});
 		}
 	}
 }

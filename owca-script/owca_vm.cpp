@@ -16,9 +16,9 @@ namespace OwcaScript {
 		return vm->execute_code_block(oc, values);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, const NativeCodeProvider &native_code_provider)
 	{
-		auto compiler = Internal::AstCompiler{ std::move(filename), std::move(content) };
+		auto compiler = Internal::AstCompiler{ std::move(filename), std::move(content), native_code_provider };
 		auto v = compiler.compile();
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};

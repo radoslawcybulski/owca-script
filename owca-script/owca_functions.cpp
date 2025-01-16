@@ -13,7 +13,7 @@ namespace OwcaScript {
 	void OwcaFunctions::add(Internal::RuntimeFunction rf)
 	{
 		auto pc = rf.param_count;
-		functions->functions[pc] = std::move(rf);
+		functions->functions.insert_or_assign(pc, std::move(rf));
 	}
 
 	std::string_view OwcaFunctions::name() const

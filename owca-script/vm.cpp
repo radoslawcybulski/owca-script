@@ -124,33 +124,46 @@ namespace OwcaScript::Internal {
 			throw_not_callable_wrong_number_of_params(std::move(tmp), index);
 		}
 
-		stacktrace.push_back({ it->second.body->line });
+		stacktrace.push_back({ it->second.fileline });
 		auto& s = stacktrace.back();
 		s.runtime_functions = runtime_functions;
 		s.runtime_function = &it->second;
-		s.values.resize(s.runtime_function->identifier_names.size());
+		s.runtime_function->visit(
+			[&](const RuntimeFunction::NativeFunction& nf) {
+				s.values.resize(nf.parameter_names.size());
+			},
+			[&](const RuntimeFunction::ScriptFunction& sf) {
+				s.values.resize(sf.identifier_names.size());
+				assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
 
-		assert(s.runtime_function->copy_from_parents.size() == s.runtime_function->values_from_parents.size());
-
-		for (auto i = 0u; i < s.runtime_function->copy_from_parents.size(); ++i) {
-			s.values[s.runtime_function->copy_from_parents[i].index_in_child] = s.runtime_function->values_from_parents[i];
-		}
+				for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
+					s.values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
+				}
+			});
 
 		return PopStack{ this };
 	}
 
 	OwcaValue VM::execute()
 	{
-		try {
-			auto& s = stacktrace.back();
-			auto vm = OwcaVM{ shared_from_this() };
+		auto& s = stacktrace.back();
+		auto vm = OwcaVM{ shared_from_this() };
 
-			s.runtime_function->body->execute(vm);
-			return {};
-		}
-		catch (FlowControlReturn o) {
-			return std::move(o.value);
-		}
+		return s.runtime_function->visit(
+			[&](const RuntimeFunction::NativeFunction& nf) -> OwcaValue {
+				auto vm = OwcaVM{ shared_from_this() };
+
+				return (*nf.function)(vm, std::span{ s.values.begin(), s.values.end() });
+			},
+			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
+				try {
+					sf.body->execute(vm);
+					return {};
+				}
+				catch (FlowControlReturn o) {
+					return std::move(o.value);
+				}
+			});
 	}
 
 	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> &values)
@@ -160,8 +173,8 @@ namespace OwcaScript::Internal {
 		{
 			stacktrace.push_back({ oc.code_->root()->line });
 			auto pop_stack = PopStack{ this };
-			RuntimeFunction rt_temp;
-			rt_temp.code = oc.code_;
+			RuntimeFunction::ScriptFunction sf;
+			RuntimeFunction rt_temp{ std::move(sf), oc.code_, "", Line{ 0 }, 0 };
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute(vm);
 		}
@@ -169,18 +182,24 @@ namespace OwcaScript::Internal {
 		auto functions = val.as_functions(vm);
 		auto pop_stack = prepare_exec(functions.functions, 0);
 		auto& s = stacktrace.back();
+		s.runtime_function->visit(
+			[&](RuntimeFunction::ScriptFunction& sf) -> void {
+				std::unordered_map<std::string_view, unsigned int> value_index_map;
+				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
+					value_index_map[sf.identifier_names[i]] = i;
+				}
 
-		std::unordered_map<std::string_view, unsigned int> value_index_map;
-		for (auto i = 0u; i < s.runtime_function->identifier_names.size(); ++i) {
-			value_index_map[s.runtime_function->identifier_names[i]] = i;
-		}
-
-		for (auto& it : values) {
-			auto it2 = value_index_map.find(it.first);
-			if (it2 != value_index_map.end()) {
-				set_identifier(it2->second, it.second);
+				for (auto& it : values) {
+					auto it2 = value_index_map.find(it.first);
+					if (it2 != value_index_map.end()) {
+						set_identifier(it2->second, it.second);
+					}
+				}
+			},
+			[&](RuntimeFunction::NativeFunction&) -> void {
+				assert(false);
 			}
-		}
+		);
 
 		try {
 			return execute();

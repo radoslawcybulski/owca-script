@@ -16,6 +16,7 @@ namespace OwcaScript {
 		NotALValue,
 		SyntaxError,
 		StringContainsEndOfLineCharacter,
+		MissingNativeFunction,
 		_Count
 	};
 	class OwcaErrorMessage {

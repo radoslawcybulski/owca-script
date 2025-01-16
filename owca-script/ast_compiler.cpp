@@ -379,7 +379,7 @@ namespace OwcaScript::Internal {
 
 				if (preview().second != ")") {
 					while (true) {
-						if (!args.empty()) {
+						if (args.size() > 1) {
 							consume(",");
 						}
 						args.push_back(compile_expression_no_assign());
@@ -653,18 +653,30 @@ namespace OwcaScript::Internal {
 			}
 		}
 		consume(")");
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, std::move(param_names), functions_stack.back());
-		struct PopOnExit {
-			AstCompiler* self;
-			~PopOnExit() {
-				self->functions_stack.pop_back();
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, std::move(param_names));
+		if (preview().second == ";") {
+			consume(";");
+			auto nf = native_code_provider.native_function(func_name, f->parameters());
+			if (!nf) {
+				add_error(OwcaErrorKind::MissingNativeFunction, filename_, line, std::format("missing native function {}", func_name));
 			}
-		};
-		functions_stack.push_back(f.get());
-		PopOnExit pop_on_exit{ this };
+			else {
+				f->update_native_function(std::move(*nf));
+			}
+		}
+		else {
+			struct PopOnExit {
+				AstCompiler* self;
+				~PopOnExit() {
+					self->functions_stack.pop_back();
+				}
+			};
+			functions_stack.push_back(f.get());
+			PopOnExit pop_on_exit{ this };
 
-		auto body = compile_block();
-		f->update_body(std::move(body));
+			auto body = compile_block();
+			f->update_body(std::move(body));
+		}
 		return f;
 	}
 	
@@ -705,7 +717,7 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstFunction> AstCompiler::compile_main_block()
 	{
 		functions_stack.clear();
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, std::format("<main-block {}>", filename_), std::vector<std::string>{}, nullptr);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, std::format("<main-block {}>", filename_), std::vector<std::string>{});
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -832,10 +844,11 @@ namespace OwcaScript::Internal {
 	std::shared_ptr<CodeBuffer> AstCompiler::compile()
 	{
 		auto root = compile_main_block();
-		if (!root) {
+		if (!error_messages_.empty()) {
 			assert(!error_messages_.empty());
 			return nullptr;
 		}
+		assert(root);
 
 		compile_phase_2(*root);
 		if (!error_messages_.empty()) {
@@ -845,7 +858,7 @@ namespace OwcaScript::Internal {
 		auto code_buffer_size_calc = CodeBufferSizeCalculator{};
 		root->calculate_size(code_buffer_size_calc);
 
-		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ code_buffer_size_calc.get_total_size() } };
+		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ filename(), code_buffer_size_calc.get_total_size()}};
 		root->emit(emit_info);
 
 		emit_info.code_buffer.validate_size(code_buffer_size_calc.get_total_size());

@@ -5,6 +5,7 @@
 #include "owca_error_message.h"
 #include "ast_base.h"
 #include "line.h"
+#include "owca_vm.h"
 
 namespace OwcaScript {
 	namespace Internal {
@@ -19,6 +20,8 @@ namespace OwcaScript {
 			std::vector<OwcaErrorMessage> error_messages_;
 			std::vector<std::unique_ptr<AstBase>> *bases_allocated = nullptr;
 			std::vector<AstFunction*> functions_stack;
+			const OwcaVM::NativeCodeProvider& native_code_provider;
+
 			bool continue_ = true;
 			bool allow_range = true;
 			struct AllowRangeSet {
@@ -84,7 +87,7 @@ namespace OwcaScript {
 			struct RewriteAsWrite;
 			void compile_phase_2(AstFunction& root);
 		public:
-			AstCompiler(std::string filename_, std::string content) : filename_(std::move(filename_)), content(std::move(content)) {}
+			AstCompiler(std::string filename_, std::string content, const OwcaVM::NativeCodeProvider& native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(native_code_provider) {}
 
 			const auto& filename() const { return filename_; }
 			std::shared_ptr<CodeBuffer> compile();

@@ -8,13 +8,15 @@ namespace OwcaScript {
 	class OwcaValue;
 
 	namespace Internal {
-		class ImplExprFunction;
+		class ImplExprNativeFunction;
+		class ImplExprScriptFunction;
 		struct RuntimeFunction;
 		struct RuntimeFunctions;
 		class VM;
 	}
 	class OwcaFunctions {
-		friend class Internal::ImplExprFunction;
+		friend class Internal::ImplExprNativeFunction;
+		friend class Internal::ImplExprScriptFunction;
 		friend class Internal::VM;
 		friend class OwcaValue;
 

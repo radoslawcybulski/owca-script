@@ -12,6 +12,7 @@ namespace OwcaScript {
 		class ImplExpr;
 
 		class CodeBuffer {
+			std::string filename_;
 			std::vector<char> storage;
 			size_t offset = 0;
 
@@ -25,10 +26,11 @@ namespace OwcaScript {
 
 			void* allocate_simple_with_copy(const void* source, size_t size_alloc, size_t size_copy, size_t align);
 		public:
-			CodeBuffer(size_t size) {
+			CodeBuffer(std::string filename, size_t size) : filename_(std::move(filename)) {
 				storage.resize(size);
 			}
 
+			std::string_view filename() const { return filename_; }
 			void validate_size(size_t size);
 			template <typename T> T* preallocate(Line line) {
 				auto p = get_ptr(sizeof(T), alignof(T));

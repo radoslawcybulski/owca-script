@@ -17,5 +17,6 @@
 #include <limits>
 #include <charconv>
 #include <sstream>
+#include <functional>
 
 #endif

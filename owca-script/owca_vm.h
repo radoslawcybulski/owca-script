@@ -38,7 +38,14 @@ namespace OwcaScript {
 				return err_msg.c_str();
 			}
 		};
-		OwcaCode compile(std::string filename, std::string content);
+		struct NativeCodeProvider {
+			virtual ~NativeCodeProvider() = default;
+
+			using Function = std::function<OwcaValue(OwcaVM &, std::span<OwcaValue>)>;
+			virtual std::optional<Function> native_function(std::string_view name, std::span<const std::string> param_names) const { return std::nullopt; }
+		};
+
+		OwcaCode compile(std::string filename, std::string content, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values = {});
 		void run_gc();
 	};
