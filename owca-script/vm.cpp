@@ -123,6 +123,14 @@ namespace OwcaScript::Internal {
 
 	OwcaValue VM::member(const OwcaValue& val, const std::string& key)
 	{
+
+
+
+
+
+
+
+
 		if (val.kind() == OwcaValueKind::Object) {
 			auto vm = OwcaVM{ shared_from_this() };
 			return std::get<OwcaObject>(val.value_).member(vm, key);
@@ -254,7 +262,13 @@ namespace OwcaScript::Internal {
 				bool self = s.runtime_function->is_method;
 				if (self) {
 					if (of.self_object) {
-						s.values[0] = OwcaObject{ of.self_object };
+						auto self_object_helper = of.self_object->is_bound_function_self_object();
+						if (self_object_helper) {
+							s.values[0] = self_object_helper->self;
+						}
+						else {
+							s.values[0] = OwcaObject{ static_cast<Object*>(of.self_object) };
+						}
 					}
 					else {
 						throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));

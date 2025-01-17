@@ -59,6 +59,17 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(VM &vm, GenerationGC generation_gc) override;
 		};
+
+		struct BoundFunctionSelfObject : public AllocationBase {
+			OwcaValue self;
+
+			BoundFunctionSelfObject(OwcaValue self) : self(std::move(self)) {}
+
+			std::string_view type() const override { return "bound function's self helper object"; }
+			std::string to_string() const override { return std::string{ type() }; }
+			void gc_mark(VM& vm, GenerationGC generation_gc) override;
+			BoundFunctionSelfObject* is_bound_function_self_object() override { return this; }
+		};
 	}
 }
 

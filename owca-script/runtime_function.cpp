@@ -28,4 +28,9 @@ namespace OwcaScript::Internal {
 			vm.gc_mark(it.second, generation_gc);
 		}
 	}
+
+	void BoundFunctionSelfObject::gc_mark(VM& vm, GenerationGC generation_gc)
+	{
+
+	}
 }
