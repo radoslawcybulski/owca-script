@@ -50,16 +50,36 @@ namespace OwcaScript {
 				return err_msg.c_str();
 			}
 		};
+		class FunctionToken {
+			const void* tok = nullptr;
+		public:
+			explicit FunctionToken(const void* tok) : tok(tok) {}
+
+			auto value() const { return tok; }
+
+			bool operator == (FunctionToken o) const { return tok == o.tok; }
+			bool operator != (FunctionToken o) const { return tok != o.tok; }
+		};
+		class ClassToken {
+			const void* tok = nullptr;
+		public:
+			explicit ClassToken(const void* tok) : tok(tok) {}
+
+			auto value() const { return tok; }
+
+			bool operator == (ClassToken o) const { return tok == o.tok; }
+			bool operator != (ClassToken o) const { return tok != o.tok; }
+		};
 		struct NativeCodeProvider {
 			virtual ~NativeCodeProvider() = default;
 
 			using Function = std::function<OwcaValue(OwcaVM &, std::span<OwcaValue>)>;
-			virtual std::optional<Function> native_function(std::string_view name, std::span<const std::string> param_names) const { return std::nullopt; }
-			virtual std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name) const { return nullptr; }
+			virtual std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const { return std::nullopt; }
+			virtual std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const { return nullptr; }
 		};
 
-		OwcaCode compile(std::string filename, std::string content, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
-		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, const NativeCodeProvider& native_code_provider = NativeCodeProvider{});
+		OwcaCode compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
+		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue execute(const OwcaCode&);
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
 		void run_gc();

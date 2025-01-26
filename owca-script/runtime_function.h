@@ -19,7 +19,7 @@ namespace OwcaScript {
 			};
 			struct NativeFunction {
 				std::span<std::string_view> parameter_names;
-				const OwcaVM::NativeCodeProvider::Function *function = nullptr;
+				OwcaVM::NativeCodeProvider::Function function;
 			};
 			std::shared_ptr<CodeBuffer> code;
 			std::variant<ScriptFunction, NativeFunction> data;
@@ -28,8 +28,8 @@ namespace OwcaScript {
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(std::variant<ScriptFunction, NativeFunction> data, std::shared_ptr<CodeBuffer> code, std::string_view name, Line fileline, unsigned int param_count, bool is_method) :
-				code(std::move(code)), data(std::move(data)), name(name), fileline(fileline), param_count(param_count), is_method(is_method) {}
+			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, Line fileline, unsigned int param_count, bool is_method) :
+				code(std::move(code)), name(name), fileline(fileline), param_count(param_count), is_method(is_method) {}
 
 			template <typename ... F> auto visit(F &&...fns) {
 				struct overloaded : F... {

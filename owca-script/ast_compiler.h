@@ -15,12 +15,13 @@ namespace OwcaScript {
 		class AstCompiler {
 			std::string filename_;
 			std::string content;
+			std::string full_name;
 			size_t content_offset = 0;
 			Line content_line = Line{ 1 };
 			std::vector<OwcaErrorMessage> error_messages_;
 			std::vector<std::unique_ptr<AstBase>> *bases_allocated = nullptr;
 			std::vector<AstFunction*> functions_stack;
-			const OwcaVM::NativeCodeProvider& native_code_provider;
+			std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider;
 
 			bool continue_ = true;
 			bool allow_range = true;
@@ -36,7 +37,19 @@ namespace OwcaScript {
 					allow_range = old_value;
 				}
 			};
+			struct FullNameUpdater {
+				std::string& full_name;
+				size_t size;
 
+				FullNameUpdater(std::string& full_name, std::string_view name) : full_name(full_name) {
+					size = full_name.size();
+					if (!full_name.empty()) full_name += ".";
+					full_name += name;
+				}
+				~FullNameUpdater() {
+					full_name.resize(size);
+				}
+			};
 			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 			template <typename T, typename ... ARGS> T* allocate(ARGS && ... args) {
@@ -89,7 +102,7 @@ namespace OwcaScript {
 			struct RewriteAsWrite;
 			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
 		public:
-			AstCompiler(std::string filename_, std::string content, const OwcaVM::NativeCodeProvider& native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(native_code_provider) {}
+			AstCompiler(std::string filename_, std::string content, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)) {}
 
 			const auto& filename() const { return filename_; }
 			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});

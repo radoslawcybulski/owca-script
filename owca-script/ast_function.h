@@ -15,7 +15,7 @@ namespace OwcaScript {
 			};
 		
 		private:
-			std::string name_;
+			std::string name_, full_name_;
 			std::vector<std::string> params;
 			std::vector<CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
@@ -23,7 +23,7 @@ namespace OwcaScript {
 			OwcaVM::NativeCodeProvider::Function native_function;
 
 		public:
-			AstFunction(Line line, std::string name, std::vector<std::string> params) : AstExpr(line), name_(std::move(name)), params(std::move(params)) {}
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params(std::move(params)) {}
 
 			const auto &name() const { return name_; }
 			void update_native_function(OwcaVM::NativeCodeProvider::Function native_function) {

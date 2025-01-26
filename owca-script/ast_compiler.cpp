@@ -659,6 +659,7 @@ namespace OwcaScript::Internal {
 			}
 			consume(")");
 		}
+		auto full_name_updater = FullNameUpdater{ full_name, class_name };
 		consume("{");
 		while (preview().second != "}") {
 			auto f = compile_function_raw();
@@ -666,18 +667,7 @@ namespace OwcaScript::Internal {
 		}
 		consume("}");
 
-		std::unique_ptr<OwcaClass::NativeClassInterface> native;
-		if (use_native) {
-			auto res = native_code_provider.native_class(class_name);
-			if (!res) {
-				add_error(OwcaErrorKind::MissingNativeFunction, filename_, line, std::format("missing native class {}", class_name));
-			}
-			else {
-				native = std::move(res);
-			}
-		}
-
-		auto c = std::make_unique<AstClass>(line, std::string{ class_name }, std::move(base_classes), std::move(members), std::move(native));
+		auto c = std::make_unique<AstClass>(line, std::string{ class_name }, std::string{ full_name }, std::move(base_classes), std::move(members), use_native);
 		return c;
 	}
 
@@ -722,21 +712,14 @@ namespace OwcaScript::Internal {
 			}
 		}
 		consume(")");
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, std::move(param_names));
+		auto full_name_updater = FullNameUpdater{ full_name, func_name };
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names));
 		if (use_native) {
 			auto [txt_line, txt] = preview();
 			if (txt == "{") {
 				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, txt_line, "native function can't have body");
 			}
 			consume(";");
-
-			auto nf = native_code_provider.native_function(func_name, f->parameters());
-			if (!nf) {
-				add_error(OwcaErrorKind::MissingNativeFunction, filename_, line, std::format("missing native function {}", func_name));
-			}
-			else {
-				f->update_native_function(std::move(*nf));
-			}
 		}
 		else {
 			struct PopOnExit {
@@ -803,7 +786,8 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstFunction> AstCompiler::compile_main_block()
 	{
 		functions_stack.clear();
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, std::format("<main-block {}>", filename_), std::vector<std::string>{});
+		auto mb = std::format("<main-block {}>", filename_);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{});
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -947,7 +931,7 @@ namespace OwcaScript::Internal {
 		auto code_buffer_size_calc = CodeBufferSizeCalculator{};
 		root->calculate_size(code_buffer_size_calc);
 
-		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ filename(), code_buffer_size_calc.get_total_size()}};
+		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ filename(), code_buffer_size_calc.get_total_size(), std::move(native_code_provider) } };
 		root->emit(emit_info);
 
 		emit_info.code_buffer.validate_size(code_buffer_size_calc.get_total_size());

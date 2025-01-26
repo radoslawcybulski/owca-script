@@ -64,7 +64,8 @@ namespace OwcaScript {
 			void throw_invalid_operand_for_mul_string(std::string_view val) const;
 			void throw_missing_key(std::string_view key) const;
 			void throw_not_hashable(std::string_view type) const;
-			void value_cant_have_fields(std::string_view type) const;
+			void throw_value_cant_have_fields(std::string_view type) const;
+			void throw_missing_native(std::string_view msg) const;
 
 			void update_execution_line(Line);
 			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>* values);

@@ -11,10 +11,11 @@ namespace OwcaScript {
 			std::vector<std::unique_ptr<AstExpr>> base_classes;
 			std::vector<std::unique_ptr<AstFunction>> members;
 			std::string name_;
-			std::unique_ptr<OwcaClass::NativeClassInterface> native;
+			std::string full_name_;
+			bool native;
 
 		public:
-			AstClass(Line line, std::string_view name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::unique_ptr<OwcaClass::NativeClassInterface> native) : AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), name_(std::string{ name }), native(std::move(native)) {}
+			AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, bool native) : AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), name_(std::string{name}), full_name_(std::move(full_name)), native(native) {}
 
 			const auto &name() const { return name_; }
 

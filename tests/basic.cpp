@@ -46,8 +46,8 @@ TEST_F(SimpleTest, native_func)
 {
 	OwcaVM vm;
 	struct Provider : public OwcaVM::NativeCodeProvider {
-		std::optional<Function> native_function(std::string_view name, std::span<const std::string> param_names) const override {
-			if (name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
+		std::optional<Function> native_function(std::string_view full_name, OwcaVM::FunctionToken token, std::span<const std::string_view> param_names) const override {
+			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM& vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
 					return OwcaInt{ args[0].convert_to_int(vm) + args[1].convert_to_int(vm) };
@@ -59,7 +59,7 @@ TEST_F(SimpleTest, native_func)
 	auto code = vm.compile("test.os", R"(
 function native foo(a, b);
 return foo(1, 2);
-)", Provider{});
+)", std::make_unique<Provider>());
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
 }
@@ -112,7 +112,7 @@ TEST_F(SimpleTest, native_class)
 				return 8;
 			}
 		};
-		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name) const override {
+		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name, OwcaVM::ClassToken) const override {
 			if (name == "A")
 				return std::make_unique<NCI>();
 			return nullptr;
@@ -125,7 +125,7 @@ class native A {
 	}
 }
 return A(q, b, c);
-)", std::vector<std::string>{ "q", "b", "c" }, Provider{});
+)", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>());
 	auto val = vm.execute(code, { {
 		{ "q", OwcaInt{ 1 }},
 		{ "b", OwcaInt{ 2 }},

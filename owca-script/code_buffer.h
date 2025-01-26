@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "line.h"
 #include "owca_class.h"
+#include "owca_vm.h"
 
 namespace OwcaScript {
 	void check_memory();
@@ -15,7 +16,7 @@ namespace OwcaScript {
 		class CodeBuffer {
 			std::string filename_;
 			std::vector<char> storage;
-			std::vector<std::unique_ptr<OwcaClass::NativeClassInterface>> native_interfaces;
+			std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider_;
 			size_t offset = 0;
 
 			char* get_ptr(size_t size, size_t align) {
@@ -28,7 +29,7 @@ namespace OwcaScript {
 
 			void* allocate_simple_with_copy(const void* source, size_t size_alloc, size_t size_copy, size_t align);
 		public:
-			CodeBuffer(std::string filename, size_t size) : filename_(std::move(filename)) {
+			CodeBuffer(std::string filename, size_t size, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
 				storage.resize(size);
 			}
 
@@ -45,7 +46,7 @@ namespace OwcaScript {
 				return std::span{ (T*)p, sz };
 			}
 			const ImplExpr* root() const { return (const ImplExpr*)storage.data(); }
-			void register_native_interface(std::unique_ptr<OwcaClass::NativeClassInterface> native);
+			const auto* native_code_provider() const { return native_code_provider_.get(); }
 		};
 
 		class CodeBufferSizeCalculator {

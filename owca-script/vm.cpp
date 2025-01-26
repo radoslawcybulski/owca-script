@@ -116,7 +116,12 @@ namespace OwcaScript::Internal {
 		assert(false);
 	}
 
-	void VM::value_cant_have_fields(std::string_view type) const
+	void VM::throw_value_cant_have_fields(std::string_view type) const
+	{
+		assert(false);
+	}
+
+	void VM::throw_missing_native(std::string_view msg) const
 	{
 		assert(false);
 	}
@@ -142,7 +147,7 @@ namespace OwcaScript::Internal {
 	void VM::member(OwcaValue& val, const std::string& key, OwcaValue value)
 	{
 		if (val.kind() != OwcaValueKind::Object) {
-			value_cant_have_fields(val.type());
+			throw_value_cant_have_fields(val.type());
 		}
 		std::get<OwcaObject>(val.value_).member(key, std::move(value));
 	}
@@ -193,7 +198,7 @@ namespace OwcaScript::Internal {
 			[&](const RuntimeFunction::NativeFunction& nf) -> OwcaValue {
 				auto vm = OwcaVM{ shared_from_this() };
 
-				return (*nf.function)(vm, std::span{ s.values.begin(), s.values.end() });
+				return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
 				try {
@@ -214,7 +219,8 @@ namespace OwcaScript::Internal {
 			stacktrace.push_back({ oc.code_->root()->line });
 			auto pop_stack = PopStack{ this };
 			RuntimeFunction::ScriptFunction sf;
-			RuntimeFunction rt_temp{ std::move(sf), oc.code_, "", Line{ 0 }, 0, false };
+			RuntimeFunction rt_temp{ oc.code_, "", Line{0}, 0, false};
+			rt_temp.data = std::move(sf);
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute(vm);
 		}

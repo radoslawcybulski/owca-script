@@ -12,6 +12,7 @@ namespace OwcaScript {
 		class ImplExprScriptFunction;
 		class ImplExprScriptClass;
 		class ImplExprNativeClass;
+		struct AllocationBase;
 		struct RuntimeFunction;
 		struct RuntimeFunctions;
 		class VM;
@@ -30,7 +31,7 @@ namespace OwcaScript {
 		Internal::AllocationBase* self_object = nullptr; // either Object or BoundFunctionSelfObject
 	public:
 		OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::Object* self_object = nullptr);
-		OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::BoundFunctionSelfObject* self_object = nullptr);
+		OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::BoundFunctionSelfObject* self_object);
 
 		std::string_view name() const;
 	};

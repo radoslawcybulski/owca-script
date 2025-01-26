@@ -11,13 +11,14 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::string_view name;
+		std::string_view name, full_name;
 		std::span<ImplExpr*> base_classes;
 		std::span<ImplExpr*> members;
 
-		void init(std::string_view name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members)
+		void init(std::string_view name, std::string_view full_name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members)
 		{
 			this->name = name;
+			this->full_name = full_name;
 			this->base_classes = base_classes;
 			this->members = members;
 		}
@@ -85,21 +86,27 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprScriptClass::ImplExprScriptClass;
 
-		OwcaClass::NativeClassInterface *native;
-
-		void init(std::string_view name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members, OwcaClass::NativeClassInterface *native)
+		void init(std::string_view name, std::string_view full_name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members)
 		{
-			ImplExprScriptClass::init(name, base_classes, members);
-			this->native = native;
+			ImplExprScriptClass::init(name, full_name, base_classes, members);
 		}
 
 		OwcaValue execute(OwcaVM &vm) const override
 		{
 			auto res = ImplExprScriptClass::execute(vm);
 			auto cls = VM::get(vm).ensure_is_class(res);
-			auto size = native->native_storage_size();
-			cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
-			cls->native_storage_total = (cls->native_storage_total + 15) & ~15;
+			auto native = cls->code->native_code_provider();
+			if (native) {
+				if (auto impl = native->native_class(full_name, OwcaVM::ClassToken{ cls })) {
+					auto size = impl->native_storage_size();
+					cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
+					cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;
+					cls->native = std::move(impl);
+				}
+			}
+			if (!cls->native) {
+				VM::get(vm).throw_missing_native(std::format("missing native function {}", full_name));
+			}
 
 			return res;
 		}
@@ -111,6 +118,7 @@ namespace OwcaScript::Internal {
 		else ei.code_buffer.preallocate<ImplExprScriptClass>(line);
 
 		ei.code_buffer.allocate(name_);
+		ei.code_buffer.allocate(full_name_);
 
 		ei.code_buffer.preallocate_array<ImplExpr*>(base_classes.size());
 		for (auto i = 0u; i < base_classes.size(); ++i) {
@@ -130,6 +138,7 @@ namespace OwcaScript::Internal {
 		else ret1 = ei.code_buffer.preallocate<ImplExprScriptClass>(line);
 
 		auto nm = ei.code_buffer.allocate(name_);
+		auto fm = ei.code_buffer.allocate(full_name_);
 		
 		auto bc = ei.code_buffer.preallocate_array<ImplExpr*>(base_classes.size());
 		for (auto i = 0u; i < base_classes.size(); ++i) {
@@ -141,13 +150,11 @@ namespace OwcaScript::Internal {
 		}
 
 		if (native) {
-			auto ni = native.get();
-			ei.code_buffer.register_native_interface(std::move(native));
-			ret2->init(nm, bc, fncs, ni);
+			ret2->init(nm, fm, bc, fncs);
 			return ret2;
 		}
 		else {
-			ret1->init(nm, bc, fncs);
+			ret1->init(nm, fm, bc, fncs);
 			return ret1;
 		}
 	}

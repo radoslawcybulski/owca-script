@@ -21,14 +21,14 @@ namespace OwcaScript {
 		return vm->execute_code_block(oc, nullptr);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, const NativeCodeProvider &native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider)
 	{
-		return compile(std::move(filename), std::move(content), {}, native_code_provider);
+		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, const NativeCodeProvider &native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider)
 	{
-		auto compiler = Internal::AstCompiler{ std::move(filename), std::move(content), native_code_provider };
+		auto compiler = Internal::AstCompiler{ std::move(filename), std::move(content), std::move(native_code_provider) };
 		auto v = compiler.compile(additional_variables);
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};

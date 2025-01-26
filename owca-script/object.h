@@ -23,7 +23,7 @@ namespace OwcaScript {
 			std::vector<Class*> lookup_order;
 			std::vector<RuntimeFunction*> runtime_functions;
 			std::unordered_map<Class*, std::pair<size_t, size_t>> native_storage_pointers;
-			OwcaClass::NativeClassInterface *native;
+			std::unique_ptr<OwcaClass::NativeClassInterface> native;
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
 
