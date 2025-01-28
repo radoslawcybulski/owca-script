@@ -25,7 +25,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			if (l.is_true()) return l;
 			return right->execute(vm);
@@ -35,7 +35,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			if (!l.is_true()) return l;
 			return right->execute(vm);
@@ -45,7 +45,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaInt{ l | r };
@@ -55,7 +55,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaInt{ l & r };
@@ -65,7 +65,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaInt{ l ^ r };
@@ -75,7 +75,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaInt{ l << r };
@@ -85,7 +85,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaInt{ l >> r };
@@ -95,7 +95,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			return OwcaRange{ OwcaInt{ l }, OwcaInt{ r } };
@@ -105,7 +105,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			auto r = right->execute(vm);
 			auto [ li, lf ] = l.get_int_or_float();
@@ -132,7 +132,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto [li, lf] = left->execute(vm).get_int_or_float();
 			auto [ri, rf] = right->execute(vm).get_int_or_float();
 			if ((li || lf) && (ri || rf)) {
@@ -164,7 +164,7 @@ namespace OwcaScript::Internal {
 			}
 			return res;
 		}
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			auto r = right->execute(vm);
 			auto [ li, lf ] = l.get_int_or_float();
@@ -196,7 +196,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto [ li, lf ] = left->execute(vm).get_int_or_float();
 			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
 			if ((li || lf) && (ri || rf)) {
@@ -221,7 +221,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm).convert_to_int(vm);
 			auto r = right->execute(vm).convert_to_int(vm);
 			if (r == 0) {
@@ -256,7 +256,7 @@ namespace OwcaScript::Internal {
 			);
 		}
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto v = left->execute(vm);
 			auto key = right->execute(vm);
 
@@ -306,7 +306,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto v = left->execute(vm);
 			auto key = right->execute(vm);
 			auto value = third->execute(vm);

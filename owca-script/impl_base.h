@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "owca_value.h"
+#include "line.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -21,14 +22,18 @@ namespace OwcaScript {
 		public:
 			using ImplBase::ImplBase;
 
-			virtual void execute(OwcaVM &) const = 0;
+			virtual void execute_impl(OwcaVM &) const = 0;
+
+			void execute(OwcaVM &) const;
 		};
 
 		class ImplExpr : public ImplBase {
 		public:
 			using ImplBase::ImplBase;
 
-			virtual OwcaValue execute(OwcaVM &) const = 0;
+			virtual OwcaValue execute_impl(OwcaVM &) const = 0;
+
+			OwcaValue execute(OwcaVM &) const;
 		};
 	}
 }

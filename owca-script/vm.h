@@ -27,6 +27,7 @@ namespace OwcaScript {
 				ExecutionFrame(Line line) : line(line) {}
 			};
 			std::vector<ExecutionFrame> stacktrace;
+			std::vector<AllocationBase*> allocated_objects;
 			unsigned int generation_gc = 0;
 
 			struct PopStack {
@@ -43,6 +44,19 @@ namespace OwcaScript {
 			PopStack prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value);
 			OwcaValue execute();
 		public:
+			struct AllocatedObjectsPointer {
+				std::vector<AllocationBase*> &allocated_objects;
+				size_t size;
+
+				AllocatedObjectsPointer(VM &vm) : allocated_objects(vm.allocated_objects) {
+					size = allocated_objects.size();
+				}
+				~AllocatedObjectsPointer() {
+					assert(allocated_objects.size() >= size);
+					allocated_objects.resize(size);
+				}
+			};
+
 			VM();
 			~VM();
 
@@ -95,6 +109,7 @@ namespace OwcaScript {
 				p2->prev = root_allocated_memory.prev;
 				p2->next = &root_allocated_memory;
 				p2->prev->next = p2->next->prev = p2;
+				allocated_objects.push_back(p2);
 				return p2;
 			}
 

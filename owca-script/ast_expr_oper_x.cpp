@@ -19,7 +19,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto f = args[0]->execute(vm);
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size() - 1);
@@ -33,7 +33,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
@@ -46,7 +46,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
@@ -59,7 +59,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {

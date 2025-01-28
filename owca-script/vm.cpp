@@ -191,6 +191,7 @@ namespace OwcaScript::Internal {
 
 	OwcaValue VM::execute()
 	{
+		auto pp = AllocatedObjectsPointer{ *this };
 		auto& s = stacktrace.back();
 		auto vm = OwcaVM{ shared_from_this() };
 
@@ -213,6 +214,7 @@ namespace OwcaScript::Internal {
 
 	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> *values)
 	{
+		auto pp = AllocatedObjectsPointer{ *this };
 		auto vm = OwcaVM{ shared_from_this() };
 		OwcaValue val;
 		{
@@ -259,6 +261,7 @@ namespace OwcaScript::Internal {
 	}
 	OwcaValue VM::execute_call(const OwcaValue &func, std::span<OwcaValue> arguments)
 	{
+		auto pp = AllocatedObjectsPointer{ *this };
 		return func.visit(
 			[&](const OwcaFunctions& of) -> OwcaValue {
 				auto vm = OwcaVM{ shared_from_this() };
@@ -414,7 +417,10 @@ namespace OwcaScript::Internal {
 			gc_mark(s.runtime_functions, ggc);
 			gc_mark(s.values, ggc);
 		}
-		
+		for(auto s : allocated_objects) {
+			gc_mark(s, ggc);
+		}
+
 		// sweep
 		AllocationBase *valid = &root_allocated_memory;
 		while (valid->next != &root_allocated_memory) {

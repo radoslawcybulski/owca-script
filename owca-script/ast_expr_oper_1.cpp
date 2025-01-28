@@ -19,7 +19,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			auto v = l.convert_to_int(vm);
 			return OwcaInt{ ~v };
@@ -29,7 +29,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			return OwcaBool{ !l.is_true() };
 		}
@@ -38,7 +38,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto l = left->execute(vm);
 			auto [li, lf] = l.get_int_or_float();
 			if (li) {

@@ -57,7 +57,7 @@ namespace OwcaScript::Internal {
 		static Result compare_split(OwcaVM& vm, AstExprCompare::Kind kind, const auto& l, const auto& r) {
 			return Result::NotExec;
 		}
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto left = first->execute(vm);
 			auto [li, lf] = left.get_int_or_float();
 

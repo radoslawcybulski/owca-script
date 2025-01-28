@@ -16,7 +16,7 @@ namespace OwcaScript::Internal {
 			this->value = value;
 			this->identifier = identifier;
 		}
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto v = value->execute(vm);
 			return VM::get(vm).member(v, std::string{ identifier });
 		}
@@ -33,7 +33,7 @@ namespace OwcaScript::Internal {
 			this->value_to_write = value_to_write;
 			this->identifier = identifier;
 		}
-		OwcaValue execute(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM &vm) const override {
 			auto vw = value_to_write->execute(vm);
 			auto v = value->execute(vm);
 			VM::get(vm).member(v, std::string{ identifier }, std::move(vw));
