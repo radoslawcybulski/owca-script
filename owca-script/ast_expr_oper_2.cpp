@@ -125,6 +125,7 @@ namespace OwcaScript::Internal {
 				return OwcaString{ l.as_string(vm).internal_value() + r.as_string(vm).internal_value() };
 			}
 			assert(false);
+			throw 1;
 		}
 	};
 	class ImplExprSub : public ImplExprOper2 {
@@ -146,6 +147,7 @@ namespace OwcaScript::Internal {
 				return OwcaFloat{ val };
 			}
 			assert(false);
+			throw 1;
 		}
 	};
 	class ImplExprMul : public ImplExprOper2 {
@@ -187,6 +189,7 @@ namespace OwcaScript::Internal {
 				return OwcaString{ mul_string(vm, r.as_string(vm).internal_value(), ll) };
 			}
 			assert(false);
+			throw 1;
 		}
 	};
 	class ImplExprDiv : public ImplExprOper2 {
@@ -211,6 +214,7 @@ namespace OwcaScript::Internal {
 				return OwcaFloat{ val };
 			}
 			assert(false);
+			throw 1;
 		}
 	};
 	class ImplExprMod : public ImplExprOper2 {

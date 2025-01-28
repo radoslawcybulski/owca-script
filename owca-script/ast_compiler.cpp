@@ -713,7 +713,7 @@ namespace OwcaScript::Internal {
 		}
 		consume(")");
 		auto full_name_updater = FullNameUpdater{ full_name, func_name };
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names));
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), use_native);
 		if (use_native) {
 			auto [txt_line, txt] = preview();
 			if (txt == "{") {
@@ -787,7 +787,7 @@ namespace OwcaScript::Internal {
 	{
 		functions_stack.clear();
 		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{});
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{}, false);
 		functions_stack.push_back(f.get());
 		
 		try {

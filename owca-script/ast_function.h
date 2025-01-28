@@ -20,15 +20,11 @@ namespace OwcaScript {
 			std::vector<CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
 			std::unique_ptr<AstStat> body;
-			OwcaVM::NativeCodeProvider::Function native_function;
-
+			bool native;
 		public:
-			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params(std::move(params)) {}
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params, bool native) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params(std::move(params)), native(native) {}
 
 			const auto &name() const { return name_; }
-			void update_native_function(OwcaVM::NativeCodeProvider::Function native_function) {
-				this->native_function = std::move(native_function);
-			}
 			void update_body(std::unique_ptr<AstStat> body) {
 				this->body = std::move(body);
 			}

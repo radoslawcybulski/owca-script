@@ -66,12 +66,12 @@ namespace OwcaScript::Internal {
 		OwcaValue execute(OwcaVM &vm) const override
 		{
 			auto code = VM::get(vm).currently_running_code();
-			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
 			assert(code);
+			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
 
 			RuntimeFunction::NativeFunction nf;
 			nf.parameter_names = parameter_names;
-			if (auto native = code->native_code_provider()) {
+			if (auto native = rf->code->native_code_provider()) {
 				auto fnc = native->native_function(full_name, OwcaVM::FunctionToken{ rf }, parameter_names);
 				if (fnc) {
 					nf.function = std::move(*fnc);
@@ -92,7 +92,7 @@ namespace OwcaScript::Internal {
 
 	void AstFunction::calculate_size(CodeBufferSizeCalculator &ei) const
 	{
-		if (native_function) {
+		if (native) {
 			ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
 			ei.code_buffer.allocate(name_);
@@ -117,7 +117,7 @@ namespace OwcaScript::Internal {
 	}
 
 	ImplExpr* AstFunction::emit(EmitInfo& ei) {
-		if (native_function) {
+		if (native) {
 			auto ret = ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
 			auto nm = ei.code_buffer.allocate(name_);
