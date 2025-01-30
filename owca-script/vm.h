@@ -16,7 +16,7 @@ namespace OwcaScript {
 		struct Class;
 		struct RuntimeFunction;
 
-		class VM : public std::enable_shared_from_this<VM> {
+		class VM {
 			AllocationEmpty root_allocated_memory;
 			struct ExecutionFrame {
 				RuntimeFunctions* runtime_functions;
@@ -109,6 +109,7 @@ namespace OwcaScript {
 				p2->prev = root_allocated_memory.prev;
 				p2->next = &root_allocated_memory;
 				p2->prev->next = p2->next->prev = p2;
+				p2->vm = this;
 				allocated_objects.push_back(p2);
 				return p2;
 			}

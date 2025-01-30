@@ -25,7 +25,8 @@ namespace OwcaScript {
 			AllocationBase &operator = (const AllocationBase&) = delete;
 			AllocationBase &operator = (AllocationBase&&) = delete;
 
-			AllocationBase* prev, * next;
+			AllocationBase* prev = nullptr, * next = nullptr;
+			VM *vm = nullptr;
 			GenerationGC last_gc_mark = GenerationGC{ 0 };
 
 			virtual std::string_view type() const = 0;

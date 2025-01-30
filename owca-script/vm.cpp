@@ -137,7 +137,7 @@ namespace OwcaScript::Internal {
 
 
 		if (val.kind() == OwcaValueKind::Object) {
-			auto vm = OwcaVM{ shared_from_this() };
+			auto vm = OwcaVM{ this };
 			return std::get<OwcaObject>(val.value_).member(vm, key);
 		}
 		assert(false);
@@ -193,11 +193,11 @@ namespace OwcaScript::Internal {
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
 		auto& s = stacktrace.back();
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 
 		return s.runtime_function->visit(
 			[&](const RuntimeFunction::NativeFunction& nf) -> OwcaValue {
-				auto vm = OwcaVM{ shared_from_this() };
+				auto vm = OwcaVM{ this };
 
 				return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
 			},
@@ -215,7 +215,7 @@ namespace OwcaScript::Internal {
 	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> *values)
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		OwcaValue val;
 		{
 			stacktrace.push_back({ oc.code_->root()->line });
@@ -264,7 +264,7 @@ namespace OwcaScript::Internal {
 		auto pp = AllocatedObjectsPointer{ *this };
 		return func.visit(
 			[&](const OwcaFunctions& of) -> OwcaValue {
-				auto vm = OwcaVM{ shared_from_this() };
+				auto vm = OwcaVM{ this };
 				auto runtime_functions = func.as_functions(vm).functions;
 				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self_object != nullptr);
 				auto& s = stacktrace.back();
@@ -290,7 +290,7 @@ namespace OwcaScript::Internal {
 				return execute();
 			},
 			[&](const OwcaClass& oc) -> OwcaValue {
-				auto vm = OwcaVM{ shared_from_this() };
+				auto vm = OwcaVM{ this };
 				auto cls = func.as_class(vm).object;
 
 				auto obj = allocate<Object>(cls->native_storage_total, cls);
@@ -330,7 +330,7 @@ namespace OwcaScript::Internal {
 	OwcaValue VM::create_map(std::vector<OwcaValue> arguments)
 	{
 		auto ds = allocate<DictionaryShared>(0);
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(vm, arguments[i], std::move(arguments[i + 1]));
 		}
@@ -360,24 +360,24 @@ namespace OwcaScript::Internal {
 	}
 	bool VM::compare_values(const OwcaValue& left, const OwcaValue& right)
 	{
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		return AstExprCompare::compare_equal(vm, left, right);
 	}
 	
 	Class* VM::ensure_is_class(const OwcaValue&v)
 	{
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		return v.as_class(vm).object;
 	}
 
 	Object* VM::ensure_is_object(const OwcaValue&v)
 	{
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		return v.as_object(vm).object;
 	}
 
 	size_t VM::calculate_hash(const OwcaValue& value) {
-		auto vm = OwcaVM{ shared_from_this() };
+		auto vm = OwcaVM{ this };
 		static auto calc_hash = [](const auto& q) {
 			return std::hash<std::remove_cvref_t<decltype(q)>>()(q);
 			};

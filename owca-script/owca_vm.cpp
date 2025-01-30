@@ -5,8 +5,9 @@
 #include "ast_compiler.h"
 
 namespace OwcaScript {
-	OwcaVM::OwcaVM() : vm(std::make_shared<Internal::VM>())
+	OwcaVM::OwcaVM() : vm_owner(std::make_shared<Internal::VM>())
 	{
+		vm = vm_owner.get();
 	}
 
 	OwcaVM::~OwcaVM() = default;

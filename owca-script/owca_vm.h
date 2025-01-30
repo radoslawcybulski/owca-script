@@ -27,11 +27,12 @@ namespace OwcaScript {
 	class OwcaVM {
 		friend class Internal::VM;
 
-		std::shared_ptr<Internal::VM> vm;
+		std::shared_ptr<Internal::VM> vm_owner;
+		Internal::VM *vm;
 
-		OwcaVM(std::shared_ptr<Internal::VM> vm) : vm(std::move(vm)) {}
 	public:
 		OwcaVM();
+		OwcaVM(Internal::VM *vm) : vm(std::move(vm)) {}
 		~OwcaVM();
 
 		class CompilationFailed : public std::exception {
