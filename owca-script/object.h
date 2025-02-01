@@ -16,7 +16,7 @@ namespace OwcaScript {
 
 		struct Class : public AllocationBase {
 			std::unordered_map<std::string, OwcaValue> values;
-			std::string_view type_;
+			const std::string_view name, full_name;
 			std::shared_ptr<CodeBuffer> code;
 			Line fileline;
 			std::vector<Class*> base_classes;
@@ -32,9 +32,12 @@ namespace OwcaScript {
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
 
 			Object* allocate(OwcaVM&);
+			void initialize_add_base_class(OwcaVM &vm, const OwcaValue &b);
+			void initialize_add_function(OwcaVM &vm, const OwcaValue &f);
+			void finalize_initializing(OwcaVM &vm);
 			char* native_storage_ptr(Object *) const;
 
-			Class(Line line);
+			Class(Line line, std::string_view type, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count);
 		};
 
 		struct Object : public AllocationBase {
@@ -46,7 +49,7 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
-			std::optional<OwcaValue> lookup(const std::string &key);
+			std::span<char> native_storage(OwcaVM::ClassToken cls);
 		};
 	}
 }

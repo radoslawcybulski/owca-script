@@ -52,8 +52,6 @@ namespace OwcaScript::Internal {
 				return OwcaFloat{ -lf->internal_value() };
 			}
 			VM::get(vm).throw_not_a_number(l.type());
-			assert(false);
-			return {};
 		}
 	};
 

@@ -28,55 +28,18 @@ namespace OwcaScript::Internal {
 			auto code = VM::get(vm).currently_running_code();
 			assert(code);
 
-			auto cls = VM::get(vm).allocate<Class>(0, line);
-			cls->type_ = name;
-			cls->code = std::move(code);
-			cls->base_classes.reserve(base_classes.size());
+			auto cls = VM::get(vm).allocate<Class>(0, line, name, full_name, std::move(code), base_classes.size());
 			for (auto b : base_classes) {
 				auto res = b->execute(vm);
-				auto c = VM::get(vm).ensure_is_class(res);
-				cls->base_classes.push_back(c);
+				cls->initialize_add_base_class(vm, res);
 			}
-
-			std::function<void(Class*)> fill_lookup_order = [&](Class* c) {
-				cls->lookup_order.push_back(c);
-				for (auto q : cls->base_classes)
-					fill_lookup_order(q);
-			};
-			fill_lookup_order(cls);
-
-			size_t offset = 0;
-			for (auto q : cls->base_classes) {
-				for (auto it : q->native_storage_pointers) {
-					cls->native_storage_pointers.insert({ it.first, { offset, it.second.second } });
-					offset += it.second.second;
-					offset = (offset + 15) & ~15;
-				}
-			}
-			cls->native_storage_total = offset;
 
 			for (auto m : members) {
 				auto f = m->execute(vm);
-				auto fnc = f.as_functions(vm);
-				assert(fnc.functions->functions.size() == 1);
-				for (auto it2 : fnc.functions->functions) {
-					cls->runtime_functions.push_back(it2.second);
-				}
+				cls->initialize_add_function(vm, f);
 			}
 
-			for (auto i = cls->lookup_order.size(); i > 0; --i) {
-				for (auto f : cls->lookup_order[i - 1]->runtime_functions) {
-					auto name = f->name;
-
-					auto it = cls->values.insert({ std::string{ name }, {} });
-					if (it.second || it.first->second.kind() != OwcaValueKind::Functions) {
-						auto rf = VM::get(vm).allocate<RuntimeFunctions>(0, name);
-						it.first->second = OwcaFunctions{ rf };
-					}
-					auto dst_fnc = it.first->second.as_functions(vm);
-					dst_fnc.functions->functions[f->param_count] = f;
-				}
-			}
+			cls->finalize_initializing(vm);
 
 			return OwcaClass{ cls };
 		}

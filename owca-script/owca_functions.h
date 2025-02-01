@@ -18,6 +18,7 @@ namespace OwcaScript {
 		class VM;
 		struct Object;
 		struct BoundFunctionSelfObject;
+		struct Class;
 	}
 	class OwcaFunctions {
 		friend class Internal::ImplExprNativeFunction;
@@ -26,6 +27,7 @@ namespace OwcaScript {
 		friend class Internal::ImplExprNativeClass;
 		friend class Internal::VM;
 		friend class OwcaValue;
+		friend struct Internal::Class;
 
 		Internal::RuntimeFunctions* functions = nullptr;
 		Internal::AllocationBase* self_object = nullptr; // either Object or BoundFunctionSelfObject

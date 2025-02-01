@@ -12,21 +12,24 @@ namespace OwcaScript {
 			std::vector<std::tuple<size_t, OwcaValue, OwcaValue>> values;
 			size_t elements = 0;
 			size_t mask = 0;
+			OwcaVM vm;
 
-			std::tuple<size_t, size_t, bool> find_place(OwcaVM &, const OwcaValue &key, size_t hash) const;
-			std::tuple<size_t, size_t, bool> find_place(OwcaVM &, const OwcaValue &key) const;
+			Dictionary(OwcaVM vm) : vm(vm) {}
+
+			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key, size_t hash) const;
+			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key) const;
 
 			void try_rehash();
-			OwcaValue &item(OwcaVM &, const OwcaValue &key);
-			const OwcaValue &read(OwcaVM &, const OwcaValue &key);
-			void write(OwcaVM &, const OwcaValue &key, OwcaValue value);
-			OwcaValue pop(OwcaVM &, const OwcaValue &key);
-			std::optional<std::pair<OwcaValue, OwcaValue>> find(OwcaVM &, const OwcaValue &key) const;
+			OwcaValue &item(const OwcaValue &key);
+			const OwcaValue &read(const OwcaValue &key);
+			void write(const OwcaValue &key, OwcaValue value);
+			OwcaValue pop(const OwcaValue &key);
+			std::optional<std::pair<const OwcaValue*, OwcaValue*>> find(const OwcaValue &key);
+			std::optional<std::pair<const OwcaValue*, const OwcaValue*>> find(const OwcaValue &key) const;
 
-			struct Iterator {
-				unsigned int pos = 0;
-			};
-			std::optional<std::pair<OwcaValue, OwcaValue>> read_and_update_iterator(Iterator&) const;
+			size_t next(size_t pos = (size_t)-1) const;
+			std::pair<const OwcaValue *, OwcaValue *> read(size_t pos);
+			std::pair<const OwcaValue *, const OwcaValue *> read(size_t pos) const;
 
 			std::string_view type() const;
 			std::string to_string() const;
@@ -36,6 +39,8 @@ namespace OwcaScript {
 		struct DictionaryShared : public AllocationBase {
 			Dictionary dict;
 
+			DictionaryShared(OwcaVM vm) : dict(vm) {}
+			
 			std::string_view type() const override {
 				return dict.type();
 			}

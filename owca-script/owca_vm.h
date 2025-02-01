@@ -83,6 +83,8 @@ namespace OwcaScript {
 		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue execute(const OwcaCode&);
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
+		OwcaValue execute(const OwcaCode&, OwcaValue &output_dict);
+		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values, OwcaValue &output_dict);
 		void run_gc();
 		void gc_mark(const OwcaValue&, GenerationGC);
 	};

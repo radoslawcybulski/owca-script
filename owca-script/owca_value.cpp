@@ -26,8 +26,6 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_cant_convert_to_integer(f->internal_value());
 		}
 		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
-		assert(false);
-		return {};
 	}
 
 	OwcaFloatInternal OwcaValue::convert_to_float(OwcaVM &vm) const
@@ -36,8 +34,6 @@ namespace OwcaScript {
 		if (i) return (OwcaFloatInternal)i->internal_value();
 		if (f) return f->internal_value();
 		Internal::VM::get(vm).throw_cant_convert_to_float(type());
-		assert(false);
-		return {};
 	}
 
 	bool OwcaValue::is_true() const
@@ -56,6 +52,12 @@ namespace OwcaScript {
 		);
 	}
 
+	OwcaEmpty OwcaValue::as_nul(OwcaVM &vm) const
+	{
+		if (kind() != OwcaValueKind::Empty)
+			Internal::VM::get(vm).throw_wrong_type(type(), "nul");
+		return {};
+	}
 	OwcaRange OwcaValue::as_range(OwcaVM &vm) const
 	{
 		if (kind() != OwcaValueKind::Range)

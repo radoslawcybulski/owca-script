@@ -22,6 +22,7 @@ namespace OwcaScript {
 			std::vector<std::unique_ptr<AstBase>> *bases_allocated = nullptr;
 			std::vector<AstFunction*> functions_stack;
 			std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider;
+			VM &vm;
 
 			bool continue_ = true;
 			bool allow_range = true;
@@ -102,7 +103,7 @@ namespace OwcaScript {
 			struct RewriteAsWrite;
 			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
 		public:
-			AstCompiler(std::string filename_, std::string content, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)) {}
+			AstCompiler(VM &vm, std::string filename_, std::string content, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
 
 			const auto& filename() const { return filename_; }
 			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});

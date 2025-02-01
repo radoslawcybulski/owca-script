@@ -119,8 +119,6 @@ namespace OwcaScript::Internal {
 		case ImplExprCompare::Result::NotExec: break;
 		}
 		VM::get(vm).throw_cant_compare(AstExprCompare::Kind::Eq, left.type(), right.type());
-		assert(false);
-		return false;
 	}
 
 	void AstExprCompare::calculate_size(CodeBufferSizeCalculator &ei) const {

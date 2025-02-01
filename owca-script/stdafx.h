@@ -18,5 +18,6 @@
 #include <charconv>
 #include <sstream>
 #include <functional>
+#include <iterator>
 
 #endif

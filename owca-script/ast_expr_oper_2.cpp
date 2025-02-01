@@ -124,8 +124,7 @@ namespace OwcaScript::Internal {
 			if (l.kind() == OwcaValueKind::String && r.kind() == OwcaValueKind::String) {
 				return OwcaString{ l.as_string(vm).internal_value() + r.as_string(vm).internal_value() };
 			}
-			assert(false);
-			throw 1;
+			VM::get(vm).throw_cant_call(std::format("can't execute {} + {}", l.type(), r.type()));
 		}
 	};
 	class ImplExprSub : public ImplExprOper2 {
@@ -133,8 +132,10 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		OwcaValue execute_impl(OwcaVM &vm) const override {
-			auto [li, lf] = left->execute(vm).get_int_or_float();
-			auto [ri, rf] = right->execute(vm).get_int_or_float();
+			auto l = left->execute(vm);
+			auto r = right->execute(vm);
+			auto [ li, lf ] = l.get_int_or_float();
+			auto [ ri, rf ] = r.get_int_or_float();
 			if ((li || lf) && (ri || rf)) {
 				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
 				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
@@ -146,8 +147,7 @@ namespace OwcaScript::Internal {
 				}
 				return OwcaFloat{ val };
 			}
-			assert(false);
-			throw 1;
+			VM::get(vm).throw_cant_call(std::format("can't execute {} - {}", l.type(), r.type()));
 		}
 	};
 	class ImplExprMul : public ImplExprOper2 {
@@ -188,8 +188,7 @@ namespace OwcaScript::Internal {
 				auto ll = l.convert_to_int(vm);
 				return OwcaString{ mul_string(vm, r.as_string(vm).internal_value(), ll) };
 			}
-			assert(false);
-			throw 1;
+			VM::get(vm).throw_cant_call(std::format("can't execute {} * {}", l.type(), r.type()));
 		}
 	};
 	class ImplExprDiv : public ImplExprOper2 {
@@ -197,8 +196,10 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		OwcaValue execute_impl(OwcaVM &vm) const override {
-			auto [ li, lf ] = left->execute(vm).get_int_or_float();
-			auto [ ri, rf ] = right->execute(vm).get_int_or_float();
+			auto l = left->execute(vm);
+			auto r = right->execute(vm);
+			auto [ li, lf ] = l.get_int_or_float();
+			auto [ ri, rf ] = r.get_int_or_float();
 			if ((li || lf) && (ri || rf)) {
 				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
 				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
@@ -213,8 +214,7 @@ namespace OwcaScript::Internal {
 				}
 				return OwcaFloat{ val };
 			}
-			assert(false);
-			throw 1;
+			VM::get(vm).throw_cant_call(std::format("can't execute {} / {}", l.type(), r.type()));
 		}
 	};
 	class ImplExprMod : public ImplExprOper2 {
@@ -286,18 +286,14 @@ namespace OwcaScript::Internal {
 						},
 						[&](const auto&) -> OwcaString {
 							Internal::VM::get(vm).throw_value_not_indexable(v.type(), key.type());
-							assert(false);
-							return {};
 						}
 					);
 				},
 				[&](const OwcaMap& o) -> OwcaValue {
-					return o.dictionary->dict.read(vm, key);
+					return o.dictionary->dict.read(key);
 				},
 				[&](const auto&) -> OwcaValue {
 					Internal::VM::get(vm).throw_value_not_indexable(v.type());
-					assert(false);
-					return {};
 				}
 			);
 		}
@@ -315,13 +311,11 @@ namespace OwcaScript::Internal {
 
 			return v.visit(
 				[&](const OwcaMap& o) -> OwcaValue {
-					o.dictionary->dict.write(vm, key, std::move(value));
+					o.dictionary->dict.write(key, std::move(value));
 					return {};
 				},
 				[&](const auto&) -> OwcaValue {
 					Internal::VM::get(vm).throw_value_not_indexable(v.type());
-					assert(false);
-					return {};
 				}
 			);
 		}

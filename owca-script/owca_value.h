@@ -57,6 +57,8 @@ namespace OwcaScript {
 		OwcaIntInternal convert_to_int(OwcaVM &) const;
 		OwcaFloatInternal convert_to_float(OwcaVM &) const;
 		bool is_true() const;
+
+		OwcaEmpty as_nul(OwcaVM &) const;
 		OwcaRange as_range(OwcaVM &) const;
 		OwcaBool as_bool(OwcaVM &) const;
 		OwcaInt as_int(OwcaVM &) const;

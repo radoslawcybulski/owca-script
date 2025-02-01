@@ -9,14 +9,14 @@ namespace OwcaScript::Internal {
 	static constexpr const size_t minimum_size = 16;
 	static constexpr const float max_allocation = 0.7f, min_allocation = 0.25f;
 
-	std::tuple<size_t, size_t, bool> Dictionary::find_place(OwcaVM &vm, const OwcaValue &key) const
+	std::tuple<size_t, size_t, bool> Dictionary::find_place(const OwcaValue &key) const
 	{
 		auto hash = VM::get(vm).calculate_hash(key);
 		if (hash == Deleted || hash == Empty) hash += 2;
-		return find_place(vm, key, hash);
+		return find_place(key, hash);
 	}
 
-	std::tuple<size_t, size_t, bool> Dictionary::find_place(OwcaVM &vm, const OwcaValue &key, size_t hash) const
+	std::tuple<size_t, size_t, bool> Dictionary::find_place(const OwcaValue &key, size_t hash) const
 	{
 		if (values.empty()) return { hash & (minimum_size - 1), hash, false};
 
@@ -66,10 +66,10 @@ namespace OwcaScript::Internal {
 		}
 	}
 
-	OwcaValue& Dictionary::item(OwcaVM &vm, const OwcaValue &key)
+	OwcaValue& Dictionary::item(const OwcaValue &key)
 	{
 		try_rehash();
-		auto [index, hash, exists] = find_place(vm, key);
+		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
 			if (values.empty()) {
 				values.resize(minimum_size);
@@ -82,23 +82,23 @@ namespace OwcaScript::Internal {
 		}
 		return std::get<2>(values[index]);
 	}
-	const OwcaValue& Dictionary::read(OwcaVM &vm, const OwcaValue &key)
+	const OwcaValue& Dictionary::read(const OwcaValue &key)
 	{
-		auto [index, hash, exists] = find_place(vm, key);
+		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
 			VM::get(vm).throw_missing_key(key.to_string());
 		}
 		return std::get<2>(values[index]);
 	}
 
-	void Dictionary::write(OwcaVM &vm, const OwcaValue &key, OwcaValue value)
+	void Dictionary::write(const OwcaValue &key, OwcaValue value)
 	{
-		item(vm, key) = std::move(value);
+		item(key) = std::move(value);
 	}
 
-	OwcaValue Dictionary::pop(OwcaVM &vm, const OwcaValue &key)
+	OwcaValue Dictionary::pop(const OwcaValue &key)
 	{
-		auto [index, hash, exists] = find_place(vm, key);
+		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
 			VM::get(vm).throw_missing_key(key.to_string());
 		}
@@ -109,22 +109,43 @@ namespace OwcaScript::Internal {
 		return v;
 	}
 
-	std::optional<std::pair<OwcaValue, OwcaValue>> Dictionary::find(OwcaVM &vm, const OwcaValue &key) const
+	std::optional<std::pair<const OwcaValue*, OwcaValue*>> Dictionary::find(const OwcaValue &key)
 	{
-		auto [i, hash, exists] = find_place(vm, key);
+		auto [i, hash, exists] = find_place(key);
 		if (!exists) return std::nullopt;
-		return std::make_pair(std::get<1>(values[i]), std::get<2>(values[i]));
+		return std::pair<const OwcaValue*, OwcaValue*>{ &std::get<1>(values[i]), &std::get<2>(values[i]) };
 	}
-	std::optional<std::pair<OwcaValue, OwcaValue>> Dictionary::read_and_update_iterator(Iterator& iter) const
+
+	std::optional<std::pair<const OwcaValue*, const OwcaValue*>> Dictionary::find(const OwcaValue &key) const
 	{
-		while (iter.pos < values.size()) {
-			auto i = iter.pos++;
-			auto h = std::get<0>(values[i]);
+		auto [i, hash, exists] = find_place(key);
+		if (!exists) return std::nullopt;
+		return std::pair<const OwcaValue*, const OwcaValue*>{ &std::get<1>(values[i]), &std::get<2>(values[i]) };
+	}
+
+	size_t Dictionary::next(size_t pos) const
+	{
+		++pos;
+		while(pos < values.size()) {
+			auto h = std::get<0>(values[pos]);
 			if (h != Empty && h != Deleted) {
-				return std::make_pair(std::get<1>(values[i]), std::get<2>(values[i]));
+				break;
 			}
+			++pos;
 		}
-		return std::nullopt;
+		return pos;
+	}
+	std::pair<const OwcaValue *, OwcaValue *> Dictionary::read(size_t pos)
+	{
+		auto h = std::get<0>(values[pos]);
+		assert(h != Empty && h != Deleted);
+		return std::pair<const OwcaValue*, OwcaValue*>{ &std::get<1>(values[pos]), &std::get<2>(values[pos]) };
+	}
+	std::pair<const OwcaValue *, const OwcaValue *> Dictionary::read(size_t pos) const
+	{
+		auto h = std::get<0>(values[pos]);
+		assert(h != Empty && h != Deleted);
+		return std::pair<const OwcaValue*, const OwcaValue*>{ &std::get<1>(values[pos]), &std::get<2>(values[pos]) };
 	}
 
 	std::string_view Dictionary::type() const
@@ -139,15 +160,13 @@ namespace OwcaScript::Internal {
 
 		tmp << "{";
 		
-		Iterator it;
-		while(true) {
-			auto v = read_and_update_iterator(it);
-			if (!v) break;
+		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
+			auto v = read(pos);
 			
 			if (first) first = false;
 			else tmp << ",";
-			tmp << " " << v->first.to_string() << ": ";
-			tmp << v->second.to_string();
+			tmp << " " << v.first->to_string() << ": ";
+			tmp << v.second->to_string();
 		}
 		tmp << " }";
 		return tmp.str();
@@ -155,13 +174,10 @@ namespace OwcaScript::Internal {
 	}
 	void Dictionary::gc_mark(VM& vm, GenerationGC generation_gc)
 	{
-		Iterator it;
-		while (true) {
-			auto v = read_and_update_iterator(it);
-			if (!v) break;
-			vm.gc_mark(v->first, generation_gc);
-			vm.gc_mark(v->second, generation_gc);
+		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
+			auto v = read(pos);
+			vm.gc_mark(*v.first, generation_gc);
+			vm.gc_mark(*v.second, generation_gc);
 		}
 	}
-
 }

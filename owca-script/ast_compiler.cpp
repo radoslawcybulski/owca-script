@@ -13,6 +13,7 @@
 #include "ast_expr_identifier.h"
 #include "ast_return.h"
 #include "ast_class.h"
+#include "vm.h"
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
@@ -117,8 +118,6 @@ namespace OwcaScript::Internal {
 		if (c >= 0 && c < ' ')
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, std::format("unexpected character 0x{:#04x}", (int)c));
 		add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, std::format("unexpected character `{}`", c));
-		assert(false);
-		return "";
 	}
 
 	std::pair<Line, std::string_view> AstCompiler::preview()
@@ -280,6 +279,9 @@ namespace OwcaScript::Internal {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for given OwcaIntInternal type",
 					orig_text, std::numeric_limits<OwcaIntInternal>::min(), std::numeric_limits<OwcaIntInternal>::max()));
 			}
+			else {
+				assert(false);
+			}
 		}
 		else {
 			OwcaFloatInternal value = 0;
@@ -294,8 +296,10 @@ namespace OwcaScript::Internal {
 			else if (ec == std::errc::result_out_of_range) {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", orig_text));
 			}
+			else {
+				assert(false);
+			}
 		}
-		assert(false);
 		return nullptr;
 	}
 
@@ -886,6 +890,9 @@ namespace OwcaScript::Internal {
 
 			if (first_run) {
 				if (current_stack->parent == nullptr) {
+					for(auto &it : compiler->vm.get_builtin_objects()) {
+						current_stack->define_identifier(it.first);
+					}
 					for (auto& ident : additional_variables)
 						current_stack->define_identifier(ident);
 				}

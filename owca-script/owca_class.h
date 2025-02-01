@@ -32,6 +32,7 @@ namespace OwcaScript {
 
 		std::string to_string() const;
 		std::string_view type() const { return "class"; }
+		OwcaValue operator [] (const std::string &key) const;
 	};
 }
 

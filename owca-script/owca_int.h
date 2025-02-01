@@ -18,4 +18,21 @@ namespace OwcaScript {
 	};
 }
 
+namespace std {
+	template <>
+	struct formatter<OwcaScript::OwcaInt>
+	{
+		template <typename FormatContext>
+		auto format(OwcaScript::OwcaInt v, FormatContext& ctx) const
+		{
+			return format_to(ctx.out(), "{}", v.internal_value());  
+		}
+		template<class ParseContext>
+		constexpr ParseContext::iterator parse(ParseContext& ctx)
+		{
+			return ctx.begin();
+		}
+	};
+}
+
 #endif
