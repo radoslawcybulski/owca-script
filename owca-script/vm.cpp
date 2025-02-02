@@ -772,10 +772,24 @@ function native hash(value);
 		assert(index < s.values.size());
 		return s.values[index];
 	}
-	void VM::set_identifier(unsigned int index, OwcaValue value)
+	void VM::set_identifier(unsigned int index, OwcaValue value, bool function_write)
 	{
 		auto& s = stacktrace.back();
 		assert(index < s.values.size());
+		if (function_write) {
+			assert(value.kind() == OwcaValueKind::Functions);
+			auto vm = OwcaVM{ this };
+			auto fnc = value.as_functions(vm);
+			assert(fnc.functions->functions.size() == 1);
+			auto &dst = s.values[index];
+			if (dst.kind() == OwcaValueKind::Functions) {
+				auto dst_fnc = dst.as_functions(vm);
+				for(auto it : fnc.functions->functions) {
+					dst_fnc.functions->functions[it.first] = it.second;
+				}
+				return;
+			}
+		}
 		s.values[index] = std::move(value);
 	}
 	std::shared_ptr<CodeBuffer> VM::currently_running_code() const

@@ -789,7 +789,6 @@ namespace OwcaScript::Internal {
 		auto line = f->line;
 		auto fi = std::make_unique<AstExprIdentifier>(line, f->name());
 		fi->update_value_to_write(std::move(f));
-		fi->set_function_write();
 		auto f2 = std::make_unique<AstExprAsStat>(line, std::move(fi));
 		return f2;
 	}

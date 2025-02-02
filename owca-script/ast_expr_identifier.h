@@ -22,7 +22,6 @@ namespace OwcaScript {
 			void update_index(unsigned int index) { this->index = index; }
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write = std::move(v); }
 			void set_function_write() { function_write = true; }
-			bool is_function_write() const { return function_write; }
 
 			ImplExpr* emit(EmitInfo& ei) override;
 			void calculate_size(CodeBufferSizeCalculator &) const override;

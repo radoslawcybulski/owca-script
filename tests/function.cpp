@@ -51,3 +51,25 @@ return d();
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 5);
 }
+
+TEST_F(FunctionTest, overload_based_on_arg_number)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+function foo(a) {
+	return 1;
+}
+function foo(a, b) {
+	return 2;
+}
+function foo(a, b, c) {
+	return 3;
+}
+if (foo(1) != 1) return 1;
+if (foo(1, 2) != 2) return 2;
+if (foo(1, 2, 3) != 3) return 3;
+return -1;
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_int(vm).internal_value(), -1);
+}
