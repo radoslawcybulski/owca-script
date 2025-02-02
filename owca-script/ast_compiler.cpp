@@ -13,6 +13,7 @@
 #include "ast_expr_identifier.h"
 #include "ast_return.h"
 #include "ast_class.h"
+#include "ast_if.h"
 #include "vm.h"
 
 namespace OwcaScript::Internal {
@@ -752,6 +753,25 @@ namespace OwcaScript::Internal {
 		return std::make_unique<AstReturn>(line, std::move(val));
 	}
 
+	std::unique_ptr<AstStat> AstCompiler::compile_if(bool elif)
+	{
+		auto line = consume(elif ? "elif" : "if");
+		consume("(");
+		std::unique_ptr<AstExpr> val = compile_expression_no_assign();
+		consume(")");
+		auto if_true = compile_stat();
+		auto if_false = [&]() -> std::unique_ptr<AstStat> {
+			auto tok = preview().second;
+			if (tok == "elif") return compile_if(true);
+			if (tok == "else") {
+				consume("else");
+				return compile_stat();
+			}
+			return nullptr;
+		}();
+		return std::make_unique<AstIf>(line, std::move(val), std::move(if_true), std::move(if_false));
+	}
+
 	std::unique_ptr<AstStat> AstCompiler::compile_function()
 	{
 		auto f = compile_function_raw();
@@ -783,6 +803,7 @@ namespace OwcaScript::Internal {
 		if (tok == "function") return compile_function();
 		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
+		if (tok == "if") return compile_if();
 		if (tok == "{") return compile_block();
 		return compile_expression_as_stat();
 	}

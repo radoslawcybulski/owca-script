@@ -41,9 +41,7 @@ namespace OwcaScript {
 			std::vector<OwcaErrorMessage> error_messages_;
 
 		public:
-			CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_) : filename_(std::move(filename_)), error_messages_(std::move(error_messages_)) {
-				err_msg = "compilation of file `" + this->filename_ + "` failed";
-			}
+			CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_);
 
 			const auto& error_messages() const { return error_messages_; }
 			

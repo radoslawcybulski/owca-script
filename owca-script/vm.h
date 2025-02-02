@@ -113,6 +113,7 @@ namespace OwcaScript {
 
 			bool compare_values(const OwcaValue& left, const OwcaValue& right);
 			size_t calculate_hash(const OwcaValue&);
+			bool calculate_if_true(const OwcaValue&);
 
 			void set_identifier(unsigned int index, OwcaValue value);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;

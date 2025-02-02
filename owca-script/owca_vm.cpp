@@ -5,6 +5,14 @@
 #include "ast_compiler.h"
 
 namespace OwcaScript {
+	OwcaVM::CompilationFailed::CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_) : filename_(std::move(filename_)), error_messages_(std::move(error_messages_)) {
+		err_msg = "compilation of file `" + this->filename_ + "` failed:";
+		for(auto &m : this->error_messages_) {
+			err_msg += "\n";
+			err_msg += m.to_string();
+		}
+	}
+
 	OwcaVM::OwcaVM() : vm_owner(std::make_shared<Internal::VM>())
 	{
 		vm = vm_owner.get();

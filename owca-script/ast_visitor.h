@@ -19,6 +19,8 @@ namespace OwcaScript {
 		class AstExprOperX;
 		class AstFunction;
 		class AstClass;
+		class AstReturn;
+		class AstIf;
 
 		struct AstVisitor {
 			virtual ~AstVisitor() = default;
@@ -37,6 +39,8 @@ namespace OwcaScript {
 			virtual void apply(AstExprOperX &o);
 			virtual void apply(AstFunction& o);
 			virtual void apply(AstClass& o);
+			virtual void apply(AstReturn& o);
+			virtual void apply(AstIf& o);
 		};
 	}
 }

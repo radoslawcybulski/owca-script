@@ -11,6 +11,8 @@
 #include "ast_expr_oper_x.h"
 #include "ast_function.h"
 #include "ast_class.h"
+#include "ast_return.h"
+#include "ast_if.h"
 
 namespace OwcaScript::Internal {
 	void AstVisitor::apply(AstExpr &o)
@@ -76,5 +78,15 @@ namespace OwcaScript::Internal {
 	void AstVisitor::apply(AstClass &o)
 	{
 		apply(static_cast<AstExpr&>(o));
+	}
+
+	void AstVisitor::apply(AstReturn &o)
+	{
+		apply(static_cast<AstStat&>(o));
+	}
+
+	void AstVisitor::apply(AstIf &o)
+	{
+		apply(static_cast<AstStat&>(o));
 	}
 }

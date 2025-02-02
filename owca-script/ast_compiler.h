@@ -96,6 +96,7 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_function();
 			std::unique_ptr<AstStat> compile_class();
 			std::unique_ptr<AstStat> compile_return();
+			std::unique_ptr<AstStat> compile_if(bool elif = false);
 			std::unique_ptr<AstStat> compile_stat();
 			std::unique_ptr<AstFunction> compile_main_block();
 

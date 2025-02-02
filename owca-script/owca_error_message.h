@@ -19,6 +19,8 @@ namespace OwcaScript {
 		InvalidIdentifier,
 		_Count
 	};
+	std::string_view to_string(OwcaErrorKind);
+	
 	class OwcaErrorMessage {
 		OwcaErrorKind kind_;
 		std::string file_;
@@ -32,6 +34,8 @@ namespace OwcaScript {
 		const auto& file() const { return file_; }
 		const auto& message() const { return message_; }
 		auto line() const { return line_; }
+
+		std::string to_string() const;
 	};
 }
 

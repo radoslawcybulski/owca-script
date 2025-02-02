@@ -164,41 +164,7 @@ namespace OwcaScript::Internal {
 			return v2;
 		}
 		static OwcaValue bool_init(OwcaVM &vm, const OwcaValue &r) {
-			return OwcaBool { r.visit(
-				[&](OwcaEmpty value) -> bool {
-					return false;
-				},
-				[&](OwcaRange value) -> bool {
-					return value.lower().internal_value() != value.upper().internal_value();
-				},
-				[&](OwcaBool value) -> bool {
-					return value.internal_value();
-				},
-				[&](OwcaInt value) -> bool {
-					return value.internal_value() != 0;
-				},
-				[&](OwcaFloat value) -> bool {
-					return value.internal_value() != 0.0;
-				},
-				[&](OwcaString value) -> bool {
-					return !value.internal_value().empty();
-				},
-				[&](OwcaFunctions value) -> bool {
-					return true;
-				},
-				[&](OwcaMap value) -> bool {
-					return value.size() > 0;
-				},
-				[&](OwcaClass value) -> bool {
-					return true;
-				},
-				[&](OwcaObject value) -> bool {
-					auto res = value.try_member("__bool__");
-					if (!res) return true;
-					auto res2 = VM::get(vm).execute_call(*res, {});
-					return res2.as_bool(vm).internal_value();
-				}
-			) };
+			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
 		}
 		static OwcaValue int_init(OwcaVM &vm, const OwcaValue &r) {
 			return OwcaInt { r.visit(
@@ -835,6 +801,44 @@ function native hash(value);
 		return v.as_object(vm).object;
 	}
 
+	bool VM::calculate_if_true(const OwcaValue &r) {
+		return r.visit(
+			[&](OwcaEmpty value) -> bool {
+				return false;
+			},
+			[&](OwcaRange value) -> bool {
+				return value.lower().internal_value() != value.upper().internal_value();
+			},
+			[&](OwcaBool value) -> bool {
+				return value.internal_value();
+			},
+			[&](OwcaInt value) -> bool {
+				return value.internal_value() != 0;
+			},
+			[&](OwcaFloat value) -> bool {
+				return value.internal_value() != 0.0;
+			},
+			[&](OwcaString value) -> bool {
+				return !value.internal_value().empty();
+			},
+			[&](OwcaFunctions value) -> bool {
+				return true;
+			},
+			[&](OwcaMap value) -> bool {
+				return value.size() > 0;
+			},
+			[&](OwcaClass value) -> bool {
+				return true;
+			},
+			[&](OwcaObject value) -> bool {
+				auto res = value.try_member("__bool__");
+				if (!res) return true;
+				auto res2 = execute_call(*res, {});
+				auto vm = OwcaVM{ this };
+				return res2.as_bool(vm).internal_value();
+			}
+		);
+	}
 	size_t VM::calculate_hash(const OwcaValue& value) {
 		auto vm = OwcaVM{ this };
 		static auto calc_hash = [](const auto& q) {
