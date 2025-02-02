@@ -14,6 +14,8 @@
 #include "ast_return.h"
 #include "ast_class.h"
 #include "ast_if.h"
+#include "ast_while.h"
+#include "ast_loop_control.h"
 #include "vm.h"
 
 namespace OwcaScript::Internal {
@@ -678,6 +680,7 @@ namespace OwcaScript::Internal {
 
 	std::unique_ptr<AstFunction> AstCompiler::compile_function_raw()
 	{
+		auto function_updater = FunctionUpdater{ *this };
 		auto line = consume("function");
 		auto [line2, func_name] = consume();
 		bool use_native = false;
@@ -742,6 +745,64 @@ namespace OwcaScript::Internal {
 		return f;
 	}
 	
+	bool AstCompiler::preview_is_loop_identifier()
+	{
+		auto start = content_offset;
+		auto line = content_line;
+		auto tok = preview().second;
+		bool is_loop_identifier = false;
+
+		if (is_identifier(tok)) {
+			consume(tok);
+			if (preview().second == ":") 
+				is_loop_identifier = true;
+		}
+		content_offset = start;
+		content_line = line;
+		return is_loop_identifier;
+	}
+
+	std::unique_ptr<AstStat> AstCompiler::compile_break_or_continue()
+	{
+		auto [ line, tok ] = consume();
+		assert(tok == "break" || tok == "continue");
+		if (loop_control_depth == 0) {
+			add_error(OwcaErrorKind::LoopControlError, filename_, line, std::format("`{}` outside loop", tok));
+		}
+		unsigned int depth = loop_control_depth - 1;
+		if (preview().second != ";") {
+			auto ident = consume().second;
+			auto it = loop_control_identifiers.find(ident);
+			if (it == loop_control_identifiers.end()) {
+				add_error(OwcaErrorKind::LoopControlError, filename_, line, std::format("no loop with `{}` identifier in current function", ident));
+			}
+			else {
+				depth = it->second.second;
+			}
+		}
+		consume(";");
+		if (tok == "break") {
+			return std::make_unique<AstLoopControl>(line, AstLoopControl::Mode::Break, depth);
+		}
+		if (tok == "continue") {
+			return std::make_unique<AstLoopControl>(line, AstLoopControl::Mode::Continue, depth);
+		}
+		assert(false);
+		throw 1;
+	}
+
+	std::unique_ptr<AstStat> AstCompiler::compile_while(std::string_view loop_ident)
+	{
+		auto line = consume("while");
+		consume("(");
+		std::unique_ptr<AstExpr> val = compile_expression_no_assign();
+		consume(")");
+		auto control_depth = loop_control_depth;
+		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
+		auto body = compile_stat();
+		return std::make_unique<AstWhile>(line, control_depth, loop_ident, std::move(val), std::move(body));
+	}
+
 	std::unique_ptr<AstStat> AstCompiler::compile_return()
 	{
 		auto line = consume("return");
@@ -798,11 +859,20 @@ namespace OwcaScript::Internal {
 		if (eof())
 			add_error_and_throw(OwcaErrorKind::UnexpectedEndOfFile, filename_, content_line, "unexpected end of file");
 
+		std::string_view ident;
+		if (preview_is_loop_identifier()) {
+			ident = consume().second;
+			consume(":");
+		}
 		auto [ line, tok ] = preview();
+		if (tok == "while") return compile_while(ident);
+		if (!ident.empty())
+			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected while because loop identifier `{}` is present", tok, ident));
 		if (tok == "function") return compile_function();
 		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
 		if (tok == "if") return compile_if();
+		if (tok == "break" || tok == "continue") return compile_break_or_continue();
 		if (tok == "{") return compile_block();
 		return compile_expression_as_stat();
 	}
@@ -879,6 +949,21 @@ namespace OwcaScript::Internal {
 		using AstVisitor::apply;
 		void apply(AstBase &o) override {
 			o.visit_children(*this);
+		}
+		void apply(AstWhile &o) override {
+			if (first_run) {
+				if (!o.get_loop_identifier().empty()) {
+					current_stack->define_identifier(o.get_loop_identifier());
+				}
+			}
+			else {
+				if (!o.get_loop_identifier().empty()) {
+					auto index = current_stack->lookup_identifier(o.get_loop_identifier());
+					assert(index);
+					o.update_loop_ident_index(*index);
+				}
+			}
+			apply(static_cast<AstStat&>(o));
 		}
 		void apply(AstExprIdentifier &o) override {
 			if (first_run) {

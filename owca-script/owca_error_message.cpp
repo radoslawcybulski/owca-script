@@ -17,7 +17,8 @@ namespace OwcaScript {
 		case OwcaErrorKind::SyntaxError: return "SyntaxError";
 		case OwcaErrorKind::StringContainsEndOfLineCharacter: return "StringContainsEndOfLineCharacter";
 		case OwcaErrorKind::InvalidIdentifier: return "InvalidIdentifier";
-		case OwcaErrorKind::_Count: return "_Count";
+		case OwcaErrorKind::LoopControlError: return "LoopControlError";
+ 		case OwcaErrorKind::_Count: return "_Count";
         }
         assert(false);
         return "<?>";

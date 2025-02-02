@@ -10,7 +10,12 @@ namespace OwcaScript {
 			OwcaValue value;
 		};
 		struct FlowControlException {
-
+		};
+		struct FlowControlContinue {
+			unsigned int depth;
+		};
+		struct FlowControlBreak {
+			unsigned int depth;
 		};
 	}
 }

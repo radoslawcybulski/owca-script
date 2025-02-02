@@ -17,10 +17,11 @@ namespace OwcaScript {
 		SyntaxError,
 		StringContainsEndOfLineCharacter,
 		InvalidIdentifier,
+		LoopControlError,
 		_Count
 	};
 	std::string_view to_string(OwcaErrorKind);
-	
+
 	class OwcaErrorMessage {
 		OwcaErrorKind kind_;
 		std::string file_;
