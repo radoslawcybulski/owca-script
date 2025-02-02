@@ -267,6 +267,10 @@ namespace OwcaScript::Internal {
 		static OwcaValue class_full_name(OwcaVM &vm, const OwcaValue &r) {
 			return OwcaString{ std::string{ r.as_class(vm).object->full_name } };
 		}
+		static OwcaValue hash(OwcaVM &vm, const OwcaValue &r) {
+			auto v = VM::get(vm).calculate_hash(r);
+			return OwcaInt{ (OwcaIntInternal)v };
+		}
 
 		template <typename F>
 		static std::function<OwcaValue(OwcaVM&, std::span<OwcaValue> args)> adapt(F &&f) {
@@ -292,6 +296,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Map.size") return adapt(map_size);
 			if (full_name == "Class.name") return adapt(class_name);
 			if (full_name == "Class.full_name") return adapt(class_full_name);
+			if (full_name == "hash") return adapt(hash);
 			return std::nullopt;
 		}
 		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, OwcaVM::ClassToken token) const override {
@@ -333,6 +338,7 @@ class Class {
 	function native name(self);
 	function native full_name(self);
 }
+function native hash(value);
 )" };
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_unique<BuiltinProvider>());
