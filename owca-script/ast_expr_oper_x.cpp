@@ -42,6 +42,19 @@ namespace OwcaScript::Internal {
 			return VM::get(vm).create_array(std::move(arguments));
 		}
 	};
+	class ImplExprCreateTuple : public ImplExprOperXBase {
+	public:
+		using ImplExprOperXBase::ImplExprOperXBase;
+
+		OwcaValue execute_impl(OwcaVM &vm) const override {
+			std::vector<OwcaValue> arguments;
+			arguments.reserve(args.size());
+			for(auto &a : args) {
+				arguments.push_back(a->execute(vm));
+			}
+			return VM::get(vm).create_tuple(std::move(arguments));
+		}
+	};
 	class ImplExprCreateSet : public ImplExprOperXBase {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
@@ -83,6 +96,7 @@ namespace OwcaScript::Internal {
 		switch (kind) {
 		case Kind::Call: ei.code_buffer.preallocate<ImplExprCall>(line); break;
 		case Kind::CreateArray: ei.code_buffer.preallocate<ImplExprCreateArray>(line); break;
+		case Kind::CreateTuple: ei.code_buffer.preallocate<ImplExprCreateTuple>(line); break;
 		case Kind::CreateSet: ei.code_buffer.preallocate<ImplExprCreateSet>(line); break;
 		case Kind::CreateMap: ei.code_buffer.preallocate<ImplExprCreateMap>(line); break;
 		}
@@ -95,6 +109,7 @@ namespace OwcaScript::Internal {
 		switch (kind) {
 		case Kind::Call: return make<ImplExprCall>(ei, line, args);
 		case Kind::CreateArray: return make<ImplExprCreateArray>(ei, line, args);
+		case Kind::CreateTuple: return make<ImplExprCreateTuple>(ei, line, args);
 		case Kind::CreateSet: return make<ImplExprCreateSet>(ei, line, args);
 		case Kind::CreateMap: return make<ImplExprCreateMap>(ei, line, args);
 		}

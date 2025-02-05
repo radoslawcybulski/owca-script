@@ -11,6 +11,7 @@ namespace OwcaScript {
 			enum class Kind {
 				Call,
 				CreateArray,
+				CreateTuple,
 				CreateSet,
 				CreateMap,
 			};

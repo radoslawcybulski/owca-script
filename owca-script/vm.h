@@ -15,7 +15,9 @@ namespace OwcaScript {
 	namespace Internal {
 		struct Object;
 		struct Class;
+		struct Array;
 		struct RuntimeFunction;
+		struct IteratorBase;
 
 		class VM {
 			AllocationEmpty root_allocated_memory;
@@ -39,6 +41,9 @@ namespace OwcaScript {
 			Class *c_function = nullptr;
 			Class *c_map = nullptr;
 			Class *c_class = nullptr;
+			Class *c_tuple = nullptr;
+			Class *c_array = nullptr;
+			Array *empty_tuple = nullptr;
 			unsigned int generation_gc = 0;
 
 			struct PopStack {
@@ -89,20 +94,24 @@ namespace OwcaScript {
 			[[noreturn]] void throw_not_callable(std::string_view type) const;
 			[[noreturn]] void throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int) const;
 			[[noreturn]] void throw_wrong_type(std::string_view type, std::string_view expected) const;
+			[[noreturn]] void throw_wrong_type(std::string_view msg) const;
 			[[noreturn]] void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right) const;
 			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view val) const;
 			[[noreturn]] void throw_missing_key(std::string_view key) const;
 			[[noreturn]] void throw_not_hashable(std::string_view type) const;
 			[[noreturn]] void throw_value_cant_have_fields(std::string_view type) const;
 			[[noreturn]] void throw_missing_native(std::string_view msg) const;
+			[[noreturn]] void throw_not_iterable(std::string_view type) const;
+			[[noreturn]] void throw_readonly(std::string_view msg) const;
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>* values, OwcaValue *dict_output);
 			OwcaValue execute_call(const OwcaValue &func, std::span<OwcaValue> arguments);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
-			OwcaValue create_map(std::vector<OwcaValue> arguments);
-			OwcaValue create_set(std::vector<OwcaValue> arguments);
+			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
+			OwcaValue create_map(const std::vector<OwcaValue> &arguments);
+			OwcaValue create_set(const std::vector<OwcaValue> &arguments);
 			OwcaValue get_identifier(unsigned int index);
 			Class* ensure_is_class(const OwcaValue&);
 			Object* ensure_is_object(const OwcaValue&);
@@ -114,6 +123,7 @@ namespace OwcaScript {
 			bool compare_values(const OwcaValue& left, const OwcaValue& right);
 			size_t calculate_hash(const OwcaValue&);
 			bool calculate_if_true(const OwcaValue&);
+			std::unique_ptr<IteratorBase> create_iterator(const OwcaValue &);
 
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;

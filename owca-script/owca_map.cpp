@@ -54,4 +54,11 @@ namespace OwcaScript {
 	{
 		return Iterator{ dictionary, dictionary->dict.values.size() };
 	}
+
+	OwcaValue *OwcaMap::value(const OwcaValue &key) const
+	{
+		auto p = dictionary->dict.find(key);
+		if (!p) return nullptr;
+		return p->second;
+	}
 }

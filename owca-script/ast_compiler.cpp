@@ -324,11 +324,26 @@ namespace OwcaScript::Internal {
 			return std::make_unique<AstExprConstant>(line, OwcaString{ std::string{ tok.substr(1, tok.size() - 2) } });
 		}
 		if (tok == "(") {
+			AllowRangeSet allow_range_set{ allow_range, true };
 			auto v = compile_expression_no_assign();
+			if (preview().second == ")") {
+				consume(")");
+				return v;
+			}
+			std::vector<std::unique_ptr<AstExpr>> values;
+			values.push_back(std::move(v));
+			while (preview().second != ")") {
+				if (!values.empty()) {
+					consume(",");
+				}
+				if (!values.empty() && preview().second == ")") break;
+				values.push_back(compile_expression_no_assign());
+			}
 			consume(")");
-			return v;
+			return std::make_unique<AstExprOperX>(line, AstExprOperX::Kind::CreateTuple, std::move(values));
 		}
 		if (tok == "[") {
+			AllowRangeSet allow_range_set{ allow_range, true };
 			std::vector<std::unique_ptr<AstExpr>> values;
 
 			while (preview().second != "]") {
@@ -342,10 +357,9 @@ namespace OwcaScript::Internal {
 			return std::make_unique<AstExprOperX>(line, AstExprOperX::Kind::CreateArray, std::move(values));
 		}
 		if (tok == "{") {
+			AllowRangeSet allow_range_set{ allow_range, false };
 			std::vector<std::unique_ptr<AstExpr>> values;
 			bool map = true;
-
-			AllowRangeSet allow_range_set{ allow_range, false };
 
 			while (preview().second != "}") {
 				if (!values.empty()) {
@@ -364,6 +378,7 @@ namespace OwcaScript::Internal {
 				}
 				if (map) {
 					consume(":");
+					AllowRangeSet allow_range_set{ allow_range, true };
 					values.push_back(compile_expression_no_assign(false));
 				}
 			}
@@ -381,6 +396,7 @@ namespace OwcaScript::Internal {
 			auto tok = preview().second;
 
 			if (tok == "(") {
+				AllowRangeSet allow_range_set{ allow_range, true };
 				std::vector<std::unique_ptr<AstExpr>> args;
 				args.push_back(std::move(left));
 				auto line = consume().first;
@@ -398,6 +414,7 @@ namespace OwcaScript::Internal {
 				left = std::make_unique<AstExprOperX>(line, AstExprOperX::Kind::Call, std::move(args));
 			}
 			else if (tok == "[") {
+				AllowRangeSet allow_range_set{ allow_range, true };
 				auto line = consume().first;
 				auto key = compile_expression_no_assign();
 				consume("]");
@@ -492,12 +509,17 @@ namespace OwcaScript::Internal {
 	}
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_range()
 	{
-		auto left = compile_expr_bitwise();
+		std::unique_ptr<AstExpr> left, right;
+
+		if (!allow_range || preview().second != ":")
+			left = compile_expr_bitwise();
 		if (allow_range) {
 			auto tok = preview().second;
 			if (tok == ":") {
 				auto [line, tok] = consume();
-				auto right = compile_expr_bitwise();
+				tok = preview().second;
+				if (tok == "-" || tok == "~" || !is_operator(tok))
+					right = compile_expr_bitwise();
 				left = std::make_unique<AstExprOper2>(line, AstExprOper2::Kind::MakeRange, std::move(left), std::move(right));
 			}
 		}

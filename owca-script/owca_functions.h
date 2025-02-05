@@ -12,6 +12,7 @@ namespace OwcaScript {
 		class ImplExprScriptFunction;
 		class ImplExprScriptClass;
 		class ImplExprNativeClass;
+		class ImplExprCompare;
 		struct AllocationBase;
 		struct RuntimeFunction;
 		struct RuntimeFunctions;
@@ -25,6 +26,7 @@ namespace OwcaScript {
 		friend class Internal::ImplExprScriptFunction;
 		friend class Internal::ImplExprScriptClass;
 		friend class Internal::ImplExprNativeClass;
+		friend class Internal::ImplExprCompare;
 		friend class Internal::VM;
 		friend class OwcaValue;
 		friend struct Internal::Class;

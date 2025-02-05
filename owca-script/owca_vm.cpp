@@ -54,6 +54,23 @@ namespace OwcaScript {
 		return OwcaCode{ std::move(v) };
 	}
 
+	OwcaValue OwcaVM::create_array(std::vector<OwcaValue> values) const
+	{
+		return vm->create_array(std::move(values));
+	}
+	OwcaValue OwcaVM::create_tuple(std::vector<OwcaValue> values) const
+	{
+		return vm->create_tuple(std::move(values));
+	}
+	OwcaValue OwcaVM::create_map(const std::vector<OwcaValue> &values) const
+	{
+		return vm->create_map(std::move(values));
+	}
+	OwcaValue OwcaVM::create_set(const std::vector<OwcaValue> &values) const
+	{
+		return vm->create_set(std::move(values));
+	}
+
 	void OwcaVM::run_gc() {
 		vm->run_gc();
 	}

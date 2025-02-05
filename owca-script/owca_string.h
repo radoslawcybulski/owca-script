@@ -15,6 +15,10 @@ namespace OwcaScript {
 
 		const auto &internal_value() const { return value; }
 		explicit operator std::string_view() const { return value; }
+
+		OwcaString substr(size_t from, size_t to) const;
+		OwcaString operator [] (size_t) const;
+		size_t size() const;
 	};
 }
 

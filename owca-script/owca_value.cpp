@@ -5,6 +5,7 @@
 #include "owca_vm.h"
 #include "runtime_function.h"
 #include "object.h"
+#include "array.h"
 
 namespace OwcaScript {
 	std::pair<const OwcaInt*, const OwcaFloat*> OwcaValue::get_int_or_float() const
@@ -48,7 +49,11 @@ namespace OwcaScript {
 			[](const OwcaFunctions&) { return true; },
 			[](const OwcaMap &o) { return o.size() != 0; },
 			[](const OwcaClass &o) { return true; },
-			[](const OwcaObject &o) { return true; }
+			[&](const OwcaObject &o) {
+				return o.object->vm->calculate_if_true(*this);
+			},
+			[](const OwcaArray &o) { return !o.object->values.empty(); },
+			[](const OwcaTuple &o) { return !o.object->values.empty(); }
 		);
 	}
 
@@ -112,6 +117,18 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "object");
 		return std::get<OwcaObject>(value_);
 	}
+	OwcaArray OwcaValue::as_array(OwcaVM &vm) const
+	{
+		if (kind() != OwcaValueKind::Array)
+			Internal::VM::get(vm).throw_wrong_type(type(), "array");
+		return std::get<OwcaArray>(value_);
+	}
+	OwcaTuple OwcaValue::as_tuple(OwcaVM &vm) const
+	{
+		if (kind() != OwcaValueKind::Tuple)
+			Internal::VM::get(vm).throw_wrong_type(type(), "tuple");
+		return std::get<OwcaTuple>(value_);
+	}
 
 	std::string_view OwcaValue::type() const
 	{
@@ -125,7 +142,9 @@ namespace OwcaScript {
 			[](const OwcaFunctions &o) -> std::string_view { return o.functions->type(); },
 			[](const OwcaMap &o) -> std::string_view { return "dictionary"; },
 			[](const OwcaClass &o) -> std::string_view { return "class"; },
-			[](const OwcaObject &o) -> std::string_view { return o.object->type(); }
+			[](const OwcaObject &o) -> std::string_view { return o.object->type(); },
+			[](const OwcaArray &o) -> std::string_view { return o.object->type(); },
+			[](const OwcaTuple &o) -> std::string_view { return o.object->type(); }
 			);
 	}
 
@@ -141,7 +160,9 @@ namespace OwcaScript {
 			[](const OwcaFunctions &o) -> std::string { return o.functions->to_string(); },
 			[](const OwcaMap &o) -> std::string { return o.to_string(); },
 			[](const OwcaClass &o) -> std::string { return o.to_string(); },
-			[](const OwcaObject &o) -> std::string { return o.to_string(); }
+			[](const OwcaObject &o) -> std::string { return o.to_string(); },
+			[](const OwcaArray &o) -> std::string { return o.to_string(); },
+			[](const OwcaTuple &o) -> std::string { return o.to_string(); }
 			);
 	}
 

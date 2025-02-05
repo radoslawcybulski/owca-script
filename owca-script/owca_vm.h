@@ -83,6 +83,10 @@ namespace OwcaScript {
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
 		OwcaValue execute(const OwcaCode&, OwcaValue &output_dict);
 		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values, OwcaValue &output_dict);
+		OwcaValue create_array(std::vector<OwcaValue> values) const;
+		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
+		OwcaValue create_map(const std::vector<OwcaValue> &values) const;
+		OwcaValue create_set(const std::vector<OwcaValue> &values) const;
 		void run_gc();
 		void gc_mark(const OwcaValue&, GenerationGC);
 	};

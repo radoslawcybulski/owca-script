@@ -11,10 +11,12 @@ namespace OwcaScript {
 	namespace Internal {
 		struct Object;
 		class VM;
+		class ImplExprCompare;
 	}
 	class OwcaObject {
 		friend class OwcaValue;
 		friend class Internal::VM;
+		friend class Internal::ImplExprCompare;
 
 		Internal::Object* object;
 

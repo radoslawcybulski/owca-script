@@ -10,12 +10,14 @@ namespace OwcaScript {
 		class ImplExprIndexRead;
 		class ImplExprIndexWrite;
 		struct DictionaryShared;
+		class ImplExprCompare;
 	}
 
 	class OwcaMap {
 		friend class Internal::VM;
 		friend class Internal::ImplExprIndexRead;
 		friend class Internal::ImplExprIndexWrite;
+		friend class Internal::ImplExprCompare;
 
 		Internal::DictionaryShared *dictionary;
 
@@ -28,7 +30,9 @@ namespace OwcaScript {
 
 		OwcaValue &operator [] (OwcaValue key);
 		const OwcaValue &operator [] (OwcaValue key) const;
-	
+		
+		OwcaValue *value(const OwcaValue &key) const;
+
 		std::vector<OwcaValue> keys() const;
 		std::vector<OwcaValue> values() const;
 		std::vector<std::pair<OwcaValue, OwcaValue>> items() const;
