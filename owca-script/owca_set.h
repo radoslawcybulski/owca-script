@@ -1,5 +1,5 @@
-#ifndef RC_OWCA_SCRIPT_OWCA_MAP_H
-#define RC_OWCA_SCRIPT_OWCA_MAP_H
+#ifndef RC_OWCA_SCRIPT_OWCA_SET_H
+#define RC_OWCA_SCRIPT_OWCA_SET_H
 
 #include "stdafx.h"
 #include "allocation_base.h"
@@ -13,42 +13,28 @@ namespace OwcaScript {
 		class ImplExprCompare;
 	}
 
-	class OwcaMap {
+	class OwcaSet {
 		friend class Internal::VM;
 		friend class Internal::ImplExprIndexRead;
 		friend class Internal::ImplExprIndexWrite;
 		friend class Internal::ImplExprCompare;
-		friend class OwcaValue;
+        friend class OwcaValue;
 
 		Internal::DictionaryShared *dictionary;
 
-		OwcaMap(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
+		OwcaSet(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
 	public:
-		~OwcaMap() = default;
+		~OwcaSet() = default;
 
 		std::string to_string() const;
 		size_t size() const;
 
-		OwcaValue &operator [] (OwcaValue key);
-		const OwcaValue &operator [] (OwcaValue key) const;
-		
-		OwcaValue *value(const OwcaValue &key) const;
-
-		std::vector<OwcaValue> keys() const;
-		std::vector<OwcaValue> values() const;
-		std::vector<std::pair<OwcaValue, OwcaValue>> items() const;
+		bool has_value(const OwcaValue &key) const;
 
 		class Iterator {
 		public:
-			using value_type = std::pair<const OwcaValue&, OwcaValue&>;
-			class Pointer {
-				value_type val;
-			public:
-				Pointer(value_type val) : val(val) {}
-
-				value_type *operator -> () { return &val; }
-			};
-			using pointer = Pointer;
+			using value_type = const OwcaValue&;
+			using pointer = const OwcaValue *;
 			using reference = value_type;
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::forward_iterator_tag;

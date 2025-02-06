@@ -13,8 +13,9 @@ namespace OwcaScript {
 			size_t elements = 0;
 			size_t mask = 0;
 			OwcaVM vm;
+			const bool is_map = true;
 
-			Dictionary(OwcaVM vm) : vm(vm) {}
+			Dictionary(OwcaVM vm, bool is_map) : vm(vm), is_map(is_map) {}
 
 			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key, size_t hash) const;
 			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key) const;
@@ -39,7 +40,7 @@ namespace OwcaScript {
 		struct DictionaryShared : public AllocationBase {
 			Dictionary dict;
 
-			DictionaryShared(OwcaVM vm) : dict(vm) {}
+			DictionaryShared(OwcaVM vm, bool is_map) : dict(vm, is_map) {}
 			
 			std::string_view type() const override {
 				return dict.type();

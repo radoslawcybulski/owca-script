@@ -63,6 +63,7 @@ return result;
         9: q,
         10: (1, 2),
         11: [ 1, 2 ],
+        12: { 1, 2 },
     };
     function create() {
         return objects[mode];
@@ -139,6 +140,12 @@ return result;
     d = cmp(create(), [ 1, 3 ], false, 125);
     if (d) return d;
 
+    d = cmp(create(), { 1, 2 }, mode == 12, 120);
+    if (d) return d;
+
+    d = cmp(create(), { 1, 3 }, false, 125);
+    if (d) return d;
+
     return 0;
     )", std::vector<std::string>{ "mode" });
         auto val = vm.execute(code, std::unordered_map<std::string, OwcaValue>{ { "mode", OwcaInt(mode) } });
@@ -206,6 +213,11 @@ TEST_F(CompareTest, array)
     run_basic_test(11);
 }
 
+TEST_F(CompareTest, set)
+{
+    run_basic_test(12);
+}
+
 // if (a == b) result = result | 1;
 // if (a != b) result = result | 2;
 // if (a <= b) result = result | 4;
@@ -238,4 +250,29 @@ TEST_F(CompareTest, array_order_bigger)
 TEST_F(CompareTest, array_order_smaller)
 {
     order_array(NotEq | Less | LessEq, 4);
+}
+
+TEST_F(CompareTest, tuple_order_eq)
+{
+    order_tuple(Eq | LessEq | MoreEq, 3);
+}
+
+TEST_F(CompareTest, tuple_order_longer)
+{
+    order_tuple(NotEq | More | MoreEq);
+}
+
+TEST_F(CompareTest, tuple_order_shorter)
+{
+    order_tuple(NotEq | Less | LessEq, 3, 4);
+}
+
+TEST_F(CompareTest, tuple_order_bigger)
+{
+    order_tuple(NotEq | More | MoreEq, 2);
+}
+
+TEST_F(CompareTest, tuple_order_smaller)
+{
+    order_tuple(NotEq | Less | LessEq, 4);
 }

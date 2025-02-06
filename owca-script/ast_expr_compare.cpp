@@ -157,6 +157,26 @@ namespace OwcaScript::Internal {
 			}
 			return kind == AstExprCompare::Kind::Eq ? Result::True : Result::False;
 		}
+		static Result compare_split(OwcaVM &vm, AstExprCompare::Kind kind, const OwcaSet& l, const OwcaSet& r) {
+			switch (kind) {
+			case AstExprCompare::Kind::Eq:
+				if (l.size() != r.size()) return Result::False;
+				break;
+			case AstExprCompare::Kind::NotEq:
+				if (l.size() != r.size()) return Result::True;
+				break;
+			case AstExprCompare::Kind::LessEq:
+			case AstExprCompare::Kind::MoreEq:
+			case AstExprCompare::Kind::Less:
+			case AstExprCompare::Kind::More: return Result::NotExec;
+			case AstExprCompare::Kind::Is: assert(false);
+			}
+			for(auto it : l) {
+				auto rv = r.has_value(it);
+				if (!rv) return kind == AstExprCompare::Kind::Eq ? Result::False : Result::True;
+			}
+			return kind == AstExprCompare::Kind::Eq ? Result::True : Result::False;
+		}
 		static Result compare_split(OwcaVM& vm, AstExprCompare::Kind kind, const auto& l, const auto& r) {
 			return Result::NotExec;
 		}

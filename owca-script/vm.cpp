@@ -133,6 +133,11 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
 			return v.as_tuple(vm);
 		}
+		static auto convert_impl2(OwcaVM &vm, size_t I, OwcaSet *b, const OwcaValue &v) {
+			if (v.kind() != OwcaValueKind::Set) 
+				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
+			return v.as_set(vm);
+		}
 		static OwcaValue convert_impl2(OwcaVM &vm, size_t I, OwcaValue *b, const OwcaValue &v) {
 			return v;
 		}
@@ -234,8 +239,15 @@ namespace OwcaScript::Internal {
 			}
 			return OwcaObject{ static_cast<Object*>(f.self_object) };
 		}
-		static OwcaValue map_size(OwcaVM &vm, const OwcaValue &r) {
-			auto v = r.as_map(vm).size();
+		static OwcaValue map_size(OwcaVM &vm, const OwcaMap &r) {
+			auto v = r.size();
+			auto v2 = (OwcaIntInternal)v;
+			if (v2 != v)
+				VM::get(vm).throw_overflow(std::format("map size {} doesn't fit integer", v));
+			return OwcaInt{ v2 };
+		}
+		static OwcaValue set_size(OwcaVM &vm, const OwcaSet &r) {
+			auto v = r.size();
 			auto v2 = (OwcaIntInternal)v;
 			if (v2 != v)
 				VM::get(vm).throw_overflow(std::format("map size {} doesn't fit integer", v));
@@ -261,6 +273,11 @@ namespace OwcaScript::Internal {
 							VM::get(vm).create_tuple({ val.first, val.second })
 						);
 					}
+				},
+				[&](OwcaSet o) {
+					for(const auto &val : o) {
+						self.object->values.push_back(val);
+					} 
 				},
 				[&](OwcaString o) {
 					self.object->values.reserve(o.internal_value().size());
@@ -294,6 +311,11 @@ namespace OwcaScript::Internal {
 						self.object->values.push_back(
 							VM::get(vm).create_tuple({ val.first, val.second })
 						);
+					} 
+				},
+				[&](OwcaSet o) {
+					for(const auto &val : o) {
+						self.object->values.push_back(val);
 					} 
 				},
 				[&](OwcaString o) {
@@ -342,6 +364,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Function.bound_value") return adapt(function_bound_value);
 			if (full_name == "Function.bind") return adapt(function_bind);
 			if (full_name == "Map.size") return adapt(map_size);
+			if (full_name == "Set.size") return adapt(set_size);
 			if (full_name == "Class.name") return adapt(class_name);
 			if (full_name == "Class.full_name") return adapt(class_full_name);
 			if (full_name == "Array.__init__") return adapt(array_init);
@@ -384,6 +407,9 @@ class Function {
 	function native bind(self, value);
 }
 class Map {
+	function native size(self);
+}
+class Set {
 	function native size(self);
 }
 class Class {
@@ -464,6 +490,12 @@ function native hash(value);
 					c_tuple = read(value_pair.second);
 					c_tuple->allocator_override = [&]() -> OwcaValue {
 						return create_tuple({});
+					};
+				}
+				else if (key == "Set") {
+					c_set = read(value_pair.second);
+					c_set->allocator_override = [&]() -> OwcaValue {
+						return create_set({});
 					};
 				}
 				builtin_objects[key] = std::move(value_pair.second);
@@ -665,7 +697,8 @@ function native hash(value);
 				return nullptr;
 			},
 			[&](const OwcaArray& o) -> OwcaValue* { return read_member(c_array); },
-			[&](const OwcaTuple& o) -> OwcaValue* { return read_member(c_tuple); }
+			[&](const OwcaTuple& o) -> OwcaValue* { return read_member(c_tuple); },
+			[&](const OwcaSet& o) -> OwcaValue* { return read_member(c_set); }
 		);
 
 		if (v && v->kind() == OwcaValueKind::Functions) {
@@ -927,7 +960,7 @@ function native hash(value);
 	OwcaValue VM::create_map(const std::vector<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0, vm, true);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(arguments[i], std::move(arguments[i + 1]));
 		}
@@ -935,8 +968,12 @@ function native hash(value);
 	}
 	OwcaValue VM::create_set(const std::vector<OwcaValue> &arguments)
 	{
-		assert(false);
-		return {};
+		auto vm = OwcaVM{ this };
+		auto ds = allocate<DictionaryShared>(0, vm, false);
+		for (auto i = 0u; i < arguments.size(); ++i) {
+			ds->dict.write(arguments[i], OwcaEmpty{});
+		}
+		return OwcaValue{ OwcaSet{ ds } };
 	}
 	OwcaValue VM::get_identifier(unsigned int index)
 	{
@@ -1017,17 +1054,16 @@ function native hash(value);
 				return true;
 			},
 			[&](OwcaObject value) -> bool {
-				auto res = value.try_member("__bool__");
-				if (!res) return true;
-				auto res2 = execute_call(*res, {});
-				auto vm = OwcaVM{ this };
-				return res2.as_bool(vm).internal_value();
+				return true;
 			},
 			[&](OwcaArray value) -> bool {
-				return !value.object->values.empty();
+				return value.size() > 0;
 			},
 			[&](OwcaTuple value) -> bool {
-				return !value.object->values.empty();
+				return value.size() > 0;
+			},
+			[&](OwcaSet value) -> bool {
+				return value.size() > 0;
 			}
 		);
 	}
@@ -1060,6 +1096,9 @@ function native hash(value);
 			},
 			[&](const OwcaTuple &o) -> size_t {
 				return o.object->hash();
+			},
+			[&](const OwcaSet &o) -> size_t {
+				throw_not_hashable(value.type());
 			}
 		);
 	}
@@ -1186,6 +1225,33 @@ function native hash(value);
 				};
 				return std::make_unique<TupleIterator>(s);
 			},
+			[&](const OwcaSet& s) -> std::unique_ptr<IteratorBase> {
+				struct SetIterator : public IteratorBase {
+					OwcaValue tmp;
+					OwcaSet::Iterator beg, end;
+					VM &vm;
+					size_t remaining = 0;
+
+					SetIterator(VM &vm, OwcaSet m) : beg(m.begin()), end(m.end()), vm(vm), remaining(m.size()) {}
+
+					OwcaValue *get() override {
+						if (beg != end && remaining > 0) {
+							return const_cast<OwcaValue*>(&*beg);
+						}
+						return nullptr;
+					}
+					void next() override {
+						if (beg != end && remaining > 0) {
+							++beg;
+							--remaining;
+						}
+					}
+					size_t remaining_size() override {
+						return remaining;
+					}
+				};
+				return std::make_unique<SetIterator>(*this, s);
+			},
 			[&](const auto &) -> std::unique_ptr<IteratorBase> {
 				throw_not_iterable(r.type());
 			}
@@ -1260,6 +1326,9 @@ function native hash(value);
 			},
 			[&](const OwcaTuple& s) {
 				gc_mark(s.object->values, ggc);
+			},
+			[&](const OwcaSet& s) {
+				gc_mark(s.dictionary, ggc);
 			}
 			);
 	}

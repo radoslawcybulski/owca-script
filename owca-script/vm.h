@@ -43,6 +43,7 @@ namespace OwcaScript {
 			Class *c_class = nullptr;
 			Class *c_tuple = nullptr;
 			Class *c_array = nullptr;
+			Class *c_set = nullptr;
 			Array *empty_tuple = nullptr;
 			unsigned int generation_gc = 0;
 

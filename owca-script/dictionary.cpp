@@ -150,7 +150,7 @@ namespace OwcaScript::Internal {
 
 	std::string_view Dictionary::type() const
 	{
-		return "dictionary";
+		return is_map ? "Map" : "Set";
 	}
 
 	std::string Dictionary::to_string() const
@@ -165,8 +165,9 @@ namespace OwcaScript::Internal {
 			
 			if (first) first = false;
 			else tmp << ",";
-			tmp << " " << v.first->to_string() << ": ";
-			tmp << v.second->to_string();
+			tmp << " " << v.first->to_string();
+			if (is_map) 
+				tmp << ": " << v.second->to_string();
 		}
 		tmp << " }";
 		return tmp.str();

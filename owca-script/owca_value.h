@@ -13,6 +13,7 @@
 #include "owca_object.h"
 #include "owca_tuple.h"
 #include "owca_array.h"
+#include "owca_set.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -34,6 +35,7 @@ namespace OwcaScript {
 		Object,
 		Tuple,
 		Array,
+		Set,
 	};
 
 	class OwcaEmpty {};
@@ -41,7 +43,7 @@ namespace OwcaScript {
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -57,6 +59,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaObject value) : value_(std::move(value)) {}
 		OwcaValue(OwcaTuple value) : value_(std::move(value)) {}
 		OwcaValue(OwcaArray value) : value_(std::move(value)) {}
+		OwcaValue(OwcaSet value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
@@ -76,6 +79,7 @@ namespace OwcaScript {
 		OwcaObject as_object(OwcaVM &) const;
 		OwcaTuple as_tuple(OwcaVM &) const;
 		OwcaArray as_array(OwcaVM &) const;
+		OwcaSet as_set(OwcaVM &) const;
 
 		std::string_view type() const;
 		std::string to_string() const;

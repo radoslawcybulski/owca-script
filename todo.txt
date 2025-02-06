@@ -1,11 +1,13 @@
-exceptions
-optimize self pointer in function object (ie non object that is vm' allocated should fit into self_object as well)
-	- add OwcaValueKind into allocated object to resolve object' ambiguity?
-range step
-	- do we need it?
 move string content into vm' allocated objects
 	- every (create OwcaVM::create_string function)?
 	- on call?
 		- return allocated object back to user to replace original string?
 	- should we use hashmap to reuse string objects?
 add value creation function to OwcaVM (so int -> OwcaValue, float -> OwcaValue, string -> OwcaValue and so on)
+use OwcaMap for global scope values passing in and out, when calling OwcaVM::execute
+exceptions
+OwcaVariable so user could keep OwcaValue values and not get crashed by gc.
+optimize self pointer in function object (ie non object that is vm' allocated should fit into self_object as well)
+	- add OwcaValueKind into allocated object to resolve object' ambiguity?
+range step
+	- do we need it?
