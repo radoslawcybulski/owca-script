@@ -412,15 +412,60 @@ function native hash(value);
 		for(auto value_pair : dct) {
 			if (value_pair.first.kind() == OwcaValueKind::String) {
 				auto key = value_pair.first.as_string(vm).internal_value();
-				if (key == "Nul") c_nul = read(value_pair.second);
-				else if (key == "Range") c_range = read(value_pair.second);
-				else if (key == "Bool") c_bool = read(value_pair.second);
-				else if (key == "Int") c_int = read(value_pair.second);
-				else if (key == "Float") c_float = read(value_pair.second);
-				else if (key == "String") c_string = read(value_pair.second);
-				else if (key == "Function") c_function = read(value_pair.second);
-				else if (key == "Map") c_map = read(value_pair.second);
-				else if (key == "Class") c_class = read(value_pair.second);
+				if (key == "Nul") {
+					c_nul = read(value_pair.second);
+					c_nul->allocator_override = []() -> OwcaValue { return OwcaEmpty{}; };
+				}
+				else if (key == "Range") {
+					c_range = read(value_pair.second);
+					c_range->allocator_override = []() -> OwcaValue { return OwcaRange{ 0, 0 }; };
+				}
+				else if (key == "Bool") {
+					c_bool = read(value_pair.second);
+					c_bool->allocator_override = []() -> OwcaValue { return OwcaBool{ false }; };
+				}
+				else if (key == "Int") {
+					c_int = read(value_pair.second);
+					c_int->allocator_override = []() -> OwcaValue { return OwcaInt{ 0 }; };
+				}
+				else if (key == "Float") {
+					c_float = read(value_pair.second);
+					c_float->allocator_override = []() -> OwcaValue { return OwcaFloat{ 0 }; };
+				}
+				else if (key == "String") {
+					c_string = read(value_pair.second);
+					c_string->allocator_override = []() -> OwcaValue { return OwcaString{ "" }; };
+				}
+				else if (key == "Function") {
+					c_function = read(value_pair.second);
+					c_function->allocator_override = [&]() -> OwcaValue {
+						throw_not_callable(c_function->full_name);
+					};
+				}
+				else if (key == "Map") {
+					c_map = read(value_pair.second);
+					c_map->allocator_override = [&]() -> OwcaValue {
+						return create_map({});
+					};
+				}
+				else if (key == "Class") {
+					c_class = read(value_pair.second);
+					c_class->allocator_override = [&]() -> OwcaValue {
+						throw_not_callable(c_function->full_name);
+					};
+				}
+				else if (key == "Array") {
+					c_array = read(value_pair.second);
+					c_array->allocator_override = [&]() -> OwcaValue {
+						return create_array({});
+					};
+				}
+				else if (key == "Tuple") {
+					c_tuple = read(value_pair.second);
+					c_tuple->allocator_override = [&]() -> OwcaValue {
+						return create_tuple({});
+					};
+				}
 				builtin_objects[key] = std::move(value_pair.second);
 			}
 		}
@@ -834,7 +879,14 @@ function native hash(value);
 				auto vm = OwcaVM{ this };
 				auto cls = func.as_class(vm).object;
 
-				auto obj = allocate<Object>(cls->native_storage_total, cls);
+				OwcaValue obj;
+				
+				if (cls->allocator_override) {
+					obj = cls->allocator_override();
+				}
+				else {
+					obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
+				}
 
 				auto it = cls->values.find("__init__");
 				if (it == cls->values.end()) {
@@ -849,12 +901,12 @@ function native hash(value);
 						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
 					}
 					else {
-						auto of2 = OwcaFunctions{ of.functions, obj };
+						auto of2 = bind_function(of.functions, obj);
 						execute_call(of2, arguments);
 					}
 				}
 
-				return OwcaObject{ obj };
+				return obj;
 			},
 			[&](const auto&) -> OwcaValue {
 				throw_not_callable(func.type());

@@ -26,6 +26,7 @@ namespace OwcaScript {
 			std::unique_ptr<OwcaClass::NativeClassInterface> native;
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
+			std::function<OwcaValue()> allocator_override;
 
 			std::string_view type() const override { return "class"; }
 			std::string to_string() const override;
