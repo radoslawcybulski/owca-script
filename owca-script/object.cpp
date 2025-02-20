@@ -35,7 +35,7 @@ namespace OwcaScript::Internal {
 		return (char*)o + sizeof(*o);
 	}
 
-	Object* Class::allocate(OwcaVM& vm)
+	Object* Class::allocate(OwcaVM vm)
 	{
 		auto o = VM::get(vm).allocate<Object>(native_storage_total, this);
 
@@ -50,12 +50,12 @@ namespace OwcaScript::Internal {
 		return o;
 	}
 
-	void Class::initialize_add_base_class(OwcaVM &vm, const OwcaValue &b)
+	void Class::initialize_add_base_class(OwcaVM vm, const OwcaValue &b)
 	{
 		auto c = VM::get(vm).ensure_is_class(b);
 		base_classes.push_back(c);
 	}
-	void Class::initialize_add_function(OwcaVM &vm, const OwcaValue &f)
+	void Class::initialize_add_function(OwcaVM vm, const OwcaValue &f)
 	{
 		auto fnc = f.as_functions(vm);
 		assert(fnc.functions->functions.size() == 1);
@@ -63,7 +63,7 @@ namespace OwcaScript::Internal {
 			runtime_functions.push_back(it2.second);
 		}
 	}
-	void Class::finalize_initializing(OwcaVM &vm)
+	void Class::finalize_initializing(OwcaVM vm)
 	{
 		size_t offset = 0;
 		for (auto q : base_classes) {

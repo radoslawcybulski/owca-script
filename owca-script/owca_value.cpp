@@ -19,7 +19,7 @@ namespace OwcaScript {
 		);
 	}
 
-	OwcaIntInternal OwcaValue::convert_to_int(OwcaVM &vm) const
+	OwcaIntInternal OwcaValue::convert_to_int(OwcaVM vm) const
 	{
 		auto [i, f] = get_int_or_float();
 		if (i) return i->internal_value();
@@ -31,7 +31,7 @@ namespace OwcaScript {
 		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
 	}
 
-	OwcaFloatInternal OwcaValue::convert_to_float(OwcaVM &vm) const
+	OwcaFloatInternal OwcaValue::convert_to_float(OwcaVM vm) const
 	{
 		auto [i, f] = get_int_or_float();
 		if (i) return (OwcaFloatInternal)i->internal_value();
@@ -60,79 +60,79 @@ namespace OwcaScript {
 		);
 	}
 
-	OwcaEmpty OwcaValue::as_nul(OwcaVM &vm) const
+	OwcaEmpty OwcaValue::as_nul(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Empty)
 			Internal::VM::get(vm).throw_wrong_type(type(), "nul");
 		return {};
 	}
-	OwcaRange OwcaValue::as_range(OwcaVM &vm) const
+	OwcaRange OwcaValue::as_range(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Range)
 			Internal::VM::get(vm).throw_wrong_type(type(), "range");
 		return std::get<OwcaRange>(value_);
 	}
-	OwcaBool OwcaValue::as_bool(OwcaVM &vm) const
+	OwcaBool OwcaValue::as_bool(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Bool)
 			Internal::VM::get(vm).throw_wrong_type(type(), "bool");
 		return std::get<OwcaBool>(value_);
 	}
-	OwcaInt OwcaValue::as_int(OwcaVM &vm) const
+	OwcaInt OwcaValue::as_int(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Int)
 			Internal::VM::get(vm).throw_wrong_type(type(), "integer");
 		return std::get<OwcaInt>(value_);
 	}
-	OwcaFloat OwcaValue::as_float(OwcaVM &vm) const
+	OwcaFloat OwcaValue::as_float(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Float)
 			Internal::VM::get(vm).throw_wrong_type(type(), "floating point number");
 		return std::get<OwcaFloat>(value_);
 	}
-	const OwcaString &OwcaValue::as_string(OwcaVM &vm) const
+	const OwcaString &OwcaValue::as_string(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::String)
 			Internal::VM::get(vm).throw_wrong_type(type(), "string");
 		return std::get<OwcaString>(value_);
 	}
-	OwcaFunctions OwcaValue::as_functions(OwcaVM &vm) const
+	OwcaFunctions OwcaValue::as_functions(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Functions)
 			Internal::VM::get(vm).throw_wrong_type(type(), "function-set");
 		return std::get<OwcaFunctions>(value_);
 	}
-	OwcaMap OwcaValue::as_map(OwcaVM &vm) const
+	OwcaMap OwcaValue::as_map(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Map)
 			Internal::VM::get(vm).throw_wrong_type(type(), "map");
 		return std::get<OwcaMap>(value_);
 	}
-	OwcaClass OwcaValue::as_class(OwcaVM &vm) const
+	OwcaClass OwcaValue::as_class(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Class)
 			Internal::VM::get(vm).throw_wrong_type(type(), "class");
 		return std::get<OwcaClass>(value_);
 	}
-	OwcaObject OwcaValue::as_object(OwcaVM &vm) const
+	OwcaObject OwcaValue::as_object(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Object)
 			Internal::VM::get(vm).throw_wrong_type(type(), "object");
 		return std::get<OwcaObject>(value_);
 	}
-	OwcaArray OwcaValue::as_array(OwcaVM &vm) const
+	OwcaArray OwcaValue::as_array(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Array)
 			Internal::VM::get(vm).throw_wrong_type(type(), "array");
 		return std::get<OwcaArray>(value_);
 	}
-	OwcaTuple OwcaValue::as_tuple(OwcaVM &vm) const
+	OwcaTuple OwcaValue::as_tuple(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Tuple)
 			Internal::VM::get(vm).throw_wrong_type(type(), "tuple");
 		return std::get<OwcaTuple>(value_);
 	}
-	OwcaSet OwcaValue::as_set(OwcaVM &vm) const
+	OwcaSet OwcaValue::as_set(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Set)
 			Internal::VM::get(vm).throw_wrong_type(type(), "set");
@@ -177,12 +177,12 @@ namespace OwcaScript {
 			);
 	}
 
-	OwcaValue OwcaValue::member(OwcaVM& vm, const std::string& key) const
+	OwcaValue OwcaValue::member(OwcaVM vm, const std::string& key) const
 	{
 		return Internal::VM::get(vm).member(*this, key);
 	}
 
-	void OwcaValue::member(OwcaVM& vm, const std::string& key, OwcaValue val)
+	void OwcaValue::member(OwcaVM vm, const std::string& key, OwcaValue val)
 	{
 		return Internal::VM::get(vm).member(*this, key, std::move(val));
 	}

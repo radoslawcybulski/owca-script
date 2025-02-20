@@ -21,7 +21,7 @@ namespace OwcaScript::Internal {
             this->loop_ident_index = loop_ident_index;
 		}
 
-		void execute_impl(OwcaVM &vm) const override {
+		void execute_impl(OwcaVM vm) const override {
             auto counter = (OwcaIntInternal)0;
 
             while(true) {

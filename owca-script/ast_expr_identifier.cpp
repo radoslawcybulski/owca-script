@@ -20,7 +20,7 @@ namespace OwcaScript::Internal {
 			this->value_to_write = value_to_write;
 			this->function_write = function_write;
 		}
-		OwcaValue execute_impl(OwcaVM &vm) const override {
+		OwcaValue execute_impl(OwcaVM vm) const override {
 			if (value_to_write) {
 				auto v = value_to_write->execute(vm);
 				VM::get(vm).set_identifier(index, v, function_write);

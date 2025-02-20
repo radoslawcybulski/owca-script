@@ -151,7 +151,7 @@ namespace OwcaScript {
 				return p2;
 			}
 
-			static VM& get(const OwcaVM& v);
+			static VM& get(const OwcaVM v);
 		};
 	}
 }

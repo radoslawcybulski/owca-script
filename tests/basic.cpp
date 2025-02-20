@@ -48,7 +48,7 @@ TEST_F(SimpleTest, native_func)
 	struct Provider : public OwcaVM::NativeCodeProvider {
 		std::optional<Function> native_function(std::string_view full_name, OwcaVM::FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
-				return [](OwcaVM& vm, std::span<OwcaValue> args) -> OwcaValue {
+				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
 					return OwcaInt{ args[0].convert_to_int(vm) + args[1].convert_to_int(vm) };
 					};

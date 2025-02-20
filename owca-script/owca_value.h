@@ -63,29 +63,29 @@ namespace OwcaScript {
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
-		OwcaIntInternal convert_to_int(OwcaVM &) const;
-		OwcaFloatInternal convert_to_float(OwcaVM &) const;
+		OwcaIntInternal convert_to_int(OwcaVM ) const;
+		OwcaFloatInternal convert_to_float(OwcaVM ) const;
 		bool is_true() const;
 
-		OwcaEmpty as_nul(OwcaVM &) const;
-		OwcaRange as_range(OwcaVM &) const;
-		OwcaBool as_bool(OwcaVM &) const;
-		OwcaInt as_int(OwcaVM &) const;
-		OwcaFloat as_float(OwcaVM &) const;
-		const OwcaString &as_string(OwcaVM &) const;
-		OwcaFunctions as_functions(OwcaVM &) const;
-		OwcaMap as_map(OwcaVM &) const;
-		OwcaClass as_class(OwcaVM &) const;
-		OwcaObject as_object(OwcaVM &) const;
-		OwcaTuple as_tuple(OwcaVM &) const;
-		OwcaArray as_array(OwcaVM &) const;
-		OwcaSet as_set(OwcaVM &) const;
+		OwcaEmpty as_nul(OwcaVM ) const;
+		OwcaRange as_range(OwcaVM ) const;
+		OwcaBool as_bool(OwcaVM ) const;
+		OwcaInt as_int(OwcaVM ) const;
+		OwcaFloat as_float(OwcaVM ) const;
+		const OwcaString &as_string(OwcaVM ) const;
+		OwcaFunctions as_functions(OwcaVM ) const;
+		OwcaMap as_map(OwcaVM ) const;
+		OwcaClass as_class(OwcaVM ) const;
+		OwcaObject as_object(OwcaVM ) const;
+		OwcaTuple as_tuple(OwcaVM ) const;
+		OwcaArray as_array(OwcaVM ) const;
+		OwcaSet as_set(OwcaVM ) const;
 
 		std::string_view type() const;
 		std::string to_string() const;
 
-		OwcaValue member(OwcaVM& vm, const std::string& key) const;
-		void member(OwcaVM& vm, const std::string& key, OwcaValue val);
+		OwcaValue member(OwcaVM vm, const std::string& key) const;
+		void member(OwcaVM vm, const std::string& key, OwcaValue val);
 
 		template <typename ... F> auto visit(F &&...fns) const {
 			struct overloaded : F... {

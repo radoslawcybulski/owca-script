@@ -15,7 +15,7 @@ namespace OwcaScript::Internal {
 			this->value = value;
 		}
 
-		void execute_impl(OwcaVM &vm) const override{
+		void execute_impl(OwcaVM vm) const override{
 			OwcaValue v;
 			if (value) {
 				v = value->execute(vm);

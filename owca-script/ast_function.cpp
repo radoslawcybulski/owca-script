@@ -27,7 +27,7 @@ namespace OwcaScript::Internal {
 			this->param_count = param_count;
 		}
 
-		OwcaValue execute_impl(OwcaVM &vm) const override
+		OwcaValue execute_impl(OwcaVM vm) const override
 		{
 			RuntimeFunction::ScriptFunction sf;
 			sf.body = body;
@@ -63,7 +63,7 @@ namespace OwcaScript::Internal {
 			this->full_name = full_name;
 		}
 
-		OwcaValue execute_impl(OwcaVM &vm) const override
+		OwcaValue execute_impl(OwcaVM vm) const override
 		{
 			auto code = VM::get(vm).currently_running_code();
 			assert(code);

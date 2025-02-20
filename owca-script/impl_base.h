@@ -22,18 +22,18 @@ namespace OwcaScript {
 		public:
 			using ImplBase::ImplBase;
 
-			virtual void execute_impl(OwcaVM &) const = 0;
+			virtual void execute_impl(OwcaVM ) const = 0;
 
-			void execute(OwcaVM &) const;
+			void execute(OwcaVM ) const;
 		};
 
 		class ImplExpr : public ImplBase {
 		public:
 			using ImplBase::ImplBase;
 
-			virtual OwcaValue execute_impl(OwcaVM &) const = 0;
+			virtual OwcaValue execute_impl(OwcaVM ) const = 0;
 
-			OwcaValue execute(OwcaVM &) const;
+			OwcaValue execute(OwcaVM ) const;
 		};
 	}
 }

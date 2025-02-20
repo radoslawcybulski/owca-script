@@ -32,10 +32,10 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
 
-			Object* allocate(OwcaVM&);
-			void initialize_add_base_class(OwcaVM &vm, const OwcaValue &b);
-			void initialize_add_function(OwcaVM &vm, const OwcaValue &f);
-			void finalize_initializing(OwcaVM &vm);
+			Object* allocate(OwcaVM);
+			void initialize_add_base_class(OwcaVM vm, const OwcaValue &b);
+			void initialize_add_function(OwcaVM vm, const OwcaValue &f);
+			void finalize_initializing(OwcaVM vm);
 			char* native_storage_ptr(Object *) const;
 
 			Class(Line line, std::string_view type, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count);

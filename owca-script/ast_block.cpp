@@ -12,7 +12,7 @@ namespace OwcaScript::Internal {
 			this->stats = stats;
 		}
 
-		void execute_impl(OwcaVM &vm) const override{
+		void execute_impl(OwcaVM vm) const override{
 			for (auto c : stats) {
 				c->execute(vm);
 			}
