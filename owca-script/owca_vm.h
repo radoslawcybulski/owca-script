@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "owca_error_message.h"
 #include "owca_class.h"
+#include "owca_value.h"
 
 namespace OwcaScript {
 	class OwcaCode;
@@ -23,6 +24,27 @@ namespace OwcaScript {
 	namespace Internal {
 		class VM;
 	}
+
+	class FunctionToken {
+		const void* tok = nullptr;
+	public:
+		explicit FunctionToken(const void* tok) : tok(tok) {}
+
+		auto value() const { return tok; }
+
+		bool operator == (FunctionToken o) const { return tok == o.tok; }
+		bool operator != (FunctionToken o) const { return tok != o.tok; }
+	};
+	class ClassToken {
+		const void* tok = nullptr;
+	public:
+		explicit ClassToken(const void* tok) : tok(tok) {}
+
+		auto value() const { return tok; }
+
+		bool operator == (ClassToken o) const { return tok == o.tok; }
+		bool operator != (ClassToken o) const { return tok != o.tok; }
+	};
 
 	class OwcaVM {
 		friend class Internal::VM;
@@ -49,26 +71,6 @@ namespace OwcaScript {
 				return err_msg.c_str();
 			}
 		};
-		class FunctionToken {
-			const void* tok = nullptr;
-		public:
-			explicit FunctionToken(const void* tok) : tok(tok) {}
-
-			auto value() const { return tok; }
-
-			bool operator == (FunctionToken o) const { return tok == o.tok; }
-			bool operator != (FunctionToken o) const { return tok != o.tok; }
-		};
-		class ClassToken {
-			const void* tok = nullptr;
-		public:
-			explicit ClassToken(const void* tok) : tok(tok) {}
-
-			auto value() const { return tok; }
-
-			bool operator == (ClassToken o) const { return tok == o.tok; }
-			bool operator != (ClassToken o) const { return tok != o.tok; }
-		};
 		struct NativeCodeProvider {
 			virtual ~NativeCodeProvider() = default;
 
@@ -79,13 +81,12 @@ namespace OwcaScript {
 
 		OwcaCode compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
-		OwcaValue execute(const OwcaCode&);
-		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values);
-		OwcaValue execute(const OwcaCode&, OwcaValue &output_dict);
-		OwcaValue execute(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>& values, OwcaValue &output_dict);
+		OwcaValue execute(const OwcaCode&, OwcaValue values = {}, OwcaValue *output_dict = nullptr);
 		OwcaValue create_array(std::vector<OwcaValue> values) const;
 		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
-		OwcaValue create_map(const std::vector<OwcaValue> &values) const;
+		OwcaValue create_map(const std::vector<OwcaValue> &values = {}) const;
+		OwcaValue create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values) const;
+		OwcaValue create_map(const std::vector<std::pair<std::string, OwcaValue>> &values) const;
 		OwcaValue create_set(const std::vector<OwcaValue> &values) const;
 		OwcaValue create_string(std::string) const;
 		OwcaValue create_string_from_view(std::string_view) const;

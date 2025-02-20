@@ -96,7 +96,7 @@ namespace OwcaScript::Internal {
 		}
 	}
 
-	std::span<char> Object::native_storage(OwcaVM::ClassToken cls)
+	std::span<char> Object::native_storage(ClassToken cls)
 	{
 		auto c = (Class*)cls.value();
 		auto it = type_->native_storage_pointers.find(c);

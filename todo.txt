@@ -1,4 +1,3 @@
-use OwcaMap for global scope values passing in and out, when calling OwcaVM::execute
 exceptions
 OwcaVariable so user could keep OwcaValue values and not get crashed by gc.
 optimize self pointer in function object (ie non object that is vm' allocated should fit into self_object as well)

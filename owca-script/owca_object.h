@@ -2,11 +2,12 @@
 #define RC_OWCA_SCRIPT_OWCA_OBJECT_H
 
 #include "stdafx.h"
-#include "owca_vm.h"
 
 namespace OwcaScript {
 	class OwcaValue;
 	class OwcaVM;
+	class ClassToken;
+	class FunctionToken;
 
 	namespace Internal {
 		struct Object;
@@ -20,7 +21,7 @@ namespace OwcaScript {
 
 		Internal::Object* object;
 
-		std::span<char> user_data_impl(OwcaVM::ClassToken) const;
+		std::span<char> user_data_impl(ClassToken) const;
 	public:
 		explicit OwcaObject(Internal::Object* object) : object(object) {}
 
@@ -32,7 +33,7 @@ namespace OwcaScript {
 
 		void member(const std::string& key, OwcaValue);
 
-		template <typename T> T &user_data(OwcaVM::ClassToken token) const {
+		template <typename T> T &user_data(ClassToken token) const {
 			auto sp = user_data_impl(token);
 			assert(sp.size() >= sizeof(T));
 			return *(T*)sp.data();

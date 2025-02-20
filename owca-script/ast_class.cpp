@@ -60,7 +60,7 @@ namespace OwcaScript::Internal {
 			auto cls = VM::get(vm).ensure_is_class(res);
 			auto native = cls->code->native_code_provider();
 			if (native) {
-				if (auto impl = native->native_class(full_name, OwcaVM::ClassToken{ cls })) {
+				if (auto impl = native->native_class(full_name, ClassToken{ cls })) {
 					auto size = impl->native_storage_size();
 					cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
 					cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;

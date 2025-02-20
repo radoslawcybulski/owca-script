@@ -51,6 +51,9 @@ namespace OwcaScript::Internal {
 			assert(0);
 			return false;
 		}
+		static bool compare_impl2(AstExprCompare::Kind kind, OwcaString left, OwcaString right) {
+			return false;
+		}
 		static Result compare_impl(AstExprCompare::Kind kind, const auto& left, const auto& right) {
 			if (kind == AstExprCompare::Kind::Is) return Result::NotExec;
 			return compare_impl2(kind, left, right) ? Result::True : Result::False;
@@ -219,7 +222,7 @@ namespace OwcaScript::Internal {
 						if (left.as_float(vm).internal_value() == right.as_float(vm).internal_value()) continue;
 						break;
 					case OwcaValueKind::String:
-						if (left.as_string(vm).internal_value() == right.as_string(vm).internal_value()) continue;
+						if (compare(vm, AstExprCompare::Kind::Eq, left, right) == Result::True) continue;
 						break;
 					case OwcaValueKind::Functions:
 						if (left.as_functions(vm).functions == right.as_functions(vm).functions) continue;

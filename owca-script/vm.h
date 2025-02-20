@@ -109,11 +109,13 @@ namespace OwcaScript {
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
-			OwcaValue execute_code_block(const OwcaCode&, const std::unordered_map<std::string, OwcaValue>* values, OwcaValue *dict_output);
+			OwcaValue execute_code_block(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
 			OwcaValue execute_call(const OwcaValue &func, std::span<OwcaValue> arguments);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
-			OwcaValue create_map(const std::vector<OwcaValue> &arguments);
+			OwcaValue create_map(const std::vector<OwcaValue> &arguments = {});
+			OwcaValue create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values);
+			OwcaValue create_map(const std::vector<std::pair<std::string, OwcaValue>> &values);
 			OwcaValue create_set(const std::vector<OwcaValue> &arguments);
 			OwcaValue create_string(std::string txt);
 			OwcaValue create_string_from_view(std::string_view txt);

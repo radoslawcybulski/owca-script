@@ -46,7 +46,7 @@ TEST_F(SimpleTest, native_func)
 {
 	OwcaVM vm;
 	struct Provider : public OwcaVM::NativeCodeProvider {
-		std::optional<Function> native_function(std::string_view full_name, OwcaVM::FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
@@ -69,11 +69,11 @@ TEST_F(SimpleTest, external_vars)
 	auto code = vm.compile("test.os", R"(
 return q + b + c;
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto val = vm.execute(code, { {
+	auto val = vm.execute(code, vm.create_map({
 		{ "q", OwcaInt{ 1 }},
 		{ "b", OwcaInt{ 2 }},
 		{ "c", OwcaInt{ 3 }},
-		} });
+		}));
 	ASSERT_EQ(val.as_int(vm).internal_value(), 6);
 }
 TEST_F(SimpleTest, class_)
@@ -87,11 +87,11 @@ class A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto val = vm.execute(code, { {
+	auto val = vm.execute(code, vm.create_map({
 		{ "q", OwcaInt{ 1 }},
 		{ "b", OwcaInt{ 2 }},
 		{ "c", OwcaInt{ 3 }},
-		} });
+		}));
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
 }
@@ -112,7 +112,7 @@ TEST_F(SimpleTest, native_class)
 				return 8;
 			}
 		};
-		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name, OwcaVM::ClassToken) const override {
+		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 			if (name == "A")
 				return std::make_unique<NCI>();
 			return nullptr;
@@ -126,11 +126,11 @@ class native A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>());
-	auto val = vm.execute(code, { {
+	auto val = vm.execute(code, vm.create_map({
 		{ "q", OwcaInt{ 1 }},
 		{ "b", OwcaInt{ 2 }},
 		{ "c", OwcaInt{ 3 }},
-		} });
+		}));
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
 }

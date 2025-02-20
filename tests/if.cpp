@@ -11,7 +11,7 @@ static int run_if(std::string code_text, OwcaValue add_val)
     OwcaVM vm;
     std::vector<std::string> tmp{ { "a" } };
     auto code = vm.compile("test.os", std::move(code_text), tmp);
-    auto val = vm.execute(code, std::unordered_map<std::string, OwcaValue>{ { "a", add_val } });
+    auto val = vm.execute(code, vm.create_map({ { "a", add_val } }));
     return (int)val.as_int(vm).internal_value();
 }
 TEST_F(IfTest, simple1)

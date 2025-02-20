@@ -360,7 +360,7 @@ namespace OwcaScript::Internal {
 			};
 		}
 
-		std::optional<Function> native_function(std::string_view full_name, OwcaVM::FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") return adapt(range_init);
 			if (full_name == "Range.lower") return adapt(range_lower);
 			if (full_name == "Range.upper") return adapt(range_upper);
@@ -383,7 +383,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "hash") return adapt(hash);
 			return std::nullopt;
 		}
-		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, OwcaVM::ClassToken token) const override {
+		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
 			return nullptr;
 		}
 	};
@@ -438,7 +438,7 @@ function native hash(value);
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_unique<BuiltinProvider>());
 		OwcaValue builtin_dictionary;
-		vm.execute(std::move(code_compiled), builtin_dictionary);
+		vm.execute(std::move(code_compiled), {}, &builtin_dictionary);
 
 		auto read = [&](const OwcaValue &val) -> Class*{
 			return ensure_is_class(val);
@@ -480,7 +480,7 @@ function native hash(value);
 				else if (key == "Map") {
 					c_map = read(value_pair.second);
 					c_map->allocator_override = [&]() -> OwcaValue {
-						return create_map({});
+						return create_map();
 					};
 				}
 				else if (key == "Class") {
@@ -805,10 +805,13 @@ function native hash(value);
 			});
 	}
 
-	OwcaValue VM::execute_code_block(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue> *values, OwcaValue *dict_output)
+	OwcaValue VM::execute_code_block(const OwcaCode &oc, OwcaValue values, OwcaValue *dict_output)
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
 		auto vm = OwcaVM{ this };
+		if (values.kind() != OwcaValueKind::Empty) {
+			values.as_map(vm);
+		}
 		OwcaValue val;
 		{
 			stacktrace.push_back({ oc.code_->root()->line });
@@ -835,9 +838,10 @@ function native hash(value);
 					assert(it2 != value_index_map.end());
 					set_identifier(it2->second, it.second);
 				}
-				if (values) {
-					for (auto& it : *values) {
-						auto it2 = value_index_map.find(it.first);
+				if (values.kind() != OwcaValueKind::Empty) {
+					for (auto it : values.as_map(vm)) {
+						auto key = it.first.as_string(vm).text();
+						auto it2 = value_index_map.find(key);
 						if (it2 != value_index_map.end()) {
 							set_identifier(it2->second, it.second);
 						}
@@ -858,7 +862,7 @@ function native hash(value);
 				if (dict_output) {
 					auto &dout = *dict_output;
 					if (dout.kind() != OwcaValueKind::Map) {
-						dout = self->create_map({});
+						dout = self->create_map();
 					}
 					auto owca_vm = OwcaVM{ self };
 
@@ -972,7 +976,25 @@ function native hash(value);
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm, true);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
-			ds->dict.write(arguments[i], std::move(arguments[i + 1]));
+			ds->dict.write(arguments[i], arguments[i + 1]);
+		}
+		return OwcaValue{ OwcaMap{ ds } };
+	}
+	OwcaValue VM::create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &arguments)
+	{
+		auto vm = OwcaVM{ this };
+		auto ds = allocate<DictionaryShared>(0, vm, true);
+		for(auto q : arguments) {
+			ds->dict.write(q.first, q.second);
+		}
+		return OwcaValue{ OwcaMap{ ds } };
+	}
+	OwcaValue VM::create_map(const std::vector<std::pair<std::string, OwcaValue>> &arguments)
+	{
+		auto vm = OwcaVM{ this };
+		auto ds = allocate<DictionaryShared>(0, vm, true);
+		for(auto q : arguments) {
+			ds->dict.write(create_string_from_view(q.first), q.second);
 		}
 		return OwcaValue{ OwcaMap{ ds } };
 	}

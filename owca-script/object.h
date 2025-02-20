@@ -50,7 +50,7 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
-			std::span<char> native_storage(OwcaVM::ClassToken cls);
+			std::span<char> native_storage(ClassToken cls);
 		};
 	}
 }

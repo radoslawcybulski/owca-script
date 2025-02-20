@@ -20,25 +20,10 @@ namespace OwcaScript {
 
 	OwcaVM::~OwcaVM() = default;
 
-	OwcaValue OwcaVM::execute(const OwcaCode&oc, OwcaValue &output_dict)
+	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaValue values, OwcaValue *output_dict)
 	{
-		return execute(oc, {}, output_dict);
+		return vm->execute_code_block(oc, values, output_dict);
 	}
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue>& values)
-	{
-		return vm->execute_code_block(oc, &values, nullptr);
-	}
-
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, const std::unordered_map<std::string, OwcaValue>& values, OwcaValue &output_dict)
-	{
-		return vm->execute_code_block(oc, &values, &output_dict);
-	}
-
-	OwcaValue OwcaVM::execute(const OwcaCode &oc)
-	{
-		return vm->execute_code_block(oc, nullptr, nullptr);
-	}
-
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider)
 	{
 		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
@@ -64,11 +49,19 @@ namespace OwcaScript {
 	}
 	OwcaValue OwcaVM::create_map(const std::vector<OwcaValue> &values) const
 	{
-		return vm->create_map(std::move(values));
+		return vm->create_map(values);
+	}
+	OwcaValue OwcaVM::create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values) const
+	{
+		return vm->create_map(values);
+	}
+	OwcaValue OwcaVM::create_map(const std::vector<std::pair<std::string, OwcaValue>> &values) const
+	{
+		return vm->create_map(values);
 	}
 	OwcaValue OwcaVM::create_set(const std::vector<OwcaValue> &values) const
 	{
-		return vm->create_set(std::move(values));
+		return vm->create_set(values);
 	}
 	OwcaValue OwcaVM::create_string_from_view(std::string_view txt) const
 	{

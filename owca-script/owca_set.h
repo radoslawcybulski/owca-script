@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_OWCA_SET_H
 
 #include "stdafx.h"
-#include "allocation_base.h"
 
 namespace OwcaScript {
 	namespace Internal {

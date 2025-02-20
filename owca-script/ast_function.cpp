@@ -72,7 +72,7 @@ namespace OwcaScript::Internal {
 			RuntimeFunction::NativeFunction nf;
 			nf.parameter_names = parameter_names;
 			if (auto native = rf->code->native_code_provider()) {
-				auto fnc = native->native_function(full_name, OwcaVM::FunctionToken{ rf }, parameter_names);
+				auto fnc = native->native_function(full_name, FunctionToken{ rf }, parameter_names);
 				if (fnc) {
 					nf.function = std::move(*fnc);
 				}

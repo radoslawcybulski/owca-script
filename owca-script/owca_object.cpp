@@ -27,7 +27,7 @@ namespace OwcaScript {
 		object->vm->member(*this, key, std::move(val));
 	}
 
-	std::span<char> OwcaObject::user_data_impl(OwcaVM::ClassToken token) const
+	std::span<char> OwcaObject::user_data_impl(ClassToken token) const
 	{
 		auto sp = object->native_storage(token);
 		if (sp.empty()) {
