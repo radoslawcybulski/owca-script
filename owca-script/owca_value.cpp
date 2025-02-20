@@ -7,6 +7,7 @@
 #include "object.h"
 #include "array.h"
 #include "dictionary.h"
+#include "string.h"
 
 namespace OwcaScript {
 	std::pair<const OwcaInt*, const OwcaFloat*> OwcaValue::get_int_or_float() const
@@ -46,7 +47,7 @@ namespace OwcaScript {
 			[](const OwcaInt& o) { return o.internal_value() != 0; },
 			[](const OwcaFloat& o) { return o.internal_value() != 0; },
 			[](const OwcaBool &o) { return o.internal_value(); },
-			[](const OwcaString &o) { return !o.internal_value().empty(); },
+			[](const OwcaString &o) { return o.internal_value()->size() != 0; },
 			[](const OwcaFunctions&) { return true; },
 			[](const OwcaMap &o) { return o.size() != 0; },
 			[](const OwcaClass &o) { return true; },
@@ -165,7 +166,7 @@ namespace OwcaScript {
 			[](const OwcaInt &o) -> std::string { return std::to_string(o.internal_value()); },
 			[](const OwcaFloat &o) -> std::string { return std::to_string(o.internal_value()); },
 			[](const OwcaBool &o) -> std::string { return o.internal_value() ? "true" : "false"; },
-			[](const OwcaString &o) -> std::string { return std::format("'{}'", o.internal_value()); },
+			[](const OwcaString &o) -> std::string { return o.internal_value()->to_string(); },
 			[](const OwcaFunctions &o) -> std::string { return o.functions->to_string(); },
 			[](const OwcaMap &o) -> std::string { return o.to_string(); },
 			[](const OwcaClass &o) -> std::string { return o.to_string(); },

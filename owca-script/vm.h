@@ -32,6 +32,8 @@ namespace OwcaScript {
 			std::vector<ExecutionFrame> stacktrace;
 			std::vector<AllocationBase*> allocated_objects;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
+			std::unordered_map<std::string_view, OwcaValue> small_strings;
+			
 			Class *c_nul = nullptr;
 			Class *c_range = nullptr;
 			Class *c_bool = nullptr;
@@ -113,6 +115,11 @@ namespace OwcaScript {
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_map(const std::vector<OwcaValue> &arguments);
 			OwcaValue create_set(const std::vector<OwcaValue> &arguments);
+			OwcaValue create_string(std::string txt);
+			OwcaValue create_string_from_view(std::string_view txt);
+			OwcaValue create_string(OwcaValue str, size_t start, size_t end);
+			OwcaValue create_string(OwcaValue str, size_t count);
+			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue get_identifier(unsigned int index);
 			Class* ensure_is_class(const OwcaValue&);
 			Object* ensure_is_object(const OwcaValue&);

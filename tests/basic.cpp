@@ -20,7 +20,7 @@ TEST_F(SimpleTest, string)
 	OwcaVM vm;
 	auto code = vm.compile("test.os", "return 'qwe' + 'rty';");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_string(vm).internal_value(), "qwerty");
+	ASSERT_EQ(val.as_string(vm).text(), "qwerty");
 }
 
 TEST_F(SimpleTest, range)
@@ -30,7 +30,7 @@ TEST_F(SimpleTest, range)
 return 'qwerty'[2:4];
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_string(vm).internal_value(), "er");
+	ASSERT_EQ(val.as_string(vm).text(), "er");
 }
 TEST_F(SimpleTest, dict)
 {

@@ -11,6 +11,7 @@
 #include "array.h"
 #include "object.h"
 #include "owca_iterator.h"
+#include "string.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -71,12 +72,12 @@ namespace OwcaScript::Internal {
 		static std::string convert_impl2(OwcaVM &vm, size_t I, std::string *b, const OwcaValue &v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string(vm).internal_value();
+			return std::string{ v.as_string(vm).text() };
 		}
 		static std::string_view convert_impl2(OwcaVM &vm, size_t I, std::string_view *b, const OwcaValue &v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string(vm).internal_value();
+			return v.as_string(vm).text();
 		}
 		static OwcaEmpty convert_impl2(OwcaVM &vm, size_t I, OwcaEmpty *b, const OwcaValue &v) {
 			if (v.kind() != OwcaValueKind::Empty) 
@@ -218,10 +219,10 @@ namespace OwcaScript::Internal {
 			) };
 		}
 		static OwcaValue string_init(OwcaVM &vm, const OwcaValue &, const OwcaValue &r) {
-			return OwcaString{ r.to_string() };
+			return vm.create_string(r.to_string());
 		}
 		static OwcaValue string_size(OwcaVM &vm, const OwcaValue &r) {
-			auto v = r.as_string(vm).internal_value().size();
+			auto v = r.as_string(vm).internal_value()->size();
 			auto v2 = (OwcaIntInternal)v;
 			if (v2 != v)
 				VM::get(vm).throw_overflow(std::format("string size {} doesn't fit integer", v));
@@ -254,10 +255,10 @@ namespace OwcaScript::Internal {
 			return OwcaInt{ v2 };
 		}
 		static OwcaValue class_name(OwcaVM &vm, const OwcaValue &r) {
-			return OwcaString{ std::string{ r.as_class(vm).object->name } };
+			return vm.create_string_from_view(r.as_class(vm).object->name);
 		}
 		static OwcaValue class_full_name(OwcaVM &vm, const OwcaValue &r) {
-			return OwcaString{ std::string{ r.as_class(vm).object->full_name } };
+			return vm.create_string_from_view(r.as_class(vm).object->full_name);
 		}
 		static OwcaValue array_init(OwcaVM &vm, const OwcaArray &self, const OwcaValue &r) {
 			r.visit(
@@ -280,10 +281,14 @@ namespace OwcaScript::Internal {
 					} 
 				},
 				[&](OwcaString o) {
-					self.object->values.reserve(o.internal_value().size());
-					for(auto q : o.internal_value()) {
-						self.object->values.push_back(OwcaString{ std::string{ q, 1 } });
-					}
+					self.object->values.reserve(o.internal_value()->size());
+					o.internal_value()->iterate_over_content(
+						[&](std::string_view txt) {
+							for(auto q : txt) {
+								self.object->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
+							}
+						}
+					);
 				},
 				[&](const auto &) {
 					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
@@ -316,13 +321,17 @@ namespace OwcaScript::Internal {
 				[&](OwcaSet o) {
 					for(const auto &val : o) {
 						self.object->values.push_back(val);
-					} 
+					}
 				},
 				[&](OwcaString o) {
-					self.object->values.reserve(o.internal_value().size());
-					for(auto q : o.internal_value()) {
-						self.object->values.push_back(OwcaString{ std::string{ q, 1 } });
-					}
+					self.object->values.reserve(o.internal_value()->size());
+					o.internal_value()->iterate_over_content(
+						[&](std::string_view txt) {
+							for(auto q : txt) {
+								self.object->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
+							}
+						}
+					);
 				},
 				[&](const auto &) {
 					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
@@ -437,7 +446,7 @@ function native hash(value);
 		auto dct = builtin_dictionary.as_map(vm);
 		for(auto value_pair : dct) {
 			if (value_pair.first.kind() == OwcaValueKind::String) {
-				auto key = value_pair.first.as_string(vm).internal_value();
+				auto key = value_pair.first.as_string(vm).text();
 				if (key == "Nul") {
 					c_nul = read(value_pair.second);
 					c_nul->allocator_override = []() -> OwcaValue { return OwcaEmpty{}; };
@@ -460,7 +469,7 @@ function native hash(value);
 				}
 				else if (key == "String") {
 					c_string = read(value_pair.second);
-					c_string->allocator_override = []() -> OwcaValue { return OwcaString{ "" }; };
+					c_string->allocator_override = [&]() -> OwcaValue { return create_string(""); };
 				}
 				else if (key == "Function") {
 					c_function = read(value_pair.second);
@@ -498,7 +507,7 @@ function native hash(value);
 						return create_set({});
 					};
 				}
-				builtin_objects[key] = std::move(value_pair.second);
+				builtin_objects[std::string{ key }] = std::move(value_pair.second);
 			}
 		}
 	}
@@ -858,7 +867,8 @@ function native hash(value);
 					s.runtime_function->visit(
 						[&](RuntimeFunction::ScriptFunction& sf) -> void {
 							for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
-								doout_obj[OwcaString{ std::string{ sf.identifier_names[i] } }] = self->get_identifier(i);
+								auto key = self->create_string_from_view(sf.identifier_names[i]);
+								doout_obj[key] = self->get_identifier(i);
 							}
 						},
 						[&](RuntimeFunction::NativeFunction&) -> void {
@@ -975,6 +985,82 @@ function native hash(value);
 		}
 		return OwcaValue{ OwcaSet{ ds } };
 	}
+	static constexpr const size_t small_string_max_size = 32;
+	OwcaValue VM::create_string_from_view(std::string_view txt)
+	{
+		if (txt.size() > small_string_max_size) {
+			return create_string(std::string{ txt });
+		}
+		auto it = small_strings.find(txt);
+		if (it != small_strings.end())
+			return it->second;
+		return create_string(std::string{ txt });
+	}
+	OwcaValue VM::create_string(std::string txt)
+	{
+		if (txt.size() <= small_string_max_size) {
+			auto it = small_strings.find(txt);
+			if (it != small_strings.end())
+				return it->second;
+		}
+		auto vm = OwcaVM{ this };
+		if ((std::uint32_t)txt.size() != txt.size()) {
+			throw_overflow(std::format("string is too large ({}) - it's size will not fit in 32 bit unsigned integer", txt.size()));
+		}
+		auto str = allocate<String>(0, std::move(txt));
+		auto os = OwcaString{ str };
+		if (txt.size() <= small_string_max_size) {
+			small_strings[str->text()] = os;
+		}
+		return OwcaValue{ os };
+	}
+	OwcaValue VM::create_string(OwcaValue str, size_t start, size_t end)
+	{
+		if (start >= end) return create_string("");
+		auto size = end - start;
+		auto vm = OwcaVM{ this };
+		auto s = str.as_string(vm);
+		auto sz = s.size();
+		if (start >= sz) return create_string("");
+		if (start + size > sz) size = sz - start;
+		if (size == 0) return create_string("");
+		auto dpth = s.internal_value()->depth();
+		auto new_s = allocate<String>(0, String::Substr{ s.internal_value(), start, size, dpth + 1 });
+		if (new_s->depth() > String::max_depth) {
+			new_s->flatten();
+		}
+		auto os = OwcaString{ new_s };
+		return os;
+	}
+	OwcaValue VM::create_string(OwcaValue str, size_t count)
+	{
+		if (count == 0) return create_string("");
+		auto vm = OwcaVM{ this };
+		auto s = str.as_string(vm);
+		auto dpth = s.internal_value()->depth();
+		auto new_s = allocate<String>(0, String::Mult{ s.internal_value(), count, dpth + 1 });
+		if (new_s->depth() > String::max_depth) {
+			new_s->flatten();
+		}
+		auto os = OwcaString{ new_s };
+		return os;
+	}
+	OwcaValue VM::create_string(OwcaValue left, OwcaValue right)
+	{
+		auto vm = OwcaVM{ this };
+		auto l = left.as_string(vm);
+		auto r = right.as_string(vm);
+		if (l.size() == 0) return right;
+		if (r.size() == 0) return left;
+		auto dpth = std::max(l.internal_value()->depth(), r.internal_value()->depth());
+		auto new_s = allocate<String>(0, String::Add{ l.internal_value(), r.internal_value(), dpth + 1 });
+		if (new_s->depth() > String::max_depth) {
+			new_s->flatten();
+		}
+		auto os = OwcaString{ new_s };
+		return os;
+	}
+
 	OwcaValue VM::get_identifier(unsigned int index)
 	{
 		auto& s = stacktrace.back();
@@ -1042,7 +1128,7 @@ function native hash(value);
 				return value.internal_value() != 0.0;
 			},
 			[&](OwcaString value) -> bool {
-				return !value.internal_value().empty();
+				return value.internal_value()->size() != 0;
 			},
 			[&](OwcaFunctions value) -> bool {
 				return true;
@@ -1077,10 +1163,10 @@ function native hash(value);
 			[](const OwcaRange& o) -> size_t { 
 				return calc_hash(o.lower().internal_value()) * 1009 + calc_hash(o.upper().internal_value()) + 4;
 			},
-			[](const OwcaInt& o) -> size_t { return calc_hash(o.internal_value()) * 1013 + 5; },
-			[](const OwcaFloat& o) -> size_t { return calc_hash(o.internal_value()) * 1019 + 6; },
+			[](const OwcaInt& o) -> size_t { return calc_hash((OwcaFloatInternal)o.internal_value()) * 1013 + 5; },
+			[](const OwcaFloat& o) -> size_t { return calc_hash(o.internal_value()) * 1013 + 5; },
 			[](const OwcaBool& o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
-			[](const OwcaString& o) -> size_t { return calc_hash(o.internal_value()) * 1031 + 8; },
+			[](const OwcaString& o) -> size_t { return o.hash() * 1031 + 8; },
 			[](const OwcaFunctions& o) -> size_t { return calc_hash(o.name()) * 1033 + 9; },
 			[&](const OwcaMap& o) -> size_t {
 				throw_not_hashable(value.type());
@@ -1131,17 +1217,18 @@ function native hash(value);
 				};
 				return std::make_unique<RangeIterator>(lower, upper, step);
 			},
-			[](const OwcaString& o) -> std::unique_ptr<IteratorBase> {
+			[&](const OwcaString& o) -> std::unique_ptr<IteratorBase> {
 				struct StringIterator : public IteratorBase {
 					OwcaValue tmp;
-					std::string_view str;
+					OwcaString str;
+					VM &vm;
 					size_t pos = 0;
 
-					StringIterator(std::string_view str) : str(str) {}
+					StringIterator(OwcaString str, VM &vm) : str(str), vm(vm) {}
 
 					OwcaValue *get() override {
 						if (pos >= str.size()) return nullptr;
-						tmp = OwcaString{ std::string{ str.substr(pos, 1) } };
+						tmp = str.substr(pos, 1);
 						return &tmp;
 					}
 					void next() override {
@@ -1152,7 +1239,7 @@ function native hash(value);
 						return str.size() - pos;
 					}
 				};
-				return std::make_unique<StringIterator>(o.internal_value());
+				return std::make_unique<StringIterator>(o, *this);
 			},
 			[&](const OwcaMap& s) -> std::unique_ptr<IteratorBase> {
 				struct MapIterator : public IteratorBase {
@@ -1263,6 +1350,9 @@ function native hash(value);
 
 		auto ggc = GenerationGC{ ++generation_gc };
 		// mark
+		for(auto &s : small_strings) {
+			gc_mark(s.second, ggc);
+		}
 		for (auto& s : stacktrace) {
 			gc_mark(s.runtime_function, ggc);
 			gc_mark(s.runtime_functions, ggc);

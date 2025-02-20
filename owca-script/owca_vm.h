@@ -87,7 +87,12 @@ namespace OwcaScript {
 		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
 		OwcaValue create_map(const std::vector<OwcaValue> &values) const;
 		OwcaValue create_set(const std::vector<OwcaValue> &values) const;
-		void run_gc();
+		OwcaValue create_string(std::string) const;
+		OwcaValue create_string_from_view(std::string_view) const;
+		OwcaValue create_string(OwcaValue str, size_t start, size_t end) const;
+		OwcaValue create_string(OwcaValue str, size_t count) const;
+		OwcaValue create_string(OwcaValue left, OwcaValue right) const;
+	void run_gc();
 		void gc_mark(const OwcaValue&, GenerationGC);
 	};
 }

@@ -70,7 +70,26 @@ namespace OwcaScript {
 	{
 		return vm->create_set(std::move(values));
 	}
-
+	OwcaValue OwcaVM::create_string_from_view(std::string_view txt) const
+	{
+		return vm->create_string_from_view(txt);
+	}
+	OwcaValue OwcaVM::create_string(std::string txt) const
+	{
+		return vm->create_string(txt);
+	}
+	OwcaValue OwcaVM::create_string(OwcaValue str, size_t start, size_t end) const
+	{
+		return vm->create_string(str, start, end);
+	}
+	OwcaValue OwcaVM::create_string(OwcaValue str, size_t count) const
+	{
+		return vm->create_string(str, count);
+	}
+	OwcaValue OwcaVM::create_string(OwcaValue left, OwcaValue right) const
+	{
+		return vm->create_string(left, right);
+	}
 	void OwcaVM::run_gc() {
 		vm->run_gc();
 	}

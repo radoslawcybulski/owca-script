@@ -321,7 +321,7 @@ namespace OwcaScript::Internal {
 			return std::make_unique<AstExprIdentifier>(line, tok);
 		}
 		if (tok[0] == '\'' || tok[0] == '"') {
-			return std::make_unique<AstExprConstant>(line, OwcaString{ std::string{ tok.substr(1, tok.size() - 2) } });
+			return std::make_unique<AstExprConstant>(line, std::string{ tok.substr(1, tok.size() - 2) });
 		}
 		if (tok == "(") {
 			AllowRangeSet allow_range_set{ allow_range, true };

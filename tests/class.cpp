@@ -16,7 +16,7 @@ TEST_F(ClassTest, name)
 	return A.name();
 	)");
 		auto val = vm.execute(code);
-		ASSERT_EQ(val.as_string(vm).internal_value(), "A");
+		ASSERT_EQ(val.as_string(vm).text(), "A");
 	}
 	catch(OwcaVM::CompilationFailed &e) {
 		FAIL() << e.what();
@@ -32,6 +32,6 @@ class A {
 return A.full_name();
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_string(vm).internal_value(), "A");
+	ASSERT_EQ(val.as_string(vm).text(), "A");
 }
 

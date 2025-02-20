@@ -4,21 +4,26 @@
 #include "stdafx.h"
 
 namespace OwcaScript {
-	using OwcaStringInternal = std::string;
+	namespace Internal {
+		struct String;
+	}
 
+	class OwcaValue;
+	
 	class OwcaString {
-		OwcaStringInternal value;
+		Internal::String *str;
 
 	public:
-		OwcaString() = default;
-		OwcaString(OwcaStringInternal value) : value(std::move(value)) {}
+		OwcaString(Internal::String *str) : str(str) {}
 
-		const auto &internal_value() const { return value; }
-		explicit operator std::string_view() const { return value; }
+		auto internal_value() const { return str; }
+		std::string_view text() const;
+		explicit operator std::string_view() const { return text(); }
 
-		OwcaString substr(size_t from, size_t to) const;
-		OwcaString operator [] (size_t) const;
+		OwcaValue substr(size_t start, size_t end) const;
+		OwcaValue operator [] (size_t pos) const;
 		size_t size() const;
+		size_t hash() const;
 	};
 }
 
@@ -29,7 +34,7 @@ namespace std {
 		template <typename FormatContext>
 		auto format(OwcaScript::OwcaString v, FormatContext& ctx) const
 		{
-			return format_to(ctx.out(), "{}", v.internal_value);  
+			return format_to(ctx.out(), "{}", v.internal_value());  
 		}
 		template<class ParseContext>
 		constexpr ParseContext::iterator parse(ParseContext& ctx)

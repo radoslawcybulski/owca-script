@@ -28,7 +28,7 @@ namespace OwcaScript {
 			size_t native_storage_total = 0;
 			std::function<OwcaValue()> allocator_override;
 
-			std::string_view type() const override { return "class"; }
+			std::string_view type() const override { return "Class"; }
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
 

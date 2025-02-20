@@ -1,23 +1,32 @@
 #include "stdafx.h"
 #include "owca_string.h"
 #include "owca_value.h"
+#include "string.h"
+#include "vm.h"
 
 namespace OwcaScript {
-    OwcaString OwcaString::substr(size_t from, size_t to) const
+    OwcaValue OwcaString::substr(size_t start, size_t end) const
     {
-        if (to > value.size()) to = value.size();
-        if (from > to) return OwcaString{ "" };
-        return OwcaString{ value.substr(from, to - from) };
+        return str->vm->create_string(*this, start, end);
     }
 
-    OwcaString OwcaString::operator [] (size_t pos) const
+    OwcaValue OwcaString::operator [] (size_t pos) const
     {
-        assert(pos < value.size());
-        return OwcaString{ value.substr(pos, 1) };
+        return str->vm->create_string(*this, pos, 1);
     }
 
     size_t OwcaString::size() const
     {
-        return value.size();
+        return str->size();
+    }
+
+    size_t OwcaString::hash() const
+    {
+        return str->hash();
+    }
+
+    std::string_view OwcaString::text() const
+    {
+        return str->text();
     }
 }
