@@ -57,7 +57,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_impl(OwcaVM vm) const override
 		{
 			auto res = ImplExprScriptClass::execute_impl(vm);
-			auto cls = VM::get(vm).ensure_is_class(res);
+			auto cls = res.as_class(vm).internal_value();
 			auto native = cls->code->native_code_provider();
 			if (native) {
 				if (auto impl = native->native_class(full_name, ClassToken{ cls })) {

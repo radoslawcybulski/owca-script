@@ -310,9 +310,9 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaArray& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.object->values.size();
-					if (size != o.object->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.object->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					if (size != o.internal_value()->values.size()) {
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
@@ -330,7 +330,7 @@ namespace OwcaScript::Internal {
 						},
 						[&](OwcaRange k) -> OwcaValue {
 							auto [v1, v2] = verify_key(vm, k, size, orig_key, "array");
-							return VM::get(vm).create_array(o.object->sub_array(v1, v2));
+							return VM::get(vm).create_array(o.internal_value()->sub_array(v1, v2));
 						},
 						[&](const auto&) -> OwcaValue {
 							Internal::VM::get(vm).throw_wrong_type(std::format("can't index with {} value", key.type()));
@@ -338,9 +338,9 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaTuple& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.object->values.size();
-					if (size != o.object->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.object->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					if (size != o.internal_value()->values.size()) {
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
@@ -358,7 +358,7 @@ namespace OwcaScript::Internal {
 						},
 						[&](OwcaRange k) -> OwcaValue {
 							auto [v1, v2] = verify_key(vm, k, size, orig_key, "tuple");
-							return VM::get(vm).create_array(o.object->sub_array(v1, v2));
+							return VM::get(vm).create_array(o.internal_value()->sub_array(v1, v2));
 						},
 						[&](const auto&) -> OwcaValue {
 							Internal::VM::get(vm).throw_wrong_type(std::format("can't index with {} value", key.type()));
@@ -366,7 +366,7 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaMap& o) -> OwcaValue {
-					return o.dictionary->dict.read(key);
+					return o.internal_value()->dict.read(key);
 				},
 				[&](const auto&) -> OwcaValue {
 					Internal::VM::get(vm).throw_value_not_indexable(v.type());
@@ -387,13 +387,13 @@ namespace OwcaScript::Internal {
 
 			return v.visit(
 				[&](const OwcaMap& o) -> OwcaValue {
-					o.dictionary->dict.write(key, std::move(value));
+					o.internal_value()->dict.write(key, std::move(value));
 					return {};
 				},
 				[&](OwcaArray o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.object->values.size();
-					if (size != o.object->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.object->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					if (size != o.internal_value()->values.size()) {
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
@@ -407,19 +407,19 @@ namespace OwcaScript::Internal {
 							auto iter = VM::get(vm).create_iterator(value);
 							auto iter_size = iter->remaining_size();
 							if (v2 - v1 != iter_size) {
-								auto old = std::move(o.object->values);
-								o.object->values.resize(old.size() - (v2 - v1) + iter_size);
+								auto old = std::move(o.internal_value()->values);
+								o.internal_value()->values.resize(old.size() - (v2 - v1) + iter_size);
 								for(size_t i = 0u; i < v1; ++i) {
-									o.object->values[i] = std::move(old[i]);
+									o.internal_value()->values[i] = std::move(old[i]);
 								}
 								for(size_t i = v2; i < old.size(); ++i) {
-									o.object->values[i - (v2 - v1) + iter_size] = std::move(old[i]);
+									o.internal_value()->values[i - (v2 - v1) + iter_size] = std::move(old[i]);
 								}
 							}
 							for(size_t i = 0u; i < iter_size; ++i) {
 								auto v = iter->get();
 								assert(v);
-								o.object->values[v1 +  i] = std::move(*v);
+								o.internal_value()->values[v1 +  i] = std::move(*v);
 								iter->next();
 							}
 							return {};

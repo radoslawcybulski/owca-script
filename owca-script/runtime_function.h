@@ -11,6 +11,8 @@ namespace OwcaScript {
 		class CodeBuffer;
 
 		struct RuntimeFunction : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::RuntimeFunction;
+
 			struct ScriptFunction {
 				std::vector<OwcaValue> values_from_parents;
 				std::span<AstFunction::CopyFromParent> copy_from_parents;
@@ -23,13 +25,13 @@ namespace OwcaScript {
 			};
 			std::shared_ptr<CodeBuffer> code;
 			std::variant<ScriptFunction, NativeFunction> data;
-			std::string_view name;
+			std::string_view name, full_name;
 			Line fileline;
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, Line fileline, unsigned int param_count, bool is_method) :
-				code(std::move(code)), name(name), fileline(fileline), param_count(param_count), is_method(is_method) {}
+			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method) :
+				code(std::move(code)), name(name), full_name(full_name), fileline(fileline), param_count(param_count), is_method(is_method) {}
 
 			template <typename ... F> auto visit(F &&...fns) {
 				struct overloaded : F... {
@@ -50,10 +52,12 @@ namespace OwcaScript {
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
-			std::unordered_map<unsigned int, RuntimeFunction*> functions;
-			std::string_view name;
+			static constexpr const Kind object_kind = Kind::RuntimeFunctions;
 
-			RuntimeFunctions(std::string_view name) : name(name) {}
+			std::unordered_map<unsigned int, RuntimeFunction*> functions;
+			std::string_view name, full_name;
+
+			RuntimeFunctions(std::string_view name, std::string_view full_name) : name(name), full_name(full_name) {}
 
 			std::string_view type() const override;
 			std::string to_string() const override;
@@ -61,6 +65,8 @@ namespace OwcaScript {
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::BoundSelfObject;
+
 			OwcaValue self;
 
 			BoundFunctionSelfObject(OwcaValue self) : self(std::move(self)) {}

@@ -17,6 +17,7 @@ namespace OwcaScript {
 		OwcaString(Internal::String *str) : str(str) {}
 
 		auto internal_value() const { return str; }
+
 		std::string_view text() const;
 		explicit operator std::string_view() const { return text(); }
 

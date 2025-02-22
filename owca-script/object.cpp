@@ -52,14 +52,14 @@ namespace OwcaScript::Internal {
 
 	void Class::initialize_add_base_class(OwcaVM vm, const OwcaValue &b)
 	{
-		auto c = VM::get(vm).ensure_is_class(b);
+		auto c = b.as_class(vm).internal_value();
 		base_classes.push_back(c);
 	}
 	void Class::initialize_add_function(OwcaVM vm, const OwcaValue &f)
 	{
 		auto fnc = f.as_functions(vm);
-		assert(fnc.functions->functions.size() == 1);
-		for (auto it2 : fnc.functions->functions) {
+		assert(fnc.internal_value()->functions.size() == 1);
+		for (auto it2 : fnc.internal_value()->functions) {
 			runtime_functions.push_back(it2.second);
 		}
 	}
@@ -87,11 +87,11 @@ namespace OwcaScript::Internal {
 
 				auto it = values.insert({ std::string{ name }, {} });
 				if (it.second || it.first->second.kind() != OwcaValueKind::Functions) {
-					auto rf = VM::get(vm).allocate<RuntimeFunctions>(0, name);
+					auto rf = VM::get(vm).allocate<RuntimeFunctions>(0, name, f->full_name);
 					it.first->second = OwcaFunctions{ rf };
 				}
 				auto dst_fnc = it.first->second.as_functions(vm);
-				dst_fnc.functions->functions[f->param_count] = f;
+				dst_fnc.internal_value()->functions[f->param_count] = f;
 			}
 		}
 	}

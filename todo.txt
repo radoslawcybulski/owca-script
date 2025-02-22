@@ -1,6 +1,4 @@
 exceptions
 OwcaVariable so user could keep OwcaValue values and not get crashed by gc.
-optimize self pointer in function object (ie non object that is vm' allocated should fit into self_object as well)
-	- add OwcaValueKind into allocated object to resolve object' ambiguity?
 range step
 	- do we need it?

@@ -8,21 +8,15 @@ namespace OwcaScript {
 
     namespace Internal {
         struct Array;
-        class VM;
-        class ImplExprIndexRead;
-        class ImplExprCompare;
     }
 	class OwcaTuple {
-        friend class Internal::VM;
-        friend class OwcaValue;
-        friend class Internal::ImplExprIndexRead;
-        friend class Internal::ImplExprCompare;
-
 		Internal::Array *object;
 
 	public:
         OwcaTuple(Internal::Array *object) : object(object) {}
-    
+		
+		auto internal_value() const { return object; }
+
         size_t size() const;
         OwcaValue operator [] (size_t) const;
 

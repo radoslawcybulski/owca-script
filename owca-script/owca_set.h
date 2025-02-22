@@ -4,27 +4,21 @@
 #include "stdafx.h"
 
 namespace OwcaScript {
+	class OwcaValue;
+	
 	namespace Internal {
-		class VM;
-		class ImplExprIndexRead;
-		class ImplExprIndexWrite;
 		struct DictionaryShared;
-		class ImplExprCompare;
 	}
 
 	class OwcaSet {
-		friend class Internal::VM;
-		friend class Internal::ImplExprIndexRead;
-		friend class Internal::ImplExprIndexWrite;
-		friend class Internal::ImplExprCompare;
-        friend class OwcaValue;
-
 		Internal::DictionaryShared *dictionary;
 
-		OwcaSet(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
 	public:
+		OwcaSet(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
 		~OwcaSet() = default;
 
+		auto internal_value() const { return dictionary; }
+		
 		std::string to_string() const;
 		size_t size() const;
 

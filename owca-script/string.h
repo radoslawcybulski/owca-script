@@ -10,6 +10,8 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct String : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::String;
+
 			static constexpr const unsigned int max_depth = 4;
 
 			struct Substr {

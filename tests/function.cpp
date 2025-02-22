@@ -21,7 +21,7 @@ class A {
 
 a = A(4);
 b = a.foo;
-c = b.bound_value().v;
+c = bound_value(b).v;
 return c;
 )");
 	auto val = vm.execute(code);

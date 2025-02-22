@@ -9,6 +9,8 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Array : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::Array;
+
             using AllocationBase::AllocationBase;
 
             std::vector<OwcaValue> values;

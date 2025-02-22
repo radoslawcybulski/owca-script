@@ -118,19 +118,19 @@ namespace OwcaScript::Internal {
 			return build_result(kind, l.lower().internal_value() == r.lower().internal_value() && l.upper().internal_value());
 		}
 		static Result compare_split(OwcaVM, AstExprCompare::Kind kind, const OwcaFunctions& l, const OwcaFunctions& r) {
-			return build_result(kind, l.functions == r.functions && l.self_object == r.self_object);
+			return build_result(kind, l.internal_value() == r.internal_value() && l.internal_self_object() == r.internal_self_object());
 		}
 		static Result compare_split(OwcaVM, AstExprCompare::Kind kind, const OwcaClass& l, const OwcaClass& r) {
-			return build_result(kind, l.object == r.object);
+			return build_result(kind, l.internal_value() == r.internal_value());
 		}
 		static Result compare_split(OwcaVM, AstExprCompare::Kind kind, const OwcaObject& l, const OwcaObject& r) {
-			return build_result(kind, l.object == r.object);
+			return build_result(kind, l.internal_value() == r.internal_value());
 		}
 		static Result compare_split(OwcaVM vm, AstExprCompare::Kind kind, const OwcaArray& l, const OwcaArray& r) {
-			return compare_array_iter(vm, kind, l.object->values, r.object->values);
+			return compare_array_iter(vm, kind, l.internal_value()->values, r.internal_value()->values);
 		}
 		static Result compare_split(OwcaVM vm, AstExprCompare::Kind kind, const OwcaTuple& l, const OwcaTuple& r) {
-			return compare_array_iter(vm, kind, l.object->values, r.object->values);
+			return compare_array_iter(vm, kind, l.internal_value()->values, r.internal_value()->values);
 		}
 		static Result compare_split(OwcaVM vm, AstExprCompare::Kind kind, const OwcaMap& l, const OwcaMap& r) {
 			switch (kind) {
@@ -225,22 +225,22 @@ namespace OwcaScript::Internal {
 						if (compare(vm, AstExprCompare::Kind::Eq, left, right) == Result::True) continue;
 						break;
 					case OwcaValueKind::Functions:
-						if (left.as_functions(vm).functions == right.as_functions(vm).functions) continue;
+						if (left.as_functions(vm).internal_value() == right.as_functions(vm).internal_value() && left.as_functions(vm).internal_self_object() == right.as_functions(vm).internal_self_object()) continue;
 						break;
 					case OwcaValueKind::Map:
-						if (left.as_map(vm).dictionary == right.as_map(vm).dictionary) continue;
+						if (left.as_map(vm).internal_value() == right.as_map(vm).internal_value()) continue;
 						break;
 					case OwcaValueKind::Class:
-						if (left.as_class(vm).object == right.as_class(vm).object) continue;
+						if (left.as_class(vm).internal_value() == right.as_class(vm).internal_value()) continue;
 						break;
 					case OwcaValueKind::Object:
-						if (left.as_object(vm).object == right.as_object(vm).object) continue;
+						if (left.as_object(vm).internal_value() == right.as_object(vm).internal_value()) continue;
 						break;
 					case OwcaValueKind::Array:
-						if (left.as_array(vm).object == right.as_array(vm).object) continue;
+						if (left.as_array(vm).internal_value() == right.as_array(vm).internal_value()) continue;
 						break;
 					case OwcaValueKind::Tuple:
-						if (left.as_tuple(vm).object == right.as_tuple(vm).object) continue;
+						if (left.as_tuple(vm).internal_value() == right.as_tuple(vm).internal_value()) continue;
 						break;
 					}
 					return OwcaBool{ false };

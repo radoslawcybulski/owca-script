@@ -18,7 +18,7 @@ namespace OwcaScript::Internal {
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
-		empty_tuple = create_tuple({}).as_tuple(vm).object;
+		empty_tuple = create_tuple({}).as_tuple(vm).internal_value();
 	}
 	VM::~VM() {
 		stacktrace.clear();
@@ -230,15 +230,11 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue function_bind(OwcaVM vm, const OwcaValue &r, const OwcaValue &bind) {
 			auto f = r.as_functions(vm);
-			return VM::get(vm).bind_function(f, bind);
+			return f.bind(bind);
 		}
 		static OwcaValue function_bound_value(OwcaVM vm, const OwcaValue &r) {
 			auto f = r.as_functions(vm);
-			auto bound = f.self_object->is_bound_function_self_object();
-			if (bound) {
-				return bound->self;
-			}
-			return OwcaObject{ static_cast<Object*>(f.self_object) };
+			return f.self();
 		}
 		static OwcaValue map_size(OwcaVM vm, const OwcaMap &r) {
 			auto v = r.size();
@@ -255,37 +251,37 @@ namespace OwcaScript::Internal {
 			return OwcaInt{ v2 };
 		}
 		static OwcaValue class_name(OwcaVM vm, const OwcaValue &r) {
-			return vm.create_string_from_view(r.as_class(vm).object->name);
+			return vm.create_string_from_view(r.as_class(vm).internal_value()->name);
 		}
 		static OwcaValue class_full_name(OwcaVM vm, const OwcaValue &r) {
-			return vm.create_string_from_view(r.as_class(vm).object->full_name);
+			return vm.create_string_from_view(r.as_class(vm).internal_value()->full_name);
 		}
 		static OwcaValue array_init(OwcaVM vm, const OwcaArray &self, const OwcaValue &r) {
 			r.visit(
 				[&](OwcaArray o) {
-					self.object->values = o.object->values;
+					self.internal_value()->values = o.internal_value()->values;
 				},
 				[&](OwcaTuple o) {
-					self.object->values = o.object->values;
+					self.internal_value()->values = o.internal_value()->values;
 				},
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
-						self.object->values.push_back(
+						self.internal_value()->values.push_back(
 							VM::get(vm).create_tuple({ val.first, val.second })
 						);
 					}
 				},
 				[&](OwcaSet o) {
 					for(const auto &val : o) {
-						self.object->values.push_back(val);
+						self.internal_value()->values.push_back(val);
 					} 
 				},
 				[&](OwcaString o) {
-					self.object->values.reserve(o.internal_value()->size());
+					self.internal_value()->values.reserve(o.internal_value()->size());
 					o.internal_value()->iterate_over_content(
 						[&](std::string_view txt) {
 							for(auto q : txt) {
-								self.object->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
+								self.internal_value()->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
 							}
 						}
 					);
@@ -297,7 +293,7 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 		static OwcaValue array_size(OwcaVM vm, const OwcaArray &self) {
-			auto v = self.object->values.size();
+			auto v = self.internal_value()->values.size();
 			auto v2 = (OwcaIntInternal)v;
 			if (v2 != v)
 				VM::get(vm).throw_overflow(std::format("array size {} doesn't fit integer", v));
@@ -306,29 +302,29 @@ namespace OwcaScript::Internal {
 		static OwcaValue tuple_init(OwcaVM vm, const OwcaArray &self, const OwcaValue &r) {
 			r.visit(
 				[&](OwcaArray o) {
-					self.object->values = o.object->values;
+					self.internal_value()->values = o.internal_value()->values;
 				},
 				[&](OwcaTuple o) {
-					self.object->values = o.object->values;
+					self.internal_value()->values = o.internal_value()->values;
 				},
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
-						self.object->values.push_back(
+						self.internal_value()->values.push_back(
 							VM::get(vm).create_tuple({ val.first, val.second })
 						);
 					} 
 				},
 				[&](OwcaSet o) {
 					for(const auto &val : o) {
-						self.object->values.push_back(val);
+						self.internal_value()->values.push_back(val);
 					}
 				},
 				[&](OwcaString o) {
-					self.object->values.reserve(o.internal_value()->size());
+					self.internal_value()->values.reserve(o.internal_value()->size());
 					o.internal_value()->iterate_over_content(
 						[&](std::string_view txt) {
 							for(auto q : txt) {
-								self.object->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
+								self.internal_value()->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
 							}
 						}
 					);
@@ -340,7 +336,7 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 		static OwcaValue tuple_size(OwcaVM vm, const OwcaArray &self) {
-			auto v = self.object->values.size();
+			auto v = self.internal_value()->values.size();
 			auto v2 = (OwcaIntInternal)v;
 			if (v2 != v)
 				VM::get(vm).throw_overflow(std::format("tuple size {} doesn't fit integer", v));
@@ -370,7 +366,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Float.__init__") return adapt(float_init);
 			if (full_name == "String.__init__") return adapt(string_init);
 			if (full_name == "String.size") return adapt(string_size);
-			if (full_name == "Function.bound_value") return adapt(function_bound_value);
+			if (full_name == "bound_value") return adapt(function_bound_value);
 			if (full_name == "Function.bind") return adapt(function_bind);
 			if (full_name == "Map.size") return adapt(map_size);
 			if (full_name == "Set.size") return adapt(set_size);
@@ -412,9 +408,9 @@ class String {
 	function native size(self);
 }
 class Function {
-	function native bound_value(self);
 	function native bind(self, value);
 }
+function native bound_value(func);
 class Map {
 	function native size(self);
 }
@@ -441,7 +437,7 @@ function native hash(value);
 		vm.execute(std::move(code_compiled), {}, &builtin_dictionary);
 
 		auto read = [&](const OwcaValue &val) -> Class*{
-			return ensure_is_class(val);
+			return val.as_class(vm).internal_value();
 		};
 		auto dct = builtin_dictionary.as_map(vm);
 		for(auto value_pair : dct) {
@@ -680,7 +676,7 @@ function native hash(value);
 			if (it == cls->values.end()) return nullptr;
 			return &it->second;
 		};
-		bool bind_if_needed = false;
+		bool bind_if_needed = true;
 		auto v = val.visit(
 			[&](const OwcaEmpty& o) -> OwcaValue* { return read_member(c_nul); },
 			[&](const OwcaRange& o) -> OwcaValue* { return read_member(c_range); },
@@ -692,14 +688,14 @@ function native hash(value);
 			[&](const OwcaMap& o) -> OwcaValue* { return read_member(c_map); },
 			[&](const OwcaClass& o) -> OwcaValue* { return read_member(c_class); },
 			[&](const OwcaObject& o) -> OwcaValue* {
-				auto it = o.object->values.find(key);
-				if (it != o.object->values.end()) {
+				auto it = o.internal_value()->values.find(key);
+				if (it != o.internal_value()->values.end()) {
+					bind_if_needed = false;
 					return &it->second;
 				}
 
-				it = o.object->type_->values.find(key);
-				if (it != o.object->type_->values.end()) {
-					bind_if_needed = true;
+				it = o.internal_value()->type_->values.find(key);
+				if (it != o.internal_value()->type_->values.end()) {
 					return &it->second;
 				}
 
@@ -710,10 +706,10 @@ function native hash(value);
 			[&](const OwcaSet& o) -> OwcaValue* { return read_member(c_set); }
 		);
 
-		if (v && v->kind() == OwcaValueKind::Functions) {
+		if (v && v->kind() == OwcaValueKind::Functions && bind_if_needed) {
 			auto f = v->as_functions(vm);
-			if (f.self_object == nullptr)
-				return bind_function(f, val);
+			if (!f.internal_self_object())
+				return f.bind(val);
 		}
 
 		if (!v) return std::nullopt;
@@ -721,23 +717,11 @@ function native hash(value);
 		return *v;
 	}
 
-	OwcaFunctions VM::bind_function(OwcaFunctions src, const OwcaValue &val)
-	{
-		auto vm = OwcaVM{ this };
-		if (val.kind() == OwcaValueKind::Object) {
-			return OwcaFunctions{ src.functions, val.as_object(vm).object };
-		}
-		else {
-			auto bound = allocate<BoundFunctionSelfObject>(0, val);
-			return OwcaFunctions{ src.functions, bound };
-		}
-	}
-
 	void VM::member(const OwcaValue& val, const std::string& key, OwcaValue value)
 	{
 		val.visit(
 			[&](const OwcaObject &o) {
-				o.object->values[key] = std::move(value);
+				o.internal_value()->values[key] = std::move(value);
 			},
 			[&](const auto &) {
 				throw_value_cant_have_fields(val.type());
@@ -817,14 +801,14 @@ function native hash(value);
 			stacktrace.push_back({ oc.code_->root()->line });
 			auto pop_stack = PopStack{ this };
 			RuntimeFunction::ScriptFunction sf;
-			RuntimeFunction rt_temp{ oc.code_, "", Line{0}, 0, false};
+			RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
 			rt_temp.data = std::move(sf);
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute(vm);
 		}
 		assert(val.kind() == OwcaValueKind::Functions);
 		auto functions = val.as_functions(vm);
-		auto pop_stack = prepare_exec(functions.functions, 0, false);
+		auto pop_stack = prepare_exec(functions.internal_value(), 0, false);
 		auto& s = stacktrace.back();
 		s.runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
@@ -898,19 +882,13 @@ function native hash(value);
 		return func.visit(
 			[&](const OwcaFunctions& of) -> OwcaValue {
 				auto vm = OwcaVM{ this };
-				auto runtime_functions = func.as_functions(vm).functions;
-				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self_object != nullptr);
+				auto runtime_functions = func.as_functions(vm).internal_value();
+				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.internal_self_object() != nullptr);
 				auto& s = stacktrace.back();
 				bool self = s.runtime_function->is_method;
 				if (self) {
-					if (of.self_object) {
-						auto self_object_helper = of.self_object->is_bound_function_self_object();
-						if (self_object_helper) {
-							s.values[0] = self_object_helper->self;
-						}
-						else {
-							s.values[0] = OwcaObject{ static_cast<Object*>(of.self_object) };
-						}
+					if (of.internal_self_object()) {
+						s.values[0] = of.self();
 					}
 					else {
 						throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));
@@ -924,7 +902,7 @@ function native hash(value);
 			},
 			[&](const OwcaClass& oc) -> OwcaValue {
 				auto vm = OwcaVM{ this };
-				auto cls = func.as_class(vm).object;
+				auto cls = func.as_class(vm).internal_value();
 
 				OwcaValue obj;
 				
@@ -943,12 +921,12 @@ function native hash(value);
 				}
 				else {
 					auto of = it->second.as_functions(vm);
-					auto it2 = of.functions->functions.find((unsigned int)(1 + arguments.size()));
-					if (it2 == of.functions->functions.end()) {
+					auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
+					if (it2 == of.internal_value()->functions.end()) {
 						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
 					}
 					else {
-						auto of2 = bind_function(of.functions, obj);
+						auto of2 = of.bind(obj);
 						execute_call(of2, arguments);
 					}
 				}
@@ -1097,12 +1075,12 @@ function native hash(value);
 			assert(value.kind() == OwcaValueKind::Functions);
 			auto vm = OwcaVM{ this };
 			auto fnc = value.as_functions(vm);
-			assert(fnc.functions->functions.size() == 1);
+			assert(fnc.internal_value()->functions.size() == 1);
 			auto &dst = s.values[index];
 			if (dst.kind() == OwcaValueKind::Functions) {
 				auto dst_fnc = dst.as_functions(vm);
-				for(auto it : fnc.functions->functions) {
-					dst_fnc.functions->functions[it.first] = it.second;
+				for(auto it : fnc.internal_value()->functions) {
+					dst_fnc.internal_value()->functions[it.first] = it.second;
 				}
 				return;
 			}
@@ -1120,18 +1098,6 @@ function native hash(value);
 		return AstExprCompare::compare_equal(vm, left, right);
 	}
 	
-	Class* VM::ensure_is_class(const OwcaValue&v)
-	{
-		auto vm = OwcaVM{ this };
-		return v.as_class(vm).object;
-	}
-
-	Object* VM::ensure_is_object(const OwcaValue&v)
-	{
-		auto vm = OwcaVM{ this };
-		return v.as_object(vm).object;
-	}
-
 	bool VM::calculate_if_true(const OwcaValue &r) {
 		return r.visit(
 			[&](OwcaEmpty value) -> bool {
@@ -1194,7 +1160,7 @@ function native hash(value);
 				throw_not_hashable(value.type());
 			},
 			[&](const OwcaClass& o) -> size_t {
-				return std::hash<void*>()(o.object) * 1009;
+				return std::hash<void*>()(o.internal_value()) * 1009;
 			},
 			[&](const OwcaObject& o) -> size_t {
 				throw_not_hashable(value.type());
@@ -1203,7 +1169,7 @@ function native hash(value);
 				throw_not_hashable(value.type());
 			},
 			[&](const OwcaTuple &o) -> size_t {
-				return o.object->hash();
+				return o.internal_value()->hash();
 			},
 			[&](const OwcaSet &o) -> size_t {
 				throw_not_hashable(value.type());
@@ -1300,15 +1266,15 @@ function native hash(value);
 					ArrayIterator(OwcaArray s) : s(s) {}
 
 					OwcaValue *get() override {
-						if (pos < s.object->values.size()) return &s.object->values[pos];
+						if (pos < s.internal_value()->values.size()) return &s.internal_value()->values[pos];
 						return nullptr;
 					}
 					void next() override {
-						if (pos < s.object->values.size())
+						if (pos < s.internal_value()->values.size())
 							++pos;
 					}
 					size_t remaining_size() override {
-						return s.object->values.size() - pos;
+						return s.internal_value()->values.size() - pos;
 					}
 				};
 				return std::make_unique<ArrayIterator>(s);
@@ -1321,15 +1287,15 @@ function native hash(value);
 					TupleIterator(OwcaTuple s) : s(s) {}
 
 					OwcaValue *get() override {
-						if (pos < s.object->values.size()) return &s.object->values[pos];
+						if (pos < s.internal_value()->values.size()) return &s.internal_value()->values[pos];
 						return nullptr;
 					}
 					void next() override {
-						if (pos < s.object->values.size())
+						if (pos < s.internal_value()->values.size())
 							++pos;
 					}
 					size_t remaining_size() override {
-						return s.object->values.size() - pos;
+						return s.internal_value()->values.size() - pos;
 					}
 				};
 				return std::make_unique<TupleIterator>(s);
@@ -1420,27 +1386,27 @@ function native hash(value);
 			[](const OwcaBool& o) { },
 			[](const OwcaString& o) { },
 			[&](const OwcaFunctions& s) {
-				gc_mark(s.functions, ggc);
-				if (s.self_object)
-					gc_mark(s.self_object, ggc);
+				gc_mark(s.internal_value(), ggc);
+				if (s.internal_self_object())
+					gc_mark(s.internal_self_object(), ggc);
 			},
 			[&](const OwcaMap& s) {
-				gc_mark(s.dictionary, ggc);
+				gc_mark(s.internal_value(), ggc);
 			},
 			[&](const OwcaClass& s) {
-				gc_mark(s.object, ggc);
+				gc_mark(s.internal_value(), ggc);
 			},
 			[&](const OwcaObject& s) {
-				gc_mark(s.object, ggc);
+				gc_mark(s.internal_value(), ggc);
 			},
 			[&](const OwcaArray& s) {
-				gc_mark(s.object->values, ggc);
+				gc_mark(s.internal_value()->values, ggc);
 			},
 			[&](const OwcaTuple& s) {
-				gc_mark(s.object->values, ggc);
+				gc_mark(s.internal_value()->values, ggc);
 			},
 			[&](const OwcaSet& s) {
-				gc_mark(s.dictionary, ggc);
+				gc_mark(s.internal_value(), ggc);
 			}
 			);
 	}

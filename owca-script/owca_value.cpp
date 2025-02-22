@@ -52,10 +52,10 @@ namespace OwcaScript {
 			[](const OwcaMap &o) { return o.size() != 0; },
 			[](const OwcaClass &o) { return true; },
 			[&](const OwcaObject &o) {
-				return o.object->vm->calculate_if_true(*this);
+				return o.internal_value()->vm->calculate_if_true(*this);
 			},
-			[](const OwcaArray &o) { return !o.object->values.empty(); },
-			[](const OwcaTuple &o) { return !o.object->values.empty(); },
+			[](const OwcaArray &o) { return !o.internal_value()->values.empty(); },
+			[](const OwcaTuple &o) { return !o.internal_value()->values.empty(); },
 			[](const OwcaSet &o) { return o.size() != 0; }
 		);
 	}
@@ -142,19 +142,19 @@ namespace OwcaScript {
 	std::string_view OwcaValue::type() const
 	{
 		return visit(
-			[](const OwcaEmpty&) -> std::string_view { return "nul"; },
-			[](const OwcaRange&) -> std::string_view { return "range"; },
-			[](const OwcaInt&) -> std::string_view { return "integer"; },
-			[](const OwcaFloat&) -> std::string_view { return "floating point number"; },
-			[](const OwcaBool&) -> std::string_view { return "bool"; },
-			[](const OwcaString&) -> std::string_view { return "string"; },
-			[](const OwcaFunctions &o) -> std::string_view { return o.functions->type(); },
-			[](const OwcaMap &o) -> std::string_view { return o.dictionary->type(); },
+			[](const OwcaEmpty&) -> std::string_view { return "Nul"; },
+			[](const OwcaRange&) -> std::string_view { return "Range"; },
+			[](const OwcaInt&) -> std::string_view { return "Integer"; },
+			[](const OwcaFloat&) -> std::string_view { return "Float"; },
+			[](const OwcaBool&) -> std::string_view { return "Bool"; },
+			[](const OwcaString&) -> std::string_view { return "String"; },
+			[](const OwcaFunctions &o) -> std::string_view { return "Function"; },
+			[](const OwcaMap &o) -> std::string_view { return "Map"; },
 			[](const OwcaClass &o) -> std::string_view { return "Class"; },
-			[](const OwcaObject &o) -> std::string_view { return o.object->type(); },
-			[](const OwcaArray &o) -> std::string_view { return o.object->type(); },
-			[](const OwcaTuple &o) -> std::string_view { return o.object->type(); },
-			[](const OwcaSet &o) -> std::string_view { return o.dictionary->type(); }
+			[](const OwcaObject &o) -> std::string_view { return o.internal_value()->type(); },
+			[](const OwcaArray &o) -> std::string_view { return "Array"; },
+			[](const OwcaTuple &o) -> std::string_view { return "Tuple"; },
+			[](const OwcaSet &o) -> std::string_view { return "Set"; }
 			);
 	}
 
@@ -167,7 +167,7 @@ namespace OwcaScript {
 			[](const OwcaFloat &o) -> std::string { return std::to_string(o.internal_value()); },
 			[](const OwcaBool &o) -> std::string { return o.internal_value() ? "true" : "false"; },
 			[](const OwcaString &o) -> std::string { return o.internal_value()->to_string(); },
-			[](const OwcaFunctions &o) -> std::string { return o.functions->to_string(); },
+			[](const OwcaFunctions &o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },
 			[](const OwcaMap &o) -> std::string { return o.to_string(); },
 			[](const OwcaClass &o) -> std::string { return o.to_string(); },
 			[](const OwcaObject &o) -> std::string { return o.to_string(); },

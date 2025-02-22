@@ -8,23 +8,15 @@ namespace OwcaScript {
 
     namespace Internal {
         struct Array;
-        class VM;
-        class ImplExprIndexRead;
-        class ImplExprIndexWrite;
-        class ImplExprCompare;
     }
 	class OwcaArray {
-        friend class Internal::VM;
-        friend class OwcaValue;
-        friend class Internal::ImplExprIndexRead;
-        friend class Internal::ImplExprIndexWrite;
-        friend class Internal::ImplExprCompare;
-
 		Internal::Array *object;
 
 	public:
         OwcaArray(Internal::Array *object) : object(object) {}
         
+		auto internal_value() const { return object; }
+
         size_t size() const;
         void resize(size_t);
         void reserve(size_t);

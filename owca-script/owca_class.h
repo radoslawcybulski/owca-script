@@ -9,15 +9,9 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Class;
-		class VM;
-		class ImplExprCompare;
 	}
 
 	class OwcaClass {
-		friend class OwcaValue;
-		friend class Internal::VM;
-		friend class Internal::ImplExprCompare;
-
 		Internal::Class* object;
 
 	public:
@@ -31,6 +25,8 @@ namespace OwcaScript {
 		};
 
 		explicit OwcaClass(Internal::Class* object) : object(object) {}
+
+		auto internal_value() const { return object; }
 
 		std::string to_string() const;
 		std::string_view type() const { return "class"; }

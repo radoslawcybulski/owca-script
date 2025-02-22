@@ -123,12 +123,9 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue str, size_t count);
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue get_identifier(unsigned int index);
-			Class* ensure_is_class(const OwcaValue&);
-			Object* ensure_is_object(const OwcaValue&);
 			OwcaValue member(const OwcaValue &val, const std::string& key);
 			std::optional<OwcaValue> try_member(const OwcaValue &val, const std::string& key);
 			void member(const OwcaValue &val, const std::string& key, OwcaValue);
-			OwcaFunctions bind_function(OwcaFunctions src, const OwcaValue &);
 
 			bool compare_values(const OwcaValue& left, const OwcaValue& right);
 			size_t calculate_hash(const OwcaValue&);
@@ -149,6 +146,7 @@ namespace OwcaScript {
 				p2->next = &root_allocated_memory;
 				p2->prev->next = p2->next->prev = p2;
 				p2->vm = this;
+				p2->kind = T::object_kind;
 				allocated_objects.push_back(p2);
 				return p2;
 			}

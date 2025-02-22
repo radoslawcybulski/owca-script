@@ -40,9 +40,9 @@ namespace OwcaScript::Internal {
 			for (auto c : copy_from_parents) {
 				sf.values_from_parents.push_back(VM::get(vm).get_identifier(c.index_in_parent));
 			}
-			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, line, param_count, !identifier_names.empty() && identifier_names[0] == "self");
+			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, full_name, line, param_count, !identifier_names.empty() && identifier_names[0] == "self");
 			rf->data = std::move(std::move(sf));
-			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name);
+			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
 			rfs->functions[rf->param_count] = rf;
 			auto of = OwcaFunctions{ rfs };
 
@@ -67,7 +67,7 @@ namespace OwcaScript::Internal {
 		{
 			auto code = VM::get(vm).currently_running_code();
 			assert(code);
-			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
+			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, full_name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
 
 			RuntimeFunction::NativeFunction nf;
 			nf.parameter_names = parameter_names;
@@ -82,7 +82,7 @@ namespace OwcaScript::Internal {
 			}
 
 			rf->data = std::move(nf);
-			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name);
+			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
 			rfs->functions[rf->param_count] = rf;
 			auto of = OwcaFunctions{ rfs };
 

@@ -12,6 +12,18 @@ namespace OwcaScript {
 		struct BoundFunctionSelfObject;
 
 		struct AllocationBase {
+			enum class Kind {
+				User,
+				String,
+				RuntimeFunction,
+				RuntimeFunctions,
+				Map,
+				Class,
+				Tuple,
+				Array,
+				Set,
+				BoundSelfObject,
+			};
 #ifdef _DEBUG
 			AllocationBase();
 			virtual ~AllocationBase();
@@ -28,6 +40,7 @@ namespace OwcaScript {
 			AllocationBase* prev = nullptr, * next = nullptr;
 			VM *vm = nullptr;
 			GenerationGC last_gc_mark = GenerationGC{ 0 };
+			Kind kind;
 
 			virtual std::string_view type() const = 0;
 			virtual std::string to_string() const = 0;
@@ -36,7 +49,10 @@ namespace OwcaScript {
 
 			static unsigned int get_currently_remaining_allocations();
 		};
+
 		struct AllocationEmpty : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::User;
+
 			friend class VM;
 
 			std::string_view type() const override { return ""; }

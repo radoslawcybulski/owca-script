@@ -11,20 +11,16 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Object;
-		class VM;
-		class ImplExprCompare;
 	}
 	class OwcaObject {
-		friend class OwcaValue;
-		friend class Internal::VM;
-		friend class Internal::ImplExprCompare;
-
 		Internal::Object* object;
 
 		std::span<char> user_data_impl(ClassToken) const;
 	public:
 		explicit OwcaObject(Internal::Object* object) : object(object) {}
 
+		auto internal_value() const { return object; }
+		
 		std::string to_string() const;
 		std::string_view type() const;
 

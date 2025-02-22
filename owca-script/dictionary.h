@@ -38,6 +38,8 @@ namespace OwcaScript {
 		};
 
 		struct DictionaryShared : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::Map;
+
 			Dictionary dict;
 
 			DictionaryShared(OwcaVM vm, bool is_map) : dict(vm, is_map) {}
