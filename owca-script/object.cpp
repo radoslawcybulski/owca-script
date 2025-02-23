@@ -8,7 +8,24 @@ namespace OwcaScript::Internal {
 	Class::Class(Line line, std::string_view name, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
 		base_classes.reserve(base_class_count);
 	}
-	Object::Object(Class* type) : type_(type) {}
+	Object::Object(Class* type) : type_(type) {
+		for (auto it : type_->native_storage_pointers) {
+			auto p = type_->native_storage_ptr(this) + it.second.first;
+			auto size = it.second.second;
+			auto cls = it.first;
+			assert(cls->native);
+			cls->native->initialize_storage(p, size);
+		}
+	}
+	Object::~Object() {
+		for (auto it : type_->native_storage_pointers) {
+			auto p = type_->native_storage_ptr(this) + it.second.first;
+			auto size = it.second.second;
+			auto cls = it.first;
+			assert(cls->native);
+			cls->native->destroy_storage(p, size);
+		}
+	}
 
 	std::string Class::to_string() const
 	{ 
@@ -33,21 +50,6 @@ namespace OwcaScript::Internal {
 	char* Class::native_storage_ptr(Object *o) const
 	{
 		return (char*)o + sizeof(*o);
-	}
-
-	Object* Class::allocate(OwcaVM vm)
-	{
-		auto o = VM::get(vm).allocate<Object>(native_storage_total, this);
-
-		for (auto it : native_storage_pointers) {
-			auto p = native_storage_ptr(o) + it.second.first;
-			auto size = it.second.second;
-			auto cls = it.first;
-			assert(cls->native);
-			cls->native->initialize_storage(p, size);
-		}
-
-		return o;
 	}
 
 	void Class::initialize_add_base_class(OwcaVM vm, const OwcaValue &b)

@@ -68,7 +68,7 @@ namespace OwcaScript::Internal {
 				}
 			}
 			if (!cls->native) {
-				VM::get(vm).throw_missing_native(std::format("missing native function {}", full_name));
+				VM::get(vm).throw_missing_native(std::format("missing native class {}", full_name));
 			}
 
 			return res;

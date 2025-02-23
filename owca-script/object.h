@@ -34,7 +34,6 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
 
-			Object* allocate(OwcaVM);
 			void initialize_add_base_class(OwcaVM vm, const OwcaValue &b);
 			void initialize_add_function(OwcaVM vm, const OwcaValue &f);
 			void finalize_initializing(OwcaVM vm);
@@ -50,6 +49,7 @@ namespace OwcaScript {
 			Class* type_;
 
 			Object(Class* type);
+			~Object();
 
 			std::string_view type() const override;
 			std::string to_string() const override;

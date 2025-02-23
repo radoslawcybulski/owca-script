@@ -9,7 +9,7 @@
 namespace OwcaScript {
 	class OwcaCode;
 	class OwcaValue;
-	class OwcaFunctions;
+	class OwcaVariable;
 
 	class GenerationGC {
 		unsigned int value;
@@ -48,6 +48,7 @@ namespace OwcaScript {
 
 	class OwcaVM {
 		friend class Internal::VM;
+		friend class OwcaVariable;
 
 		std::shared_ptr<Internal::VM> vm_owner;
 		Internal::VM *vm;

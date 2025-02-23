@@ -12,6 +12,7 @@
 #include "object.h"
 #include "owca_iterator.h"
 #include "string.h"
+#include "owca_variable.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -25,6 +26,17 @@ namespace OwcaScript::Internal {
 		allocated_objects.clear();
 		builtin_objects.clear();
 		run_gc();
+	}
+
+	void VM::register_variable(OwcaVariable &var) {
+		var.global_variable_index = global_variables.size();
+		global_variables.push_back(&var);
+	}
+	void VM::unregister_variable(OwcaVariable &var) {
+		assert(var.global_variable_index < global_variables.size());
+		global_variables[var.global_variable_index] = global_variables.back();
+		global_variables[var.global_variable_index]->global_variable_index = var.global_variable_index;
+		global_variables.pop_back();
 	}
 
 	namespace {
@@ -1338,11 +1350,13 @@ function native hash(value);
 
 		auto ggc = GenerationGC{ ++generation_gc };
 		// mark
+		for(auto q : global_variables)
+			gc_mark(*q, ggc);
+
 		for(auto &s : small_strings) {
 			gc_mark(s.second, ggc);
 		}
 		for (auto& s : stacktrace) {
-			gc_mark(s.runtime_function, ggc);
 			gc_mark(s.runtime_functions, ggc);
 			gc_mark(s.values, ggc);
 		}

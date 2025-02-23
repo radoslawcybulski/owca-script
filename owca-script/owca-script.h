@@ -6,5 +6,6 @@
 #include "owca_code.h"
 #include "owca_error_message.h"
 #include "owca_exception.h"
+#include "owca_variable.h"
 
 #endif

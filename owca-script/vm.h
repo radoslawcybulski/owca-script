@@ -11,6 +11,7 @@
 namespace OwcaScript {
 	class OwcaValue;
 	class OwcaCode;
+	class OwcaVariable;
 
 	namespace Internal {
 		struct Object;
@@ -21,6 +22,7 @@ namespace OwcaScript {
 
 		class VM {
 			AllocationEmpty root_allocated_memory;
+			std::vector<OwcaVariable*> global_variables;
 			struct ExecutionFrame {
 				RuntimeFunctions* runtime_functions;
 				RuntimeFunction* runtime_function;
@@ -138,12 +140,14 @@ namespace OwcaScript {
 			void gc_mark(AllocationBase* ptr, GenerationGC ggc);
 			void gc_mark(const OwcaValue &, GenerationGC ggc);
 			void gc_mark(const std::vector<OwcaValue> &, GenerationGC ggc);
+			void register_variable(OwcaVariable &var);
+			void unregister_variable(OwcaVariable &var);
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
 				auto p = new char[sizeof(T) + oversize];
 				auto p2 = new (p) T{ std::forward<ARGS>(args)... };
-				p2->prev = root_allocated_memory.prev;
-				p2->next = &root_allocated_memory;
+				p2->prev = &root_allocated_memory;
+				p2->next = root_allocated_memory.next;
 				p2->prev->next = p2->next->prev = p2;
 				p2->vm = this;
 				p2->kind = T::object_kind;

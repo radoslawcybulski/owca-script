@@ -1,4 +1,3 @@
 exceptions
-OwcaVariable so user could keep OwcaValue values and not get crashed by gc.
 range step
 	- do we need it?
