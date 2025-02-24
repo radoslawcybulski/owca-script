@@ -79,7 +79,7 @@ namespace OwcaScript::Internal {
 
 		std::function<void(Class*)> fill_lookup_order = [&](Class* c) {
 			lookup_order.push_back(c);
-			for (auto q : base_classes)
+			for (auto q : c->base_classes)
 				fill_lookup_order(q);
 		};
 		fill_lookup_order(this);
@@ -96,15 +96,15 @@ namespace OwcaScript::Internal {
 				dst_fnc.internal_value()->functions[f->param_count] = f;
 			}
 		}
+		for(auto q : lookup_order) all_base_classes.insert(q);
 	}
 
-	std::span<char> Object::native_storage(ClassToken cls)
+	std::span<char> Object::native_storage_raw(ClassToken cls)
 	{
 		auto c = (Class*)cls.value();
 		auto it = type_->native_storage_pointers.find(c);
 		if (it == type_->native_storage_pointers.end()) return {};
-		auto p = type_->native_storage_ptr(this);
-		return { p + it->second.first, it->second.second };
+		return { (char*)this + sizeof(*this) + it->second.first, it->second.second };
 	}
 
 	std::string_view Object::type() const

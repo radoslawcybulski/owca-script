@@ -14,6 +14,7 @@
 #include "owca_tuple.h"
 #include "owca_array.h"
 #include "owca_set.h"
+#include "owca_exception.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -60,6 +61,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaTuple value) : value_(std::move(value)) {}
 		OwcaValue(OwcaArray value) : value_(std::move(value)) {}
 		OwcaValue(OwcaSet value) : value_(std::move(value)) {}
+		OwcaValue(OwcaException value);
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
@@ -80,6 +82,7 @@ namespace OwcaScript {
 		OwcaTuple as_tuple(OwcaVM ) const;
 		OwcaArray as_array(OwcaVM ) const;
 		OwcaSet as_set(OwcaVM ) const;
+		OwcaException as_exception(OwcaVM) const;
 
 		std::string_view type() const;
 		std::string to_string() const;

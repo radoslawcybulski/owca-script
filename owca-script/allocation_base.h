@@ -23,6 +23,7 @@ namespace OwcaScript {
 				Array,
 				Set,
 				BoundSelfObject,
+				Exception,
 			};
 #ifdef _DEBUG
 			AllocationBase();

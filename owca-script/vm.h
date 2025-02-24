@@ -19,6 +19,7 @@ namespace OwcaScript {
 		struct Array;
 		struct RuntimeFunction;
 		struct IteratorBase;
+		struct Exception;
 
 		class VM {
 			AllocationEmpty root_allocated_memory;
@@ -48,8 +49,15 @@ namespace OwcaScript {
 			Class *c_tuple = nullptr;
 			Class *c_array = nullptr;
 			Class *c_set = nullptr;
+			Class *c_stack_frame = nullptr;
+			Class *c_stack_trace = nullptr;
+			Class *c_exception = nullptr;
+			Class *c_math_exception = nullptr;
+			Class *c_invalid_operation_exception = nullptr;
 			Array *empty_tuple = nullptr;
 			unsigned int generation_gc = 0;
+
+			std::optional<OwcaException> exception_being_handled;
 
 			struct PopStack {
 				VM* vm = nullptr;
@@ -83,31 +91,50 @@ namespace OwcaScript {
 
 			VM();
 			~VM();
+			
+			void initialize_exception_object(Exception &);
+			void throw_exception(Class *exc, std::string_view msg);
 
-			[[noreturn]] void throw_division_by_zero() const;
-			[[noreturn]] void throw_mod_division_by_zero() const;
-			[[noreturn]] void throw_cant_convert_to_float(std::string_view type) const;
-			[[noreturn]] void throw_cant_convert_to_integer(OwcaFloatInternal val) const;
-			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type) const;
-			[[noreturn]] void throw_not_a_number(std::string_view type) const;
-			[[noreturn]] void throw_overflow(std::string_view msg) const;
-			[[noreturn]] void throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right) const;
-			[[noreturn]] void throw_index_out_of_range(std::string msg) const;
-			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="") const;
-			[[noreturn]] void throw_missing_member(std::string_view type, std::string_view ident) const;
-			[[noreturn]] void throw_cant_call(std::string_view msg) const;
-			[[noreturn]] void throw_not_callable(std::string_view type) const;
-			[[noreturn]] void throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int) const;
-			[[noreturn]] void throw_wrong_type(std::string_view type, std::string_view expected) const;
-			[[noreturn]] void throw_wrong_type(std::string_view msg) const;
-			[[noreturn]] void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right) const;
-			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view val) const;
-			[[noreturn]] void throw_missing_key(std::string_view key) const;
-			[[noreturn]] void throw_not_hashable(std::string_view type) const;
-			[[noreturn]] void throw_value_cant_have_fields(std::string_view type) const;
-			[[noreturn]] void throw_missing_native(std::string_view msg) const;
-			[[noreturn]] void throw_not_iterable(std::string_view type) const;
-			[[noreturn]] void throw_readonly(std::string_view msg) const;
+			struct ExceptionHandlingSentinel {
+				VM &vm;
+				std::optional<OwcaException> previous;
+
+				ExceptionHandlingSentinel(VM &vm, OwcaException oe) : vm(vm) {
+					previous = vm.exception_being_handled;
+					vm.exception_being_handled = oe;
+				}
+				~ExceptionHandlingSentinel() {
+					vm.exception_being_handled = previous;
+				}
+			};
+
+			// math exception
+			[[noreturn]] void throw_division_by_zero();
+			[[noreturn]] void throw_mod_division_by_zero();
+			[[noreturn]] void throw_cant_convert_to_float(std::string_view type);
+			[[noreturn]] void throw_cant_convert_to_integer(OwcaFloatInternal val);
+			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
+			[[noreturn]] void throw_not_a_number(std::string_view type);
+			[[noreturn]] void throw_overflow(std::string_view msg);
+
+			// invalid operation exception
+			[[noreturn]] void throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right);
+			[[noreturn]] void throw_index_out_of_range(std::string msg);
+			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
+			[[noreturn]] void throw_missing_member(std::string_view type, std::string_view ident);
+			[[noreturn]] void throw_cant_call(std::string_view msg);
+			[[noreturn]] void throw_not_callable(std::string_view type);
+			[[noreturn]] void throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);
+			[[noreturn]] void throw_wrong_type(std::string_view type, std::string_view expected);
+			[[noreturn]] void throw_wrong_type(std::string_view msg);
+			[[noreturn]] void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
+			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view val);
+			[[noreturn]] void throw_missing_key(std::string_view key);
+			[[noreturn]] void throw_not_hashable(std::string_view type);
+			[[noreturn]] void throw_value_cant_have_fields(std::string_view type);
+			[[noreturn]] void throw_missing_native(std::string_view msg);
+			[[noreturn]] void throw_not_iterable(std::string_view type);
+			[[noreturn]] void throw_readonly(std::string_view msg);
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
@@ -115,6 +142,7 @@ namespace OwcaScript {
 			OwcaValue execute_call(const OwcaValue &func, std::span<OwcaValue> arguments);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
+			OwcaValue create_exception();
 			OwcaValue create_map(const std::vector<OwcaValue> &arguments = {});
 			OwcaValue create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values);
 			OwcaValue create_map(const std::vector<std::pair<std::string, OwcaValue>> &values);
@@ -128,6 +156,7 @@ namespace OwcaScript {
 			OwcaValue member(const OwcaValue &val, const std::string& key);
 			std::optional<OwcaValue> try_member(const OwcaValue &val, const std::string& key);
 			void member(const OwcaValue &val, const std::string& key, OwcaValue);
+			Exception *is_exception(OwcaObject obj) const;
 
 			bool compare_values(const OwcaValue& left, const OwcaValue& right);
 			size_t calculate_hash(const OwcaValue&);

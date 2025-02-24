@@ -15,12 +15,14 @@
 #include "ast_class.h"
 #include "ast_if.h"
 #include "ast_while.h"
+#include "ast_try.h"
+#include "ast_throw.h"
 #include "ast_loop_control.h"
 #include "vm.h"
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
-		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "raise", "try", "catch", "and", "or", "not", "native"
+		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "throw", "try", "catch", "and", "or", "not", "native"
 	} };
 	static std::string_view operators_2[] = {
 			">=", "<=", "=>", "==", "!="
@@ -836,6 +838,46 @@ namespace OwcaScript::Internal {
 		return std::make_unique<AstReturn>(line, std::move(val));
 	}
 
+	std::unique_ptr<AstStat> AstCompiler::compile_try()
+	{
+		auto line = consume("try");
+		auto body = compile_block();
+
+		std::vector<std::tuple<std::string_view, unsigned int, std::vector<std::unique_ptr<AstExpr>>, std::unique_ptr<AstStat>>> catches;
+
+		while(catches.empty() || preview().second == "catch") {
+			consume("catch");
+			consume("(");
+			std::string_view identifier;
+			if (preview_is_loop_identifier()) {
+				auto [ line, txt ] = consume();
+				if (!is_identifier(txt)) add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("expected identifier, got `{}`", txt));
+				identifier = txt;
+				consume(":");
+			}
+			std::vector<std::unique_ptr<AstExpr>> types;
+			while(true) {
+				if (!types.empty()) {
+					if (preview().second != "|") break;
+					consume("|");
+				}
+				types.push_back(compile_expression_no_assign());
+			}
+			consume(")");
+			auto body2 = compile_block();
+			catches.push_back({ identifier, std::numeric_limits<unsigned int>::max(), std::move(types), std::move(body2) });
+		}
+		return std::make_unique<AstTry>(line, std::move(body), std::move(catches));
+	}
+	
+	std::unique_ptr<AstStat> AstCompiler::compile_throw()
+	{
+		auto line = consume("throw");
+		auto val = compile_expression_no_assign();
+		consume(";");
+		return std::make_unique<AstThrow>(line, std::move(val));
+	}
+	
 	std::unique_ptr<AstStat> AstCompiler::compile_if(bool elif)
 	{
 		auto line = consume(elif ? "elif" : "if");
@@ -894,6 +936,8 @@ namespace OwcaScript::Internal {
 		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
 		if (tok == "if") return compile_if();
+		if (tok == "try") return compile_try();
+		if (tok == "throw") return compile_throw();
 		if (tok == "break" || tok == "continue") return compile_break_or_continue();
 		if (tok == "{") return compile_block();
 		return compile_expression_as_stat();
@@ -983,6 +1027,26 @@ namespace OwcaScript::Internal {
 					auto index = current_stack->lookup_identifier(o.get_loop_identifier());
 					assert(index);
 					o.update_loop_ident_index(*index);
+				}
+			}
+			apply(static_cast<AstStat&>(o));
+		}
+		void apply(AstTry &o) override {
+			if (first_run) {
+				for(auto i = 0u; i < o.catch_count(); ++i) {
+					auto ident = o.catch_identifier(i);
+					if (!ident.empty())
+						current_stack->define_identifier(ident);
+				}
+			}
+			else {
+				for(auto i = 0u; i < o.catch_count(); ++i) {
+					auto ident = o.catch_identifier(i);
+					if (!ident.empty()) {
+						auto index = current_stack->lookup_identifier(ident);
+						assert(index);
+						o.update_catch_index(i, *index);
+					}
 				}
 			}
 			apply(static_cast<AstStat&>(o));

@@ -129,6 +129,8 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_function();
 			std::unique_ptr<AstStat> compile_class();
 			std::unique_ptr<AstStat> compile_return();
+			std::unique_ptr<AstStat> compile_try();
+			std::unique_ptr<AstStat> compile_throw();
 			std::unique_ptr<AstStat> compile_if(bool elif = false);
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_break_or_continue();

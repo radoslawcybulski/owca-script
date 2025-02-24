@@ -13,6 +13,8 @@
 #include "owca_iterator.h"
 #include "string.h"
 #include "owca_variable.h"
+#include "exception.h"
+#include "owca_exception.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -151,6 +153,15 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
 			return v.as_set(vm);
 		}
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaException *b, const OwcaValue &v) {
+			if (v.kind() != OwcaValueKind::Object) 
+				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
+			auto oo = v.as_object(vm);
+			auto oe = VM::get(vm).is_exception(oo);
+			if (!oe)
+				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
+			return OwcaException{ oo.internal_value(), oe };
+		}
 		static OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, const OwcaValue &v) {
 			return v;
 		}
@@ -189,11 +200,7 @@ namespace OwcaScript::Internal {
 			auto v = std::abs(r.upper().internal_value() - r.lower().internal_value());
 			if (v < 0)
 				VM::get(vm).throw_overflow(std::format("range size for size {} -> {} overflows integer", r.lower(), r.upper()));
-			auto v2 = OwcaInt{ v };
-			if (v2.internal_value() != v) {
-				VM::get(vm).throw_overflow(std::format("range size for size {} -> {} overflows integer", r.lower(), r.upper()));
-			}
-			return v2;
+			return OwcaInt{ vm, v, "range' size" };
 		}
 		static OwcaValue bool_init(OwcaVM vm, const OwcaValue &r) {
 			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
@@ -208,6 +215,62 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaFloat value) -> OwcaIntInternal {
 					return (OwcaIntInternal)value.internal_value();
+				},
+				[&](OwcaString source) -> OwcaIntInternal {
+					auto text = source.text();
+					unsigned int base = 0;
+
+					if (text.size() > 1) {
+						if (text.substr(0, 2) == "0x" || text.substr(0, 2) == "0X") {
+							base = 16;
+							text = text.substr(2);
+						}
+						else if (text.substr(0, 2) == "0b" || text.substr(0, 2) == "0B") {
+							base = 2;
+							text = text.substr(2);
+						}
+						else if (text.substr(0, 2) == "0o" || text.substr(0, 2) == "0O") {
+							base = 8;
+							text = text.substr(2);
+						}
+					}
+			
+					if (base > 0) {
+						OwcaIntInternal value = 0;
+						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, base);
+			
+						if (ec == std::errc() && ptr == text.data() + text.size()) {
+							return value;
+						}
+						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
+							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+						}
+						else if (ec == std::errc::result_out_of_range) {
+							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for given OwcaIntInternal type",
+								source.text(), std::numeric_limits<OwcaIntInternal>::min(), std::numeric_limits<OwcaIntInternal>::max()));
+						}
+						else {
+							assert(false);
+						}
+					}
+					else {
+						OwcaFloatInternal value = 0;
+						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+			
+						if (ec == std::errc() && ptr == text.data() + text.size()) {
+							return (OwcaIntInternal)value;
+						}
+						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
+							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+						}
+						else if (ec == std::errc::result_out_of_range) {
+							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", source.text()));
+						}
+						else {
+							assert(false);
+						}
+					}
+					return {};
 				},
 				[&](const auto &) -> OwcaIntInternal {
 					VM::get(vm).throw_cant_convert_to_integer(r.type());
@@ -225,6 +288,62 @@ namespace OwcaScript::Internal {
 				[&](OwcaFloat value) -> OwcaFloatInternal {
 					return value.internal_value();
 				},
+				[&](OwcaString source) -> OwcaFloatInternal {
+					auto text = source.text();
+					unsigned int base = 0;
+
+					if (text.size() > 1) {
+						if (text.substr(0, 2) == "0x" || text.substr(0, 2) == "0X") {
+							base = 16;
+							text = text.substr(2);
+						}
+						else if (text.substr(0, 2) == "0b" || text.substr(0, 2) == "0B") {
+							base = 2;
+							text = text.substr(2);
+						}
+						else if (text.substr(0, 2) == "0o" || text.substr(0, 2) == "0O") {
+							base = 8;
+							text = text.substr(2);
+						}
+					}
+			
+					if (base > 0) {
+						OwcaIntInternal value = 0;
+						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, base);
+			
+						if (ec == std::errc() && ptr == text.data() + text.size()) {
+							return (OwcaFloatInternal)value;
+						}
+						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
+							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+						}
+						else if (ec == std::errc::result_out_of_range) {
+							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for given OwcaIntInternal type",
+								source.text(), std::numeric_limits<OwcaIntInternal>::min(), std::numeric_limits<OwcaIntInternal>::max()));
+						}
+						else {
+							assert(false);
+						}
+					}
+					else {
+						OwcaFloatInternal value = 0;
+						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
+			
+						if (ec == std::errc() && ptr == text.data() + text.size()) {
+							return value;
+						}
+						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
+							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+						}
+						else if (ec == std::errc::result_out_of_range) {
+							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", source.text()));
+						}
+						else {
+							assert(false);
+						}
+					}
+					return {};
+				},
 				[&](const auto &) -> OwcaFloatInternal {
 					VM::get(vm).throw_cant_convert_to_float(r.type());
 				}
@@ -234,11 +353,7 @@ namespace OwcaScript::Internal {
 			return vm.create_string(r.to_string());
 		}
 		static OwcaValue string_size(OwcaVM vm, const OwcaValue &r) {
-			auto v = r.as_string(vm).internal_value()->size();
-			auto v2 = (OwcaIntInternal)v;
-			if (v2 != v)
-				VM::get(vm).throw_overflow(std::format("string size {} doesn't fit integer", v));
-			return OwcaInt{ v2 };
+			return OwcaInt{ vm, r.as_string(vm).internal_value()->size(), "string' size" };
 		}
 		static OwcaValue function_bind(OwcaVM vm, const OwcaValue &r, const OwcaValue &bind) {
 			auto f = r.as_functions(vm);
@@ -249,18 +364,10 @@ namespace OwcaScript::Internal {
 			return f.self();
 		}
 		static OwcaValue map_size(OwcaVM vm, const OwcaMap &r) {
-			auto v = r.size();
-			auto v2 = (OwcaIntInternal)v;
-			if (v2 != v)
-				VM::get(vm).throw_overflow(std::format("map size {} doesn't fit integer", v));
-			return OwcaInt{ v2 };
+			return OwcaInt{ vm, r.size(), "map' size" };
 		}
 		static OwcaValue set_size(OwcaVM vm, const OwcaSet &r) {
-			auto v = r.size();
-			auto v2 = (OwcaIntInternal)v;
-			if (v2 != v)
-				VM::get(vm).throw_overflow(std::format("map size {} doesn't fit integer", v));
-			return OwcaInt{ v2 };
+			return OwcaInt{ vm, r.size(), "set' size" };
 		}
 		static OwcaValue class_name(OwcaVM vm, const OwcaValue &r) {
 			return vm.create_string_from_view(r.as_class(vm).internal_value()->name);
@@ -305,11 +412,7 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 		static OwcaValue array_size(OwcaVM vm, const OwcaArray &self) {
-			auto v = self.internal_value()->values.size();
-			auto v2 = (OwcaIntInternal)v;
-			if (v2 != v)
-				VM::get(vm).throw_overflow(std::format("array size {} doesn't fit integer", v));
-			return OwcaInt{ v2 };
+			return OwcaInt{ vm, self.internal_value()->values.size(), "array' size" };
 		}
 		static OwcaValue tuple_init(OwcaVM vm, const OwcaArray &self, const OwcaValue &r) {
 			r.visit(
@@ -348,12 +451,36 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 		static OwcaValue tuple_size(OwcaVM vm, const OwcaArray &self) {
-			auto v = self.internal_value()->values.size();
-			auto v2 = (OwcaIntInternal)v;
-			if (v2 != v)
-				VM::get(vm).throw_overflow(std::format("tuple size {} doesn't fit integer", v));
-			return OwcaInt{ v2 };
+			return OwcaInt{ vm, self.internal_value()->values.size(), "tuple' size" };
 		}
+		static OwcaValue exception_init(OwcaVM vm, OwcaException self, OwcaString msg) {
+			VM::get(vm).initialize_exception_object(*self.internal_value());
+			self.internal_value()->message = std::string{ msg.text() };
+			return {};
+		}
+		static OwcaValue exception_count(OwcaVM vm, OwcaException self) {
+			return OwcaInt{ vm, self.count(), "stack frame" };
+		}
+		static OwcaValue exception_message(OwcaVM vm, OwcaException self) {
+			return vm.create_string_from_view(self.message());
+		}
+		static OwcaValue exception_line(OwcaVM vm, OwcaException self, OwcaInt index) {
+			assert(self.count() > 0);
+			auto ind = index.as<unsigned int>(vm, "frame index", 0, (unsigned int)(self.count() - 1));
+			return OwcaInt{ vm, self.frame(ind).line, "frame's line" };
+			
+		}
+		static OwcaValue exception_filename(OwcaVM vm, OwcaException self, OwcaInt index) {
+			assert(self.count() > 0);
+			auto ind = index.as<unsigned int>(vm, "frame index", 0, (unsigned int)(self.count() - 1));
+			return vm.create_string_from_view(self.frame(ind).filename);
+		}
+		static OwcaValue exception_function(OwcaVM vm, OwcaException self, OwcaInt index) {
+			assert(self.count() > 0);
+			auto ind = index.as<unsigned int>(vm, "frame index", 0, (unsigned int)(self.count() - 1));
+			return vm.create_string_from_view(self.frame(ind).function);
+		}
+
 		static OwcaValue hash(OwcaVM vm, const OwcaValue &r) {
 			auto v = VM::get(vm).calculate_hash(r);
 			return OwcaInt{ (OwcaIntInternal)v };
@@ -389,9 +516,16 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.__init__") return adapt(tuple_init);
 			if (full_name == "Tuple.size") return adapt(tuple_size);
 			if (full_name == "hash") return adapt(hash);
+			if (full_name == "Exception.__init__") return adapt(exception_init);
+			if (full_name == "Exception.count") return adapt(exception_count);
+			if (full_name == "Exception.message") return adapt(exception_message);
+			if (full_name == "Exception.line") return adapt(exception_line);
+			if (full_name == "Exception.filename") return adapt(exception_filename);
+			if (full_name == "Exception.function") return adapt(exception_function);
 			return std::nullopt;
 		}
 		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
+			if (full_name == "Exception") return std::make_unique<OwcaClass::NativeClassInterfaceSimpleImplementation<Exception>>();
 			return nullptr;
 		}
 	};
@@ -441,6 +575,17 @@ class Tuple {
 	function native __init__(self, value);
 	function native size(self);
 }
+class native Exception {
+	function native __init__(self, message);
+	function native count(self);
+	function native message(self);
+	function native line(self, index);
+	function native filename(self, index);
+	function native function(self, index);
+}
+class MathException(Exception) {}
+class InvalidOperationException(Exception) {}
+
 function native hash(value);
 )" };
 		auto vm = OwcaVM{ this };
@@ -494,7 +639,7 @@ function native hash(value);
 				else if (key == "Class") {
 					c_class = read(value_pair.second);
 					c_class->allocator_override = [&]() -> OwcaValue {
-						throw_not_callable(c_function->full_name);
+						throw_not_callable(c_class->full_name);
 					};
 				}
 				else if (key == "Array") {
@@ -515,160 +660,173 @@ function native hash(value);
 						return create_set({});
 					};
 				}
+				else if (key == "Exception") {
+					c_exception = read(value_pair.second);
+				}
+				else if (key == "MathException") {
+					c_math_exception = read(value_pair.second);
+				}
+				else if (key == "InvalidOperationException") {
+					c_invalid_operation_exception = read(value_pair.second);
+				}
 				builtin_objects[std::string{ key }] = std::move(value_pair.second);
 			}
 		}
 	}
+	void VM::initialize_exception_object(Exception &exc)
+	{
+		for(auto &st : stacktrace) {
+			exc.frames.push_back({});
+			exc.frames.back().code = st.runtime_function->code;
+			exc.frames.back().line = st.line.line;
+			exc.frames.back().function = st.runtime_function->full_name;
+		}
+	}
+	Exception *VM::is_exception(OwcaObject obj) const
+	{
+		return obj.internal_value()->native_storage<Exception>(ClassToken{ c_exception });
+	}	
 	VM& VM::get(const OwcaVM v)
 	{
 		return *v.vm;
 	}
 
-	void VM::throw_division_by_zero() const
+	void VM::throw_exception(Class *exc, std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		auto tmp = std::vector<OwcaValue>{};
+		tmp.push_back(create_string_from_view(msg));
+		auto res = execute_call(OwcaClass{ exc }, tmp);
+		throw res.as_exception(this);
 	}
 
-	void VM::throw_mod_division_by_zero() const
+	void VM::throw_division_by_zero()
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_math_exception, "division by zero");
 	}
 
-	void VM::throw_cant_convert_to_float(std::string_view type) const
+	void VM::throw_mod_division_by_zero()
 	{
-		assert(false);
-		throw 1;
-		//throw OwcaException{ std::format("can't convert value of type `{}` to floating point", type()) };
+		throw_exception(c_math_exception, "modulo by zero");
 	}
 
-	void VM::throw_cant_convert_to_integer(OwcaFloatInternal val) const
+	void VM::throw_cant_convert_to_float(std::string_view type)
 	{
-		assert(false);
-		throw 1;
-		//throw OwcaException{ std::format("can't convert value `{}` to integer - the conversion would loose data", f) };
+		throw_exception(c_math_exception, std::format("can't convert value of type `{}` to floating point", type));
 	}
 
-	void VM::throw_cant_convert_to_integer(std::string_view type) const
+	void VM::throw_cant_convert_to_integer(OwcaFloatInternal val)
 	{
-		assert(false);
-		throw 1;
-		// throw OwcaException{ std::format("can't convert value of type `{}` to integer", type()) };
+		throw_exception(c_math_exception, std::format("can't convert {} to integer - no lossless convertion", val));
 	}
 
-	void VM::throw_not_a_number(std::string_view type) const
+	void VM::throw_cant_convert_to_integer(std::string_view type)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_math_exception, std::format("can't convert {} to integer", type));
 	}
 
-	void VM::throw_overflow(std::string_view msg) const
+	void VM::throw_not_a_number(std::string_view type)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_math_exception, std::format("can't convert {} to a number", type));
 	}
 
-	void VM::throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right) const
+	void VM::throw_overflow(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_math_exception, msg);
 	}
 
-	void VM::throw_index_out_of_range(std::string msg) const
+	void VM::throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right)
 	{
-		assert(false);
-		throw 1;
+		const char *oper;
+		switch(kind) {
+		case AstExprCompare::Kind::Is: oper = "is"; break;
+		case AstExprCompare::Kind::Eq: oper = "=="; break;
+		case AstExprCompare::Kind::NotEq: oper = "!="; break;
+		case AstExprCompare::Kind::LessEq: oper = "<=>"; break;
+		case AstExprCompare::Kind::MoreEq: oper = ">="; break;
+		case AstExprCompare::Kind::Less: oper = "<"; break;
+		case AstExprCompare::Kind::More: oper = ">"; break;
+		}
+		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
 	}
 
-	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type) const
+	void VM::throw_index_out_of_range(std::string msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
 	}
 
-	void VM::throw_missing_member(std::string_view type, std::string_view ident) const
+	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("{} is not indexable with key {}", type, key_type));
 	}
 
-	void VM::throw_cant_call(std::string_view msg) const
+	void VM::throw_missing_member(std::string_view type, std::string_view ident)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("{} doesn't have a member {}", type, ident));
 	}
 
-	void VM::throw_not_callable(std::string_view type) const
+	void VM::throw_cant_call(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
+	}
+
+	void VM::throw_not_callable(std::string_view type)
+	{
+		throw_exception(c_invalid_operation_exception, std::format("{} is not callable", type));
 	}
 	
-	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int) const
+	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("{} is not callable - wrong number of parameters ({})", type, params));
 	}
 
-	void VM::throw_wrong_type(std::string_view type, std::string_view expected) const
+	void VM::throw_wrong_type(std::string_view type, std::string_view expected)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("wrong type {} - expected {}", type, expected));
 	}
 
-	void VM::throw_wrong_type(std::string_view msg) const
+	void VM::throw_wrong_type(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
 	}
 
-	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right) const
+	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
 	}
 
-	void VM::throw_invalid_operand_for_mul_string(std::string_view val) const
+	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("can't multiply string by {}", val));
 	}
 
-	void VM::throw_missing_key(std::string_view key) const
+	void VM::throw_missing_key(std::string_view key)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("missing key {}", key));
 	}
 
-	void VM::throw_not_hashable(std::string_view type) const
+	void VM::throw_not_hashable(std::string_view type)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("{} is not hashable", type));
 	}
 
-	void VM::throw_value_cant_have_fields(std::string_view type) const
+	void VM::throw_value_cant_have_fields(std::string_view type)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, std::format("{} can't have fields", type));
 	}
 
-	void VM::throw_missing_native(std::string_view msg) const
+	void VM::throw_missing_native(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
 	}
 
-	void VM::throw_not_iterable(std::string_view msg) const
+	void VM::throw_not_iterable(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
 	}
 
-	void VM::throw_readonly(std::string_view msg) const
+	void VM::throw_readonly(std::string_view msg)
 	{
-		assert(false);
-		throw 1;
+		throw_exception(c_invalid_operation_exception, msg);
 	}
 
 	OwcaValue VM::member(const OwcaValue& val, const std::string& key)
@@ -880,13 +1038,7 @@ function native hash(value);
 		};
 		auto copy_back = CopyBack{ this, dict_output };
 
-		try {
-			return execute();
-		}
-		catch (FlowControlException) {
-			assert(false);
-			return {};
-		}
+		return execute();
 	}
 	OwcaValue VM::execute_call(const OwcaValue &func, std::span<OwcaValue> arguments)
 	{
@@ -997,6 +1149,7 @@ function native hash(value);
 		}
 		return OwcaValue{ OwcaSet{ ds } };
 	}
+	
 	static constexpr const size_t small_string_max_size = 32;
 	OwcaValue VM::create_string_from_view(std::string_view txt)
 	{

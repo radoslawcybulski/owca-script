@@ -29,7 +29,7 @@ namespace OwcaScript {
 
 	std::span<char> OwcaObject::user_data_impl(ClassToken token) const
 	{
-		auto sp = object->native_storage(token);
+		auto sp = object->native_storage_raw(token);
 		if (sp.empty()) {
 			auto cls = (Internal::Class*)token.value();
 			object->vm->throw_wrong_type(object->type(), cls->full_name);

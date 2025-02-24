@@ -23,6 +23,8 @@ namespace OwcaScript {
 		class AstIf;
 		class AstWhile;
 		class AstLoopControl;
+		class AstTry;
+		class AstThrow;
 
 		struct AstVisitor {
 			virtual ~AstVisitor() = default;
@@ -45,6 +47,8 @@ namespace OwcaScript {
 			virtual void apply(AstIf& o);
 			virtual void apply(AstWhile& o);
 			virtual void apply(AstLoopControl& o);
+			virtual void apply(AstTry& o);
+			virtual void apply(AstThrow& o);
 		};
 	}
 }

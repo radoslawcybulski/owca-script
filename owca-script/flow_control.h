@@ -9,8 +9,6 @@ namespace OwcaScript {
 		struct FlowControlReturn {
 			OwcaValue value;
 		};
-		struct FlowControlException {
-		};
 		struct FlowControlContinue {
 			unsigned int depth;
 		};

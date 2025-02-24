@@ -2,17 +2,33 @@
 #define RC_OWCA_SCRIPT_OWCA_EXCEPTION_H
 
 #include "stdafx.h"
-#include "owca_value.h"
 
 namespace OwcaScript {
-	class OwcaException : public std::exception {
-		OwcaValue value_;
-		std::string msg;
+	class OwcaClass;
+	
+	namespace Internal {
+		struct Exception;
+		struct Object;
+	}
+	class OwcaException {
+		Internal::Object *owner;
+		Internal::Exception *object;
 	public:
-		OwcaException(std::string msg, OwcaValue value = {});
+		explicit OwcaException(Internal::Object *owner, Internal::Exception *object) : owner(owner), object(object) {}
 
-		const char* what() const noexcept override { return msg.c_str(); }
-		const auto& value() const { return value_; }
+		auto internal_owner() const { return owner; }
+		auto internal_value() const { return object; }
+
+		std::string_view message() const;
+		std::string to_string() const;
+		size_t count() const;
+		OwcaClass type() const;
+		struct Frame {
+			std::string_view filename;
+			std::string_view function;
+			unsigned int line;
+		};
+		Frame frame(unsigned int) const;
 	};
 }
 

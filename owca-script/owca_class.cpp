@@ -14,4 +14,10 @@ namespace OwcaScript {
 	{
 		return object->vm->member(*this, key);
 	}
+
+	bool OwcaClass::has_base_class(OwcaClass base) const
+	{
+		auto it = object->all_base_classes.find(base.internal_value());
+		return it != object->all_base_classes.end();
+	}
 }

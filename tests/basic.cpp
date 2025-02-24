@@ -106,7 +106,7 @@ TEST_F(SimpleTest, native_class)
 			}
 			void destroy_storage(void* ptr, size_t s) override {
 			}
-			void gc_mark_members(void* ptr, size_t s, GenerationGC generation_gc) override {
+			void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 			}
 			size_t native_storage_size() override {
 				return 8;

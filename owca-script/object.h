@@ -21,6 +21,7 @@ namespace OwcaScript {
 			const std::string_view name, full_name;
 			std::shared_ptr<CodeBuffer> code;
 			Line fileline;
+			std::unordered_set<Class*> all_base_classes;
 			std::vector<Class*> base_classes;
 			std::vector<Class*> lookup_order;
 			std::vector<RuntimeFunction*> runtime_functions;
@@ -54,7 +55,13 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(VM& vm, GenerationGC generation_gc) override;
-			std::span<char> native_storage(ClassToken cls);
+			std::span<char> native_storage_raw(ClassToken cls);
+			template <typename T> T* native_storage(ClassToken cls) {
+				auto sp = native_storage_raw(cls);
+				if (sp.empty()) return nullptr;
+				assert(sp.size() >= sizeof(T));
+				return reinterpret_cast<T*>(sp.data());
+			}
 		};
 	}
 }

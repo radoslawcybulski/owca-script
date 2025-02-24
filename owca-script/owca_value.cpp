@@ -10,6 +10,8 @@
 #include "string.h"
 
 namespace OwcaScript {
+	OwcaValue::OwcaValue(OwcaException value) : value_(OwcaObject{ value.internal_owner() }) {}
+
 	std::pair<const OwcaInt*, const OwcaFloat*> OwcaValue::get_int_or_float() const
 	{
 		return visit(
@@ -18,7 +20,6 @@ namespace OwcaScript {
 			[](const auto&) -> std::pair<const OwcaInt*, const OwcaFloat*> { return { nullptr, nullptr }; }
 		);
 	}
-
 	OwcaIntInternal OwcaValue::convert_to_int(OwcaVM vm) const
 	{
 		auto [i, f] = get_int_or_float();
@@ -63,80 +64,90 @@ namespace OwcaScript {
 	OwcaEmpty OwcaValue::as_nul(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Empty)
-			Internal::VM::get(vm).throw_wrong_type(type(), "nul");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Nul");
 		return {};
 	}
 	OwcaRange OwcaValue::as_range(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Range)
-			Internal::VM::get(vm).throw_wrong_type(type(), "range");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Range");
 		return std::get<OwcaRange>(value_);
 	}
 	OwcaBool OwcaValue::as_bool(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Bool)
-			Internal::VM::get(vm).throw_wrong_type(type(), "bool");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Bool");
 		return std::get<OwcaBool>(value_);
 	}
 	OwcaInt OwcaValue::as_int(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Int)
-			Internal::VM::get(vm).throw_wrong_type(type(), "integer");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Integer");
 		return std::get<OwcaInt>(value_);
 	}
 	OwcaFloat OwcaValue::as_float(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Float)
-			Internal::VM::get(vm).throw_wrong_type(type(), "floating point number");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Float");
 		return std::get<OwcaFloat>(value_);
 	}
 	const OwcaString &OwcaValue::as_string(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::String)
-			Internal::VM::get(vm).throw_wrong_type(type(), "string");
+			Internal::VM::get(vm).throw_wrong_type(type(), "String");
 		return std::get<OwcaString>(value_);
 	}
 	OwcaFunctions OwcaValue::as_functions(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Functions)
-			Internal::VM::get(vm).throw_wrong_type(type(), "function-set");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Function");
 		return std::get<OwcaFunctions>(value_);
 	}
 	OwcaMap OwcaValue::as_map(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Map)
-			Internal::VM::get(vm).throw_wrong_type(type(), "map");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Map");
 		return std::get<OwcaMap>(value_);
 	}
 	OwcaClass OwcaValue::as_class(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Class)
-			Internal::VM::get(vm).throw_wrong_type(type(), "class");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Class");
 		return std::get<OwcaClass>(value_);
 	}
 	OwcaObject OwcaValue::as_object(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Object)
-			Internal::VM::get(vm).throw_wrong_type(type(), "object");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Object");
 		return std::get<OwcaObject>(value_);
 	}
 	OwcaArray OwcaValue::as_array(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Array)
-			Internal::VM::get(vm).throw_wrong_type(type(), "array");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Array");
 		return std::get<OwcaArray>(value_);
 	}
 	OwcaTuple OwcaValue::as_tuple(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Tuple)
-			Internal::VM::get(vm).throw_wrong_type(type(), "tuple");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Tuple");
 		return std::get<OwcaTuple>(value_);
 	}
 	OwcaSet OwcaValue::as_set(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Set)
-			Internal::VM::get(vm).throw_wrong_type(type(), "set");
+			Internal::VM::get(vm).throw_wrong_type(type(), "Set");
 		return std::get<OwcaSet>(value_);
+	}
+	OwcaException OwcaValue::as_exception(OwcaVM vm) const
+	{
+		if (kind() != OwcaValueKind::Object)
+			Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
+		auto oo = as_object(vm);
+		auto oe = Internal::VM::get(vm).is_exception(oo);
+		if (!oe)
+			Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
+		return OwcaException{ oo.internal_value(), oe };
 	}
 
 	std::string_view OwcaValue::type() const
