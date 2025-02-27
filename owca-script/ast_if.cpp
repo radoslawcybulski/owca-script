@@ -18,14 +18,14 @@ namespace OwcaScript::Internal {
             this->if_false = if_false;
 		}
 
-		void execute_impl(OwcaVM vm) const override{
-            auto v = value->execute(vm);
+		void execute_statement_impl(OwcaVM vm) const override{
+            auto v = value->execute_expression(vm);
             auto condition = VM::get(vm).calculate_if_true(v);
             if (condition) {
-                if_true->execute(vm);
+                if_true->execute_statement(vm);
             }
             else if (if_false) {
-                if_false->execute(vm);
+                if_false->execute_statement(vm);
             }
 		}
 	};

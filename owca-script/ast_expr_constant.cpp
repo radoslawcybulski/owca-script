@@ -11,7 +11,7 @@ namespace OwcaScript::Internal {
 
 		void init() {
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaEmpty{};
 		}
 	};
@@ -23,7 +23,7 @@ namespace OwcaScript::Internal {
 		void init(bool value) {
 			this->value = value;
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaBool{ value };
 		}
 	};
@@ -35,7 +35,7 @@ namespace OwcaScript::Internal {
 		void init(OwcaIntInternal value) {
 			this->value = value;
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaInt{ value };
 		}
 	};
@@ -47,7 +47,7 @@ namespace OwcaScript::Internal {
 		void init(OwcaFloatInternal value) {
 			this->value = value;
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaFloat{ value };
 		}
 	};
@@ -59,7 +59,7 @@ namespace OwcaScript::Internal {
 		void init(std::string_view value) {
 			this->value = std::move(value);
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return vm.create_string_from_view(value);
 		}
 	};

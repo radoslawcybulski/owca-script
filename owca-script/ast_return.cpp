@@ -15,10 +15,10 @@ namespace OwcaScript::Internal {
 			this->value = value;
 		}
 
-		void execute_impl(OwcaVM vm) const override{
+		void execute_statement_impl(OwcaVM vm) const override{
 			OwcaValue v;
 			if (value) {
-				v = value->execute(vm);
+				v = value->execute_expression(vm);
 			}
 			throw FlowControlReturn{ std::move(v) };
 		}

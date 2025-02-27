@@ -194,13 +194,13 @@ namespace OwcaScript::Internal {
 					}
 				);
 		}
-		OwcaValue execute_impl(OwcaVM vm) const override {
-			auto left = first->execute(vm);
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
+			auto left = first->execute_expression(vm);
 			auto [li, lf] = left.get_int_or_float();
 
 			for (auto i = 0u; i < nexts.size(); ++i) {
 				auto [kind, compare_line, next_value] = nexts[i];
-				auto right = next_value->execute(vm);
+				auto right = next_value->execute_expression(vm);
 				VM::get(vm).update_execution_line(compare_line);
 
 				if (kind == AstExprCompare::Kind::Is) {

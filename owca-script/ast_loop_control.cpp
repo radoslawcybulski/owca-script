@@ -15,7 +15,7 @@ namespace OwcaScript::Internal {
 			this->depth = depth;
 		}
 
-		void execute_impl(OwcaVM vm) const override{
+		void execute_statement_impl(OwcaVM vm) const override{
 			throw FlowControlBreak{ depth };
 		}
 	};
@@ -29,7 +29,7 @@ namespace OwcaScript::Internal {
 			this->depth = depth;
 		}
 
-		void execute_impl(OwcaVM vm) const override{
+		void execute_statement_impl(OwcaVM vm) const override{
 			throw FlowControlContinue{ depth };
 		}
 	};

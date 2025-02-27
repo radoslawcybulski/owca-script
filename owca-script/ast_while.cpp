@@ -21,18 +21,18 @@ namespace OwcaScript::Internal {
             this->loop_ident_index = loop_ident_index;
 		}
 
-		void execute_impl(OwcaVM vm) const override {
+		void execute_statement_impl(OwcaVM vm) const override {
             auto counter = (OwcaIntInternal)0;
 
             while(true) {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
                     VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
                 }
-                auto v = value->execute(vm);
+                auto v = value->execute_expression(vm);
                 auto condition = VM::get(vm).calculate_if_true(v);
                 if (!condition) break;
                 try {
-                    body->execute(vm);
+                    body->execute_statement(vm);
                 }
                 catch(FlowControlContinue e) {
                     if (e.depth == depth)

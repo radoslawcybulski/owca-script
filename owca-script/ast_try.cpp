@@ -16,9 +16,9 @@ namespace OwcaScript::Internal {
             this->catches = catches;
 		}
 
-		void execute_impl(OwcaVM vm) const override {
+		void execute_statement_impl(OwcaVM vm) const override {
             try {
-                body->execute(vm);
+                body->execute_statement(vm);
                 return;
             }
             catch(OwcaException oe) {
@@ -29,7 +29,7 @@ namespace OwcaScript::Internal {
                     bool found = false;
 
                     for(auto et : exception_types) {
-                        auto v = et->execute(vm);
+                        auto v = et->execute_expression(vm);
                         auto oe2 = v.as_class(vm);
                         if (oe_type.has_base_class(oe2)) {
                             found = true;
@@ -41,7 +41,7 @@ namespace OwcaScript::Internal {
                         if (ident_index != std::numeric_limits<unsigned int>::max()) {
                             VM::get(vm).set_identifier(ident_index, oe, false);
                         }
-                        catch_body->execute(vm);
+                        catch_body->execute_statement(vm);
                         break;
                     }
                 }

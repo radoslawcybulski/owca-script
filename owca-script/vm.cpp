@@ -950,7 +950,7 @@ function native hash(value);
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
 				try {
-					sf.body->execute(vm);
+					sf.body->execute_statement(vm);
 					return {};
 				}
 				catch (FlowControlReturn o) {
@@ -974,7 +974,7 @@ function native hash(value);
 			RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
 			rt_temp.data = std::move(sf);
 			stacktrace.back().runtime_function = &rt_temp;
-			val = oc.code_->root()->execute(vm);
+			val = oc.code_->root()->execute_expression(vm);
 		}
 		assert(val.kind() == OwcaValueKind::Functions);
 		auto functions = val.as_functions(vm);

@@ -23,19 +23,19 @@ namespace OwcaScript::Internal {
 			this->members = members;
 		}
 
-		OwcaValue execute_impl(OwcaVM vm) const override
+		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
 			auto code = VM::get(vm).currently_running_code();
 			assert(code);
 
 			auto cls = VM::get(vm).allocate<Class>(0, line, name, full_name, std::move(code), base_classes.size());
 			for (auto b : base_classes) {
-				auto res = b->execute(vm);
+				auto res = b->execute_expression(vm);
 				cls->initialize_add_base_class(vm, res);
 			}
 
 			for (auto m : members) {
-				auto f = m->execute(vm);
+				auto f = m->execute_expression(vm);
 				cls->initialize_add_function(vm, f);
 			}
 
@@ -54,9 +54,9 @@ namespace OwcaScript::Internal {
 			ImplExprScriptClass::init(name, full_name, base_classes, members);
 		}
 
-		OwcaValue execute_impl(OwcaVM vm) const override
+		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
-			auto res = ImplExprScriptClass::execute_impl(vm);
+			auto res = ImplExprScriptClass::execute_expression_impl(vm);
 			auto cls = res.as_class(vm).internal_value();
 			auto native = cls->code->native_code_provider();
 			if (native) {

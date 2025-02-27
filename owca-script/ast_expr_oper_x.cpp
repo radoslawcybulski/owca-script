@@ -19,12 +19,12 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute_impl(OwcaVM vm) const override {
-			auto f = args[0]->execute(vm);
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
+			auto f = args[0]->execute_expression(vm);
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size() - 1);
 			for(auto i = 1u; i < args.size(); ++i) {
-				arguments.push_back(args[i]->execute(vm));
+				arguments.push_back(args[i]->execute_expression(vm));
 			}
 			return VM::get(vm).execute_call(std::move(f), arguments);
 		}
@@ -33,11 +33,11 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
-				arguments.push_back(a->execute(vm));
+				arguments.push_back(a->execute_expression(vm));
 			}
 			return VM::get(vm).create_array(std::move(arguments));
 		}
@@ -46,11 +46,11 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
-				arguments.push_back(a->execute(vm));
+				arguments.push_back(a->execute_expression(vm));
 			}
 			return VM::get(vm).create_tuple(std::move(arguments));
 		}
@@ -59,11 +59,11 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
-				arguments.push_back(a->execute(vm));
+				arguments.push_back(a->execute_expression(vm));
 			}
 			return VM::get(vm).create_set(std::move(arguments));
 		}
@@ -72,11 +72,11 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
-		OwcaValue execute_impl(OwcaVM vm) const override {
+		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
 			for(auto &a : args) {
-				arguments.push_back(a->execute(vm));
+				arguments.push_back(a->execute_expression(vm));
 			}
 			return VM::get(vm).create_map(std::move(arguments));
 		}
