@@ -45,7 +45,7 @@ namespace OwcaScript {
 		return Iterator{ dictionary, dictionary->dict.values.size() };
 	}
 
-	bool OwcaSet::has_value(const OwcaValue &key) const
+	bool OwcaSet::has_value(OwcaValue key) const
 	{
 		auto p = dictionary->dict.find(key);
         return bool(p);

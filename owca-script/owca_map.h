@@ -23,9 +23,9 @@ namespace OwcaScript {
 		size_t size() const;
 
 		OwcaValue &operator [] (OwcaValue key);
-		const OwcaValue &operator [] (OwcaValue key) const;
+		OwcaValue operator [] (OwcaValue key) const;
 		
-		OwcaValue *value(const OwcaValue &key) const;
+		OwcaValue *value(OwcaValue key) const;
 
 		std::vector<OwcaValue> keys() const;
 		std::vector<OwcaValue> values() const;

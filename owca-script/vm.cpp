@@ -50,13 +50,13 @@ namespace OwcaScript::Internal {
 		};
 	}
 	struct VM::BuiltinProvider : public OwcaVM::NativeCodeProvider {
-		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Bool) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
 			return v.as_bool(vm).internal_value();
 		}
 		template <std::integral T>
-		static T convert_impl2(OwcaVM vm, size_t I, T *, const OwcaValue &v) {
+		static T convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Int && v.kind() != OwcaValueKind::Float) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to integer value", I + 1, v.type()));
 			if (v.kind() == OwcaValueKind::Int) {
@@ -73,7 +73,7 @@ namespace OwcaScript::Internal {
 			}
 		}
 		template <std::floating_point T>
-		static auto convert_impl2(OwcaVM vm, size_t I, T *, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Int && v.kind() != OwcaValueKind::Float) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to integer value", I + 1, v.type()));
 			if (v.kind() == OwcaValueKind::Int) {
@@ -83,77 +83,77 @@ namespace OwcaScript::Internal {
 				return (T)v.as_float(vm).internal_value();
 			}
 		}
-		static std::string convert_impl2(OwcaVM vm, size_t I, std::string *b, const OwcaValue &v) {
+		static std::string convert_impl2(OwcaVM vm, size_t I, std::string *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 			return std::string{ v.as_string(vm).text() };
 		}
-		static std::string_view convert_impl2(OwcaVM vm, size_t I, std::string_view *b, const OwcaValue &v) {
+		static std::string_view convert_impl2(OwcaVM vm, size_t I, std::string_view *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 			return v.as_string(vm).text();
 		}
-		static OwcaEmpty convert_impl2(OwcaVM vm, size_t I, OwcaEmpty *b, const OwcaValue &v) {
+		static OwcaEmpty convert_impl2(OwcaVM vm, size_t I, OwcaEmpty *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Empty) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
 			return {};
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaRange *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaRange *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Range) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
 			return v.as_range(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaInt *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaInt *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Int) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an integer", I + 1, v.type()));
 			return v.as_int(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaFloat *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaFloat *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Float) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
 			return v.as_float(vm);
 		}
-		static const auto &convert_impl2(OwcaVM vm, size_t I, OwcaString *b, const OwcaValue &v) {
+		static const auto &convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 			return v.as_string(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaFunctions *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaFunctions *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Functions) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
 			return v.as_functions(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Map) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
 			return v.as_map(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Class) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
 			return v.as_class(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Object) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
 			return v.as_object(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Array) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
 			return v.as_array(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Tuple) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
 			return v.as_tuple(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Set) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
 			return v.as_set(vm);
 		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaException *b, const OwcaValue &v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaException *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Object) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
 			auto oo = v.as_object(vm);
@@ -162,7 +162,7 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
 			return OwcaException{ oo.internal_value(), oe };
 		}
-		static OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, const OwcaValue &v) {
+		static OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, OwcaValue v) {
 			return v;
 		}
 
@@ -202,10 +202,10 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_overflow(std::format("range size for size {} -> {} overflows integer", r.lower(), r.upper()));
 			return OwcaInt{ vm, v, "range' size" };
 		}
-		static OwcaValue bool_init(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue bool_init(OwcaVM vm, OwcaValue r) {
 			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
 		}
-		static OwcaValue int_init(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue int_init(OwcaVM vm, OwcaValue r) {
 			return OwcaInt { r.visit(
 				[&](OwcaBool value) -> OwcaIntInternal {
 					return value.internal_value() ? 1 : 0;
@@ -277,7 +277,7 @@ namespace OwcaScript::Internal {
 				}
 			) };
 		}
-		static OwcaValue float_init(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue float_init(OwcaVM vm, OwcaValue r) {
 			return OwcaFloat { r.visit(
 				[&](OwcaBool value) -> OwcaFloatInternal {
 					return value.internal_value() ? 1.0f : 0.0f;
@@ -349,17 +349,17 @@ namespace OwcaScript::Internal {
 				}
 			) };
 		}
-		static OwcaValue string_init(OwcaVM vm, const OwcaValue &, const OwcaValue &r) {
+		static OwcaValue string_init(OwcaVM vm, OwcaValue , OwcaValue r) {
 			return vm.create_string(r.to_string());
 		}
-		static OwcaValue string_size(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
 			return OwcaInt{ vm, r.as_string(vm).internal_value()->size(), "string' size" };
 		}
-		static OwcaValue function_bind(OwcaVM vm, const OwcaValue &r, const OwcaValue &bind) {
+		static OwcaValue function_bind(OwcaVM vm, OwcaValue r, OwcaValue bind) {
 			auto f = r.as_functions(vm);
 			return f.bind(bind);
 		}
-		static OwcaValue function_bound_value(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue function_bound_value(OwcaVM vm, OwcaValue r) {
 			auto f = r.as_functions(vm);
 			return f.self();
 		}
@@ -369,13 +369,13 @@ namespace OwcaScript::Internal {
 		static OwcaValue set_size(OwcaVM vm, const OwcaSet &r) {
 			return OwcaInt{ vm, r.size(), "set' size" };
 		}
-		static OwcaValue class_name(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue class_name(OwcaVM vm, OwcaValue r) {
 			return vm.create_string_from_view(r.as_class(vm).internal_value()->name);
 		}
-		static OwcaValue class_full_name(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue class_full_name(OwcaVM vm, OwcaValue r) {
 			return vm.create_string_from_view(r.as_class(vm).internal_value()->full_name);
 		}
-		static OwcaValue array_init(OwcaVM vm, const OwcaArray &self, const OwcaValue &r) {
+		static OwcaValue array_init(OwcaVM vm, OwcaArray self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = o.internal_value()->values;
@@ -385,9 +385,7 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
-						self.internal_value()->values.push_back(
-							VM::get(vm).create_tuple({ val.first, val.second })
-						);
+						self.internal_value()->values.push_back(val.first);
 					}
 				},
 				[&](OwcaSet o) {
@@ -411,10 +409,17 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue array_size(OwcaVM vm, const OwcaArray &self) {
+		static OwcaValue array_size(OwcaVM vm, OwcaArray self) {
 			return OwcaInt{ vm, self.internal_value()->values.size(), "array' size" };
 		}
-		static OwcaValue tuple_init(OwcaVM vm, const OwcaArray &self, const OwcaValue &r) {
+		static OwcaValue array_sort(OwcaVM vm, OwcaArray self) {
+			auto values = self.internal_value()->values;
+			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
+				return VM::get(vm).compare_values(CompareKind::Less, a, b);
+			});
+			return OwcaArray{ VM::get(vm).allocate<Array>(0, std::move(values)) };
+		}
+		static OwcaValue tuple_init(OwcaVM vm, OwcaArray self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = o.internal_value()->values;
@@ -424,9 +429,7 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
-						self.internal_value()->values.push_back(
-							VM::get(vm).create_tuple({ val.first, val.second })
-						);
+						self.internal_value()->values.push_back(val.first);
 					} 
 				},
 				[&](OwcaSet o) {
@@ -450,8 +453,15 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue tuple_size(OwcaVM vm, const OwcaArray &self) {
+		static OwcaValue tuple_size(OwcaVM vm, OwcaArray self) {
 			return OwcaInt{ vm, self.internal_value()->values.size(), "tuple' size" };
+		}
+		static OwcaValue tuple_sort(OwcaVM vm, OwcaArray self) {
+			auto values = self.internal_value()->values;
+			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
+				return VM::get(vm).compare_values(CompareKind::Less, a, b);
+			});
+			return OwcaTuple{ VM::get(vm).allocate<Array>(0, std::move(values), true) };
 		}
 		static OwcaValue exception_init(OwcaVM vm, OwcaException self, OwcaString msg) {
 			VM::get(vm).initialize_exception_object(*self.internal_value());
@@ -481,7 +491,7 @@ namespace OwcaScript::Internal {
 			return vm.create_string_from_view(self.frame(ind).function);
 		}
 
-		static OwcaValue hash(OwcaVM vm, const OwcaValue &r) {
+		static OwcaValue hash(OwcaVM vm, OwcaValue r) {
 			auto v = VM::get(vm).calculate_hash(r);
 			return OwcaInt{ (OwcaIntInternal)v };
 		}
@@ -513,8 +523,10 @@ namespace OwcaScript::Internal {
 			if (full_name == "Class.full_name") return adapt(class_full_name);
 			if (full_name == "Array.__init__") return adapt(array_init);
 			if (full_name == "Array.size") return adapt(array_size);
+			if (full_name == "Array.sort") return adapt(array_sort);
 			if (full_name == "Tuple.__init__") return adapt(tuple_init);
 			if (full_name == "Tuple.size") return adapt(tuple_size);
+			if (full_name == "Tuple.sort") return adapt(tuple_sort);
 			if (full_name == "hash") return adapt(hash);
 			if (full_name == "Exception.__init__") return adapt(exception_init);
 			if (full_name == "Exception.count") return adapt(exception_count);
@@ -570,10 +582,12 @@ class Class {
 class Array {
 	function native __init__(self, value);
 	function native size(self);
+	function native sort(self);
 }
 class Tuple {
 	function native __init__(self, value);
 	function native size(self);
+	function native sort(self);
 }
 class native Exception {
 	function native __init__(self, message);
@@ -593,7 +607,7 @@ function native hash(value);
 		OwcaValue builtin_dictionary;
 		vm.execute(std::move(code_compiled), {}, &builtin_dictionary);
 
-		auto read = [&](const OwcaValue &val) -> Class*{
+		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class(vm).internal_value();
 		};
 		auto dct = builtin_dictionary.as_map(vm);
@@ -686,7 +700,7 @@ function native hash(value);
 	{
 		return obj.internal_value()->native_storage<Exception>(ClassToken{ c_exception });
 	}	
-	VM& VM::get(const OwcaVM v)
+	VM& VM::get(const OwcaVM &v)
 	{
 		return *v.vm;
 	}
@@ -734,17 +748,17 @@ function native hash(value);
 		throw_exception(c_math_exception, msg);
 	}
 
-	void VM::throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right)
+	void VM::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
 	{
 		const char *oper;
 		switch(kind) {
-		case AstExprCompare::Kind::Is: oper = "is"; break;
-		case AstExprCompare::Kind::Eq: oper = "=="; break;
-		case AstExprCompare::Kind::NotEq: oper = "!="; break;
-		case AstExprCompare::Kind::LessEq: oper = "<=>"; break;
-		case AstExprCompare::Kind::MoreEq: oper = ">="; break;
-		case AstExprCompare::Kind::Less: oper = "<"; break;
-		case AstExprCompare::Kind::More: oper = ">"; break;
+		case CompareKind::Is: oper = "is"; break;
+		case CompareKind::Eq: oper = "=="; break;
+		case CompareKind::NotEq: oper = "!="; break;
+		case CompareKind::LessEq: oper = "<=>"; break;
+		case CompareKind::MoreEq: oper = ">="; break;
+		case CompareKind::Less: oper = "<"; break;
+		case CompareKind::More: oper = ">"; break;
 		}
 		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
 	}
@@ -829,7 +843,7 @@ function native hash(value);
 		throw_exception(c_invalid_operation_exception, msg);
 	}
 
-	OwcaValue VM::member(const OwcaValue& val, const std::string& key)
+	OwcaValue VM::member(OwcaValue val, const std::string& key)
 	{
 		auto v = try_member(val, key);
 		if (!v) {
@@ -838,7 +852,7 @@ function native hash(value);
 		return *v;
 	}
 
-	std::optional<OwcaValue> VM::try_member(const OwcaValue& val, const std::string& key)
+	std::optional<OwcaValue> VM::try_member(OwcaValue val, const std::string& key)
 	{
 		auto vm = OwcaVM{ this };
 		auto read_member = [&](Class *cls) -> OwcaValue * {
@@ -887,7 +901,7 @@ function native hash(value);
 		return *v;
 	}
 
-	void VM::member(const OwcaValue& val, const std::string& key, OwcaValue value)
+	void VM::member(OwcaValue val, const std::string& key, OwcaValue value)
 	{
 		val.visit(
 			[&](const OwcaObject &o) {
@@ -1040,7 +1054,7 @@ function native hash(value);
 
 		return execute();
 	}
-	OwcaValue VM::execute_call(const OwcaValue &func, std::span<OwcaValue> arguments)
+	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
 		return func.visit(
@@ -1257,13 +1271,12 @@ function native hash(value);
 		auto& s = stacktrace.back();
 		return s.runtime_function->code;
 	}
-	bool VM::compare_values(const OwcaValue& left, const OwcaValue& right)
+	bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
 	{
-		auto vm = OwcaVM{ this };
-		return AstExprCompare::compare_equal(vm, left, right);
+		return AstExprCompare::execute_compare(this, kind, left, right);
 	}
 	
-	bool VM::calculate_if_true(const OwcaValue &r) {
+	bool VM::calculate_if_true(OwcaValue r) {
 		return r.visit(
 			[&](OwcaEmpty value) -> bool {
 				return false;
@@ -1306,43 +1319,43 @@ function native hash(value);
 			}
 		);
 	}
-	size_t VM::calculate_hash(const OwcaValue& value) {
+	size_t VM::calculate_hash(OwcaValue value) {
 		auto vm = OwcaVM{ this };
 		static auto calc_hash = [](const auto& q) {
 			return std::hash<std::remove_cvref_t<decltype(q)>>()(q);
 			};
 		return value.visit(
-			[](const OwcaEmpty& o) -> size_t { return 3; },
-			[](const OwcaRange& o) -> size_t { 
+			[](OwcaEmpty o) -> size_t { return 3; },
+			[](OwcaRange o) -> size_t { 
 				return calc_hash(o.lower().internal_value()) * 1009 + calc_hash(o.upper().internal_value()) + 4;
 			},
-			[](const OwcaInt& o) -> size_t { return calc_hash((OwcaFloatInternal)o.internal_value()) * 1013 + 5; },
-			[](const OwcaFloat& o) -> size_t { return calc_hash(o.internal_value()) * 1013 + 5; },
-			[](const OwcaBool& o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
-			[](const OwcaString& o) -> size_t { return o.hash() * 1031 + 8; },
-			[](const OwcaFunctions& o) -> size_t { return calc_hash(o.name()) * 1033 + 9; },
-			[&](const OwcaMap& o) -> size_t {
+			[](OwcaInt o) -> size_t { return calc_hash((OwcaFloatInternal)o.internal_value()) * 1013 + 5; },
+			[](OwcaFloat o) -> size_t { return calc_hash(o.internal_value()) * 1013 + 5; },
+			[](OwcaBool o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
+			[](OwcaString o) -> size_t { return o.hash() * 1031 + 8; },
+			[](OwcaFunctions o) -> size_t { return calc_hash(o.name()) * 1033 + 9; },
+			[&](OwcaMap o) -> size_t {
 				throw_not_hashable(value.type());
 			},
-			[&](const OwcaClass& o) -> size_t {
+			[&](OwcaClass o) -> size_t {
 				return std::hash<void*>()(o.internal_value()) * 1009;
 			},
-			[&](const OwcaObject& o) -> size_t {
+			[&](OwcaObject o) -> size_t {
 				throw_not_hashable(value.type());
 			},
-			[&](const OwcaArray &o) -> size_t {
+			[&](OwcaArray o) -> size_t {
 				throw_not_hashable(value.type());
 			},
-			[&](const OwcaTuple &o) -> size_t {
+			[&](OwcaTuple o) -> size_t {
 				return o.internal_value()->hash();
 			},
-			[&](const OwcaSet &o) -> size_t {
+			[&](OwcaSet o) -> size_t {
 				throw_not_hashable(value.type());
 			}
 		);
 	}
 
-	std::unique_ptr<IteratorBase> VM::create_iterator(const OwcaValue &r)
+	std::unique_ptr<IteratorBase> VM::create_iterator(OwcaValue r)
 	{
 		return r.visit(
 			[](const OwcaRange& o) -> std::unique_ptr<IteratorBase> {
@@ -1406,7 +1419,7 @@ function native hash(value);
 					OwcaValue *get() override {
 						if (beg != end && remaining > 0) {
 							auto v = *beg;
-							tmp = vm.create_tuple({ v.first, v.second });
+							tmp = v.first;
 							return &tmp;
 						}
 						return nullptr;
@@ -1543,7 +1556,7 @@ function native hash(value);
 		}
 	}
 
-	void VM::gc_mark(const OwcaValue& o, GenerationGC ggc)
+	void VM::gc_mark(OwcaValue o, GenerationGC ggc)
 	{
 		o.visit(
 			[](const OwcaEmpty& o) { },

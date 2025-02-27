@@ -20,7 +20,7 @@ namespace OwcaScript {
         size_t size() const;
         void resize(size_t);
         void reserve(size_t);
-        const OwcaValue &operator [] (size_t) const;
+        OwcaValue operator [] (size_t) const;
         OwcaValue &operator [] (size_t);
 
         std::string to_string() const;

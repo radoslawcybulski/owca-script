@@ -94,8 +94,9 @@ namespace OwcaScript {
 		OwcaValue create_string(OwcaValue str, size_t start, size_t end) const;
 		OwcaValue create_string(OwcaValue str, size_t count) const;
 		OwcaValue create_string(OwcaValue left, OwcaValue right) const;
-	void run_gc();
-		void gc_mark(const OwcaValue&, GenerationGC);
+		
+		void run_gc();
+		void gc_mark(OwcaValue, GenerationGC);
 	};
 }
 

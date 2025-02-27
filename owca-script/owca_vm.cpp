@@ -87,7 +87,7 @@ namespace OwcaScript {
 		vm->run_gc();
 	}
 
-	void OwcaVM::gc_mark(const OwcaValue&v, GenerationGC ggc)
+	void OwcaVM::gc_mark(OwcaValue v, GenerationGC ggc)
 	{
 		vm->gc_mark(v, ggc);
 	}

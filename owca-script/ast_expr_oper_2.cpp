@@ -249,7 +249,7 @@ namespace OwcaScript::Internal {
 			[&](const auto&) {}
 		);
 	}
-	static size_t verify_key(OwcaVM vm, OwcaInt k, size_t size, const OwcaValue &orig_key, std::string_view name) {
+	static size_t verify_key(OwcaVM vm, OwcaInt k, size_t size, OwcaValue orig_key, std::string_view name) {
 		auto v = k.internal_value();
 		if (v < 0 || v >= (OwcaIntInternal)size)
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is out of range for {} of size {}", orig_key, name, size));
@@ -258,7 +258,7 @@ namespace OwcaScript::Internal {
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is out of range for {} of size {} - size_t overflows", orig_key, name, size));
 		return v2;
 	}
-	static std::pair<size_t, size_t> verify_key(OwcaVM vm, OwcaRange k, size_t size, const OwcaValue &orig_key, std::string_view name) {
+	static std::pair<size_t, size_t> verify_key(OwcaVM vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name) {
 		auto [v1, v2] = k.internal_values();
 		if (v2 <= v1)
 			return { 0, 0 };

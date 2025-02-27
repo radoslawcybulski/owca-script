@@ -19,7 +19,7 @@ namespace OwcaScript {
         object->values.reserve(s);
     }
 
-    const OwcaValue &OwcaArray::operator [] (size_t s) const
+    OwcaValue OwcaArray::operator [] (size_t s) const
     {
         assert(s < object->values.size());
         return object->values[s];

@@ -22,6 +22,7 @@ namespace OwcaScript {
 		class AstReturn;
 		class AstIf;
 		class AstWhile;
+		class AstFor;
 		class AstLoopControl;
 		class AstTry;
 		class AstThrow;
@@ -46,6 +47,7 @@ namespace OwcaScript {
 			virtual void apply(AstReturn& o);
 			virtual void apply(AstIf& o);
 			virtual void apply(AstWhile& o);
+			virtual void apply(AstFor& o);
 			virtual void apply(AstLoopControl& o);
 			virtual void apply(AstTry& o);
 			virtual void apply(AstThrow& o);

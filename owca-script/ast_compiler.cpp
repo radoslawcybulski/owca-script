@@ -15,6 +15,7 @@
 #include "ast_class.h"
 #include "ast_if.h"
 #include "ast_while.h"
+#include "ast_for.h"
 #include "ast_try.h"
 #include "ast_throw.h"
 #include "ast_loop_control.h"
@@ -335,10 +336,8 @@ namespace OwcaScript::Internal {
 			std::vector<std::unique_ptr<AstExpr>> values;
 			values.push_back(std::move(v));
 			while (preview().second != ")") {
-				if (!values.empty()) {
-					consume(",");
-				}
-				if (!values.empty() && preview().second == ")") break;
+				consume(",");
+				if (preview().second == ")") break;
 				values.push_back(compile_expression_no_assign());
 			}
 			consume(")");
@@ -530,17 +529,17 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_compare()
 	{
 		auto left = compile_expr_range();
-		std::vector<std::tuple<AstExprCompare::Kind, Line, std::unique_ptr<AstExpr>>> nexts;
+		std::vector<std::tuple<CompareKind, Line, std::unique_ptr<AstExpr>>> nexts;
 		while (true) {
 			auto tok = preview().second;
-			std::optional<AstExprCompare::Kind> kind;
-			if (tok == "==") kind = AstExprCompare::Kind::Eq;
-			else if (tok == "!=") kind = AstExprCompare::Kind::NotEq;
-			else if (tok == ">=") kind = AstExprCompare::Kind::MoreEq;
-			else if (tok == "<=") kind = AstExprCompare::Kind::LessEq;
-			else if (tok == ">") kind = AstExprCompare::Kind::More;
-			else if (tok == "<") kind = AstExprCompare::Kind::Less;
-			else if (tok == "is") kind = AstExprCompare::Kind::Is;
+			std::optional<CompareKind> kind;
+			if (tok == "==") kind = CompareKind::Eq;
+			else if (tok == "!=") kind = CompareKind::NotEq;
+			else if (tok == ">=") kind = CompareKind::MoreEq;
+			else if (tok == "<=") kind = CompareKind::LessEq;
+			else if (tok == ">") kind = CompareKind::More;
+			else if (tok == "<") kind = CompareKind::Less;
+			else if (tok == "is") kind = CompareKind::Is;
 			if (!kind) break;
 
 			auto [line, tok2] = consume();
@@ -827,6 +826,22 @@ namespace OwcaScript::Internal {
 		return std::make_unique<AstWhile>(line, control_depth, loop_ident, std::move(val), std::move(body));
 	}
 
+	std::unique_ptr<AstStat> AstCompiler::compile_for(std::string_view loop_ident)
+	{
+		auto line = consume("for");
+		consume("(");
+		auto [ text_line, text ] = consume();
+		if (!is_identifier(text))
+			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, text_line, std::format("expected identifier for iteration's value, got `{}`", text));
+		consume("=");
+		std::unique_ptr<AstExpr> iterator = compile_expression_no_assign();
+		consume(")");
+		auto control_depth = loop_control_depth;
+		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
+		auto body = compile_stat();
+		return std::make_unique<AstFor>(line, control_depth, loop_ident, text, std::move(iterator), std::move(body));
+	}
+
 	std::unique_ptr<AstStat> AstCompiler::compile_return()
 	{
 		auto line = consume("return");
@@ -930,6 +945,7 @@ namespace OwcaScript::Internal {
 		}
 		auto [ line, tok ] = preview();
 		if (tok == "while") return compile_while(ident);
+		if (tok == "for") return compile_for(ident);
 		if (!ident.empty())
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected while because loop identifier `{}` is present", tok, ident));
 		if (tok == "function") return compile_function();
@@ -1028,6 +1044,23 @@ namespace OwcaScript::Internal {
 					assert(index);
 					o.update_loop_ident_index(*index);
 				}
+			}
+			apply(static_cast<AstStat&>(o));
+		}
+		void apply(AstFor &o) override {
+			if (first_run) {
+				if (!o.get_loop_identifier().empty()) {
+					current_stack->define_identifier(o.get_loop_identifier());
+				}
+				current_stack->define_identifier(o.get_value());
+			}
+			else {
+				if (!o.get_loop_identifier().empty()) {
+					auto index = current_stack->lookup_identifier(o.get_loop_identifier());
+					assert(index);
+					o.update_loop_ident_index(*index);
+				}
+				o.update_value_index(*current_stack->lookup_identifier(o.get_value()));
 			}
 			apply(static_cast<AstStat&>(o));
 		}

@@ -20,6 +20,7 @@ namespace OwcaScript {
 		struct RuntimeFunction;
 		struct IteratorBase;
 		struct Exception;
+		enum class CompareKind;
 
 		class VM {
 			AllocationEmpty root_allocated_memory;
@@ -118,7 +119,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_overflow(std::string_view msg);
 
 			// invalid operation exception
-			[[noreturn]] void throw_cant_compare(AstExprCompare::Kind kind, std::string_view left, std::string_view right);
+			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
 			[[noreturn]] void throw_index_out_of_range(std::string msg);
 			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
 			[[noreturn]] void throw_missing_member(std::string_view type, std::string_view ident);
@@ -139,7 +140,7 @@ namespace OwcaScript {
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
-			OwcaValue execute_call(const OwcaValue &func, std::span<OwcaValue> arguments);
+			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_exception();
@@ -153,21 +154,21 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue str, size_t count);
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue get_identifier(unsigned int index);
-			OwcaValue member(const OwcaValue &val, const std::string& key);
-			std::optional<OwcaValue> try_member(const OwcaValue &val, const std::string& key);
-			void member(const OwcaValue &val, const std::string& key, OwcaValue);
+			OwcaValue member(OwcaValue val, const std::string& key);
+			std::optional<OwcaValue> try_member(OwcaValue val, const std::string& key);
+			void member(OwcaValue val, const std::string& key, OwcaValue);
 			Exception *is_exception(OwcaObject obj) const;
 
-			bool compare_values(const OwcaValue& left, const OwcaValue& right);
-			size_t calculate_hash(const OwcaValue&);
-			bool calculate_if_true(const OwcaValue&);
-			std::unique_ptr<IteratorBase> create_iterator(const OwcaValue &);
+			bool compare_values(CompareKind kind, OwcaValue left, OwcaValue right);
+			size_t calculate_hash(OwcaValue);
+			bool calculate_if_true(OwcaValue);
+			std::unique_ptr<IteratorBase> create_iterator(OwcaValue );
 
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;
 			void run_gc();
 			void gc_mark(AllocationBase* ptr, GenerationGC ggc);
-			void gc_mark(const OwcaValue &, GenerationGC ggc);
+			void gc_mark(OwcaValue , GenerationGC ggc);
 			void gc_mark(const std::vector<OwcaValue> &, GenerationGC ggc);
 			void register_variable(OwcaVariable &var);
 			void unregister_variable(OwcaVariable &var);
@@ -184,7 +185,7 @@ namespace OwcaScript {
 				return p2;
 			}
 
-			static VM& get(const OwcaVM v);
+			static VM& get(const OwcaVM &v);
 		};
 	}
 }

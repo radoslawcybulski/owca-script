@@ -22,7 +22,7 @@ namespace OwcaScript {
 		std::string to_string() const;
 		size_t size() const;
 
-		bool has_value(const OwcaValue &key) const;
+		bool has_value(OwcaValue key) const;
 
 		class Iterator {
 		public:

@@ -14,6 +14,7 @@
 #include "ast_return.h"
 #include "ast_if.h"
 #include "ast_while.h"
+#include "ast_for.h"
 #include "ast_loop_control.h"
 #include "ast_try.h"
 #include "ast_throw.h"
@@ -95,6 +96,11 @@ namespace OwcaScript::Internal {
 	}
 
 	void AstVisitor::apply(AstWhile &o)
+	{
+		apply(static_cast<AstStat&>(o));
+	}
+
+	void AstVisitor::apply(AstFor &o)
 	{
 		apply(static_cast<AstStat&>(o));
 	}

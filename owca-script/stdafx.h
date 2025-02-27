@@ -19,5 +19,6 @@
 #include <sstream>
 #include <functional>
 #include <iterator>
+#include <algorithm>
 
 #endif

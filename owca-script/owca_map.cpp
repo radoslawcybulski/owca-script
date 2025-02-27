@@ -20,7 +20,7 @@ namespace OwcaScript {
 		return dictionary->dict.item(key);
 	}
 
-	const OwcaValue &OwcaMap::operator [] (OwcaValue key) const
+	OwcaValue OwcaMap::operator [] (OwcaValue key) const
 	{
 		return dictionary->dict.item(key);
 	}
@@ -55,7 +55,7 @@ namespace OwcaScript {
 		return Iterator{ dictionary, dictionary->dict.values.size() };
 	}
 
-	OwcaValue *OwcaMap::value(const OwcaValue &key) const
+	OwcaValue *OwcaMap::value(OwcaValue key) const
 	{
 		auto p = dictionary->dict.find(key);
 		if (!p) return nullptr;

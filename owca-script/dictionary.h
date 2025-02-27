@@ -17,16 +17,16 @@ namespace OwcaScript {
 
 			Dictionary(OwcaVM vm, bool is_map) : vm(vm), is_map(is_map) {}
 
-			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key, size_t hash) const;
-			std::tuple<size_t, size_t, bool> find_place(const OwcaValue &key) const;
+			std::tuple<size_t, size_t, bool> find_place(OwcaValue key, size_t hash) const;
+			std::tuple<size_t, size_t, bool> find_place(OwcaValue key) const;
 
 			void try_rehash();
-			OwcaValue &item(const OwcaValue &key);
-			const OwcaValue &read(const OwcaValue &key);
-			void write(const OwcaValue &key, OwcaValue value);
-			OwcaValue pop(const OwcaValue &key);
-			std::optional<std::pair<const OwcaValue*, OwcaValue*>> find(const OwcaValue &key);
-			std::optional<std::pair<const OwcaValue*, const OwcaValue*>> find(const OwcaValue &key) const;
+			OwcaValue &item(OwcaValue key);
+			OwcaValue read(OwcaValue key);
+			void write(OwcaValue key, OwcaValue value);
+			OwcaValue pop(OwcaValue key);
+			std::optional<std::pair<const OwcaValue*, OwcaValue*>> find(OwcaValue key);
+			std::optional<std::pair<const OwcaValue*, const OwcaValue*>> find(OwcaValue key) const;
 
 			size_t next(size_t pos = (size_t)-1) const;
 			std::pair<const OwcaValue *, OwcaValue *> read(size_t pos);

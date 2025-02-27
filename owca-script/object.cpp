@@ -52,12 +52,12 @@ namespace OwcaScript::Internal {
 		return (char*)o + sizeof(*o);
 	}
 
-	void Class::initialize_add_base_class(OwcaVM vm, const OwcaValue &b)
+	void Class::initialize_add_base_class(OwcaVM vm, OwcaValue b)
 	{
 		auto c = b.as_class(vm).internal_value();
 		base_classes.push_back(c);
 	}
-	void Class::initialize_add_function(OwcaVM vm, const OwcaValue &f)
+	void Class::initialize_add_function(OwcaVM vm, OwcaValue f)
 	{
 		auto fnc = f.as_functions(vm);
 		assert(fnc.internal_value()->functions.size() == 1);

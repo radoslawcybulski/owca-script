@@ -9,14 +9,14 @@ namespace OwcaScript::Internal {
 	static constexpr const size_t minimum_size = 16;
 	static constexpr const float max_allocation = 0.7f, min_allocation = 0.25f;
 
-	std::tuple<size_t, size_t, bool> Dictionary::find_place(const OwcaValue &key) const
+	std::tuple<size_t, size_t, bool> Dictionary::find_place(OwcaValue key) const
 	{
 		auto hash = VM::get(vm).calculate_hash(key);
 		if (hash == Deleted || hash == Empty) hash += 2;
 		return find_place(key, hash);
 	}
 
-	std::tuple<size_t, size_t, bool> Dictionary::find_place(const OwcaValue &key, size_t hash) const
+	std::tuple<size_t, size_t, bool> Dictionary::find_place(OwcaValue key, size_t hash) const
 	{
 		if (values.empty()) return { hash & (minimum_size - 1), hash, false};
 
@@ -28,7 +28,7 @@ namespace OwcaScript::Internal {
 			if (cell_hash == Empty) return {index, hash, false};
 			if (cell_hash == Deleted) continue;
 			if (cell_hash != hash) continue;
-			if (VM::get(vm).compare_values(std::get<1>(p), key)) return { index, hash, true };
+			if (VM::get(vm).compare_values(CompareKind::Eq, std::get<1>(p), key)) return { index, hash, true };
 		}
 		assert(false);
 		return { 0, 0, false };
@@ -66,7 +66,7 @@ namespace OwcaScript::Internal {
 		}
 	}
 
-	OwcaValue& Dictionary::item(const OwcaValue &key)
+	OwcaValue& Dictionary::item(OwcaValue key)
 	{
 		try_rehash();
 		auto [index, hash, exists] = find_place(key);
@@ -82,7 +82,7 @@ namespace OwcaScript::Internal {
 		}
 		return std::get<2>(values[index]);
 	}
-	const OwcaValue& Dictionary::read(const OwcaValue &key)
+	OwcaValue Dictionary::read(OwcaValue key)
 	{
 		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
@@ -91,12 +91,12 @@ namespace OwcaScript::Internal {
 		return std::get<2>(values[index]);
 	}
 
-	void Dictionary::write(const OwcaValue &key, OwcaValue value)
+	void Dictionary::write(OwcaValue key, OwcaValue value)
 	{
 		item(key) = std::move(value);
 	}
 
-	OwcaValue Dictionary::pop(const OwcaValue &key)
+	OwcaValue Dictionary::pop(OwcaValue key)
 	{
 		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
@@ -109,14 +109,14 @@ namespace OwcaScript::Internal {
 		return v;
 	}
 
-	std::optional<std::pair<const OwcaValue*, OwcaValue*>> Dictionary::find(const OwcaValue &key)
+	std::optional<std::pair<const OwcaValue*, OwcaValue*>> Dictionary::find(OwcaValue key)
 	{
 		auto [i, hash, exists] = find_place(key);
 		if (!exists) return std::nullopt;
 		return std::pair<const OwcaValue*, OwcaValue*>{ &std::get<1>(values[i]), &std::get<2>(values[i]) };
 	}
 
-	std::optional<std::pair<const OwcaValue*, const OwcaValue*>> Dictionary::find(const OwcaValue &key) const
+	std::optional<std::pair<const OwcaValue*, const OwcaValue*>> Dictionary::find(OwcaValue key) const
 	{
 		auto [i, hash, exists] = find_place(key);
 		if (!exists) return std::nullopt;

@@ -55,8 +55,8 @@ namespace OwcaScript {
 			[&](const OwcaObject &o) {
 				return o.internal_value()->vm->calculate_if_true(*this);
 			},
-			[](const OwcaArray &o) { return !o.internal_value()->values.empty(); },
-			[](const OwcaTuple &o) { return !o.internal_value()->values.empty(); },
+			[](OwcaArray o) { return !o.internal_value()->values.empty(); },
+			[](OwcaTuple o) { return !o.internal_value()->values.empty(); },
 			[](const OwcaSet &o) { return o.size() != 0; }
 		);
 	}
@@ -163,8 +163,8 @@ namespace OwcaScript {
 			[](const OwcaMap &o) -> std::string_view { return "Map"; },
 			[](const OwcaClass &o) -> std::string_view { return "Class"; },
 			[](const OwcaObject &o) -> std::string_view { return o.internal_value()->type(); },
-			[](const OwcaArray &o) -> std::string_view { return "Array"; },
-			[](const OwcaTuple &o) -> std::string_view { return "Tuple"; },
+			[](OwcaArray o) -> std::string_view { return "Array"; },
+			[](OwcaTuple o) -> std::string_view { return "Tuple"; },
 			[](const OwcaSet &o) -> std::string_view { return "Set"; }
 			);
 	}
@@ -182,8 +182,8 @@ namespace OwcaScript {
 			[](const OwcaMap &o) -> std::string { return o.to_string(); },
 			[](const OwcaClass &o) -> std::string { return o.to_string(); },
 			[](const OwcaObject &o) -> std::string { return o.to_string(); },
-			[](const OwcaArray &o) -> std::string { return o.to_string(); },
-			[](const OwcaTuple &o) -> std::string { return o.to_string(); },
+			[](OwcaArray o) -> std::string { return o.to_string(); },
+			[](OwcaTuple o) -> std::string { return o.to_string(); },
 			[](const OwcaSet &o) -> std::string { return o.to_string(); }
 			);
 	}

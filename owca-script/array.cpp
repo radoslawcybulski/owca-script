@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
 
         size_t h = 13;
 
-        for(auto &q : values) {
+        for(auto q : values) {
             auto v = vm->calculate_hash(q);
             h = h * 1299709 + v;
         }

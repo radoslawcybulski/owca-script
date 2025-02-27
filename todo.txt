@@ -1,3 +1,7 @@
-exceptions
+with statement
+some functionality should be overloadable for user classes
+	- bool operator, with statement
+	- iteration - will require some twidling (how do we return more than one iterator to iterate one after another)
+	- array access? rather not
 range step
 	- do we need it?
