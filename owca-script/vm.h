@@ -9,6 +9,7 @@
 #include "owca_value.h"
 #include "execution_frame.h"
 #include "impl_base.h"
+#include "owca_variable.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -26,7 +27,6 @@ namespace OwcaScript {
 
 		class VM {
 			AllocationEmpty root_allocated_memory;
-			std::vector<OwcaVariable*> global_variables;
 			std::vector<ExecutionFrame> stacktrace;
 			std::vector<AllocationBase*> allocated_objects;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
@@ -75,6 +75,8 @@ namespace OwcaScript {
 
 			struct BuiltinProvider;
 		public:
+			OwcaVariableSet global_variables;
+
 			struct AllocatedObjectsPointer {
 				std::vector<AllocationBase*> &allocated_objects;
 				size_t size;
@@ -163,7 +165,7 @@ namespace OwcaScript {
 			bool compare_values(CompareKind kind, OwcaValue left, OwcaValue right);
 			size_t calculate_hash(OwcaValue);
 			bool calculate_if_true(OwcaValue);
-			std::unique_ptr<IteratorBase> create_iterator(OwcaValue );
+			OwcaIterator create_iterator(OwcaValue );
 
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;
@@ -171,8 +173,6 @@ namespace OwcaScript {
 			void gc_mark(AllocationBase* ptr, GenerationGC ggc);
 			void gc_mark(OwcaValue , GenerationGC ggc);
 			void gc_mark(const std::vector<OwcaValue> &, GenerationGC ggc);
-			void register_variable(OwcaVariable &var);
-			void unregister_variable(OwcaVariable &var);
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
 				auto p = new char[sizeof(T) + oversize];

@@ -9,9 +9,9 @@ namespace OwcaScript::Internal {
 	std::string RuntimeFunction::to_string() const {
 		return std::format("function set {}", name);
 	}
-	void RuntimeFunction::gc_mark(VM& vm, GenerationGC generation_gc) {
+	void RuntimeFunction::gc_mark(OwcaVM vm, GenerationGC generation_gc) {
 		visit([&](ScriptFunction& s) {
-			vm.gc_mark(s.values_from_parents, generation_gc);
+			VM::get(vm).gc_mark(s.values_from_parents, generation_gc);
 			},
 			[](const auto&) {});
 	}
@@ -22,6 +22,9 @@ namespace OwcaScript::Internal {
 			},
 			[](const NativeFunction&) {
 				return false;
+			},
+			[](const NativeGenerator&) {
+				return true;
 			});
 	}
 
@@ -31,13 +34,13 @@ namespace OwcaScript::Internal {
 	std::string RuntimeFunctions::to_string() const {
 		return std::format("function set {}", name);
 	}
-	void RuntimeFunctions::gc_mark(VM &vm, GenerationGC generation_gc) {
+	void RuntimeFunctions::gc_mark(OwcaVM vm, GenerationGC generation_gc) {
 		for (auto& it : functions) {
-			vm.gc_mark(it.second, generation_gc);
+			VM::get(vm).gc_mark(it.second, generation_gc);
 		}
 	}
 
-	void BoundFunctionSelfObject::gc_mark(VM& vm, GenerationGC generation_gc)
+	void BoundFunctionSelfObject::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
 
 	}

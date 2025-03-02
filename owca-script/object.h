@@ -33,7 +33,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "Class"; }
 			std::string to_string() const override;
-			void gc_mark(VM& vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 
 			void initialize_add_base_class(OwcaVM vm, OwcaValue b);
 			void initialize_add_function(OwcaVM vm, OwcaValue f);
@@ -54,7 +54,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(VM& vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 			std::span<char> native_storage_raw(ClassToken cls);
 			template <typename T> T* native_storage(ClassToken cls) {
 				auto sp = native_storage_raw(cls);

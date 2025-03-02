@@ -409,7 +409,7 @@ namespace OwcaScript::Internal {
 							auto &values = o.internal_value()->values;
 							std::vector<OwcaValue> temp;
 
-							for(auto val = iter->next(); val.kind() != OwcaValueKind::Completed; val = iter->next()) {
+							for(auto val = iter.next(); val.kind() != OwcaValueKind::Completed; val = iter.next()) {
 								assert(write <= v2);
 								if (write < v2) {
 									values[write++] = val;

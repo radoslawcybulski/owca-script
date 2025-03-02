@@ -147,19 +147,19 @@ namespace OwcaScript::Internal {
         return hash_value;
     }
 
-	void String::gc_mark(VM& vm, GenerationGC generation_gc)
+	void String::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
         visit(
             [&](const std::string &t) {},
             [&](Substr t) {
-                vm.gc_mark(t.child, generation_gc);
+                VM::get(vm).gc_mark(t.child, generation_gc);
             },
             [&](Mult t) {
-                vm.gc_mark(t.child, generation_gc);
+                VM::get(vm).gc_mark(t.child, generation_gc);
             },
             [&](Add t) {
-                vm.gc_mark(t.left, generation_gc);
-                vm.gc_mark(t.right, generation_gc);
+                VM::get(vm).gc_mark(t.left, generation_gc);
+                VM::get(vm).gc_mark(t.right, generation_gc);
             }
         );
 	}

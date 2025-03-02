@@ -19,9 +19,9 @@ namespace OwcaScript::Internal {
         return temp;
     }
 
-    void Array::gc_mark(VM& vm, GenerationGC generation_gc)
+    void Array::gc_mark(OwcaVM vm, GenerationGC generation_gc)
     {
-        vm.gc_mark(values, generation_gc);
+        VM::get(vm).gc_mark(values, generation_gc);
     }
 
     size_t Array::hash() const

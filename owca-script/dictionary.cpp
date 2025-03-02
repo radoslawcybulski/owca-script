@@ -173,12 +173,12 @@ namespace OwcaScript::Internal {
 		return tmp.str();
 
 	}
-	void Dictionary::gc_mark(VM& vm, GenerationGC generation_gc)
+	void Dictionary::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
 		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
 			auto v = read(pos);
-			vm.gc_mark(*v.first, generation_gc);
-			vm.gc_mark(*v.second, generation_gc);
+			VM::get(vm).gc_mark(*v.first, generation_gc);
+			VM::get(vm).gc_mark(*v.second, generation_gc);
 		}
 	}
 }

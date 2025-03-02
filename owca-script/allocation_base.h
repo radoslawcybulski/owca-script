@@ -46,7 +46,7 @@ namespace OwcaScript {
 
 			virtual std::string_view type() const = 0;
 			virtual std::string to_string() const = 0;
-			virtual void gc_mark(VM &vm, GenerationGC generation_gc) = 0;
+			virtual void gc_mark(OwcaVM vm, GenerationGC generation_gc) = 0;
 			virtual BoundFunctionSelfObject* is_bound_function_self_object() { return nullptr; }
 
 			static unsigned int get_currently_remaining_allocations();
@@ -61,7 +61,7 @@ namespace OwcaScript {
 			std::string to_string() const override { return ""; }
 
 		private:
-			void gc_mark(VM &vm, GenerationGC generation_gc) {}
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) {}
 		};
 	}
 }

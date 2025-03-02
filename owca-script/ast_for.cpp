@@ -27,13 +27,16 @@ namespace OwcaScript::Internal {
 		void execute_statement_impl(OwcaVM vm) const override {
             auto counter = (OwcaIntInternal)0;
             auto iter_value = iterator->execute_expression(vm);
-            auto iter = VM::get(vm).create_iterator(iter_value);
+            auto iter = [&]() {
+                if (iter_value.kind() == OwcaValueKind::Iterator) return iter_value.as_iterator(vm);
+                return VM::get(vm).create_iterator(iter_value);
+            }();
 
             while(true) {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
                     VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
                 }
-                auto v = iter->next();
+                auto v = iter.next();
                 if (v.kind() == OwcaValueKind::Completed) break;
 
                 VM::get(vm).set_identifier(value_index, v);
@@ -66,7 +69,7 @@ namespace OwcaScript::Internal {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
                     VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
                 }
-                auto v = iter->next();
+                auto v = iter.next();
                 if (v.kind() == OwcaValueKind::Completed) break;
                 
                 std::cout << "QWERTY " << v.to_string() << "\n";

@@ -58,12 +58,14 @@ namespace OwcaScript::Internal {
 
 		std::span<std::string_view> parameter_names;
 		std::string_view name, full_name;
+		bool is_generator;
 
-		void init(std::span<std::string_view> parameter_names, std::string_view name, std::string_view full_name)
+		void init(std::span<std::string_view> parameter_names, std::string_view name, std::string_view full_name, bool is_generator)
 		{
 			this->parameter_names = parameter_names;
 			this->name = name;
 			this->full_name = full_name;
+			this->is_generator = is_generator;
 		}
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override
@@ -72,19 +74,35 @@ namespace OwcaScript::Internal {
 			assert(code);
 			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, full_name, line, (unsigned int)parameter_names.size(), !parameter_names.empty() && parameter_names[0] == "self");
 
-			RuntimeFunction::NativeFunction nf;
-			nf.parameter_names = parameter_names;
+			bool filled = false;
+
 			if (auto native = rf->code->native_code_provider()) {
-				auto fnc = native->native_function(full_name, FunctionToken{ rf }, parameter_names);
-				if (fnc) {
-					nf.function = std::move(*fnc);
+				if (is_generator) {
+					auto fnc = native->native_generator(full_name, FunctionToken{ rf }, parameter_names);
+					RuntimeFunction::NativeGenerator nf;
+					nf.parameter_names = parameter_names;
+					if (fnc) {
+						nf.generator = std::move(*fnc);
+					}
+					else {
+						VM::get(vm).throw_missing_native(std::format("missing native function {}", full_name));
+					}
+					rf->data = std::move(nf);
+				}
+				else {
+					auto fnc = native->native_function(full_name, FunctionToken{ rf }, parameter_names);
+					RuntimeFunction::NativeFunction nf;
+					nf.parameter_names = parameter_names;
+					if (fnc) {
+						nf.function = std::move(*fnc);
+					}
+					else {
+						VM::get(vm).throw_missing_native(std::format("missing native function {}", full_name));
+					}
+					rf->data = std::move(nf);
 				}
 			}
-			if (!nf.function) {
-				VM::get(vm).throw_missing_native(std::format("missing native function {}", full_name));
-			}
 
-			rf->data = std::move(nf);
 			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
 			rfs->functions[rf->param_count] = rf;
 			auto of = OwcaFunctions{ rfs };
@@ -129,7 +147,7 @@ namespace OwcaScript::Internal {
 			for (auto i = 0u; i < params.size(); ++i) {
 				pn[i] = ei.code_buffer.allocate(params[i]);
 			}
-			ret->init(pn, nm, fm);
+			ret->init(pn, nm, fm, generator == Generator::Yes);
 			return ret;
 		}
 		else {

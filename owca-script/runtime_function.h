@@ -24,12 +24,16 @@ namespace OwcaScript {
 				std::span<std::string_view> parameter_names;
 				OwcaVM::NativeCodeProvider::Function function;
 			};
+			struct NativeGenerator {
+				std::span<std::string_view> parameter_names;
+				OwcaVM::NativeCodeProvider::GeneratorFunction generator;
+			};
 			// struct NativeGeneratorFunction {
 			// 	std::span<std::string_view> parameter_names;
 			// 	OwcaVM::NativeCodeProvider::Generator function;
 			// };
 			std::shared_ptr<CodeBuffer> code;
-			std::variant<ScriptFunction, NativeFunction> data;
+			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
 			std::string_view name, full_name;
 			Line fileline;
 			unsigned int param_count = 0;
@@ -54,7 +58,7 @@ namespace OwcaScript {
 			
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(VM &vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
@@ -67,7 +71,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(VM &vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
@@ -79,7 +83,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "bound function's self helper object"; }
 			std::string to_string() const override { return std::string{ type() }; }
-			void gc_mark(VM& vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 			BoundFunctionSelfObject* is_bound_function_self_object() override { return this; }
 		};
 	}

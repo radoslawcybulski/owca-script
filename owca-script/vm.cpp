@@ -31,22 +31,14 @@ namespace OwcaScript::Internal {
 		run_gc();
 	}
 
-	void VM::register_variable(OwcaVariable &var) {
-		var.global_variable_index = global_variables.size();
-		global_variables.push_back(&var);
-	}
-	void VM::unregister_variable(OwcaVariable &var) {
-		assert(var.global_variable_index < global_variables.size());
-		global_variables[var.global_variable_index] = global_variables.back();
-		global_variables[var.global_variable_index]->global_variable_index = var.global_variable_index;
-		global_variables.pop_back();
-	}
-
 	namespace {
 		template <typename T> struct FuncToTuple {
 
 		};
-		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM , ARGS...)> {
+		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
+			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
+		};
+		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, OwcaVariableSet&, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
 		};
 	}
@@ -179,13 +171,15 @@ namespace OwcaScript::Internal {
 				return std::tuple<>{};
 			}
 		}
-		template <typename ... ARGS> static std::tuple<OwcaVM, ARGS...> convert(OwcaVM vm, std::span<OwcaValue> args) {
+		template <typename ... ARGS> static std::tuple<OwcaVM, ARGS...> convert2(OwcaVM vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
 			assert(sizeof...(ARGS) == args.size());
 			std::tuple<ARGS...> dst_args = convert_impl<0, ARGS...>(vm, args);
 			return std::tuple_cat(std::tuple<OwcaVM>(vm), std::move(dst_args));
 		}
-		template <typename ... ARGS> static auto convert2(OwcaVM vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
-			return convert<ARGS...>(vm, args);
+		template <typename ... ARGS> static std::tuple<OwcaVM, OwcaVariableSet&, ARGS...> convert2(OwcaVM vm, OwcaVariableSet &set, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
+			assert(sizeof...(ARGS) == args.size());
+			std::tuple<ARGS...> dst_args = convert_impl<0, ARGS...>(vm, args);
+			return std::tuple_cat(std::tuple<OwcaVM, OwcaVariableSet&>(vm, set), std::move(dst_args));
 		}
 		
 		static OwcaValue range_init(OwcaVM vm, OwcaRange, std::int64_t lower, std::int64_t upper) {
@@ -196,6 +190,15 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue range_upper(OwcaVM vm, OwcaRange r) {
 			return r.upper();
+		}
+		static Generator range_iter(OwcaVM vm, OwcaVariableSet &set, OwcaRange o) {
+			auto lower = o.lower().internal_value();
+			auto upper = o.upper().internal_value();
+			OwcaIntInternal step = (lower > upper) ? -1 : 1;
+			while(lower != upper) {
+				co_yield OwcaInt{ lower };
+				lower += step;
+			}
 		}
 		static OwcaValue range_size(OwcaVM vm, OwcaRange r) {
 			auto v = std::abs(r.upper().internal_value() - r.lower().internal_value());
@@ -356,6 +359,11 @@ namespace OwcaScript::Internal {
 		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
 			return OwcaInt{ vm, r.as_string(vm).internal_value()->size(), "string' size" };
 		}
+		static Generator string_iter(OwcaVM vm, OwcaVariableSet &set, OwcaString o) {
+			for(auto i = 0u; i < o.size(); ++i) {
+				co_yield o.substr(i, 1);
+			}
+		}
 		static OwcaValue function_bind(OwcaVM vm, OwcaValue r, OwcaValue bind) {
 			auto f = r.as_functions(vm);
 			return f.bind(bind);
@@ -367,8 +375,18 @@ namespace OwcaScript::Internal {
 		static OwcaValue map_size(OwcaVM vm, const OwcaMap &r) {
 			return OwcaInt{ vm, r.size(), "map' size" };
 		}
+		static Generator map_iter(OwcaVM vm, OwcaVariableSet &set, OwcaMap o) {
+			for(auto v : o) {
+				co_yield v.first;
+			}
+		}
 		static OwcaValue set_size(OwcaVM vm, const OwcaSet &r) {
 			return OwcaInt{ vm, r.size(), "set' size" };
+		}
+		static Generator set_iter(OwcaVM vm, OwcaVariableSet &set, OwcaSet o) {
+			for(auto v : o) {
+				co_yield v;
+			}
 		}
 		static OwcaValue class_name(OwcaVM vm, OwcaValue r) {
 			return vm.create_string_from_view(r.as_class(vm).internal_value()->name);
@@ -404,6 +422,12 @@ namespace OwcaScript::Internal {
 						}
 					);
 				},
+				[&](OwcaObject o) {
+					auto iter = VM::get(vm).create_iterator(o);
+					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+						self.internal_value()->values.push_back(v);
+					}
+				},
 				[&](const auto &) {
 					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
 				}
@@ -412,6 +436,11 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue array_size(OwcaVM vm, OwcaArray self) {
 			return OwcaInt{ vm, self.internal_value()->values.size(), "array' size" };
+		}
+		static Generator array_iter(OwcaVM vm, OwcaVariableSet &set, OwcaArray o) {
+			for(auto i = 0u; i < o.size(); ++i) {
+				co_yield o[i];
+			}
 		}
 		static OwcaValue array_sort(OwcaVM vm, OwcaArray self) {
 			auto values = self.internal_value()->values;
@@ -448,6 +477,12 @@ namespace OwcaScript::Internal {
 						}
 					);
 				},
+				[&](OwcaObject o) {
+					auto iter = VM::get(vm).create_iterator(o);
+					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+						self.internal_value()->values.push_back(v);
+					}
+				},
 				[&](const auto &) {
 					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
 				}
@@ -456,6 +491,11 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue tuple_size(OwcaVM vm, OwcaArray self) {
 			return OwcaInt{ vm, self.internal_value()->values.size(), "tuple' size" };
+		}
+		static Generator tuple_iter(OwcaVM vm, OwcaVariableSet &set, OwcaArray o) {
+			for(auto i = 0u; i < o.size(); ++i) {
+				co_yield o[i];
+			}
 		}
 		static OwcaValue tuple_sort(OwcaVM vm, OwcaArray self) {
 			auto values = self.internal_value()->values;
@@ -503,9 +543,17 @@ namespace OwcaScript::Internal {
 
 		template <typename F>
 		static std::function<OwcaValue(OwcaVM, std::span<OwcaValue> args)> adapt(F &&f) {
-			return [f = std::move(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+			return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 				using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
 				auto dest_args = convert2(vm, args, (T*)nullptr);
+				return std::apply(f, dest_args);
+			};
+		}
+		template <typename F>
+		static std::function<Generator(OwcaVM, OwcaVariableSet&, std::span<OwcaValue> args)> adapt2(F &&f) {
+			return [f = std::forward<F>(f)](OwcaVM vm, OwcaVariableSet &set, std::span<OwcaValue> args) -> Generator {
+				using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
+				auto dest_args = convert2(vm, set, args, (T*)nullptr);
 				return std::apply(f, dest_args);
 			};
 		}
@@ -542,6 +590,15 @@ namespace OwcaScript::Internal {
 			if (full_name == "Exception.function") return adapt(exception_function);
 			return std::nullopt;
 		}
+		std::optional<GeneratorFunction> native_generator(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
+			if (full_name == "Range.__iter__") return adapt2(range_iter);
+			if (full_name == "String.__iter__") return adapt2(string_iter);
+			if (full_name == "Map.__iter__") return adapt2(map_iter);
+			if (full_name == "Set.__iter__") return adapt2(set_iter);
+			if (full_name == "Array.__iter__") return adapt2(array_iter);
+			if (full_name == "Tuple.__iter__") return adapt2(tuple_iter);
+			return std::nullopt;
+		}
 		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
 			if (full_name == "Exception") return std::make_unique<OwcaClass::NativeClassInterfaceSimpleImplementation<Exception>>();
 			return nullptr;
@@ -559,6 +616,7 @@ class Range {
 	function native lower(self);
 	function native upper(self);
 	function native size(self);
+	function native generator __iter__(self);
 }
 class Bool {
 	function native __init__(self, value);
@@ -572,6 +630,7 @@ class Float {
 class String {
 	function native __init__(self, value);
 	function native size(self);
+	function native generator __iter__(self);
 }
 class Function {
 	function native bind(self, value);
@@ -579,9 +638,11 @@ class Function {
 function native bound_value(func);
 class Map {
 	function native size(self);
+	function native generator __iter__(self);
 }
 class Set {
 	function native size(self);
+	function native generator __iter__(self);
 }
 class Class {
 	function native name(self);
@@ -591,11 +652,13 @@ class Array {
 	function native __init__(self, value);
 	function native size(self);
 	function native sort(self);
+	function native generator __iter__(self);
 }
 class Tuple {
 	function native __init__(self, value);
 	function native size(self);
 	function native sort(self);
+	function native generator __iter__(self);
 }
 class native Exception {
 	function native __init__(self, message);
@@ -971,6 +1034,9 @@ function native print(msg);
 			[&](const RuntimeFunction::NativeFunction& nf) {
 				s.values.resize(nf.parameter_names.size());
 			},
+			[&](const RuntimeFunction::NativeGenerator& nf) {
+				s.values.resize(nf.parameter_names.size());
+			},
 			[&](const RuntimeFunction::ScriptFunction& sf) {
 				s.values.resize(sf.identifier_names.size());
 				assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
@@ -1032,6 +1098,13 @@ function native print(msg);
 				auto vm = OwcaVM{ this };
 
 				return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
+			},
+			[&](const RuntimeFunction::NativeGenerator& nf) -> OwcaValue {
+				auto vm = OwcaVM{ this };
+				auto gen = allocate<Iterator>(0, (size_t)0, s.runtime_function->fileline);
+				gen->frame = std::move(s);
+				gen->generator = nf.generator(vm, gen->variable_set, std::span{ gen->frame.values.begin(), gen->frame.values.end() });
+				return OwcaIterator{ gen };
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
 				if (sf.is_generator) {
@@ -1098,6 +1171,9 @@ function native print(msg);
 			},
 			[&](RuntimeFunction::NativeFunction&) -> void {
 				assert(false);
+			},
+			[&](RuntimeFunction::NativeGenerator&) -> void {
+				assert(false);
 			}
 		);
 
@@ -1125,6 +1201,9 @@ function native print(msg);
 						},
 						[&](RuntimeFunction::NativeFunction&) -> void {
 							assert(false);
+						},
+						[&](RuntimeFunction::NativeGenerator&) -> void {
+							assert(false);
 						}
 					);
 				}
@@ -1140,6 +1219,21 @@ function native print(msg);
 		if (!oi.internal_value()->generator)
 			return OwcaCompleted{};
 		auto pop_stack = PopStack{ this };
+		struct AllocatedObjectsRestorer {
+			VM *self;
+			OwcaIterator oi;
+			std::vector<AllocationBase*> orig_allocated_objects;
+
+			AllocatedObjectsRestorer(VM *self, OwcaIterator oi) : self(self), oi(oi) {
+				orig_allocated_objects = std::move(self->allocated_objects);
+				self->allocated_objects = std::move(oi.internal_value()->allocated_objects);
+			}
+			~AllocatedObjectsRestorer() {
+				oi.internal_value()->allocated_objects = std::move(self->allocated_objects);
+				self->allocated_objects = std::move(orig_allocated_objects);
+			}
+		};
+		auto allocated_object_restorer = AllocatedObjectsRestorer{ this, oi };
 		stacktrace.push_back(std::move(oi.internal_value()->frame));
 		std::optional<OwcaValue> value;
 		try {
@@ -1480,119 +1574,13 @@ function native print(msg);
 		);
 	}
 
-	std::unique_ptr<IteratorBase> VM::create_iterator(OwcaValue r)
+	OwcaIterator VM::create_iterator(OwcaValue r)
 	{
-		return r.visit(
-			[](OwcaRange o) -> std::unique_ptr<IteratorBase> {
-				auto lower = o.lower().internal_value();
-				auto upper = o.upper().internal_value();
-				OwcaIntInternal step = (lower > upper) ? -1 : 1;
-				struct RangeIterator : public IteratorBase {
-					OwcaIntInternal lower, upper, step;
-
-					RangeIterator(OwcaIntInternal lower, OwcaIntInternal upper, OwcaIntInternal step) : lower(lower), upper(upper), step(step) {}
-
-					OwcaValue next() override {
-						if (lower == upper) return OwcaCompleted{};
-						auto v = OwcaInt{ lower };
-						lower += step;
-						return v;
-					}
-				};
-				return std::make_unique<RangeIterator>(lower, upper, step);
-			},
-			[&](OwcaString o) -> std::unique_ptr<IteratorBase> {
-				struct StringIterator : public IteratorBase {
-					OwcaString str;
-					size_t pos = 0;
-
-					StringIterator(OwcaString str, VM &vm) : str(str) {}
-
-					OwcaValue next() override {
-						if (pos >= str.size()) return OwcaCompleted{};
-						auto v = str.substr(pos, 1);
-						pos += 1;
-						return v;
-					}
-				};
-				return std::make_unique<StringIterator>(o, *this);
-			},
-			[&](OwcaMap s) -> std::unique_ptr<IteratorBase> {
-				struct MapIterator : public IteratorBase {
-					OwcaMap::Iterator beg, end;
-
-					MapIterator(VM &vm, OwcaMap m) : beg(m.begin()), end(m.end()) {}
-
-					OwcaValue next() override {
-						if (beg == end) return OwcaCompleted{};
-						auto v = beg->first;
-						++beg;
-						return v;
-					}
-				};
-				return std::make_unique<MapIterator>(*this, s);
-			},
-			[&](OwcaArray s) -> std::unique_ptr<IteratorBase> {
-				struct ArrayIterator : public IteratorBase {
-					OwcaArray s;
-					size_t pos = 0;
-
-					ArrayIterator(OwcaArray s) : s(s) {}
-
-					OwcaValue next() override {
-						if (pos >= s.internal_value()->values.size()) return OwcaCompleted{};
-						return s.internal_value()->values[pos++];
-					}
-				};
-				return std::make_unique<ArrayIterator>(s);
-			},
-			[&](OwcaTuple s) -> std::unique_ptr<IteratorBase> {
-				struct TupleIterator : public IteratorBase {
-					OwcaTuple s;
-					size_t pos = 0;
-
-					TupleIterator(OwcaTuple s) : s(s) {}
-
-					OwcaValue next() override {
-						if (pos >= s.internal_value()->values.size()) return OwcaCompleted{};
-						return s.internal_value()->values[pos++];
-					}
-				};
-				return std::make_unique<TupleIterator>(s);
-			},
-			[&](OwcaSet s) -> std::unique_ptr<IteratorBase> {
-				struct SetIterator : public IteratorBase {
-					OwcaValue tmp;
-					OwcaSet::Iterator beg, end;
-
-					SetIterator(VM &vm, OwcaSet m) : beg(m.begin()), end(m.end()) {}
-
-					OwcaValue next() override {
-						if (beg == end) return OwcaCompleted{};
-						auto v = *beg;
-						++beg;
-						return v;
-					}
-				};
-				return std::make_unique<SetIterator>(*this, s);
-			},
-			[&](OwcaIterator oi) -> std::unique_ptr<IteratorBase> {
-				struct IteratorIterator : public IteratorBase {
-					OwcaIterator oi;
-
-					IteratorIterator(OwcaIterator oi) : oi(oi) { }
-
-					OwcaValue next() override {
-						return oi.next();
-					}
-				};
-				return std::make_unique<IteratorIterator>(oi);
-
-			},
-			[&](const auto &) -> std::unique_ptr<IteratorBase> {
-				throw_not_iterable(r.type());
-			}
-			);
+		auto func = try_member(r, "__iter__");
+		if (!func)
+			throw_not_iterable(r.type());
+		auto val = execute_call(*func, {});
+		return val.as_iterator(this);
 	}
 
 	void VM::run_gc() {
@@ -1600,14 +1588,13 @@ function native print(msg);
 
 		auto ggc = GenerationGC{ ++generation_gc };
 		// mark
-		for(auto q : global_variables)
-			gc_mark(*q, ggc);
+		global_variables.gc_mark(this, ggc);
 
 		for(auto &s : small_strings) {
 			gc_mark(s.second, ggc);
 		}
 		for (auto& s : stacktrace) {
-			s.gc_mark(*this, ggc);
+			s.gc_mark(this, ggc);
 		}
 		for(auto s : allocated_objects) {
 			gc_mark(s, ggc);
@@ -1635,7 +1622,7 @@ function native print(msg);
 	{
 		if (ptr->last_gc_mark != ggc) {
 			ptr->last_gc_mark = ggc;
-			ptr->gc_mark(*this, ggc);
+			ptr->gc_mark(this, ggc);
 		}
 	}
 

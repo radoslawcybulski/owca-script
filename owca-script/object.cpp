@@ -34,16 +34,16 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Class::gc_mark(VM& vm, GenerationGC generation_gc)
+	void Class::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
 		for (auto& it : values) {
-			vm.gc_mark(it.second, generation_gc);
+			VM::get(vm).gc_mark(it.second, generation_gc);
 		}
 		for (auto c : base_classes) {
-			vm.gc_mark(c, generation_gc);
+			VM::get(vm).gc_mark(c, generation_gc);
 		}
 		for (auto c : runtime_functions) {
-			vm.gc_mark(c, generation_gc);
+			VM::get(vm).gc_mark(c, generation_gc);
 		}
 	}
 
@@ -119,10 +119,10 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Object::gc_mark(VM& vm, GenerationGC generation_gc)
+	void Object::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
-		vm.gc_mark(type_, generation_gc);
+		VM::get(vm).gc_mark(type_, generation_gc);
 		for (auto& it : values)
-			vm.gc_mark(it.second, generation_gc);
+			VM::get(vm).gc_mark(it.second, generation_gc);
 	}
 }

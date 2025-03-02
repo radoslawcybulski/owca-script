@@ -7,6 +7,7 @@
 #include "impl_base.h"
 #include "owca_iterator.h"
 #include "owca_value.h"
+#include "owca_variable.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -20,6 +21,8 @@ namespace OwcaScript {
             ExecutionFrame frame;
             ImplStat::State state;
             std::optional<Generator> generator;
+			OwcaVariableSet variable_set;
+			std::vector<AllocationBase*> allocated_objects;
 
             Iterator(size_t sz, Line line) : frame(line), state(sz) {}
 
@@ -28,7 +31,7 @@ namespace OwcaScript {
 				return "Iterator";
 			}
 			std::string to_string() const override;
-			void gc_mark(VM &vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
 		};
 	}
 }
