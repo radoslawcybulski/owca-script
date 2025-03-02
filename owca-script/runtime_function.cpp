@@ -10,12 +10,20 @@ namespace OwcaScript::Internal {
 		return std::format("function set {}", name);
 	}
 	void RuntimeFunction::gc_mark(VM& vm, GenerationGC generation_gc) {
-		visit([&](RuntimeFunction::ScriptFunction& s) {
+		visit([&](ScriptFunction& s) {
 			vm.gc_mark(s.values_from_parents, generation_gc);
 			},
 			[](const auto&) {});
 	}
 
+	bool RuntimeFunction::is_generator() const {
+		return visit([&](const ScriptFunction& s) {
+			return s.is_generator;
+			},
+			[](const NativeFunction&) {
+				return false;
+			});
+	}
 
 	std::string_view RuntimeFunctions::type() const {
 		return "function set";

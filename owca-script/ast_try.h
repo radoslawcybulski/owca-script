@@ -17,6 +17,7 @@ namespace OwcaScript {
             size_t catch_count() const { return catches.size(); }
             auto catch_identifier(size_t index) { return std::get<0>(catches[index]); }
             void update_catch_index(size_t index, unsigned int var_index) { std::get<1>(catches[index]) = var_index; }
+			auto catch_line(size_t index) { return std::get<3>(catches[index])->line; }
 			ImplStat* emit(EmitInfo& ei) override;
 			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;

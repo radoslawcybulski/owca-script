@@ -33,11 +33,10 @@ namespace OwcaScript::Internal {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
                     VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
                 }
-                auto v = iter->get();
-                if (!v) break;
+                auto v = iter->next();
+                if (v.kind() == OwcaValueKind::Completed) break;
 
-                VM::get(vm).set_identifier(value_index, *v);
-                iter->next();
+                VM::get(vm).set_identifier(value_index, v);
 
                 try {
                     body->execute_statement(vm);
@@ -54,6 +53,44 @@ namespace OwcaScript::Internal {
                 }
                 ++counter;
             }
+		}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+            VM::get(vm).update_execution_line(line);
+            auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+
+            auto counter = (OwcaIntInternal)0;
+            auto iter_value = iterator->execute_expression(vm);
+            auto iter = VM::get(vm).create_iterator(iter_value);
+
+            while(true) {
+                if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
+                    VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
+                }
+                auto v = iter->next();
+                if (v.kind() == OwcaValueKind::Completed) break;
+                
+                std::cout << "QWERTY " << v.to_string() << "\n";
+                VM::get(vm).set_identifier(value_index, v);
+
+                try {
+                    co_await body->execute_generator_statement(vm, st);
+                }
+                catch(FlowControlContinue e) {
+                    if (e.depth == depth)
+                        continue;
+                    throw;
+                }
+                catch(FlowControlBreak e) {
+                    if (e.depth == depth)
+                        break;
+                    throw;
+                }
+                ++counter;
+            }
+            co_return;
+		}
+		size_t calculate_generator_allocation_size() const override {
+			return body->calculate_generator_allocation_size() + calculate_generator_object_size_for_this();
 		}
 	};
 

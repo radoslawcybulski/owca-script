@@ -8,6 +8,7 @@
 #include "array.h"
 #include "dictionary.h"
 #include "string.h"
+#include "iterator.h"
 
 namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaException value) : value_(OwcaObject{ value.internal_owner() }) {}
@@ -43,21 +44,23 @@ namespace OwcaScript {
 	bool OwcaValue::is_true() const
 	{
 		return visit(
-			[](const OwcaEmpty&) { return false; },
-			[](const OwcaRange&) { return true; },
-			[](const OwcaInt& o) { return o.internal_value() != 0; },
-			[](const OwcaFloat& o) { return o.internal_value() != 0; },
-			[](const OwcaBool &o) { return o.internal_value(); },
-			[](const OwcaString &o) { return o.internal_value()->size() != 0; },
-			[](const OwcaFunctions&) { return true; },
-			[](const OwcaMap &o) { return o.size() != 0; },
-			[](const OwcaClass &o) { return true; },
-			[&](const OwcaObject &o) {
+			[](OwcaEmpty) { return false; },
+			[](OwcaCompleted) { return false; },
+			[](OwcaRange) { return true; },
+			[](OwcaInt o) { return o.internal_value() != 0; },
+			[](OwcaFloat o) { return o.internal_value() != 0; },
+			[](OwcaBool o) { return o.internal_value(); },
+			[](OwcaString o) { return o.internal_value()->size() != 0; },
+			[](OwcaFunctions) { return true; },
+			[](OwcaMap o) { return o.size() != 0; },
+			[](OwcaClass o) { return true; },
+			[&](OwcaObject o) {
 				return o.internal_value()->vm->calculate_if_true(*this);
 			},
 			[](OwcaArray o) { return !o.internal_value()->values.empty(); },
 			[](OwcaTuple o) { return !o.internal_value()->values.empty(); },
-			[](const OwcaSet &o) { return o.size() != 0; }
+			[](OwcaSet o) { return o.size() != 0; },
+			[](OwcaIterator o) { return !o.completed(); }
 		);
 	}
 
@@ -65,6 +68,12 @@ namespace OwcaScript {
 	{
 		if (kind() != OwcaValueKind::Empty)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Nul");
+		return {};
+	}
+	OwcaCompleted OwcaValue::as_completed(OwcaVM vm) const
+	{
+		if (kind() != OwcaValueKind::Completed)
+			Internal::VM::get(vm).throw_wrong_type(type(), "Completed");
 		return {};
 	}
 	OwcaRange OwcaValue::as_range(OwcaVM vm) const
@@ -149,42 +158,52 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
 		return OwcaException{ oo.internal_value(), oe };
 	}
+	OwcaIterator OwcaValue::as_iterator(OwcaVM vm) const
+	{
+		if (kind() != OwcaValueKind::Iterator)
+			Internal::VM::get(vm).throw_wrong_type(type(), "Iterator");
+		return std::get<OwcaIterator>(value_);
+	}
 
 	std::string_view OwcaValue::type() const
 	{
 		return visit(
-			[](const OwcaEmpty&) -> std::string_view { return "Nul"; },
-			[](const OwcaRange&) -> std::string_view { return "Range"; },
-			[](const OwcaInt&) -> std::string_view { return "Integer"; },
-			[](const OwcaFloat&) -> std::string_view { return "Float"; },
-			[](const OwcaBool&) -> std::string_view { return "Bool"; },
-			[](const OwcaString&) -> std::string_view { return "String"; },
-			[](const OwcaFunctions &o) -> std::string_view { return "Function"; },
-			[](const OwcaMap &o) -> std::string_view { return "Map"; },
-			[](const OwcaClass &o) -> std::string_view { return "Class"; },
-			[](const OwcaObject &o) -> std::string_view { return o.internal_value()->type(); },
-			[](OwcaArray o) -> std::string_view { return "Array"; },
-			[](OwcaTuple o) -> std::string_view { return "Tuple"; },
-			[](const OwcaSet &o) -> std::string_view { return "Set"; }
+			[](OwcaEmpty) -> std::string_view { return "Nul"; },
+			[](OwcaCompleted) -> std::string_view { return "Completed"; },
+			[](OwcaRange) -> std::string_view { return "Range"; },
+			[](OwcaInt) -> std::string_view { return "Integer"; },
+			[](OwcaFloat) -> std::string_view { return "Float"; },
+			[](OwcaBool) -> std::string_view { return "Bool"; },
+			[](OwcaString) -> std::string_view { return "String"; },
+			[](OwcaFunctions) -> std::string_view { return "Function"; },
+			[](OwcaMap) -> std::string_view { return "Map"; },
+			[](OwcaClass) -> std::string_view { return "Class"; },
+			[](OwcaObject o) -> std::string_view { return o.internal_value()->type(); },
+			[](OwcaArray) -> std::string_view { return "Array"; },
+			[](OwcaTuple) -> std::string_view { return "Tuple"; },
+			[](OwcaSet) -> std::string_view { return "Set"; },
+			[](OwcaIterator) -> std::string_view { return "Iterator"; }
 			);
 	}
 
 	std::string OwcaValue::to_string() const
 	{
 		return visit(
-			[](const OwcaEmpty &o) -> std::string { return "nul"; },
-			[](const OwcaRange &o) -> std::string { return std::format("{}..{}", o.lower().internal_value(), o.upper().internal_value()); },
-			[](const OwcaInt &o) -> std::string { return std::to_string(o.internal_value()); },
-			[](const OwcaFloat &o) -> std::string { return std::to_string(o.internal_value()); },
-			[](const OwcaBool &o) -> std::string { return o.internal_value() ? "true" : "false"; },
-			[](const OwcaString &o) -> std::string { return o.internal_value()->to_string(); },
-			[](const OwcaFunctions &o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },
-			[](const OwcaMap &o) -> std::string { return o.to_string(); },
-			[](const OwcaClass &o) -> std::string { return o.to_string(); },
-			[](const OwcaObject &o) -> std::string { return o.to_string(); },
+			[](OwcaEmpty o) -> std::string { return "nul"; },
+			[](OwcaCompleted o) -> std::string { return "completed"; },
+			[](OwcaRange o) -> std::string { return std::format("{}..{}", o.lower().internal_value(), o.upper().internal_value()); },
+			[](OwcaInt o) -> std::string { return std::to_string(o.internal_value()); },
+			[](OwcaFloat o) -> std::string { return std::to_string(o.internal_value()); },
+			[](OwcaBool o) -> std::string { return o.internal_value() ? "true" : "false"; },
+			[](OwcaString o) -> std::string { return o.internal_value()->to_string(); },
+			[](OwcaFunctions o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },
+			[](OwcaMap o) -> std::string { return o.to_string(); },
+			[](OwcaClass o) -> std::string { return o.to_string(); },
+			[](OwcaObject o) -> std::string { return o.to_string(); },
 			[](OwcaArray o) -> std::string { return o.to_string(); },
 			[](OwcaTuple o) -> std::string { return o.to_string(); },
-			[](const OwcaSet &o) -> std::string { return o.to_string(); }
+			[](OwcaSet o) -> std::string { return o.to_string(); },
+			[](OwcaIterator o) -> std::string { return o.internal_value()->to_string(); }
 			);
 	}
 

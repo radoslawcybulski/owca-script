@@ -14,6 +14,7 @@ static int run_for(std::string code_text, OwcaValue add_val)
     auto val = vm.execute(code, vm.create_map({ { "a", add_val } }));
     return (int)val.as_int(vm).internal_value();
 }
+
 TEST_F(ForTest, simple1)
 {
     ASSERT_EQ(run_for(R"(

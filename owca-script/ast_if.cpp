@@ -28,6 +28,24 @@ namespace OwcaScript::Internal {
                 if_false->execute_statement(vm);
             }
 		}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+			VM::get(vm).update_execution_line(line);
+			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+
+			auto v = value->execute_expression(vm);
+            auto condition = VM::get(vm).calculate_if_true(v);
+            if (condition) {
+                co_await if_true->execute_generator_statement(vm, st);
+            }
+            else if (if_false) {
+                co_await if_false->execute_generator_statement(vm, st);
+            }
+            co_return;
+		}
+		size_t calculate_generator_allocation_size() const override {
+			auto sz = std::max(if_true->calculate_generator_allocation_size(), if_false ? if_false->calculate_generator_allocation_size() : (size_t)0);
+			return sz + calculate_generator_object_size_for_this();
+		}
 	};
 
 	void AstIf::calculate_size(CodeBufferSizeCalculator &ei) const

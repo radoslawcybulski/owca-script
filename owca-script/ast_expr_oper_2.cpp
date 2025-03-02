@@ -405,22 +405,40 @@ namespace OwcaScript::Internal {
 						[&](OwcaRange k) -> OwcaValue {
 							auto [v1, v2] = verify_key(vm, k, size, orig_key, "array");
 							auto iter = VM::get(vm).create_iterator(value);
-							auto iter_size = iter->remaining_size();
-							if (v2 - v1 != iter_size) {
-								auto old = std::move(o.internal_value()->values);
-								o.internal_value()->values.resize(old.size() - (v2 - v1) + iter_size);
-								for(size_t i = 0u; i < v1; ++i) {
-									o.internal_value()->values[i] = std::move(old[i]);
+							auto write = v1;
+							auto &values = o.internal_value()->values;
+							std::vector<OwcaValue> temp;
+
+							for(auto val = iter->next(); val.kind() != OwcaValueKind::Completed; val = iter->next()) {
+								assert(write <= v2);
+								if (write < v2) {
+									values[write++] = val;
 								}
-								for(size_t i = v2; i < old.size(); ++i) {
-									o.internal_value()->values[i - (v2 - v1) + iter_size] = std::move(old[i]);
+								else {
+									assert(write == v2);
+									temp.push_back(val);
 								}
 							}
-							for(size_t i = 0u; i < iter_size; ++i) {
-								auto v = iter->get();
-								assert(v);
-								o.internal_value()->values[v1 +  i] = std::move(*v);
-								iter->next();
+							if (write < v2) {
+								assert(temp.empty());
+
+								for(size_t i = v2; i < values.size(); ++i) {
+									values[write++] = values[i];
+								}
+								assert(write < values.size());
+								values.resize(write);
+							}
+							else if (!temp.empty()) {
+								auto old_size = values.size();
+								values.resize(values.size() + temp.size());
+								auto new_size = values.size();
+								for(size_t i = old_size; i > v2; --i, --new_size) {
+									values[new_size] = values[i];
+								}
+								for(auto q : temp) {
+									values[write++] = q;
+								}
+								assert(write == new_size);
 							}
 							return {};
 						},

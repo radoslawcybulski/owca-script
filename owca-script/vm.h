@@ -7,6 +7,8 @@
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
 #include "owca_value.h"
+#include "execution_frame.h"
+#include "impl_base.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -25,20 +27,13 @@ namespace OwcaScript {
 		class VM {
 			AllocationEmpty root_allocated_memory;
 			std::vector<OwcaVariable*> global_variables;
-			struct ExecutionFrame {
-				RuntimeFunctions* runtime_functions;
-				RuntimeFunction* runtime_function;
-				Line line;
-				std::vector<OwcaValue> values;
-
-				ExecutionFrame(Line line) : line(line) {}
-			};
 			std::vector<ExecutionFrame> stacktrace;
 			std::vector<AllocationBase*> allocated_objects;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
 			std::unordered_map<std::string_view, OwcaValue> small_strings;
 			
 			Class *c_nul = nullptr;
+			Class *c_completed = nullptr;
 			Class *c_range = nullptr;
 			Class *c_bool = nullptr;
 			Class *c_int = nullptr;
@@ -55,10 +50,12 @@ namespace OwcaScript {
 			Class *c_exception = nullptr;
 			Class *c_math_exception = nullptr;
 			Class *c_invalid_operation_exception = nullptr;
+			Class *c_iterator = nullptr;
 			Array *empty_tuple = nullptr;
 			unsigned int generation_gc = 0;
 
 			std::optional<OwcaException> exception_being_handled;
+			std::optional<OwcaValue> value_to_yield;
 
 			struct PopStack {
 				VM* vm = nullptr;
@@ -73,6 +70,7 @@ namespace OwcaScript {
 
 			PopStack prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value);
 			OwcaValue execute();
+			Generator execute_generator(ImplStat::State &state, ImplStat *body);
 			void initialize_builtins();
 
 			struct BuiltinProvider;
@@ -136,11 +134,14 @@ namespace OwcaScript {
 			[[noreturn]] void throw_missing_native(std::string_view msg);
 			[[noreturn]] void throw_not_iterable(std::string_view type);
 			[[noreturn]] void throw_readonly(std::string_view msg);
+			[[noreturn]] void throw_cant_return_value_from_generator();
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
+			OwcaValue resume_generator(OwcaIterator oi);
+			void set_yield_value(OwcaValue v);
 			OwcaValue create_array(std::vector<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_exception();

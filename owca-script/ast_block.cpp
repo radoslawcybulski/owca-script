@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ast_block.h"
+#include "vm.h"
 
 namespace OwcaScript::Internal {
 	class ImplBlock : public ImplStat {
@@ -16,6 +17,20 @@ namespace OwcaScript::Internal {
 			for (auto c : stats) {
 				c->execute_statement(vm);
 			}
+		}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+ 			VM::get(vm).update_execution_line(line);
+			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+			for (auto c : stats) {
+				co_await c->execute_generator_statement(vm, st);
+			}
+		}
+		size_t calculate_generator_allocation_size() const override {
+			size_t sz = 0;
+			for(auto c : stats) {
+				sz = std::max(sz, c->calculate_generator_allocation_size());
+			}
+			return sz + calculate_generator_object_size_for_this();
 		}
 	};
 

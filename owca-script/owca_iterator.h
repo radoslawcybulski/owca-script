@@ -13,22 +13,22 @@ namespace OwcaScript {
         struct IteratorBase {
             virtual ~IteratorBase() = default;
 
-            virtual OwcaValue *get() = 0;
-            virtual void next() = 0;
-            virtual size_t remaining_size() = 0 ;
+            virtual OwcaValue next() = 0;
         };
+
+        struct Iterator;
     }
 
 	class OwcaIterator {
-        friend class Internal::VM;
+        Internal::Iterator *object;
 
-        std::unique_ptr<Internal::IteratorBase> ib;
-
-        OwcaIterator(std::unique_ptr<Internal::IteratorBase> ib) : ib(std::move(ib)) {}
 	public:
-        std::optional<OwcaValue> current() const;
-        void next();
-        size_t remaining_size() const;
+        OwcaIterator(Internal::Iterator *object) : object(object) {}
+
+		auto internal_value() const { return object; }
+
+        bool completed() const;
+        OwcaValue next() const;
 	};
 }
 

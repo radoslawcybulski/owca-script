@@ -20,6 +20,16 @@ namespace OwcaScript::Internal {
             auto oe = v.as_exception(vm);
             throw oe;
 		}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+			VM::get(vm).update_execution_line(line);
+			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+
+			execute_statement_impl(vm);
+            co_return;
+		}
+		size_t calculate_generator_allocation_size() const override {
+			return calculate_generator_object_size_for_this();
+		}
 	};
 
 	void AstThrow::calculate_size(CodeBufferSizeCalculator &ei) const

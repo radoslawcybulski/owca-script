@@ -19,7 +19,7 @@ endif()
 add_subdirectory(googletest)
 
 set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 

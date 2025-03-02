@@ -76,6 +76,7 @@ namespace OwcaScript {
 			virtual ~NativeCodeProvider() = default;
 
 			using Function = std::function<OwcaValue(OwcaVM , std::span<OwcaValue>)>;
+			//using Generator = std::function<OwcaValue(OwcaVM , std::span<OwcaValue>)>;
 			virtual std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const { return std::nullopt; }
 			virtual std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const { return nullptr; }
 		};

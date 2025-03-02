@@ -18,11 +18,16 @@ namespace OwcaScript {
 				std::span<AstFunction::CopyFromParent> copy_from_parents;
 				std::span<std::string_view> identifier_names;
 				ImplStat *body = nullptr;
+				bool is_generator = false;
 			};
 			struct NativeFunction {
 				std::span<std::string_view> parameter_names;
 				OwcaVM::NativeCodeProvider::Function function;
 			};
+			// struct NativeGeneratorFunction {
+			// 	std::span<std::string_view> parameter_names;
+			// 	OwcaVM::NativeCodeProvider::Generator function;
+			// };
 			std::shared_ptr<CodeBuffer> code;
 			std::variant<ScriptFunction, NativeFunction> data;
 			std::string_view name, full_name;
@@ -45,7 +50,8 @@ namespace OwcaScript {
 				};
 				return std::visit(overloaded{std::forward<F>(fns)...}, data);
 			}
-
+			bool is_generator() const;
+			
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(VM &vm, GenerationGC generation_gc) override;

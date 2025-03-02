@@ -15,6 +15,7 @@
 #include "owca_variable.h"
 #include "exception.h"
 #include "owca_exception.h"
+#include "iterator.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -495,6 +496,10 @@ namespace OwcaScript::Internal {
 			auto v = VM::get(vm).calculate_hash(r);
 			return OwcaInt{ (OwcaIntInternal)v };
 		}
+		static OwcaValue print(OwcaVM vm, OwcaValue r) {
+			std::cout << r.to_string() << "\n";
+			return {};
+		}
 
 		template <typename F>
 		static std::function<OwcaValue(OwcaVM, std::span<OwcaValue> args)> adapt(F &&f) {
@@ -528,6 +533,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.size") return adapt(tuple_size);
 			if (full_name == "Tuple.sort") return adapt(tuple_sort);
 			if (full_name == "hash") return adapt(hash);
+			if (full_name == "print") return adapt(print);
 			if (full_name == "Exception.__init__") return adapt(exception_init);
 			if (full_name == "Exception.count") return adapt(exception_count);
 			if (full_name == "Exception.message") return adapt(exception_message);
@@ -545,6 +551,8 @@ namespace OwcaScript::Internal {
 	{
 		auto code = std::string{ R"(
 class Nul {
+}
+class Iterator {
 }
 class Range {
 	function native __init__(self, lower, upper);
@@ -601,6 +609,7 @@ class MathException(Exception) {}
 class InvalidOperationException(Exception) {}
 
 function native hash(value);
+function native print(msg);
 )" };
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_unique<BuiltinProvider>());
@@ -617,6 +626,10 @@ function native hash(value);
 				if (key == "Nul") {
 					c_nul = read(value_pair.second);
 					c_nul->allocator_override = []() -> OwcaValue { return OwcaEmpty{}; };
+				}
+				else if (key == "Completed") {
+					c_completed = read(value_pair.second);
+					c_completed->allocator_override = []() -> OwcaValue { return OwcaCompleted{}; };
 				}
 				else if (key == "Range") {
 					c_range = read(value_pair.second);
@@ -642,6 +655,12 @@ function native hash(value);
 					c_function = read(value_pair.second);
 					c_function->allocator_override = [&]() -> OwcaValue {
 						throw_not_callable(c_function->full_name);
+					};
+				}
+				else if (key == "Iterator") {
+					c_iterator = read(value_pair.second);
+					c_iterator->allocator_override = [&]() -> OwcaValue {
+						throw_not_callable(c_iterator->full_name);
 					};
 				}
 				else if (key == "Map") {
@@ -843,6 +862,11 @@ function native hash(value);
 		throw_exception(c_invalid_operation_exception, msg);
 	}
 
+	void VM::throw_cant_return_value_from_generator()
+	{
+		throw_exception(c_invalid_operation_exception, "can't return value from generator");
+	}
+
 	OwcaValue VM::member(OwcaValue val, const std::string& key)
 	{
 		auto v = try_member(val, key);
@@ -862,16 +886,17 @@ function native hash(value);
 		};
 		bool bind_if_needed = true;
 		auto v = val.visit(
-			[&](const OwcaEmpty& o) -> OwcaValue* { return read_member(c_nul); },
-			[&](const OwcaRange& o) -> OwcaValue* { return read_member(c_range); },
-			[&](const OwcaInt& o) -> OwcaValue* { return read_member(c_int); },
-			[&](const OwcaFloat& o) -> OwcaValue* { return read_member(c_float); },
-			[&](const OwcaBool& o) -> OwcaValue* { return read_member(c_bool); },
-			[&](const OwcaString& o) -> OwcaValue* { return read_member(c_string); },
-			[&](const OwcaFunctions& o) -> OwcaValue* { return read_member(c_function); },
-			[&](const OwcaMap& o) -> OwcaValue* { return read_member(c_map); },
-			[&](const OwcaClass& o) -> OwcaValue* { return read_member(c_class); },
-			[&](const OwcaObject& o) -> OwcaValue* {
+			[&](OwcaEmpty o) -> OwcaValue* { return read_member(c_nul); },
+			[&](OwcaCompleted o) -> OwcaValue* { return read_member(c_completed); },
+			[&](OwcaRange o) -> OwcaValue* { return read_member(c_range); },
+			[&](OwcaInt o) -> OwcaValue* { return read_member(c_int); },
+			[&](OwcaFloat o) -> OwcaValue* { return read_member(c_float); },
+			[&](OwcaBool o) -> OwcaValue* { return read_member(c_bool); },
+			[&](OwcaString o) -> OwcaValue* { return read_member(c_string); },
+			[&](OwcaFunctions o) -> OwcaValue* { return read_member(c_function); },
+			[&](OwcaMap o) -> OwcaValue* { return read_member(c_map); },
+			[&](OwcaClass o) -> OwcaValue* { return read_member(c_class); },
+			[&](OwcaObject o) -> OwcaValue* {
 				auto it = o.internal_value()->values.find(key);
 				if (it != o.internal_value()->values.end()) {
 					bind_if_needed = false;
@@ -885,9 +910,10 @@ function native hash(value);
 
 				return nullptr;
 			},
-			[&](const OwcaArray& o) -> OwcaValue* { return read_member(c_array); },
-			[&](const OwcaTuple& o) -> OwcaValue* { return read_member(c_tuple); },
-			[&](const OwcaSet& o) -> OwcaValue* { return read_member(c_set); }
+			[&](OwcaArray o) -> OwcaValue* { return read_member(c_array); },
+			[&](OwcaTuple o) -> OwcaValue* { return read_member(c_tuple); },
+			[&](OwcaSet o) -> OwcaValue* { return read_member(c_set); },
+			[&](OwcaIterator o) -> OwcaValue* { return read_member(c_iterator); }
 		);
 
 		if (v && v->kind() == OwcaValueKind::Functions && bind_if_needed) {
@@ -916,6 +942,13 @@ function native hash(value);
 	void VM::update_execution_line(Line line)
 	{
 		stacktrace.back().line = line;
+	}
+
+	void VM::set_yield_value(OwcaValue v)
+	{
+		assert(!value_to_yield);
+		assert(stacktrace.back().runtime_function->is_generator());
+		value_to_yield = v;
 	}
 
 	VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value)
@@ -950,6 +983,44 @@ function native hash(value);
 		return PopStack{ this };
 	}
 
+	Generator VM::execute_generator(ImplStat::State &state, ImplStat *body)
+	{
+		assert(state.storage.empty());
+		body->execute_generator_statement(OwcaVM{ this }, state);
+		assert(!state.storage.empty());
+		std::optional<OwcaValue> last_yield;
+		try {
+			while(!state.storage.empty()) {
+				try {
+					state.top()->resume();
+				}
+				catch(OwcaException) {
+					state.exception = std::current_exception();
+					continue;
+				}
+				catch(FlowControlContinue) {
+					state.exception = std::current_exception();
+					continue;
+				}
+				catch(FlowControlBreak) {
+					state.exception = std::current_exception();
+					continue;
+				}
+				if (value_to_yield) {
+					auto v = *value_to_yield;
+					value_to_yield.reset();
+					co_yield v;
+				}
+			}
+		}
+		catch(FlowControlReturn o) {
+			assert(o.value.kind() == OwcaValueKind::Empty || o.value.kind() == OwcaValueKind::Completed);
+			last_yield = o.value;
+		}
+		if (last_yield) co_yield *last_yield;
+		co_return;
+	}
+
 	OwcaValue VM::execute()
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
@@ -963,12 +1034,21 @@ function native hash(value);
 				return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
-				try {
-					sf.body->execute_statement(vm);
-					return {};
+				if (sf.is_generator) {
+					auto gen_size = sf.body->calculate_generator_allocation_size();
+					auto gen = allocate<Iterator>(0, gen_size, s.runtime_function->fileline);
+					gen->frame = std::move(s);
+					gen->generator = execute_generator(gen->state, sf.body);
+					return OwcaIterator{ gen };
 				}
-				catch (FlowControlReturn o) {
-					return std::move(o.value);
+				else {
+					try {
+						sf.body->execute_statement(vm);
+						return {};
+					}
+					catch (FlowControlReturn o) {
+						return std::move(o.value);
+					}
 				}
 			});
 	}
@@ -1054,11 +1134,46 @@ function native hash(value);
 
 		return execute();
 	}
+
+	OwcaValue VM::resume_generator(OwcaIterator oi)
+	{
+		if (!oi.internal_value()->generator)
+			return OwcaCompleted{};
+		auto pop_stack = PopStack{ this };
+		stacktrace.push_back(std::move(oi.internal_value()->frame));
+		std::optional<OwcaValue> value;
+		try {
+			value = oi.internal_value()->generator->next();
+			oi.internal_value()->frame = std::move(stacktrace.back());
+		}
+		catch (FlowControlReturn o) {
+			if (o.value.kind() != OwcaValueKind::Empty)
+				throw_cant_return_value_from_generator();
+			value.reset();
+			oi.internal_value()->generator.reset();
+		}
+		catch(...) {
+			oi.internal_value()->generator.reset();
+			throw;
+		}
+		if (!value || value->kind() == OwcaValueKind::Completed) {
+			oi.internal_value()->generator.reset();
+			return OwcaCompleted{};
+		}
+		return *value;
+	}
+
+
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
 		auto pp = AllocatedObjectsPointer{ *this };
 		return func.visit(
-			[&](const OwcaFunctions& of) -> OwcaValue {
+			[&](OwcaIterator oi) -> OwcaValue {
+				if (!arguments.empty())
+					throw_not_callable_wrong_number_of_params("generator", (unsigned int)arguments.size());
+				return resume_generator(oi);
+			},
+			[&](OwcaFunctions of) -> OwcaValue {
 				auto vm = OwcaVM{ this };
 				auto runtime_functions = func.as_functions(vm).internal_value();
 				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.internal_self_object() != nullptr);
@@ -1078,7 +1193,7 @@ function native hash(value);
 
 				return execute();
 			},
-			[&](const OwcaClass& oc) -> OwcaValue {
+			[&](OwcaClass oc) -> OwcaValue {
 				auto vm = OwcaVM{ this };
 				auto cls = func.as_class(vm).internal_value();
 
@@ -1281,6 +1396,9 @@ function native hash(value);
 			[&](OwcaEmpty value) -> bool {
 				return false;
 			},
+			[&](OwcaCompleted value) -> bool {
+				return false;
+			},
 			[&](OwcaRange value) -> bool {
 				return value.lower().internal_value() != value.upper().internal_value();
 			},
@@ -1316,6 +1434,9 @@ function native hash(value);
 			},
 			[&](OwcaSet value) -> bool {
 				return value.size() > 0;
+			},
+			[&](OwcaIterator value) -> bool {
+				return !value.completed();
 			}
 		);
 	}
@@ -1326,6 +1447,7 @@ function native hash(value);
 			};
 		return value.visit(
 			[](OwcaEmpty o) -> size_t { return 3; },
+			[](OwcaCompleted o) -> size_t { return 12; },
 			[](OwcaRange o) -> size_t { 
 				return calc_hash(o.lower().internal_value()) * 1009 + calc_hash(o.upper().internal_value()) + 4;
 			},
@@ -1338,7 +1460,7 @@ function native hash(value);
 				throw_not_hashable(value.type());
 			},
 			[&](OwcaClass o) -> size_t {
-				return std::hash<void*>()(o.internal_value()) * 1009;
+				return std::hash<void*>()(o.internal_value()) * 1009 + 10;
 			},
 			[&](OwcaObject o) -> size_t {
 				throw_not_hashable(value.type());
@@ -1347,9 +1469,12 @@ function native hash(value);
 				throw_not_hashable(value.type());
 			},
 			[&](OwcaTuple o) -> size_t {
-				return o.internal_value()->hash();
+				return o.internal_value()->hash() + 11;
 			},
 			[&](OwcaSet o) -> size_t {
+				throw_not_hashable(value.type());
+			},
+			[&](OwcaIterator o) -> size_t {
 				throw_not_hashable(value.type());
 			}
 		);
@@ -1358,152 +1483,111 @@ function native hash(value);
 	std::unique_ptr<IteratorBase> VM::create_iterator(OwcaValue r)
 	{
 		return r.visit(
-			[](const OwcaRange& o) -> std::unique_ptr<IteratorBase> {
+			[](OwcaRange o) -> std::unique_ptr<IteratorBase> {
 				auto lower = o.lower().internal_value();
 				auto upper = o.upper().internal_value();
 				OwcaIntInternal step = (lower > upper) ? -1 : 1;
 				struct RangeIterator : public IteratorBase {
 					OwcaIntInternal lower, upper, step;
-					OwcaValue tmp;
 
 					RangeIterator(OwcaIntInternal lower, OwcaIntInternal upper, OwcaIntInternal step) : lower(lower), upper(upper), step(step) {}
 
-					OwcaValue *get() override {
-						if (lower == upper) return nullptr;
-						tmp = OwcaInt{ lower };
-						return &tmp;
-					}
-					void next() override {
+					OwcaValue next() override {
+						if (lower == upper) return OwcaCompleted{};
+						auto v = OwcaInt{ lower };
 						lower += step;
-					}
-					size_t remaining_size() override {
-						if (step > 0) return upper - lower;
-						return lower - upper;
+						return v;
 					}
 				};
 				return std::make_unique<RangeIterator>(lower, upper, step);
 			},
-			[&](const OwcaString& o) -> std::unique_ptr<IteratorBase> {
+			[&](OwcaString o) -> std::unique_ptr<IteratorBase> {
 				struct StringIterator : public IteratorBase {
-					OwcaValue tmp;
 					OwcaString str;
-					VM &vm;
 					size_t pos = 0;
 
-					StringIterator(OwcaString str, VM &vm) : str(str), vm(vm) {}
+					StringIterator(OwcaString str, VM &vm) : str(str) {}
 
-					OwcaValue *get() override {
-						if (pos >= str.size()) return nullptr;
-						tmp = str.substr(pos, 1);
-						return &tmp;
-					}
-					void next() override {
-						if (pos < str.size())
-							pos += 1;
-					}
-					size_t remaining_size() override {
-						return str.size() - pos;
+					OwcaValue next() override {
+						if (pos >= str.size()) return OwcaCompleted{};
+						auto v = str.substr(pos, 1);
+						pos += 1;
+						return v;
 					}
 				};
 				return std::make_unique<StringIterator>(o, *this);
 			},
-			[&](const OwcaMap& s) -> std::unique_ptr<IteratorBase> {
+			[&](OwcaMap s) -> std::unique_ptr<IteratorBase> {
 				struct MapIterator : public IteratorBase {
-					OwcaValue tmp;
 					OwcaMap::Iterator beg, end;
-					VM &vm;
-					size_t remaining = 0;
 
-					MapIterator(VM &vm, OwcaMap m) : beg(m.begin()), end(m.end()), vm(vm), remaining(m.size()) {}
+					MapIterator(VM &vm, OwcaMap m) : beg(m.begin()), end(m.end()) {}
 
-					OwcaValue *get() override {
-						if (beg != end && remaining > 0) {
-							auto v = *beg;
-							tmp = v.first;
-							return &tmp;
-						}
-						return nullptr;
-					}
-					void next() override {
-						if (beg != end && remaining > 0) {
-							++beg;
-							--remaining;
-						}
-					}
-					size_t remaining_size() override {
-						return remaining;
+					OwcaValue next() override {
+						if (beg == end) return OwcaCompleted{};
+						auto v = beg->first;
+						++beg;
+						return v;
 					}
 				};
 				return std::make_unique<MapIterator>(*this, s);
 			},
-			[&](const OwcaArray& s) -> std::unique_ptr<IteratorBase> {
+			[&](OwcaArray s) -> std::unique_ptr<IteratorBase> {
 				struct ArrayIterator : public IteratorBase {
 					OwcaArray s;
 					size_t pos = 0;
 
 					ArrayIterator(OwcaArray s) : s(s) {}
 
-					OwcaValue *get() override {
-						if (pos < s.internal_value()->values.size()) return &s.internal_value()->values[pos];
-						return nullptr;
-					}
-					void next() override {
-						if (pos < s.internal_value()->values.size())
-							++pos;
-					}
-					size_t remaining_size() override {
-						return s.internal_value()->values.size() - pos;
+					OwcaValue next() override {
+						if (pos >= s.internal_value()->values.size()) return OwcaCompleted{};
+						return s.internal_value()->values[pos++];
 					}
 				};
 				return std::make_unique<ArrayIterator>(s);
 			},
-			[&](const OwcaTuple& s) -> std::unique_ptr<IteratorBase> {
+			[&](OwcaTuple s) -> std::unique_ptr<IteratorBase> {
 				struct TupleIterator : public IteratorBase {
 					OwcaTuple s;
 					size_t pos = 0;
 
 					TupleIterator(OwcaTuple s) : s(s) {}
 
-					OwcaValue *get() override {
-						if (pos < s.internal_value()->values.size()) return &s.internal_value()->values[pos];
-						return nullptr;
-					}
-					void next() override {
-						if (pos < s.internal_value()->values.size())
-							++pos;
-					}
-					size_t remaining_size() override {
-						return s.internal_value()->values.size() - pos;
+					OwcaValue next() override {
+						if (pos >= s.internal_value()->values.size()) return OwcaCompleted{};
+						return s.internal_value()->values[pos++];
 					}
 				};
 				return std::make_unique<TupleIterator>(s);
 			},
-			[&](const OwcaSet& s) -> std::unique_ptr<IteratorBase> {
+			[&](OwcaSet s) -> std::unique_ptr<IteratorBase> {
 				struct SetIterator : public IteratorBase {
 					OwcaValue tmp;
 					OwcaSet::Iterator beg, end;
-					VM &vm;
-					size_t remaining = 0;
 
-					SetIterator(VM &vm, OwcaSet m) : beg(m.begin()), end(m.end()), vm(vm), remaining(m.size()) {}
+					SetIterator(VM &vm, OwcaSet m) : beg(m.begin()), end(m.end()) {}
 
-					OwcaValue *get() override {
-						if (beg != end && remaining > 0) {
-							return const_cast<OwcaValue*>(&*beg);
-						}
-						return nullptr;
-					}
-					void next() override {
-						if (beg != end && remaining > 0) {
-							++beg;
-							--remaining;
-						}
-					}
-					size_t remaining_size() override {
-						return remaining;
+					OwcaValue next() override {
+						if (beg == end) return OwcaCompleted{};
+						auto v = *beg;
+						++beg;
+						return v;
 					}
 				};
 				return std::make_unique<SetIterator>(*this, s);
+			},
+			[&](OwcaIterator oi) -> std::unique_ptr<IteratorBase> {
+				struct IteratorIterator : public IteratorBase {
+					OwcaIterator oi;
+
+					IteratorIterator(OwcaIterator oi) : oi(oi) { }
+
+					OwcaValue next() override {
+						return oi.next();
+					}
+				};
+				return std::make_unique<IteratorIterator>(oi);
+
 			},
 			[&](const auto &) -> std::unique_ptr<IteratorBase> {
 				throw_not_iterable(r.type());
@@ -1523,8 +1607,7 @@ function native hash(value);
 			gc_mark(s.second, ggc);
 		}
 		for (auto& s : stacktrace) {
-			gc_mark(s.runtime_functions, ggc);
-			gc_mark(s.values, ggc);
+			s.gc_mark(*this, ggc);
 		}
 		for(auto s : allocated_objects) {
 			gc_mark(s, ggc);
@@ -1559,33 +1642,37 @@ function native hash(value);
 	void VM::gc_mark(OwcaValue o, GenerationGC ggc)
 	{
 		o.visit(
-			[](const OwcaEmpty& o) { },
-			[](const OwcaRange& o) { },
-			[](const OwcaInt& o) { },
-			[](const OwcaFloat& o) { },
-			[](const OwcaBool& o) { },
-			[](const OwcaString& o) { },
-			[&](const OwcaFunctions& s) {
+			[](OwcaEmpty o) { },
+			[](OwcaCompleted o) { },
+			[](OwcaRange o) { },
+			[](OwcaInt o) { },
+			[](OwcaFloat o) { },
+			[](OwcaBool o) { },
+			[](OwcaString o) { },
+			[&](OwcaFunctions s) {
 				gc_mark(s.internal_value(), ggc);
 				if (s.internal_self_object())
 					gc_mark(s.internal_self_object(), ggc);
 			},
-			[&](const OwcaMap& s) {
+			[&](OwcaMap s) {
 				gc_mark(s.internal_value(), ggc);
 			},
-			[&](const OwcaClass& s) {
+			[&](OwcaClass s) {
 				gc_mark(s.internal_value(), ggc);
 			},
-			[&](const OwcaObject& s) {
+			[&](OwcaObject s) {
 				gc_mark(s.internal_value(), ggc);
 			},
-			[&](const OwcaArray& s) {
+			[&](OwcaArray s) {
 				gc_mark(s.internal_value()->values, ggc);
 			},
-			[&](const OwcaTuple& s) {
+			[&](OwcaTuple s) {
 				gc_mark(s.internal_value()->values, ggc);
 			},
-			[&](const OwcaSet& s) {
+			[&](OwcaSet s) {
+				gc_mark(s.internal_value(), ggc);
+			},
+			[&](OwcaIterator s) {
 				gc_mark(s.internal_value(), ggc);
 			}
 			);

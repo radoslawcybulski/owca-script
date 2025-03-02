@@ -1,21 +1,15 @@
 #include "stdafx.h"
 #include "owca_iterator.h"
 #include "owca_value.h"
+#include "iterator.h"
 
 namespace OwcaScript {
-    std::optional<OwcaValue> OwcaIterator::current() const
+    bool OwcaIterator::completed() const
     {
-        auto v = ib->get();
-        if (v) return *v;
-        return std::nullopt;
+        return !bool(object->generator);
     }
-
-    void OwcaIterator::next() {
-        ib->next();
-    }
-
-    size_t OwcaIterator::remaining_size() const
+    OwcaValue OwcaIterator::next() const
     {
-        return ib->remaining_size();
+        return object->execute_next();
     }
 }

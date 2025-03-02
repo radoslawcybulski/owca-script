@@ -16,13 +16,15 @@ namespace OwcaScript::Internal {
 		std::string_view name, full_name;
 		ImplStat *body;
 		unsigned int param_count;
+		bool is_generator;
 
-		void init(std::span<AstFunction::CopyFromParent> copy_from_parents, std::span<std::string_view> identifier_names, std::string_view name, std::string_view full_name, unsigned int param_count, ImplStat *body)
+		void init(std::span<AstFunction::CopyFromParent> copy_from_parents, std::span<std::string_view> identifier_names, std::string_view name, std::string_view full_name, bool is_generator, unsigned int param_count, ImplStat *body)
 		{
 			this->copy_from_parents = copy_from_parents;
 			this->identifier_names = identifier_names;
 			this->name = name;
 			this->full_name = full_name;
+			this->is_generator = is_generator;
 			this->body = body;
 			this->param_count = param_count;
 		}
@@ -35,13 +37,14 @@ namespace OwcaScript::Internal {
 			assert(code);
 			sf.copy_from_parents = copy_from_parents;
 			sf.identifier_names = identifier_names;
+			sf.is_generator = is_generator;
 
 			sf.values_from_parents.reserve(copy_from_parents.size());
 			for (auto c : copy_from_parents) {
 				sf.values_from_parents.push_back(VM::get(vm).get_identifier(c.index_in_parent));
 			}
 			auto rf = VM::get(vm).allocate<RuntimeFunction>(0, std::move(code), name, full_name, line, param_count, !identifier_names.empty() && identifier_names[0] == "self");
-			rf->data = std::move(std::move(sf));
+			rf->data = std::move(sf);
 			auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
 			rfs->functions[rf->param_count] = rf;
 			auto of = OwcaFunctions{ rfs };
@@ -92,7 +95,7 @@ namespace OwcaScript::Internal {
 
 	void AstFunction::calculate_size(CodeBufferSizeCalculator &ei) const
 	{
-		if (native) {
+		if (native == Native::Yes) {
 			ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
 			ei.code_buffer.allocate(name_);
@@ -117,7 +120,7 @@ namespace OwcaScript::Internal {
 	}
 
 	ImplExpr* AstFunction::emit(EmitInfo& ei) {
-		if (native) {
+		if (native == Native::Yes) {
 			auto ret = ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
 			auto nm = ei.code_buffer.allocate(name_);
@@ -143,7 +146,7 @@ namespace OwcaScript::Internal {
 				inm[i] = ei.code_buffer.allocate(identifier_names[i]);
 			}
 			auto bd = body->emit(ei);
-			ret->init(c, inm, nm, fm, (unsigned int)params.size(), bd);
+			ret->init(c, inm, nm, fm, generator == Generator::Yes, (unsigned int)params.size(), bd);
 			return ret;
 		}
 	}

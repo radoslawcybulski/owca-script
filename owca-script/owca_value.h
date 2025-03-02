@@ -15,6 +15,7 @@
 #include "owca_array.h"
 #include "owca_set.h"
 #include "owca_exception.h"
+#include "owca_iterator.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -25,6 +26,7 @@ namespace OwcaScript {
 
 	enum class OwcaValueKind {
 		Empty,
+		Completed,
 		Range,
 		Bool,
 		Int,
@@ -37,18 +39,21 @@ namespace OwcaScript {
 		Tuple,
 		Array,
 		Set,
+		Iterator,
 	};
 
 	class OwcaEmpty {};
+	class OwcaCompleted {};
 
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
 		OwcaValue(OwcaEmpty value) : value_(value) {}
+		OwcaValue(OwcaCompleted value) : value_(value) {}
 		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
 		OwcaValue(OwcaInt value) : value_(value) {}
@@ -62,6 +67,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaArray value) : value_(std::move(value)) {}
 		OwcaValue(OwcaSet value) : value_(std::move(value)) {}
 		OwcaValue(OwcaException value);
+		OwcaValue(OwcaIterator value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
@@ -70,6 +76,7 @@ namespace OwcaScript {
 		bool is_true() const;
 
 		OwcaEmpty as_nul(OwcaVM ) const;
+		OwcaCompleted as_completed(OwcaVM ) const;
 		OwcaRange as_range(OwcaVM ) const;
 		OwcaBool as_bool(OwcaVM ) const;
 		OwcaInt as_int(OwcaVM ) const;
@@ -83,6 +90,7 @@ namespace OwcaScript {
 		OwcaArray as_array(OwcaVM ) const;
 		OwcaSet as_set(OwcaVM ) const;
 		OwcaException as_exception(OwcaVM) const;
+		OwcaIterator as_iterator(OwcaVM) const;
 
 		std::string_view type() const;
 		std::string to_string() const;
@@ -97,6 +105,77 @@ namespace OwcaScript {
 			return std::visit(overloaded{std::forward<F>(fns)...}, value_);
 		}
 	};
+
+    class Generator
+    {
+    public:
+        struct promise_type;
+        using handle_type = std::coroutine_handle<promise_type>;
+     
+        struct promise_type // required
+        {
+            OwcaValue value_;
+            std::exception_ptr exception_;
+			bool completed = false;
+
+            Generator get_return_object()
+            {
+                return Generator(handle_type::from_promise(*this));
+            }
+            std::suspend_always initial_suspend() { return {}; }
+            std::suspend_always final_suspend() noexcept { 
+				completed = true;
+				return {};
+			}
+            void unhandled_exception() { exception_ = std::current_exception(); }
+     
+            template<std::convertible_to<OwcaValue> From>
+            std::suspend_always yield_value(From&& from)
+            {
+                value_ = std::forward<From>(from);
+                return {};
+            }
+            void return_void() {}
+        };
+     
+        Generator(handle_type h) : h_(std::move(h)) {
+			if (h_.done()) completed = true;
+		}
+        ~Generator() {
+			if (h_) h_.destroy();
+		}
+		Generator(const Generator &) = delete;
+		Generator(Generator &&o) : h_(std::move(o.h_)), completed(o.completed) {
+			o.h_ = {};
+		}
+		Generator &operator = (const Generator&) = delete;
+		Generator &operator = (Generator &&o) {
+			if (this != &o) {
+				if (h_) h_.destroy();
+				h_ = std::move(o.h_);
+				completed = o.completed;
+				o.h_ = {};
+			}
+			return *this;
+		}
+
+        std::optional<OwcaValue> next()
+        {
+            if (completed) return std::nullopt;
+            h_();
+            if (h_.promise().exception_)
+                std::rethrow_exception(h_.promise().exception_);
+            if (h_.done()) {
+                completed = true;
+                return std::nullopt;
+            }
+            return h_.promise().value_;
+        }
+     
+    private:
+        handle_type h_;
+        bool completed = false;
+    };	
 }
 
 namespace std {

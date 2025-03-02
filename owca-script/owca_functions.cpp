@@ -7,6 +7,7 @@
 #include "string.h"
 #include "dictionary.h"
 #include "array.h"
+#include "iterator.h"
 
 namespace OwcaScript {
 	OwcaFunctions::OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::AllocationBase* self_object) : functions(functions), self_object(self_object) {}
@@ -20,6 +21,7 @@ namespace OwcaScript {
 	{
 		auto s = self.visit(
 			[](OwcaEmpty) -> Internal::AllocationBase * { return nullptr; },
+			[&](OwcaCompleted) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaInt) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaFloat) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaBool) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
@@ -44,6 +46,7 @@ namespace OwcaScript {
 		case Internal::AllocationBase::Kind::Tuple: return OwcaTuple{ static_cast<Internal::Array*>(self_object) };
 		case Internal::AllocationBase::Kind::Array: return OwcaArray{ static_cast<Internal::Array*>(self_object) };
 		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::DictionaryShared*>(self_object) };
+		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };
 		case Internal::AllocationBase::Kind::BoundSelfObject: return static_cast<Internal::BoundFunctionSelfObject*>(self_object)->self;
 		}
 		assert(false);

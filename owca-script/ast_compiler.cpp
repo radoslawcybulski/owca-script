@@ -12,6 +12,7 @@
 #include "ast_expr_constant.h"
 #include "ast_expr_identifier.h"
 #include "ast_return.h"
+#include "ast_yield.h"
 #include "ast_class.h"
 #include "ast_if.h"
 #include "ast_while.h"
@@ -706,12 +707,25 @@ namespace OwcaScript::Internal {
 		auto function_updater = FunctionUpdater{ *this };
 		auto line = consume("function");
 		auto [line2, func_name] = consume();
-		bool use_native = false;
-		if (func_name == "native" && preview().second != "(") {
-			auto [ l, f] = consume();
-			line2 = l;
-			func_name = f;
-			use_native = true;
+		bool use_native = false, is_generator = false;
+
+		while(preview().second != "(") {
+			if (func_name == "native") {
+				if (use_native)
+					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line2, "reused function's `native` specifier");
+				auto [ l, f] = consume();
+				line2 = l;
+				func_name = f;
+				use_native = true;
+			}
+			else if (func_name == "generator") {
+				if (is_generator)
+					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line2, "reused function's `generator` specifier");
+				auto [ l, f] = consume();
+				line2 = l;
+				func_name = f;
+				is_generator = true;
+			}
 		}
 		if (!is_identifier(func_name)) {
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier for function name, got `{}`", func_name));
@@ -744,7 +758,7 @@ namespace OwcaScript::Internal {
 		}
 		consume(")");
 		auto full_name_updater = FullNameUpdater{ full_name, func_name };
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), use_native);
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), use_native ? AstFunction::Native::Yes : AstFunction::Native::No, is_generator ? AstFunction::Generator::Yes : AstFunction::Generator::No);
 		if (use_native) {
 			auto [txt_line, txt] = preview();
 			if (txt == "{") {
@@ -847,10 +861,27 @@ namespace OwcaScript::Internal {
 		auto line = consume("return");
 		std::unique_ptr<AstExpr> val;
 		if (!eof() && preview().second != ";") {
+			if (!functions_stack.empty() && functions_stack.back()->is_generator()) {
+				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, "can't use return statement with value in generator function");
+			}
 			val = compile_expression_no_assign();
 		}
 		consume(";");
 		return std::make_unique<AstReturn>(line, std::move(val));
+	}
+
+	std::unique_ptr<AstStat> AstCompiler::compile_yield()
+	{
+		auto line = consume("yield");
+		if (functions_stack.empty()) {
+			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, "can't use yield statement in global scope");
+		}
+		if (functions_stack.empty() || !functions_stack.back()->is_generator()) {
+			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("function `{}` is not marked as generator, can't use yield statement", functions_stack.back()->name()));
+		}
+		auto val = compile_expression_no_assign();
+		consume(";");
+		return std::make_unique<AstYield>(line, std::move(val));
 	}
 
 	std::unique_ptr<AstStat> AstCompiler::compile_try()
@@ -951,6 +982,7 @@ namespace OwcaScript::Internal {
 		if (tok == "function") return compile_function();
 		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
+		if (tok == "yield") return compile_yield();
 		if (tok == "if") return compile_if();
 		if (tok == "try") return compile_try();
 		if (tok == "throw") return compile_throw();
@@ -963,7 +995,7 @@ namespace OwcaScript::Internal {
 	{
 		functions_stack.clear();
 		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{}, false);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{}, AstFunction::Native::No, AstFunction::Generator::No);
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -985,8 +1017,10 @@ namespace OwcaScript::Internal {
 
 	struct AstCompiler::Phase2 : public AstVisitor {
 		struct Stack {
-			std::unordered_map<std::string_view, unsigned int> identifiers;
-			std::unordered_set<unsigned int> copied;
+			enum class IdentifierState {
+				Unknown, Writable, ReadOnly
+			};
+			std::unordered_map<std::string_view, std::pair<unsigned int, IdentifierState>> identifiers;
 			std::vector<std::string_view> identifier_names;
 			using CopyFromParent = AstFunction::CopyFromParent;
 			std::vector<CopyFromParent> copy_from_parents;
@@ -994,30 +1028,52 @@ namespace OwcaScript::Internal {
 			AstFunction* owner;
 			Stack* parent = nullptr;
 
-			unsigned int define_identifier(std::string_view name) {
-				auto it = identifiers.insert({ name, (unsigned int)identifiers.size() });
+			auto define_identifier(std::string_view name) {
+				auto it = identifiers.insert({ name, { (unsigned int)identifiers.size(), IdentifierState::Unknown } });
 				if (it.second) {
 					identifier_names.push_back(it.first->first);
 				}
-				return it.first->second;
+				return it.first;
 			}
-			std::optional<unsigned int> lookup_identifier(std::string_view name) {
+			std::optional<std::pair<unsigned int, bool>> lookup_identifier(std::string_view name) {
 				auto it = identifiers.find(name);
-				if (it != identifiers.end())
-					return it->second;
+				if (it != identifiers.end()) {
+					bool wa;
+					switch(it->second.second) {
+					case IdentifierState::Writable: wa = true; break;
+					case IdentifierState::ReadOnly: wa = false; break;
+					case IdentifierState::Unknown:
+						if (parent) {
+							auto p = parent->lookup_identifier(name);
+							wa = !p;
+						}
+						else wa = true;
+						it->second.second = wa ? IdentifierState::Writable : IdentifierState::ReadOnly;
+						break;
+					}
+					return std::pair<unsigned int, bool>{ it->second.first, wa };
+				}
 
 				if (parent == nullptr)
 					return std::nullopt;
 
-				auto p = parent->lookup_identifier(name);
-				if (!p)
+				auto pp = parent->lookup_identifier(name);
+				if (!pp)
 					return std::nullopt;
+				auto [ p, _ ] = *pp;
 
-				auto new_index = define_identifier(name);
-				copy_from_parents.push_back({ *p, new_index });
-				copied.insert(new_index);
-				
-				return new_index;
+				auto it2 = define_identifier(name);
+				copy_from_parents.push_back({ p, it2->second.first });
+				it2->second.second = IdentifierState::ReadOnly;
+
+				return std::pair<unsigned int, bool>{ it2->second.first, false };
+			}
+			unsigned int ensure_writable_identifier(AstCompiler *comp, Line line, std::string_view name) {
+				auto index_pp = lookup_identifier(name);
+				assert(index_pp);
+				auto [ index, writeable ] = *index_pp;
+				if (!writeable) comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack", name));
+				return index;
 			}
 		};
 		std::unordered_map<AstFunction*, Stack> stacks;
@@ -1028,6 +1084,9 @@ namespace OwcaScript::Internal {
 
 		Phase2(AstCompiler* compiler, std::span<const std::string> additional_variables) : additional_variables(additional_variables), compiler(compiler) {}
 
+		void add_error(OwcaErrorKind kind, Line line, std::string msg) {
+			compiler->add_error(kind, compiler->filename_, line, std::move(msg));
+		}
 		using AstVisitor::apply;
 		void apply(AstBase &o) override {
 			o.visit_children(*this);
@@ -1040,9 +1099,8 @@ namespace OwcaScript::Internal {
 			}
 			else {
 				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->lookup_identifier(o.get_loop_identifier());
-					assert(index);
-					o.update_loop_ident_index(*index);
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+					o.update_loop_ident_index(index);
 				}
 			}
 			apply(static_cast<AstStat&>(o));
@@ -1056,11 +1114,11 @@ namespace OwcaScript::Internal {
 			}
 			else {
 				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->lookup_identifier(o.get_loop_identifier());
-					assert(index);
-					o.update_loop_ident_index(*index);
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+					o.update_loop_ident_index(index);
 				}
-				o.update_value_index(*current_stack->lookup_identifier(o.get_value()));
+				auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_value());
+				o.update_value_index(index);
 			}
 			apply(static_cast<AstStat&>(o));
 		}
@@ -1076,9 +1134,8 @@ namespace OwcaScript::Internal {
 				for(auto i = 0u; i < o.catch_count(); ++i) {
 					auto ident = o.catch_identifier(i);
 					if (!ident.empty()) {
-						auto index = current_stack->lookup_identifier(ident);
-						assert(index);
-						o.update_catch_index(i, *index);
+						auto index = current_stack->ensure_writable_identifier(compiler, o.catch_line(i), ident);
+						o.update_catch_index(i, index);
 					}
 				}
 			}
@@ -1091,17 +1148,17 @@ namespace OwcaScript::Internal {
 				}
 			}
 			else {
-				auto index = current_stack->lookup_identifier(o.identifier());
-				if (!index) {
-					compiler->add_error(OwcaErrorKind::UndefinedIdentifier, compiler->filename_, o.line, std::format("variable `{}` has not been written", o.identifier()));
+				auto index_pp = current_stack->lookup_identifier(o.identifier());
+				if (!index_pp) {
+					add_error(OwcaErrorKind::UndefinedIdentifier, o.line, std::format("variable `{}` has not been written", o.identifier()));
 				}
 				else {
+					auto [ index, writable ] = *index_pp;
 					if (o.write()) {
-						if (current_stack->copied.find(*index) != current_stack->copied.end()) {
-							compiler->add_error(OwcaErrorKind::VariableIsConstant, compiler->filename_, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
-						}
+						if (!writable) 
+							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_index(*index);
+					o.update_index(index);
 				}
 			}
 			apply(static_cast<AstExpr&>(o));

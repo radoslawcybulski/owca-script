@@ -47,6 +47,39 @@ namespace OwcaScript::Internal {
                 ++counter;
             }
 		}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+            VM::get(vm).update_execution_line(line);
+            auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+
+            auto counter = (OwcaIntInternal)0;
+
+            while(true) {
+                if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
+                    VM::get(vm).set_identifier(loop_ident_index, OwcaInt{ counter });
+                }
+                auto v = value->execute_expression(vm);
+                auto condition = VM::get(vm).calculate_if_true(v);
+                if (!condition) break;
+                try {
+                    co_await body->execute_generator_statement(vm, st);
+                }
+                catch(FlowControlContinue e) {
+                    if (e.depth == depth)
+                        continue;
+                    throw;
+                }
+                catch(FlowControlBreak e) {
+                    if (e.depth == depth)
+                        break;
+                    throw;
+                }
+                ++counter;
+            }
+            co_return;
+		}
+		size_t calculate_generator_allocation_size() const override {
+			return body->calculate_generator_allocation_size() + calculate_generator_object_size_for_this();
+		}
 	};
 
 	void AstWhile::calculate_size(CodeBufferSizeCalculator &ei) const

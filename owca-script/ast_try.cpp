@@ -16,36 +16,73 @@ namespace OwcaScript::Internal {
             this->catches = catches;
 		}
 
+        struct ExceptionHandlerInfo {
+            ImplStat *catch_body = nullptr;
+            unsigned int ident_index = 0;
+            OwcaValue oe;
+        };
+        std::optional<ExceptionHandlerInfo> find_handler(OwcaVM vm, OwcaException oe) const {
+            auto oe_type = oe.type();
+
+            for(auto [ ident_index, exception_types, catch_body ] : catches) {
+                for(auto et : exception_types) {
+                    auto v = et->execute_expression(vm);
+                    auto oe2 = v.as_class(vm);
+                    if (oe_type.has_base_class(oe2))
+                        return ExceptionHandlerInfo{ catch_body, ident_index, oe };
+                }
+            }
+            return std::nullopt;
+        }
+
 		void execute_statement_impl(OwcaVM vm) const override {
+            std::optional<OwcaException> oe_value;
+            std::optional<ExceptionHandlerInfo> handler_info;
             try {
                 body->execute_statement(vm);
                 return;
             }
             catch(OwcaException oe) {
                 auto sentinel = VM::ExceptionHandlingSentinel{ VM::get(vm), oe };
-                auto oe_type = oe.type();
-
-                for(auto [ ident_index, exception_types, catch_body ] : catches) {
-                    bool found = false;
-
-                    for(auto et : exception_types) {
-                        auto v = et->execute_expression(vm);
-                        auto oe2 = v.as_class(vm);
-                        if (oe_type.has_base_class(oe2)) {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if (found) {
-                        if (ident_index != std::numeric_limits<unsigned int>::max()) {
-                            VM::get(vm).set_identifier(ident_index, oe, false);
-                        }
-                        catch_body->execute_statement(vm);
-                        break;
-                    }
-                }
+                handler_info = find_handler(vm, oe);
+                if (!handler_info) throw;
+                oe_value = oe;
             }
+            auto sentinel = VM::ExceptionHandlingSentinel{ VM::get(vm), *oe_value };
+            if (handler_info->ident_index != std::numeric_limits<unsigned int>::max()) {
+                VM::get(vm).set_identifier(handler_info->ident_index, handler_info->oe, false);
+            }
+            handler_info->catch_body->execute_statement(vm);
+}
+		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+            VM::get(vm).update_execution_line(line);
+            auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+
+            std::optional<OwcaException> oe_value;
+            std::optional<ExceptionHandlerInfo> handler_info;
+            try {
+                co_await body->execute_generator_statement(vm, st);
+                co_return;
+            }
+            catch(OwcaException oe) {
+                auto sentinel = VM::ExceptionHandlingSentinel{ VM::get(vm), oe };
+                handler_info = find_handler(vm, oe);
+                if (!handler_info) throw;
+                oe_value = oe;
+            }
+            auto sentinel = VM::ExceptionHandlingSentinel{ VM::get(vm), *oe_value };
+            if (handler_info->ident_index != std::numeric_limits<unsigned int>::max()) {
+                VM::get(vm).set_identifier(handler_info->ident_index, handler_info->oe, false);
+            }
+            co_await handler_info->catch_body->execute_generator_statement(vm, st);
+            co_return;
+		}
+		size_t calculate_generator_allocation_size() const override {
+            auto sz = body->calculate_generator_allocation_size();
+            for(auto [ ident_index, exception_types, catch_body ] : catches) {
+                sz = std::max(sz, catch_body->calculate_generator_allocation_size());
+            }
+			return sz + calculate_generator_object_size_for_this();
 		}
 	};
 
