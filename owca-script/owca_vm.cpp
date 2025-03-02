@@ -39,7 +39,7 @@ namespace OwcaScript {
 		return OwcaCode{ std::move(v) };
 	}
 
-	OwcaValue OwcaVM::create_array(std::vector<OwcaValue> values) const
+	OwcaValue OwcaVM::create_array(std::deque<OwcaValue> values) const
 	{
 		return vm->create_array(std::move(values));
 	}

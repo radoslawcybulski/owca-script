@@ -7,6 +7,7 @@
 #include "string.h"
 #include "dictionary.h"
 #include "array.h"
+#include "tuple.h"
 #include "iterator.h"
 
 namespace OwcaScript {
@@ -43,7 +44,7 @@ namespace OwcaScript {
 		case Internal::AllocationBase::Kind::RuntimeFunctions: return OwcaFunctions{ static_cast<Internal::RuntimeFunctions*>(self_object) };
 		case Internal::AllocationBase::Kind::Map: return OwcaMap{ static_cast<Internal::DictionaryShared*>(self_object) };
 		case Internal::AllocationBase::Kind::Class: return OwcaClass{ static_cast<Internal::Class*>(self_object) };
-		case Internal::AllocationBase::Kind::Tuple: return OwcaTuple{ static_cast<Internal::Array*>(self_object) };
+		case Internal::AllocationBase::Kind::Tuple: return OwcaTuple{ static_cast<Internal::Tuple*>(self_object) };
 		case Internal::AllocationBase::Kind::Array: return OwcaArray{ static_cast<Internal::Array*>(self_object) };
 		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::DictionaryShared*>(self_object) };
 		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };

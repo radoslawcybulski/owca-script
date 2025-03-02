@@ -86,7 +86,7 @@ namespace OwcaScript {
 		OwcaCode compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue execute(const OwcaCode&, OwcaValue values = {}, OwcaValue *output_dict = nullptr);
-		OwcaValue create_array(std::vector<OwcaValue> values) const;
+		OwcaValue create_array(std::deque<OwcaValue> values) const;
 		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
 		OwcaValue create_map(const std::vector<OwcaValue> &values = {}) const;
 		OwcaValue create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values) const;

@@ -6,6 +6,7 @@
 #include "owca_value.h"
 #include "dictionary.h"
 #include "array.h"
+#include "tuple.h"
 #include "owca_iterator.h"
 #include "string.h"
 
@@ -330,7 +331,7 @@ namespace OwcaScript::Internal {
 						},
 						[&](OwcaRange k) -> OwcaValue {
 							auto [v1, v2] = verify_key(vm, k, size, orig_key, "array");
-							return VM::get(vm).create_array(o.internal_value()->sub_array(v1, v2));
+							return VM::get(vm).create_array(o.internal_value()->sub_deque(v1, v2));
 						},
 						[&](const auto&) -> OwcaValue {
 							Internal::VM::get(vm).throw_wrong_type(std::format("can't index with {} value", key.type()));
@@ -358,7 +359,7 @@ namespace OwcaScript::Internal {
 						},
 						[&](OwcaRange k) -> OwcaValue {
 							auto [v1, v2] = verify_key(vm, k, size, orig_key, "tuple");
-							return VM::get(vm).create_array(o.internal_value()->sub_array(v1, v2));
+							return VM::get(vm).create_tuple(o.internal_value()->sub_array(v1, v2));
 						},
 						[&](const auto&) -> OwcaValue {
 							Internal::VM::get(vm).throw_wrong_type(std::format("can't index with {} value", key.type()));

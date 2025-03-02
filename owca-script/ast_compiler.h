@@ -110,6 +110,7 @@ namespace OwcaScript {
 			std::unique_ptr<AstExpr> compile_parse_constant_number(Line line, std::string_view text);
 
 			bool preview_is_loop_identifier();
+			bool preview_is_with_assignment();
 			std::unique_ptr<AstExpr> compile_expr_value();
 			std::unique_ptr<AstExpr> compile_expr_postfix();
 			std::unique_ptr<AstExpr> compile_expr_prefix();
@@ -132,6 +133,7 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_yield();
 			std::unique_ptr<AstStat> compile_try();
 			std::unique_ptr<AstStat> compile_throw();
+			std::unique_ptr<AstStat> compile_with();
 			std::unique_ptr<AstStat> compile_for(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_if(bool elif = false);
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);

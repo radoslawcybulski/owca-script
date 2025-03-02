@@ -6,6 +6,7 @@
 #include "runtime_function.h"
 #include "object.h"
 #include "array.h"
+#include "tuple.h"
 #include "dictionary.h"
 #include "string.h"
 #include "iterator.h"

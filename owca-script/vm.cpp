@@ -9,6 +9,7 @@
 #include "flow_control.h"
 #include "dictionary.h"
 #include "array.h"
+#include "tuple.h"
 #include "object.h"
 #include "owca_iterator.h"
 #include "string.h"
@@ -206,10 +207,10 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_overflow(std::format("range size for size {} -> {} overflows integer", r.lower(), r.upper()));
 			return OwcaInt{ vm, v, "range' size" };
 		}
-		static OwcaValue bool_init(OwcaVM vm, OwcaValue r) {
+		static OwcaValue bool_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
 		}
-		static OwcaValue int_init(OwcaVM vm, OwcaValue r) {
+		static OwcaValue int_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return OwcaInt { r.visit(
 				[&](OwcaBool value) -> OwcaIntInternal {
 					return value.internal_value() ? 1 : 0;
@@ -281,7 +282,7 @@ namespace OwcaScript::Internal {
 				}
 			) };
 		}
-		static OwcaValue float_init(OwcaVM vm, OwcaValue r) {
+		static OwcaValue float_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return OwcaFloat { r.visit(
 				[&](OwcaBool value) -> OwcaFloatInternal {
 					return value.internal_value() ? 1.0f : 0.0f;
@@ -353,8 +354,24 @@ namespace OwcaScript::Internal {
 				}
 			) };
 		}
-		static OwcaValue string_init(OwcaVM vm, OwcaValue , OwcaValue r) {
-			return vm.create_string(r.to_string());
+		static OwcaValue string_init(OwcaVM vm, OwcaValue, OwcaValue r) {
+			return r.visit(
+				[&](OwcaEmpty o) { return vm.create_string_from_view("nul"); },
+				[&](OwcaCompleted o) { return vm.create_string_from_view("completed"); },
+				[&](OwcaRange o) { return vm.create_string(std::format("{}..{}", o.lower(), o.upper())); },
+				[&](OwcaInt o) { return vm.create_string(std::format("{}", o.internal_value())); },
+				[&](OwcaFloat o) { return vm.create_string(std::format("{}", o.internal_value())); },
+				[&](OwcaBool o) { return vm.create_string_from_view(o.internal_value() ? "true" : "false"); },
+				[&](OwcaString o) -> OwcaValue { return o; },
+				[&](OwcaFunctions s) { return vm.create_string_from_view(std::format("function {}", s.internal_value()->full_name)); },
+				[&](OwcaMap s) { return vm.create_string(s.to_string()); },
+				[&](OwcaClass s) { return vm.create_string(s.to_string()); },
+				[&](OwcaObject s) { return vm.create_string(s.to_string()); },
+				[&](OwcaArray s) { return vm.create_string(s.to_string()); },
+				[&](OwcaTuple s) { return vm.create_string(s.to_string()); },
+				[&](OwcaSet s) { return vm.create_string(s.to_string()); },
+				[&](OwcaIterator s) { return vm.create_string_from_view("iterator"); }
+				);
 		}
 		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
 			return OwcaInt{ vm, r.as_string(vm).internal_value()->size(), "string' size" };
@@ -400,7 +417,7 @@ namespace OwcaScript::Internal {
 					self.internal_value()->values = o.internal_value()->values;
 				},
 				[&](OwcaTuple o) {
-					self.internal_value()->values = o.internal_value()->values;
+					self.internal_value()->values = { o.internal_value()->values.begin(), o.internal_value()->values.end() };
 				},
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
@@ -413,7 +430,6 @@ namespace OwcaScript::Internal {
 					} 
 				},
 				[&](OwcaString o) {
-					self.internal_value()->values.reserve(o.internal_value()->size());
 					o.internal_value()->iterate_over_content(
 						[&](std::string_view txt) {
 							for(auto q : txt) {
@@ -442,6 +458,21 @@ namespace OwcaScript::Internal {
 				co_yield o[i];
 			}
 		}
+		
+		static OwcaValue array_push_back(OwcaVM vm, OwcaArray self, OwcaValue v) {
+			self.push_back(v);
+			return {};
+		}
+		static OwcaValue array_push_front(OwcaVM vm, OwcaArray self, OwcaValue v) {
+			self.push_front(v);
+			return {};
+		}
+		static OwcaValue array_pop_back(OwcaVM vm, OwcaArray self) {
+			return self.pop_back();
+		}
+		static OwcaValue array_pop_front(OwcaVM vm, OwcaArray self) {
+			return self.pop_front();
+		}
 		static OwcaValue array_sort(OwcaVM vm, OwcaArray self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
@@ -449,10 +480,10 @@ namespace OwcaScript::Internal {
 			});
 			return OwcaArray{ VM::get(vm).allocate<Array>(0, std::move(values)) };
 		}
-		static OwcaValue tuple_init(OwcaVM vm, OwcaArray self, OwcaValue r) {
+		static OwcaValue tuple_init(OwcaVM vm, OwcaTuple self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
-					self.internal_value()->values = o.internal_value()->values;
+					self.internal_value()->values = { o.internal_value()->values.begin(), o.internal_value()->values.end() };
 				},
 				[&](OwcaTuple o) {
 					self.internal_value()->values = o.internal_value()->values;
@@ -468,7 +499,7 @@ namespace OwcaScript::Internal {
 					}
 				},
 				[&](OwcaString o) {
-					self.internal_value()->values.reserve(o.internal_value()->size());
+					self.internal_value()->values.reserve(o.size());
 					o.internal_value()->iterate_over_content(
 						[&](std::string_view txt) {
 							for(auto q : txt) {
@@ -489,20 +520,20 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue tuple_size(OwcaVM vm, OwcaArray self) {
+		static OwcaValue tuple_size(OwcaVM vm, OwcaTuple self) {
 			return OwcaInt{ vm, self.internal_value()->values.size(), "tuple' size" };
 		}
-		static Generator tuple_iter(OwcaVM vm, OwcaVariableSet &set, OwcaArray o) {
+		static Generator tuple_iter(OwcaVM vm, OwcaVariableSet &set, OwcaTuple o) {
 			for(auto i = 0u; i < o.size(); ++i) {
 				co_yield o[i];
 			}
 		}
-		static OwcaValue tuple_sort(OwcaVM vm, OwcaArray self) {
+		static OwcaValue tuple_sort(OwcaVM vm, OwcaTuple self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
 				return VM::get(vm).compare_values(CompareKind::Less, a, b);
 			});
-			return OwcaTuple{ VM::get(vm).allocate<Array>(0, std::move(values), true) };
+			return OwcaTuple{ VM::get(vm).allocate<Tuple>(0, std::move(values)) };
 		}
 		static OwcaValue exception_init(OwcaVM vm, OwcaException self, OwcaString msg) {
 			VM::get(vm).initialize_exception_object(*self.internal_value());
@@ -577,6 +608,10 @@ namespace OwcaScript::Internal {
 			if (full_name == "Array.__init__") return adapt(array_init);
 			if (full_name == "Array.size") return adapt(array_size);
 			if (full_name == "Array.sort") return adapt(array_sort);
+			if (full_name == "Array.push_back") return adapt(array_push_back);
+			if (full_name == "Array.push_front") return adapt(array_push_front);
+			if (full_name == "Array.pop_back") return adapt(array_pop_back);
+			if (full_name == "Array.pop_front") return adapt(array_pop_front);
 			if (full_name == "Tuple.__init__") return adapt(tuple_init);
 			if (full_name == "Tuple.size") return adapt(tuple_size);
 			if (full_name == "Tuple.sort") return adapt(tuple_sort);
@@ -653,6 +688,10 @@ class Array {
 	function native size(self);
 	function native sort(self);
 	function native generator __iter__(self);
+	function native push_back(self, v);
+	function native push_front(self, v);
+	function native pop_back(self);
+	function native pop_front(self);
 }
 class Tuple {
 	function native __init__(self, value);
@@ -701,18 +740,22 @@ function native print(msg);
 				else if (key == "Bool") {
 					c_bool = read(value_pair.second);
 					c_bool->allocator_override = []() -> OwcaValue { return OwcaBool{ false }; };
+					c_bool->reload_self = true;
 				}
 				else if (key == "Int") {
 					c_int = read(value_pair.second);
 					c_int->allocator_override = []() -> OwcaValue { return OwcaInt{ 0 }; };
+					c_int->reload_self = true;
 				}
 				else if (key == "Float") {
 					c_float = read(value_pair.second);
 					c_float->allocator_override = []() -> OwcaValue { return OwcaFloat{ 0 }; };
+					c_float->reload_self = true;
 				}
 				else if (key == "String") {
 					c_string = read(value_pair.second);
 					c_string->allocator_override = [&]() -> OwcaValue { return create_string(""); };
+					c_string->reload_self = true;
 				}
 				else if (key == "Function") {
 					c_function = read(value_pair.second);
@@ -930,6 +973,11 @@ function native print(msg);
 		throw_exception(c_invalid_operation_exception, "can't return value from generator");
 	}
 
+	void VM::throw_container_is_empty()
+	{
+		throw_exception(c_invalid_operation_exception, "container is empty");
+	}
+	
 	OwcaValue VM::member(OwcaValue val, const std::string& key)
 	{
 		auto v = try_member(val, key);
@@ -1296,6 +1344,9 @@ function native print(msg);
 				if (cls->allocator_override) {
 					obj = cls->allocator_override();
 				}
+				else if (cls->reload_self) {
+					obj = {};
+				}
 				else {
 					obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
 				}
@@ -1314,7 +1365,9 @@ function native print(msg);
 					}
 					else {
 						auto of2 = of.bind(obj);
-						execute_call(of2, arguments);
+						auto val = execute_call(of2, arguments);
+						if (cls->reload_self)
+							obj = val;
 					}
 				}
 
@@ -1325,7 +1378,7 @@ function native print(msg);
 			}
 		);
 	}
-	OwcaValue VM::create_array(std::vector<OwcaValue> arguments)
+	OwcaValue VM::create_array(std::deque<OwcaValue> arguments)
 	{
 		auto t = allocate<Array>(0, std::move(arguments));
 		return OwcaArray{ t };
@@ -1333,7 +1386,7 @@ function native print(msg);
 	OwcaValue VM::create_tuple(std::vector<OwcaValue> arguments)
 	{
 		if (arguments.empty() && empty_tuple != nullptr) return OwcaTuple{ empty_tuple };
-		auto t = allocate<Array>(0, std::move(arguments), true);
+		auto t = allocate<Tuple>(0, std::move(arguments));
 		return OwcaTuple{ t };
 	}
 	OwcaValue VM::create_map(const std::vector<OwcaValue> &arguments)
@@ -1665,6 +1718,12 @@ function native print(msg);
 			);
 	}
 	void VM::gc_mark(const std::vector<OwcaValue>& o, GenerationGC ggc)
+	{
+		for (auto& q : o) {
+			gc_mark(q, ggc);
+		}
+	}
+	void VM::gc_mark(const std::deque<OwcaValue>& o, GenerationGC ggc)
 	{
 		for (auto& q : o) {
 			gc_mark(q, ggc);

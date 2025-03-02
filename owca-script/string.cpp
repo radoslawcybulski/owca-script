@@ -127,11 +127,13 @@ namespace OwcaScript::Internal {
 	std::string String::to_string() const
 	{
         std::string tmp;
-        tmp.reserve(size());
+        tmp.reserve(size() + 2);
+        tmp += '"';
         iterate_over_content([&](std::string_view t) {
             tmp += t;
         });
-        assert(tmp.size() == size());
+        tmp += '"';
+        assert(tmp.size() == size() + 2);
         return tmp;
 	}
 

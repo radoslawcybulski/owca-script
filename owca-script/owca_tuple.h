@@ -7,13 +7,13 @@ namespace OwcaScript {
     class OwcaValue;
 
     namespace Internal {
-        struct Array;
+        struct Tuple;
     }
 	class OwcaTuple {
-		Internal::Array *object;
+		Internal::Tuple *object;
 
 	public:
-        OwcaTuple(Internal::Array *object) : object(object) {}
+        OwcaTuple(Internal::Tuple *object) : object(object) {}
 		
 		auto internal_value() const { return object; }
 

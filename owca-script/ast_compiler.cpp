@@ -21,10 +21,11 @@
 #include "ast_throw.h"
 #include "ast_loop_control.h"
 #include "vm.h"
+#include "ast_with.h"
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
-		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "throw", "try", "catch", "and", "or", "not", "native"
+		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "throw", "try", "catch", "and", "or", "not", "with"
 	} };
 	static std::string_view operators_2[] = {
 			">=", "<=", "=>", "==", "!="
@@ -782,6 +783,22 @@ namespace OwcaScript::Internal {
 		return f;
 	}
 	
+	bool AstCompiler::preview_is_with_assignment()
+	{
+		auto start = content_offset;
+		auto line = content_line;
+		auto tok = preview().second;
+		bool is_loop_identifier = false;
+
+		if (is_identifier(tok)) {
+			consume(tok);
+			if (preview().second == "=") 
+				is_loop_identifier = true;
+		}
+		content_offset = start;
+		content_line = line;
+		return is_loop_identifier;
+	}
 	bool AstCompiler::preview_is_loop_identifier()
 	{
 		auto start = content_offset;
@@ -854,6 +871,24 @@ namespace OwcaScript::Internal {
 		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
 		auto body = compile_stat();
 		return std::make_unique<AstFor>(line, control_depth, loop_ident, text, std::move(iterator), std::move(body));
+	}
+
+	std::unique_ptr<AstStat> AstCompiler::compile_with()
+	{
+		auto line = consume("with");
+		consume("(");
+		std::string_view ident;
+		if (preview_is_with_assignment()) {
+			auto [ text_line, text ] = consume();
+			if (!is_identifier(text))
+				add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, text_line, std::format("expected identifier for iteration's value, got `{}`", text));
+			ident = text;
+			consume("=");
+		}
+		std::unique_ptr<AstExpr> iterator = compile_expression_no_assign();
+		consume(")");
+		auto body = compile_stat();
+		return std::make_unique<AstWith>(line, ident, std::move(iterator), std::move(body));
 	}
 
 	std::unique_ptr<AstStat> AstCompiler::compile_return()
@@ -979,6 +1014,7 @@ namespace OwcaScript::Internal {
 		if (tok == "for") return compile_for(ident);
 		if (!ident.empty())
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected while because loop identifier `{}` is present", tok, ident));
+		if (tok == "with") return compile_with();
 		if (tok == "function") return compile_function();
 		if (tok == "class") return compile_class();
 		if (tok == "return") return compile_return();
@@ -1119,6 +1155,20 @@ namespace OwcaScript::Internal {
 				}
 				auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_value());
 				o.update_value_index(index);
+			}
+			apply(static_cast<AstStat&>(o));
+		}
+		void apply(AstWith &o) override {
+			if (first_run) {
+				if (!o.get_identifier().empty()) {
+					current_stack->define_identifier(o.get_identifier());
+				}
+			}
+			else {
+				if (!o.get_identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_identifier());
+					o.update_ident_index(index);
+				}
 			}
 			apply(static_cast<AstStat&>(o));
 		}

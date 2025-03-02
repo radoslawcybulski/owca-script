@@ -30,6 +30,7 @@ namespace OwcaScript {
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
 			std::function<OwcaValue()> allocator_override;
+			bool reload_self = false;
 
 			std::string_view type() const override { return "Class"; }
 			std::string to_string() const override;

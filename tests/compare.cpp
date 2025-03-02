@@ -29,7 +29,7 @@ if (a <  b) result = result | 16;
 if (a >  b) result = result | 32;
 return result;
     )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"), std::vector<std::string>{ "b" });
-        auto val = vm.execute(code, vm.create_map({ { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array(std::move(pp)) } }));
+        auto val = vm.execute(code, vm.create_map({ { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array({ pp.begin(), pp.end() }) } }));
         ASSERT_EQ(val.as_int(vm).internal_value(), expected);
     }
     void run_basic_test(int mode) {

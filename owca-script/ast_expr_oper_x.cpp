@@ -34,8 +34,7 @@ namespace OwcaScript::Internal {
 		using ImplExprOperXBase::ImplExprOperXBase;
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			std::vector<OwcaValue> arguments;
-			arguments.reserve(args.size());
+			std::deque<OwcaValue> arguments;
 			for(auto &a : args) {
 				arguments.push_back(a->execute_expression(vm));
 			}

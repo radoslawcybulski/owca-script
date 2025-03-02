@@ -13,18 +13,18 @@ namespace OwcaScript {
 
             using AllocationBase::AllocationBase;
 
-            std::vector<OwcaValue> values;
+            std::deque<OwcaValue> values;
             const bool is_tuple = false;
 			
-            Array(std::vector<OwcaValue> values, bool is_tuple = false) : values(std::move(values)), is_tuple(is_tuple) {}
+            Array(std::deque<OwcaValue> values) : values(std::move(values)) {}
 
 			std::string_view type() const override {
-				return is_tuple ? "tuple" : "array";
+				return "Array";
 			}
-            std::vector<OwcaValue> sub_array(size_t from, size_t to) const;
+            //std::vector<OwcaValue> sub_array(size_t from, size_t to) const;
+			std::deque<OwcaValue> sub_deque(size_t from, size_t to) const;
 			std::string to_string() const override;
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
-            size_t hash() const;
 		};
 	}
 }

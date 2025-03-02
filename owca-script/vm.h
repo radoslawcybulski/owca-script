@@ -51,7 +51,7 @@ namespace OwcaScript {
 			Class *c_math_exception = nullptr;
 			Class *c_invalid_operation_exception = nullptr;
 			Class *c_iterator = nullptr;
-			Array *empty_tuple = nullptr;
+			Tuple *empty_tuple = nullptr;
 			unsigned int generation_gc = 0;
 
 			std::optional<OwcaException> exception_being_handled;
@@ -137,6 +137,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_not_iterable(std::string_view type);
 			[[noreturn]] void throw_readonly(std::string_view msg);
 			[[noreturn]] void throw_cant_return_value_from_generator();
+			[[noreturn]] void throw_container_is_empty();
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
@@ -144,7 +145,7 @@ namespace OwcaScript {
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue resume_generator(OwcaIterator oi);
 			void set_yield_value(OwcaValue v);
-			OwcaValue create_array(std::vector<OwcaValue> arguments);
+			OwcaValue create_array(std::deque<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_exception();
 			OwcaValue create_map(const std::vector<OwcaValue> &arguments = {});
@@ -173,6 +174,7 @@ namespace OwcaScript {
 			void gc_mark(AllocationBase* ptr, GenerationGC ggc);
 			void gc_mark(OwcaValue , GenerationGC ggc);
 			void gc_mark(const std::vector<OwcaValue> &, GenerationGC ggc);
+			void gc_mark(const std::deque<OwcaValue> &, GenerationGC ggc);
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
 				auto p = new char[sizeof(T) + oversize];

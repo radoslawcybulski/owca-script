@@ -6,16 +6,16 @@
 namespace OwcaScript::Internal {
     std::string Array::to_string() const
     {
-        if (values.empty()) return is_tuple ? "()" : "[]";
+        if (values.empty()) return "[]";
 
         std::string temp;
-        temp += is_tuple ? "(" : "[";
+        temp += "[";
         for(auto &q : values) {
             if (temp.size() > 1) temp += ",";
             temp += " ";
             temp += q.to_string();
         }
-        temp += is_tuple ? " )" : " ]";
+        temp += " ]";
         return temp;
     }
 
@@ -24,29 +24,26 @@ namespace OwcaScript::Internal {
         VM::get(vm).gc_mark(values, generation_gc);
     }
 
-    size_t Array::hash() const
-    {
-        assert(is_tuple);
-
-        size_t h = 13;
-
-        for(auto q : values) {
-            auto v = vm->calculate_hash(q);
-            h = h * 1299709 + v;
-        }
-
-        return h;
-    }
-
-    std::vector<OwcaValue> Array::sub_array(size_t from, size_t to) const
+    std::deque<OwcaValue> Array::sub_deque(size_t from, size_t to) const
     {
         assert(from <= to);
         assert(to <= values.size());
-        std::vector<OwcaValue> temp;
-        temp.reserve(to - from);
+        std::deque<OwcaValue> temp;
         for(auto i = from; i < to; ++i) {
             temp.push_back(values[i]);
         }
         return temp;
     }
+
+    // std::vector<OwcaValue> Array::sub_array(size_t from, size_t to) const
+    // {
+    //     assert(from <= to);
+    //     assert(to <= values.size());
+    //     std::vector<OwcaValue> temp;
+    //     temp.reserve(to - from);
+    //     for(auto i = from; i < to; ++i) {
+    //         temp.push_back(values[i]);
+    //     }
+    //     return temp;
+    // }
 }

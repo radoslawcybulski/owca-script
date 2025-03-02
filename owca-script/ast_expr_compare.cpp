@@ -4,6 +4,7 @@
 #include "owca_vm.h"
 #include "owca_iterator.h"
 #include "array.h"
+#include "tuple.h"
 #include "dictionary.h"
 #include "owca_value.h"
 
@@ -52,7 +53,7 @@ namespace OwcaScript::Internal {
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaEmpty& l, const OwcaEmpty& r) {
 		return build_result(kind, true);
 	}
-	static Result compare_array_iter(OwcaVM vm, CompareKind kind, const std::vector<OwcaValue> &left, const std::vector<OwcaValue> &right) {
+	template <typename T> static Result compare_array_iter(OwcaVM vm, CompareKind kind, const T &left, const T &right) {
 		if (kind == CompareKind::Eq) {
 			if (left.size() != right.size()) return Result::False;
 		}

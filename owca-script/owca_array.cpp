@@ -2,6 +2,7 @@
 #include "owca_array.h"
 #include "array.h"
 #include "owca_value.h"
+#include "vm.h"
 
 namespace OwcaScript {
     size_t OwcaArray::size() const
@@ -12,11 +13,6 @@ namespace OwcaScript {
     void OwcaArray::resize(size_t s)
     {
         object->values.resize(s);
-    }
-
-    void OwcaArray::reserve(size_t s)
-    {
-        object->values.reserve(s);
     }
 
     OwcaValue OwcaArray::operator [] (size_t s) const
@@ -36,8 +32,29 @@ namespace OwcaScript {
         return object->to_string();
     }
 
-    std::vector<OwcaValue>::iterator OwcaArray::begin() { return object->values.begin(); }
-    std::vector<OwcaValue>::iterator OwcaArray::end() { return object->values.end(); }
-    std::vector<OwcaValue>::const_iterator OwcaArray::cbegin() { return object->values.cbegin(); }
-    std::vector<OwcaValue>::const_iterator OwcaArray::cend() { return object->values.cend(); }
+    void OwcaArray::push_back(OwcaValue v)
+    {
+        object->values.push_back(v);
+    }
+    void OwcaArray::push_front(OwcaValue v)
+    {
+        object->values.push_front(v);
+    }
+    OwcaValue OwcaArray::pop_back()
+    {
+        if (object->values.empty())
+            object->vm->throw_container_is_empty();
+        auto v = object->values.back();
+        object->values.pop_back();
+        return v;
+    }
+    OwcaValue OwcaArray::pop_front()
+    {
+        if (object->values.empty())
+            object->vm->throw_container_is_empty();
+        auto v = object->values.front();
+        object->values.pop_front();
+        return v;
+    }
+
 }

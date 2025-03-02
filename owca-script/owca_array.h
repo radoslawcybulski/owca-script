@@ -19,16 +19,13 @@ namespace OwcaScript {
 
         size_t size() const;
         void resize(size_t);
-        void reserve(size_t);
         OwcaValue operator [] (size_t) const;
         OwcaValue &operator [] (size_t);
-
+		void push_back(OwcaValue);
+		void push_front(OwcaValue);
+		OwcaValue pop_back();
+		OwcaValue pop_front();
         std::string to_string() const;
-
-        std::vector<OwcaValue>::iterator begin();
-        std::vector<OwcaValue>::iterator end();
-        std::vector<OwcaValue>::const_iterator cbegin();
-        std::vector<OwcaValue>::const_iterator cend();
 	};
 }
 

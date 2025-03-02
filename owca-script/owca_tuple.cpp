@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "owca_tuple.h"
-#include "array.h"
+#include "tuple.h"
 #include "owca_value.h"
 
 namespace OwcaScript {
