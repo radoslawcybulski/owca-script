@@ -21,6 +21,8 @@ namespace OwcaScript {
 			void visit_children(AstVisitor&) override;
 
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write = std::move(v); }
+
+			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

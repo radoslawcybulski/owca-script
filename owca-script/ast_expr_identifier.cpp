@@ -9,17 +9,14 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::string_view identifier;
-		ImplExpr* value_to_write = nullptr;
-		unsigned int index;
-		bool function_write;
+		#define FIELDS(Q) \
+			Q(index, unsigned int) \
+			Q(identifier, std::string_view) \
+			Q(value_to_write, ImplExpr*) \
+			Q(function_write, bool)
 
-		void init(unsigned int index, std::string_view identifier, ImplExpr* value_to_write, bool function_write) {
-			this->identifier = identifier;
-			this->index = index;
-			this->value_to_write = value_to_write;
-			this->function_write = function_write;
-		}
+		IMPL_DEFINE_EXPR(Kind::Ident)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			if (value_to_write) {
 				auto v = value_to_write->execute_expression(vm);
@@ -49,5 +46,9 @@ namespace OwcaScript::Internal {
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {
 		if (value_to_write)
 			value_to_write->visit(vis);
+	}
+	void AstExprIdentifier::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::Ident] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprIdentifier>(line); };
 	}
 }

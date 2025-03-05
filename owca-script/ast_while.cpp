@@ -7,19 +7,15 @@
 namespace OwcaScript::Internal {
 	class ImplWhile : public ImplStat {
 	public:
-		using ImplStat::ImplStat;
+        using ImplStat::ImplStat;
 
-		ImplExpr* value;
-        ImplStat* body;
-        unsigned int depth;
-        unsigned int loop_ident_index;
-
-		void init(unsigned int depth, unsigned int loop_ident_index, ImplExpr *value, ImplStat* body) {
-			this->value = value;
-            this->body = body;
-            this->depth = depth;
-            this->loop_ident_index = loop_ident_index;
-		}
+		#define FIELDS(Q) \
+            Q(depth, unsigned int) \
+            Q(loop_ident_index, unsigned int) \
+            Q(value, ImplExpr*) \
+            Q(body, ImplStat*)
+    
+        IMPL_DEFINE_STAT(Kind::While)
 
 		void execute_statement_impl(OwcaVM vm) const override {
             auto counter = (OwcaIntInternal)0;
@@ -101,5 +97,9 @@ namespace OwcaScript::Internal {
 	void AstWhile::visit_children(AstVisitor& vis) {
         value->visit(vis);
         body->visit(vis);
+	}
+	void AstWhile::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::While] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplWhile>(line); };
 	}
 }

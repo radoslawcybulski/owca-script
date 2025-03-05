@@ -191,14 +191,12 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		ImplExpr* first;
-		std::span<std::tuple<CompareKind, Line, ImplExpr*>> nexts;
+#define FIELDS(Q) \
+	Q(first, ImplExpr*) \
+	Q(nexts, std::span<std::tuple<CompareKind, Line, ImplExpr*>>)
 
-		void init(ImplExpr* first, std::span<std::tuple<CompareKind, Line, ImplExpr*>> nexts) {
-			this->first = first;
-			this->nexts = nexts;
-		}
-		
+		IMPL_DEFINE_EXPR(Kind::Compare)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto left = first->execute_expression(vm);
 
@@ -283,5 +281,9 @@ namespace OwcaScript::Internal {
 		for (auto& q : nexts) {
 			std::get<2>(q)->visit(vis);
 		}
+	}
+	void AstExprCompare::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::Compare] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCompare>(line); };
 	}
 }

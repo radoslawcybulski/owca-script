@@ -15,20 +15,22 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		ImplExpr* left;
-		ImplExpr* right;
-		ImplExpr* third = nullptr;
+		#define FIELDS(Q) \
+			Q(left, ImplExpr*) \
+			Q(right, ImplExpr*) \
+			Q(third, ImplExpr*)
 
-		void init(ImplExpr* left, ImplExpr* right, ImplExpr* third = nullptr) {
-			this->left = left;
-			this->right = right;
-			this->third = third;
+		IMPL_DEFINE_EXPR(Kind::LogOr)
+
+		void init(ImplExpr* left, ImplExpr* right) {
+			init(left, right, nullptr);
 		}
 	};
 	class ImplExprLogOr : public ImplExprOper2 {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::LogOr; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			if (l.is_true()) return l;
@@ -39,6 +41,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::LogAnd; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			if (!l.is_true()) return l;
@@ -49,6 +52,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::BinOr; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -59,6 +63,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::BinAnd; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -69,6 +74,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::BinXor; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -79,6 +85,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::BinLShift; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -89,6 +96,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::BinRShift; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -99,6 +107,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::MakeRange; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaIntInternal>::min();
 			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaIntInternal>::max();
@@ -109,6 +118,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::Add; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
@@ -135,6 +145,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::Sub; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
@@ -158,6 +169,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::Mul; }
 		static OwcaValue mul_string(OwcaVM vm, OwcaValue val, OwcaIntInternal mul) {
 			if (mul < 0)
 				Internal::VM::get(vm).throw_invalid_operand_for_mul_string(std::to_string(mul));
@@ -194,6 +206,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::Div; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
@@ -220,6 +233,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper2::ImplExprOper2;
 
+		Kind kind() const override { return Kind::Mod; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
@@ -530,5 +544,21 @@ namespace OwcaScript::Internal {
 	void AstExprOper2::update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third) {
 		kind_ = new_kind;
 		this->third = std::move(third);
+	}
+	void AstExprOper2::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::LogOr] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprLogOr>(line); };
+		functions[(size_t)ImplExpr::Kind::LogAnd] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprLogAnd>(line); };
+		functions[(size_t)ImplExpr::Kind::BinOr] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinOr>(line); };
+		functions[(size_t)ImplExpr::Kind::BinAnd] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinAnd>(line); };
+		functions[(size_t)ImplExpr::Kind::BinXor] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinXor>(line); };
+		functions[(size_t)ImplExpr::Kind::BinLShift] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinLShift>(line); };
+		functions[(size_t)ImplExpr::Kind::BinRShift] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinRShift>(line); };
+		functions[(size_t)ImplExpr::Kind::MakeRange] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprMakeRange>(line); };
+		functions[(size_t)ImplExpr::Kind::Add] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprAdd>(line); };
+		functions[(size_t)ImplExpr::Kind::Sub] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprSub>(line); };
+		functions[(size_t)ImplExpr::Kind::Mul] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprMul>(line); };
+		functions[(size_t)ImplExpr::Kind::Div] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprDiv>(line); };
+		functions[(size_t)ImplExpr::Kind::Mod] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprMod>(line); };
 	}
 }

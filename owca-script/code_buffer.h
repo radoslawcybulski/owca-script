@@ -19,19 +19,14 @@ namespace OwcaScript {
 			std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider_;
 			size_t offset = 0;
 
-			char* get_ptr(size_t size, size_t align) {
-				offset = (offset + align - 1) & ~(align - 1);
-				assert(offset + size <= storage.size());
-				char* ptr = storage.data() + offset;
-				offset += size;
-				return ptr;
-			}
+			char* get_ptr(size_t size, size_t align);
 
 			void* allocate_simple_with_copy(const void* source, size_t size_alloc, size_t size_copy, size_t align);
 		public:
 			CodeBuffer(std::string filename, size_t size, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
 				storage.resize(size);
 			}
+			CodeBuffer(std::string filename, std::span<unsigned char> storage, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider);
 
 			std::string_view filename() const { return filename_; }
 			void validate_size(size_t size);
@@ -42,11 +37,16 @@ namespace OwcaScript {
 
 			std::string_view allocate(std::string_view txt);
 			template <typename T> std::span<T> preallocate_array(size_t sz) {
+				if (sz == 0) return {};
 				auto p = get_ptr(sz * sizeof(T), alignof(T));
 				return std::span{ (T*)p, sz };
 			}
 			const ImplExpr* root() const { return (const ImplExpr*)storage.data(); }
 			const auto* native_code_provider() const { return native_code_provider_.get(); }
+			std::vector<unsigned char> serialize();
+			const auto &peek_storage() const { return storage; }
+
+			bool compare(const CodeBuffer &other) const;
 		};
 
 		class CodeBufferSizeCalculator {
@@ -56,10 +56,7 @@ namespace OwcaScript {
 
 				size_t offset = 0;
 
-				void get_ptr(size_t size, size_t align) {
-					offset = (offset + align - 1) & ~(align - 1);
-					offset += size;
-				}
+				void get_ptr(size_t size, size_t align);
 
 				template <typename T> void preallocate(Line line) {
 					get_ptr(sizeof(T), alignof(T));
@@ -69,6 +66,7 @@ namespace OwcaScript {
 					get_ptr(txt.size() + 1, 1);
 				}
 				template <typename T> void preallocate_array(size_t sz) {
+					if (sz == 0) return;
 					get_ptr(sz * sizeof(T), alignof(T));
 				}
 			};

@@ -19,8 +19,52 @@
 #include "ast_try.h"
 #include "ast_throw.h"
 #include "ast_with.h"
+#include "ast_yield.h"
 
 namespace OwcaScript::Internal {
+    std::span<std::function<ImplExpr*(Deserializer&, Line)>> get_expression_constructors() {
+        static std::array<std::function<ImplExpr*(Deserializer&, Line)>, (unsigned int)ImplExpr::Kind::_Count> a = []() {
+            std::array<std::function<ImplExpr*(Deserializer&, Line)>, (unsigned int)ImplExpr::Kind::_Count> tmp;
+
+			AstExprCompare::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprConstant::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprIdentifier::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprMember::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprOper1::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprOper2::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprOperX::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstFunction::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstClass::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+
+			for(auto &q : tmp) assert(q);
+
+			return tmp;
+        }();
+		return a;
+    }
+    std::span<std::function<ImplStat*(Deserializer&, Line)>> get_statement_constructors() {
+        static std::array<std::function<ImplStat*(Deserializer&, Line)>, (unsigned int)ImplStat::Kind::_Count> a = []() {
+            std::array<std::function<ImplStat*(Deserializer&, Line)>, (unsigned int)ImplStat::Kind::_Count> tmp;
+
+			AstBlock::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprAsStat::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstReturn::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstIf::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstWhile::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstFor::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstLoopControl::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstTry::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstThrow::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstWith::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstYield::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			
+			for(auto &q : tmp) assert(q);
+
+            return tmp;
+        }();
+		return a;
+    }
+
 	void AstVisitor::apply(AstExpr &o)
 	{
 		apply(static_cast<AstBase&>(o));
@@ -122,6 +166,11 @@ namespace OwcaScript::Internal {
 	}
 
 	void AstVisitor::apply(AstWith &o)
+	{
+		apply(static_cast<AstStat&>(o));
+	}
+
+	void AstVisitor::apply(AstYield &o)
 	{
 		apply(static_cast<AstStat&>(o));
 	}

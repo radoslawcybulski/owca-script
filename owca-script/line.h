@@ -5,9 +5,19 @@
 
 namespace OwcaScript {
 	namespace Internal {
-		struct Line {
-			unsigned int line;
+		class Serializer;
+		class Deserializer;
+
+        struct Line {
+			unsigned int line = 0;
+            Line() {}
 			explicit Line(unsigned int line) : line(line) {}
+
+            void serialize_object(Serializer &) const;
+            void deserialize_object(Deserializer &);
+            bool compare(const Line &o) const {
+                return line == o.line;
+            }
 		};
 	}
 }

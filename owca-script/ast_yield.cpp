@@ -8,11 +8,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		ImplExpr* value;
+		#define FIELDS(Q) \
+			Q(value, ImplExpr*)
 
-		void init(ImplExpr *value) {
-			this->value = value;
-		}
+		IMPL_DEFINE_STAT(Kind::Yield)
 
 		void execute_statement_impl(OwcaVM vm) const override {
 			assert(false);
@@ -45,5 +44,9 @@ namespace OwcaScript::Internal {
 	void AstYield::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstYield::visit_children(AstVisitor& vis) {
 		value->visit(vis);
+	}
+	void AstYield::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Yield] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplYield>(line); };
 	}
 }

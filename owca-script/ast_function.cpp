@@ -7,27 +7,30 @@
 #include "owca_functions.h"
 
 namespace OwcaScript::Internal {
+	void AstFunction::CopyFromParent::serialize_object(Serializer &ser) const {
+		ser.serialize(index_in_parent);
+		ser.serialize(index_in_child);
+	}
+	void AstFunction::CopyFromParent::deserialize_object(Deserializer &ser) {
+		ser.deserialize(index_in_parent);
+		ser.deserialize(index_in_child);
+	}
+
 	class ImplExprScriptFunction : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::span<AstFunction::CopyFromParent> copy_from_parents;
-		std::span<std::string_view> identifier_names;
-		std::string_view name, full_name;
-		ImplStat *body;
-		unsigned int param_count;
-		bool is_generator;
+		#define FIELDS(Q) \
+			Q(copy_from_parents, std::span<AstFunction::CopyFromParent>) \
+			Q(identifier_names, std::span<std::string_view>) \
+			Q(name, std::string_view) \
+			Q(full_name, std::string_view) \
+			Q(is_generator, bool) \
+			Q(param_count, unsigned int) \
+			Q(body, ImplStat *)
+    
+		IMPL_DEFINE_EXPR(Kind::ScriptFunction)
 
-		void init(std::span<AstFunction::CopyFromParent> copy_from_parents, std::span<std::string_view> identifier_names, std::string_view name, std::string_view full_name, bool is_generator, unsigned int param_count, ImplStat *body)
-		{
-			this->copy_from_parents = copy_from_parents;
-			this->identifier_names = identifier_names;
-			this->name = name;
-			this->full_name = full_name;
-			this->is_generator = is_generator;
-			this->body = body;
-			this->param_count = param_count;
-		}
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
@@ -56,17 +59,14 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::span<std::string_view> parameter_names;
-		std::string_view name, full_name;
-		bool is_generator;
-
-		void init(std::span<std::string_view> parameter_names, std::string_view name, std::string_view full_name, bool is_generator)
-		{
-			this->parameter_names = parameter_names;
-			this->name = name;
-			this->full_name = full_name;
-			this->is_generator = is_generator;
-		}
+		#undef FIELDS
+		#define FIELDS(Q) \
+			Q(parameter_names, std::span<std::string_view>) \
+			Q(name, std::string_view) \
+			Q(full_name, std::string_view) \
+			Q(is_generator, bool)
+    
+		IMPL_DEFINE_EXPR(Kind::NativeFunction)
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
@@ -116,23 +116,23 @@ namespace OwcaScript::Internal {
 		if (native == Native::Yes) {
 			ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
-			ei.code_buffer.allocate(name_);
-			ei.code_buffer.allocate(full_name_);
 			ei.code_buffer.preallocate_array<std::string_view>(params.size());
 			for (auto i = 0u; i < params.size(); ++i) {
 				ei.code_buffer.allocate(params[i]);
 			}
+			ei.code_buffer.allocate(name_);
+			ei.code_buffer.allocate(full_name_);
 		}
 		else {
 			assert(body);
 			ei.code_buffer.preallocate<ImplExprScriptFunction>(line);
-			ei.code_buffer.allocate(name_);
-			ei.code_buffer.allocate(full_name_);
 			ei.code_buffer.preallocate_array<CopyFromParent>(copy_from_parents.size());
 			ei.code_buffer.preallocate_array<std::string_view>(identifier_names.size());
 			for (auto i = 0u; i < identifier_names.size(); ++i) {
 				ei.code_buffer.allocate(identifier_names[i]);
 			}
+			ei.code_buffer.allocate(name_);
+			ei.code_buffer.allocate(full_name_);
 			body->calculate_size(ei);
 		}
 	}
@@ -141,20 +141,18 @@ namespace OwcaScript::Internal {
 		if (native == Native::Yes) {
 			auto ret = ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
 			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
-			auto nm = ei.code_buffer.allocate(name_);
-			auto fm = ei.code_buffer.allocate(full_name_);
 			auto pn = ei.code_buffer.preallocate_array<std::string_view>(params.size());
 			for (auto i = 0u; i < params.size(); ++i) {
 				pn[i] = ei.code_buffer.allocate(params[i]);
 			}
+			auto nm = ei.code_buffer.allocate(name_);
+			auto fm = ei.code_buffer.allocate(full_name_);
 			ret->init(pn, nm, fm, generator == Generator::Yes);
 			return ret;
 		}
 		else {
 			assert(body);
 			auto ret = ei.code_buffer.preallocate<ImplExprScriptFunction>(line);
-			auto nm = ei.code_buffer.allocate(name_);
-			auto fm = ei.code_buffer.allocate(full_name_);
 			auto c = ei.code_buffer.preallocate_array<CopyFromParent>(copy_from_parents.size());
 			for (auto i = 0u; i < copy_from_parents.size(); ++i) {
 				c[i] = copy_from_parents[i];
@@ -163,6 +161,8 @@ namespace OwcaScript::Internal {
 			for (auto i = 0u; i < identifier_names.size(); ++i) {
 				inm[i] = ei.code_buffer.allocate(identifier_names[i]);
 			}
+			auto nm = ei.code_buffer.allocate(name_);
+			auto fm = ei.code_buffer.allocate(full_name_);
 			auto bd = body->emit(ei);
 			ret->init(c, inm, nm, fm, generator == Generator::Yes, (unsigned int)params.size(), bd);
 			return ret;
@@ -173,5 +173,10 @@ namespace OwcaScript::Internal {
 	void AstFunction::visit_children(AstVisitor& vis) {
 		if (body)
 			body->visit(vis);
+	}
+	void AstFunction::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::NativeFunction] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprNativeFunction>(line); };
+		functions[(size_t)ImplExpr::Kind::ScriptFunction] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprScriptFunction>(line); };
 	}
 }

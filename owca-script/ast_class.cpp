@@ -11,17 +11,13 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::string_view name, full_name;
-		std::span<ImplExpr*> base_classes;
-		std::span<ImplExpr*> members;
+		#define FIELDS(Q) \
+			Q(name, std::string_view) \
+			Q(full_name, std::string_view) \
+			Q(base_classes, std::span<ImplExpr*>) \
+			Q(members, std::span<ImplExpr*>)
 
-		void init(std::string_view name, std::string_view full_name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members)
-		{
-			this->name = name;
-			this->full_name = full_name;
-			this->base_classes = base_classes;
-			this->members = members;
-		}
+		IMPL_DEFINE_EXPR(Kind::ScriptClass)
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
@@ -49,11 +45,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprScriptClass::ImplExprScriptClass;
 
-		void init(std::string_view name, std::string_view full_name, std::span<ImplExpr*> base_classes, std::span<ImplExpr*> members)
-		{
-			ImplExprScriptClass::init(name, full_name, base_classes, members);
-		}
-
+		Kind kind() const override { return Kind::NativeClass; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override
 		{
 			auto res = ImplExprScriptClass::execute_expression_impl(vm);
@@ -128,5 +120,10 @@ namespace OwcaScript::Internal {
 			q->visit(vis);
 		for(auto &q : members)
 			q->visit(vis);
+	}
+	void AstClass::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::NativeClass] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprNativeClass>(line); };
+		functions[(size_t)ImplExpr::Kind::ScriptClass] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprScriptClass>(line); };
 	}
 }

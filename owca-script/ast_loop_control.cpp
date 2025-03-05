@@ -9,11 +9,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		unsigned int depth;
-
-		void init(unsigned int depth) {
-			this->depth = depth;
-		}
+		#define FIELDS(Q) \
+			Q(depth, unsigned int)
+    
+		IMPL_DEFINE_STAT(Kind::Break)
 
 		void execute_statement_impl(OwcaVM vm) const override{
 			throw FlowControlBreak{ depth };
@@ -31,11 +30,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		unsigned int depth;
-
-		void init(unsigned int depth) {
-			this->depth = depth;
-		}
+		#define FIELDS(Q) \
+			Q(depth, unsigned int)
+    
+		IMPL_DEFINE_STAT(Kind::Continue)
 
 		void execute_statement_impl(OwcaVM vm) const override{
 			throw FlowControlContinue{ depth };
@@ -78,5 +76,10 @@ namespace OwcaScript::Internal {
 
 	void AstLoopControl::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstLoopControl::visit_children(AstVisitor& vis) {
+	}
+	void AstLoopControl::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Break] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplLoopControlBreak>(line); };
+		functions[(size_t)ImplStat::Kind::Continue] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplLoopControlContinue>(line); };
 	}
 }

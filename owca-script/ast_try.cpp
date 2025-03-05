@@ -6,15 +6,13 @@
 namespace OwcaScript::Internal {
 	class ImplTry : public ImplStat {
 	public:
-		using ImplStat::ImplStat;
+        using ImplStat::ImplStat;
 
-        ImplStat* body;
-        std::span<std::tuple<unsigned int, std::span<ImplExpr*>, ImplStat*>> catches;
+		#define FIELDS(Q) \
+			Q(body, ImplStat*) \
+            Q(catches, std::span<std::tuple<unsigned int, std::span<ImplExpr*>, ImplStat*>>)
 
-		void init(ImplStat* body, std::span<std::tuple<unsigned int, std::span<ImplExpr*>, ImplStat*>> catches) {
-            this->body = body;
-            this->catches = catches;
-		}
+        IMPL_DEFINE_STAT(Kind::Try)
 
         struct ExceptionHandlerInfo {
             ImplStat *catch_body = nullptr;
@@ -126,5 +124,9 @@ namespace OwcaScript::Internal {
             }
             std::get<3>(c)->visit(vis);
         }
+	}
+	void AstTry::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Try] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplTry>(line); };
 	}
 }

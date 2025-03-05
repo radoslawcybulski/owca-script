@@ -7,17 +7,14 @@
 namespace OwcaScript::Internal {
 	class ImplWith : public ImplStat {
 	public:
-		using ImplStat::ImplStat;
+        using ImplStat::ImplStat;
 
-		ImplExpr* value;
-        ImplStat* body;
-        unsigned int ident_index;
+        #define FIELDS(Q) \
+            Q(ident_index, unsigned int) \
+            Q(value, ImplExpr*) \
+            Q(body, ImplStat*)
 
-		void init(unsigned int ident_index, ImplExpr *value, ImplStat* body) {
-			this->value = value;
-            this->body = body;
-            this->ident_index = ident_index;
-		}
+        IMPL_DEFINE_STAT(Kind::With)
 
 		void execute_statement_impl(OwcaVM vm) const override {
             auto val = value->execute_expression(vm);
@@ -94,5 +91,9 @@ namespace OwcaScript::Internal {
 	void AstWith::visit_children(AstVisitor& vis) {
         value->visit(vis);
         body->visit(vis);
+	}
+	void AstWith::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::With] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplWith>(line); };
 	}
 }

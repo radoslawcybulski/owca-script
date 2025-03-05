@@ -7,6 +7,9 @@
 
 namespace OwcaScript {
 	namespace Internal {
+		class Serializer;
+		class Deserializer;
+
 		class AstFunction : public AstExpr {
 		public:
 			enum class Native : unsigned char { No = 0, Yes = 1 };
@@ -14,6 +17,12 @@ namespace OwcaScript {
 			struct CopyFromParent {
 				unsigned int index_in_parent;
 				unsigned int index_in_child;
+
+				void serialize_object(Serializer &) const;
+				void deserialize_object(Deserializer &);
+				bool compare(const CopyFromParent &o) const {
+					return index_in_child == o.index_in_child && index_in_parent == o.index_in_parent;
+				}
 			};
 		
 		private:
@@ -44,6 +53,8 @@ namespace OwcaScript {
 			void calculate_size(CodeBufferSizeCalculator &) const override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
+
+			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

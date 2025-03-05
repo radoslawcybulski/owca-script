@@ -9,16 +9,16 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		ImplExpr* left;
+		#define FIELDS(Q) \
+			Q(left, ImplExpr*)
 
-		void init(ImplExpr* left) {
-			this->left = left;
-		}
+		IMPL_DEFINE_EXPR(Kind::BinNeg)
 	};
 	class ImplExprBinNeg : public ImplExprOper1 {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
+		Kind kind() const override { return Kind::BinNeg; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto v = l.convert_to_int(vm);
@@ -29,6 +29,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
+		Kind kind() const override { return Kind::LogNot; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			return OwcaBool{ !l.is_true() };
@@ -38,6 +39,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOper1::ImplExprOper1;
 
+		Kind kind() const override { return Kind::Negate; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto [li, lf] = l.get_int_or_float();
@@ -86,5 +88,11 @@ namespace OwcaScript::Internal {
 	void AstExprOper1::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprOper1::visit_children(AstVisitor& vis) {
 		left->visit(vis);
+	}
+	void AstExprOper1::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::BinNeg] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinNeg>(line); };
+		functions[(size_t)ImplExpr::Kind::LogNot] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprLogNot>(line); };
+		functions[(size_t)ImplExpr::Kind::Negate] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprNegate>(line); };
 	}
 }

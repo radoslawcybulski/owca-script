@@ -29,6 +29,8 @@ namespace OwcaScript {
 			void visit_children(AstVisitor&) override;
 
 			static bool execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right);
+
+			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

@@ -9,14 +9,12 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		ImplExpr* value;
-        ImplStat *if_true, *if_false;
-
-		void init(ImplExpr *value, ImplStat *if_true, ImplStat *if_false) {
-			this->value = value;
-            this->if_true = if_true;
-            this->if_false = if_false;
-		}
+		#define FIELDS(Q) \
+			Q(value, ImplExpr*) \
+			Q(if_true, ImplStat*) \
+			Q(if_false, ImplStat*)
+    
+		IMPL_DEFINE_STAT(Kind::If)
 
 		void execute_statement_impl(OwcaVM vm) const override{
             auto v = value->execute_expression(vm);
@@ -70,5 +68,9 @@ namespace OwcaScript::Internal {
         value->visit(vis);
         if_true->visit(vis);
         if (if_false) if_false->visit(vis);
+	}
+	void AstIf::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::If] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplIf>(line); };
 	}
 }

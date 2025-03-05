@@ -9,16 +9,16 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		std::span<ImplExpr*> args;
+		#define FIELDS(Q) \
+			Q(args, std::span<ImplExpr*>)
 
-		void init(std::span<ImplExpr*> args) {
-			this->args = args;
-		}
+		IMPL_DEFINE_EXPR(Kind::Call)
 	};
 	class ImplExprCall : public ImplExprOperXBase {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
+		Kind kind() const override { return Kind::Call; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto f = args[0]->execute_expression(vm);
 			std::vector<OwcaValue> arguments;
@@ -33,6 +33,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
+		Kind kind() const override { return Kind::CreateArray; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::deque<OwcaValue> arguments;
 			for(auto &a : args) {
@@ -45,6 +46,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
+		Kind kind() const override { return Kind::CreateTuple; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
@@ -58,6 +60,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
+		Kind kind() const override { return Kind::CreateSet; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
@@ -71,6 +74,7 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExprOperXBase::ImplExprOperXBase;
 
+		Kind kind() const override { return Kind::CreateMap; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			std::vector<OwcaValue> arguments;
 			arguments.reserve(args.size());
@@ -119,5 +123,13 @@ namespace OwcaScript::Internal {
 	void AstExprOperX::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprOperX::visit_children(AstVisitor& vis) {
 		for(auto &a : args) a->visit(vis);
+	}
+	void AstExprOperX::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::Call] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCall>(line); };
+		functions[(size_t)ImplExpr::Kind::CreateArray] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCreateArray>(line); };
+		functions[(size_t)ImplExpr::Kind::CreateTuple] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCreateTuple>(line); };
+		functions[(size_t)ImplExpr::Kind::CreateSet] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCreateSet>(line); };
+		functions[(size_t)ImplExpr::Kind::CreateMap] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCreateMap>(line); };
 	}
 }

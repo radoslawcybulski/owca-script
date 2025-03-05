@@ -9,11 +9,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		ImplExpr* value;
-
-		void init(ImplExpr *value) {
-			this->value = value;
-		}
+		#define FIELDS(Q) \
+			Q(value, ImplExpr*)
+    
+		IMPL_DEFINE_STAT(Kind::Return)
 
 		void execute_statement_impl(OwcaVM vm) const override{
 			OwcaValue v;
@@ -55,5 +54,9 @@ namespace OwcaScript::Internal {
 	void AstReturn::visit_children(AstVisitor& vis) {
 		if (value)
 			value->visit(vis);
+	}
+	void AstReturn::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Return] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplReturn>(line); };
 	}
 }

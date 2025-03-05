@@ -23,5 +23,6 @@
 #include <coroutine>
 #include <iostream>
 #include <deque>
+#include <array>
 
 #endif

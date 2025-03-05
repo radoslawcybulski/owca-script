@@ -8,23 +8,18 @@
 namespace OwcaScript::Internal {
 	class ImplFor : public ImplStat {
 	public:
-		using ImplStat::ImplStat;
+        using ImplStat::ImplStat;
 
-		ImplExpr* iterator;
-        ImplStat* body;
-        unsigned int depth;
-        unsigned int value_index;
-        unsigned int loop_ident_index;
+		#define FIELDS(Q) \
+            Q(depth, unsigned int) \
+            Q(loop_ident_index, unsigned int) \
+            Q(value_index, unsigned int) \
+            Q(iterator, ImplExpr*) \
+            Q(body, ImplStat*)
+    
+        IMPL_DEFINE_STAT(Kind::For)
 
-		void init(unsigned int depth, unsigned int loop_ident_index, unsigned int value_index, ImplExpr *iterator, ImplStat* body) {
-			this->iterator = iterator;
-            this->body = body;
-            this->depth = depth;
-            this->value_index = value_index;
-            this->loop_ident_index = loop_ident_index;
-		}
-
-		void execute_statement_impl(OwcaVM vm) const override {
+        void execute_statement_impl(OwcaVM vm) const override {
             auto counter = (OwcaIntInternal)0;
             auto iter_value = iterator->execute_expression(vm);
             auto iter = [&]() {
@@ -116,5 +111,9 @@ namespace OwcaScript::Internal {
 	void AstFor::visit_children(AstVisitor& vis) {
         iterator->visit(vis);
         body->visit(vis);
+	}
+	void AstFor::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::For] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplFor>(line); };
 	}
 }

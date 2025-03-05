@@ -59,6 +59,14 @@ namespace OwcaScript {
 		OwcaVM(Internal::VM *vm) : vm(std::move(vm)) {}
 		~OwcaVM();
 
+		class SerializationFailed : public std::exception {
+			std::string msg;
+		public:
+			SerializationFailed(std::string msg) : msg(std::move(msg)) {}
+			const char *what() const noexcept {
+				return msg.c_str();
+			}
+		};
 		class CompilationFailed : public std::exception {
 			std::string filename_;
 			std::string err_msg;
@@ -83,6 +91,7 @@ namespace OwcaScript {
 			virtual std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const { return nullptr; }
 		};
 
+		OwcaCode load(std::string filename, std::span<unsigned char> binary_content, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue execute(const OwcaCode&, OwcaValue values = {}, OwcaValue *output_dict = nullptr);

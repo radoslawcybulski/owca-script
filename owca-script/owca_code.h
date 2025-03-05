@@ -15,6 +15,11 @@ namespace OwcaScript {
 		std::shared_ptr<Internal::CodeBuffer> code_;
 	public:
 		OwcaCode(std::shared_ptr<Internal::CodeBuffer> code_) : code_(std::move(code_)) {}
+
+		const auto &internal_value() const { return code_; }
+
+		std::vector<unsigned char> serialize_to_binary() const;
+		bool compare(const OwcaCode &other) const;
 	};
 }
 

@@ -9,11 +9,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		ImplExpr* value;
+		#define FIELDS(Q) \
+			Q(value, ImplExpr*)
 
-		void init(ImplExpr *value) {
-			this->value = value;
-		}
+		IMPL_DEFINE_STAT(Kind::Throw)
 
 		void execute_statement_impl(OwcaVM vm) const override{
             auto v = value->execute_expression(vm);
@@ -47,5 +46,9 @@ namespace OwcaScript::Internal {
 	void AstThrow::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstThrow::visit_children(AstVisitor& vis) {
         value->visit(vis);
+	}
+	void AstThrow::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Throw] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplThrow>(line); };
 	}
 }

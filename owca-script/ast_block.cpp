@@ -7,11 +7,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplStat::ImplStat;
 
-		std::span<ImplStat*> stats;
+#define FIELDS(Q) \
+		Q(stats, std::span<ImplStat*>)
 
-		void init(std::span<ImplStat*> stats) {
-			this->stats = stats;
-		}
+		IMPL_DEFINE_STAT(Kind::Block)
 
 		void execute_statement_impl(OwcaVM vm) const override{
 			for (auto c : stats) {
@@ -69,5 +68,9 @@ namespace OwcaScript::Internal {
 		for (auto& c : children) {
 			c->visit(vis);
 		}
+	}
+	void AstBlock::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplStat::Kind::Block] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplBlock>(line); };
 	}
 }

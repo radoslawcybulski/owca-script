@@ -9,8 +9,10 @@ namespace OwcaScript::Internal {
 	public:
 		using ImplExpr::ImplExpr;
 
-		void init() {
-		}
+		#define FIELDS(Q) 
+
+		IMPL_DEFINE_EXPR(Kind::ConstantEmpty)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaEmpty{};
 		}
@@ -18,11 +20,12 @@ namespace OwcaScript::Internal {
 	class ImplExprConstantBool : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
-		bool value;
 
-		void init(bool value) {
-			this->value = value;
-		}
+		#undef FIELDS		
+		#define FIELDS(Q) Q(value, bool)
+
+		IMPL_DEFINE_EXPR(Kind::ConstantBool)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaBool{ value };
 		}
@@ -30,11 +33,12 @@ namespace OwcaScript::Internal {
 	class ImplExprConstantInt : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
-		OwcaIntInternal value;
 
-		void init(OwcaIntInternal value) {
-			this->value = value;
-		}
+		#undef FIELDS
+		#define FIELDS(Q) Q(value, OwcaIntInternal)
+
+		IMPL_DEFINE_EXPR(Kind::ConstantInt)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaInt{ value };
 		}
@@ -42,11 +46,12 @@ namespace OwcaScript::Internal {
 	class ImplExprConstantFloat : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
-		OwcaFloatInternal value;
 
-		void init(OwcaFloatInternal value) {
-			this->value = value;
-		}
+		#undef FIELDS
+		#define FIELDS(Q) Q(value, OwcaFloatInternal)
+
+		IMPL_DEFINE_EXPR(Kind::ConstantFloat)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return OwcaFloat{ value };
 		}
@@ -54,11 +59,12 @@ namespace OwcaScript::Internal {
 	class ImplExprConstantString : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;
-		std::string_view value;
 
-		void init(std::string_view value) {
-			this->value = std::move(value);
-		}
+		#undef FIELDS
+		#define FIELDS(Q) Q(value, std::string_view)
+
+		IMPL_DEFINE_EXPR(Kind::ConstantString)
+
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			return vm.create_string_from_view(value);
 		}
@@ -118,5 +124,13 @@ namespace OwcaScript::Internal {
 	}
 	void AstExprConstant::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprConstant::visit_children(AstVisitor& vis) {
+	}
+	void AstExprConstant::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
+	{
+		functions[(size_t)ImplExpr::Kind::ConstantEmpty] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprConstantEmpty>(line); };
+		functions[(size_t)ImplExpr::Kind::ConstantBool] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprConstantBool>(line); };
+		functions[(size_t)ImplExpr::Kind::ConstantInt] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprConstantInt>(line); };
+		functions[(size_t)ImplExpr::Kind::ConstantFloat] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprConstantFloat>(line); };
+		functions[(size_t)ImplExpr::Kind::ConstantString] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprConstantString>(line); };
 	}
 }

@@ -27,6 +27,7 @@ namespace OwcaScript {
 		class AstTry;
 		class AstThrow;
 		class AstWith;
+		class AstYield;
 
 		struct AstVisitor {
 			virtual ~AstVisitor() = default;
@@ -53,6 +54,7 @@ namespace OwcaScript {
 			virtual void apply(AstTry& o);
 			virtual void apply(AstThrow& o);
 			virtual void apply(AstWith &o);
+			virtual void apply(AstYield &o);
 		};
 	}
 }
