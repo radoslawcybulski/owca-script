@@ -11,7 +11,8 @@ static auto run_with(std::string code_text, OwcaValue add_val)
     OwcaVM vm;
     std::vector<std::string> tmp{ { "a" } };
     auto code = vm.compile("test.os", std::move(code_text), tmp);
-    auto val = vm.execute(code, vm.create_map({ { "a", add_val } }));
+    auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
+    auto val = vm.execute(code, vm.create_map(map_data));
     return std::string{ val.as_string(vm).text() };
 }
 TEST_F(WithTest, simple1)

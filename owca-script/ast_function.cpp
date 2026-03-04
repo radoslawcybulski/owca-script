@@ -115,7 +115,7 @@ namespace OwcaScript::Internal {
 	{
 		if (native == Native::Yes) {
 			ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
-			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
+			// std::span<std::string_view> parameter_names, NativeCodeProvider::Function function, std::string_view name
 			ei.code_buffer.preallocate_array<std::string_view>(params.size());
 			for (auto i = 0u; i < params.size(); ++i) {
 				ei.code_buffer.allocate(params[i]);
@@ -140,7 +140,7 @@ namespace OwcaScript::Internal {
 	ImplExpr* AstFunction::emit(EmitInfo& ei) {
 		if (native == Native::Yes) {
 			auto ret = ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
-			// std::span<std::string_view> parameter_names, OwcaVM::NativeCodeProvider::Function function, std::string_view name
+			// std::span<std::string_view> parameter_names, NativeCodeProvider::Function function, std::string_view name
 			auto pn = ei.code_buffer.preallocate_array<std::string_view>(params.size());
 			for (auto i = 0u; i < params.size(); ++i) {
 				pn[i] = ei.code_buffer.allocate(params[i]);

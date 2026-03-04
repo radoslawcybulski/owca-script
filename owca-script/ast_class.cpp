@@ -7,6 +7,9 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
+	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, bool native) : 
+		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), name_(std::string{name}), full_name_(std::move(full_name)), native(native) {}
+
 	class ImplExprScriptClass : public ImplExpr {
 	public:
 		using ImplExpr::ImplExpr;

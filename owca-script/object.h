@@ -4,10 +4,10 @@
 #include "stdafx.h"
 #include "allocation_base.h"
 #include "line.h"
-#include "owca_class.h"
 
 namespace OwcaScript {
 	class OwcaVM;
+	class NativeClassInterface;
 
 	namespace Internal {
 		class CodeBuffer;
@@ -26,7 +26,7 @@ namespace OwcaScript {
 			std::vector<Class*> lookup_order;
 			std::vector<RuntimeFunction*> runtime_functions;
 			std::unordered_map<Class*, std::pair<size_t, size_t>> native_storage_pointers;
-			std::unique_ptr<OwcaClass::NativeClassInterface> native;
+			std::unique_ptr<NativeClassInterface> native;
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
 			std::function<OwcaValue()> allocator_override;

@@ -2,6 +2,7 @@
 #define RC_OWCA_SCRIPT_OWCA_INT_H
 
 #include "stdafx.h"
+#include "owca_vm.h"
 
 namespace OwcaScript {
 	using OwcaIntInternal = std::int64_t;

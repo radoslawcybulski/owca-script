@@ -67,7 +67,7 @@ namespace OwcaScript::Internal {
 			for(auto &a : args) {
 				arguments.push_back(a->execute_expression(vm));
 			}
-			return VM::get(vm).create_set(std::move(arguments));
+			return VM::get(vm).create_set(arguments);
 		}
 	};
 	class ImplExprCreateMap : public ImplExprOperXBase {
@@ -81,7 +81,7 @@ namespace OwcaScript::Internal {
 			for(auto &a : args) {
 				arguments.push_back(a->execute_expression(vm));
 			}
-			return VM::get(vm).create_map(std::move(arguments));
+			return VM::get(vm).create_map(arguments);
 		}
 	};
 

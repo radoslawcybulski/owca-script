@@ -45,7 +45,7 @@ return v['a'] + v['b'];
 TEST_F(SimpleTest, native_func)
 {
 	OwcaVM vm;
-	struct Provider : public OwcaVM::NativeCodeProvider {
+	struct Provider : public NativeCodeProvider {
 		std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
@@ -69,11 +69,9 @@ TEST_F(SimpleTest, external_vars)
 	auto code = vm.compile("test.os", R"(
 return q + b + c;
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto val = vm.execute(code, vm.create_map({
-		{ "q", OwcaInt{ 1 }},
-		{ "b", OwcaInt{ 2 }},
-		{ "c", OwcaInt{ 3 }},
-		}));
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto val = vm.execute(code, vm.create_map(map_data));
+
 	ASSERT_EQ(val.as_int(vm).internal_value(), 6);
 }
 TEST_F(SimpleTest, class_)
@@ -87,11 +85,8 @@ class A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto val = vm.execute(code, vm.create_map({
-		{ "q", OwcaInt{ 1 }},
-		{ "b", OwcaInt{ 2 }},
-		{ "c", OwcaInt{ 3 }},
-		}));
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
 }
@@ -99,8 +94,8 @@ return A(q, b, c);
 TEST_F(SimpleTest, native_class)
 {
 	OwcaVM vm;
-	struct Provider : public OwcaVM::NativeCodeProvider {
-		struct NCI : public OwcaClass::NativeClassInterface {
+	struct Provider : public NativeCodeProvider {
+		struct NCI : public NativeClassInterface {
 			void initialize_storage(void* ptr, size_t s) override {
 				*(std::uint64_t*)ptr = 1234;
 			}
@@ -112,7 +107,7 @@ TEST_F(SimpleTest, native_class)
 				return 8;
 			}
 		};
-		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+		std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 			if (name == "A")
 				return std::make_unique<NCI>();
 			return nullptr;
@@ -126,11 +121,8 @@ class native A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>());
-	auto val = vm.execute(code, vm.create_map({
-		{ "q", OwcaInt{ 1 }},
-		{ "b", OwcaInt{ 2 }},
-		{ "c", OwcaInt{ 3 }},
-		}));
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
 }

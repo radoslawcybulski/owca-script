@@ -26,13 +26,13 @@
 	}
 #define IMPL_DEFINE_COMPARE_IMPL(name, ...) if (!Comparer::compare(this->name, reinterpret_cast<decltype(this)>(r)->name)) return false;
 #define IMPL_DEFINE_COMPARE_EXPR \
-	bool compare(const ImplExpr *r) const { \
+	bool compare(const ImplExpr *r) const override { \
 		if (kind() != r->kind()) return Comparer::debug_break(false); \
 		FIELDS(IMPL_DEFINE_COMPARE_IMPL) \
 		return true; \
 	}
 #define IMPL_DEFINE_COMPARE_STAT \
-	bool compare(const ImplStat *r) const { \
+	bool compare(const ImplStat *r) const override { \
 		FIELDS(IMPL_DEFINE_COMPARE_IMPL) \
 		return true; \
 	}
@@ -89,8 +89,6 @@ namespace OwcaScript {
 			void serialize_impl(std::int64_t);
 			
 		public:
-			enum class SerializationOperation : unsigned char;
-
 			Serializer(size_t size);
 			
 			std::vector<unsigned char> take_result() {

@@ -24,5 +24,6 @@
 #include <iostream>
 #include <deque>
 #include <array>
+#include <cstring>
 
 #endif

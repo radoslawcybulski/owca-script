@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "allocation_base.h"
+#include "owca_exception.h"
 
 namespace OwcaScript {
 	class OwcaVM;

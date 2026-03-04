@@ -2,6 +2,7 @@
 #define RC_OWCA_SCRIPT_OWCA_OBJECT_H
 
 #include "stdafx.h"
+#include "tokens.h"
 
 namespace OwcaScript {
 	class OwcaValue;

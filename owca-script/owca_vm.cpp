@@ -21,10 +21,18 @@ namespace OwcaScript {
 
 	OwcaVM::~OwcaVM() = default;
 
+	OwcaValue OwcaVM::execute(const OwcaCode &oc) {
+		return execute(oc, {}, nullptr);
+	}
+	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaValue values) {
+		return execute(oc, values, nullptr);
+	}
+
 	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaValue values, OwcaValue *output_dict)
 	{
 		return vm->execute_code_block(oc, values, output_dict);
 	}
+
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider)
 	{
 		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
@@ -45,6 +53,14 @@ namespace OwcaScript {
 		return OwcaCode{ std::move(v) };
 	}
 
+	OwcaValue OwcaVM::create_array() const
+	{
+		return vm->create_array(std::deque<OwcaValue>{});
+	}
+	OwcaValue OwcaVM::create_array(std::span<OwcaValue> values) const
+	{
+		return vm->create_array({ values.begin(), values.end() });
+	}
 	OwcaValue OwcaVM::create_array(std::deque<OwcaValue> values) const
 	{
 		return vm->create_array(std::move(values));
@@ -53,19 +69,23 @@ namespace OwcaScript {
 	{
 		return vm->create_tuple(std::move(values));
 	}
-	OwcaValue OwcaVM::create_map(const std::vector<OwcaValue> &values) const
+	OwcaValue OwcaVM::create_map() const
+	{
+		return vm->create_map(std::span<OwcaValue>{});
+	}
+	OwcaValue OwcaVM::create_map(const std::span<OwcaValue> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values) const
+	OwcaValue OwcaVM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_map(const std::vector<std::pair<std::string, OwcaValue>> &values) const
+	OwcaValue OwcaVM::create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_set(const std::vector<OwcaValue> &values) const
+	OwcaValue OwcaVM::create_set(const std::span<OwcaValue> &values) const
 	{
 		return vm->create_set(values);
 	}

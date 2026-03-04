@@ -43,7 +43,7 @@ namespace OwcaScript::Internal {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
 		};
 	}
-	struct VM::BuiltinProvider : public OwcaVM::NativeCodeProvider {
+	struct VM::BuiltinProvider : public NativeCodeProvider {
 		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Bool) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
@@ -634,8 +634,8 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.__iter__") return adapt2(tuple_iter);
 			return std::nullopt;
 		}
-		std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
-			if (full_name == "Exception") return std::make_unique<OwcaClass::NativeClassInterfaceSimpleImplementation<Exception>>();
+		std::unique_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
+			if (full_name == "Exception") return std::make_unique<NativeClassInterfaceSimpleImplementation<Exception>>();
 			return nullptr;
 		}
 	};
@@ -1389,7 +1389,7 @@ function native print(msg);
 		auto t = allocate<Tuple>(0, std::move(arguments));
 		return OwcaTuple{ t };
 	}
-	OwcaValue VM::create_map(const std::vector<OwcaValue> &arguments)
+	OwcaValue VM::create_map(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm, true);
@@ -1398,7 +1398,7 @@ function native print(msg);
 		}
 		return OwcaValue{ OwcaMap{ ds } };
 	}
-	OwcaValue VM::create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &arguments)
+	OwcaValue VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm, true);
@@ -1407,7 +1407,7 @@ function native print(msg);
 		}
 		return OwcaValue{ OwcaMap{ ds } };
 	}
-	OwcaValue VM::create_map(const std::vector<std::pair<std::string, OwcaValue>> &arguments)
+	OwcaValue VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm, true);
@@ -1416,7 +1416,7 @@ function native print(msg);
 		}
 		return OwcaValue{ OwcaMap{ ds } };
 	}
-	OwcaValue VM::create_set(const std::vector<OwcaValue> &arguments)
+	OwcaValue VM::create_set(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm, false);

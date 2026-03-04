@@ -29,7 +29,8 @@ if (a <  b) result = result | 16;
 if (a >  b) result = result | 32;
 return result;
     )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"), std::vector<std::string>{ "b" });
-        auto val = vm.execute(code, vm.create_map({ { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array({ pp.begin(), pp.end() }) } }));
+        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array(std::span{ pp.begin(), pp.end() }) } } };
+        auto val = vm.execute(code, vm.create_map(map_data));
         ASSERT_EQ(val.as_int(vm).internal_value(), expected);
     }
     void run_basic_test(int mode) {
@@ -148,7 +149,8 @@ return result;
 
     return 0;
     )", std::vector<std::string>{ "mode" });
-        auto val = vm.execute(code, vm.create_map({ { "mode", OwcaInt(mode) } }));
+        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "mode", OwcaInt(mode) } } };
+        auto val = vm.execute(code, vm.create_map(map_data));
         ASSERT_EQ(val.as_int(vm).internal_value(), 0);
     }
 };

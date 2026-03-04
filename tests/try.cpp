@@ -24,7 +24,8 @@ catch(e: B) {
 return 3;
 )", tmp);
         try {
-            auto val = vm.execute(code, vm.create_map({ { "a", OwcaInt(mode) } }));
+            auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", OwcaInt(mode) } } };
+            auto val = vm.execute(code, vm.create_map(map_data));
             return (int)val.as_int(vm).internal_value();
         }
         catch(OwcaException oe) {

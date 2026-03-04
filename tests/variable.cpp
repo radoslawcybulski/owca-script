@@ -7,12 +7,12 @@ class VariableTest : public SimpleTest {
 };
 
 namespace {
-    struct Provider : public OwcaVM::NativeCodeProvider {
+    struct Provider : public NativeCodeProvider {
         int &counter;
 
         Provider(int &counter) : counter(counter) {}
 
-        struct NCI : public OwcaClass::NativeClassInterface {
+        struct NCI : public NativeClassInterface {
             int &counter;
             NCI(int &counter) : counter(counter) {}
 
@@ -29,7 +29,7 @@ namespace {
                 return 8;
             }
         };
-        std::unique_ptr<OwcaClass::NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+        std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
             if (name == "A")
                 return std::make_unique<NCI>(counter);
             return nullptr;

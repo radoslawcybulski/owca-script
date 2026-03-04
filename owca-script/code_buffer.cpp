@@ -6,7 +6,7 @@ namespace OwcaScript::Internal {
     std::span<std::function<ImplExpr*(Deserializer&, Line)>> get_expression_constructors();
     std::span<std::function<ImplStat*(Deserializer&, Line)>> get_statement_constructors();
 
-	CodeBuffer::CodeBuffer(std::string filename, std::span<unsigned char> storage, std::unique_ptr<OwcaVM::NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
+	CodeBuffer::CodeBuffer(std::string filename, std::span<unsigned char> storage, std::unique_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
 		auto ser = Deserializer{ filename_, storage, get_statement_constructors(), get_expression_constructors() };
 		ImplExpr *expr;
 		ser.deserialize(expr);
@@ -59,9 +59,13 @@ namespace OwcaScript::Internal {
 	}
 }
 
+#ifdef _WIN32
 #include <Windows.h>
 
 void OwcaScript::check_memory()
 {
 	_ASSERTE( _CrtCheckMemory( ) );
 }
+#else
+void OwcaScript::check_memory() {}
+#endif

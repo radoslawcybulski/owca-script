@@ -148,10 +148,10 @@ namespace OwcaScript {
 			OwcaValue create_array(std::deque<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_exception();
-			OwcaValue create_map(const std::vector<OwcaValue> &arguments = {});
-			OwcaValue create_map(const std::vector<std::pair<OwcaValue, OwcaValue>> &values);
-			OwcaValue create_map(const std::vector<std::pair<std::string, OwcaValue>> &values);
-			OwcaValue create_set(const std::vector<OwcaValue> &arguments);
+			OwcaValue create_map(const std::span<OwcaValue> &arguments = {});
+			OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
+			OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
+			OwcaValue create_set(const std::span<OwcaValue> &arguments);
 			OwcaValue create_string(std::string txt);
 			OwcaValue create_string_from_view(std::string_view txt);
 			OwcaValue create_string(OwcaValue str, size_t start, size_t end);

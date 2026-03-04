@@ -19,18 +19,20 @@ namespace OwcaScript {
 				std::span<std::string_view> identifier_names;
 				ImplStat *body = nullptr;
 				bool is_generator = false;
+
+				ScriptFunction();
 			};
 			struct NativeFunction {
 				std::span<std::string_view> parameter_names;
-				OwcaVM::NativeCodeProvider::Function function;
+				NativeCodeProvider::Function function;
 			};
 			struct NativeGenerator {
 				std::span<std::string_view> parameter_names;
-				OwcaVM::NativeCodeProvider::GeneratorFunction generator;
+				NativeCodeProvider::GeneratorFunction generator;
 			};
 			// struct NativeGeneratorFunction {
 			// 	std::span<std::string_view> parameter_names;
-			// 	OwcaVM::NativeCodeProvider::Generator function;
+			// 	NativeCodeProvider::Generator function;
 			// };
 			std::shared_ptr<CodeBuffer> code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
@@ -39,8 +41,7 @@ namespace OwcaScript {
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method) :
-				code(std::move(code)), name(name), full_name(full_name), fileline(fileline), param_count(param_count), is_method(is_method) {}
+			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method);
 
 			template <typename ... F> auto visit(F &&...fns) {
 				struct overloaded : F... {

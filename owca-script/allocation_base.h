@@ -61,7 +61,7 @@ namespace OwcaScript {
 			std::string to_string() const override { return ""; }
 
 		private:
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) {}
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override {}
 		};
 	}
 }
