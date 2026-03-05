@@ -124,5 +124,12 @@ namespace OwcaScript::Internal {
 		VM::get(vm).gc_mark(type_, generation_gc);
 		for (auto& it : values)
 			VM::get(vm).gc_mark(it.second, generation_gc);
+		for(auto& it : type_->native_storage_pointers) {
+			auto p = type_->native_storage_ptr(this) + it.second.first;
+			auto size = it.second.second;
+			auto cls = it.first;
+			assert(cls->native);
+			cls->native->gc_mark_members(p, size, vm, generation_gc);
+		}
 	}
 }

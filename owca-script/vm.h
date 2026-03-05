@@ -177,7 +177,7 @@ namespace OwcaScript {
 			void gc_mark(const std::deque<OwcaValue> &, GenerationGC ggc);
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
-				auto p = new char[sizeof(T) + oversize];
+				auto p = std::malloc(sizeof(T) + oversize);
 				auto p2 = new (p) T{ std::forward<ARGS>(args)... };
 				p2->prev = &root_allocated_memory;
 				p2->next = root_allocated_memory.next;

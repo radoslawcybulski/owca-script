@@ -18,12 +18,13 @@ namespace {
 
             void initialize_storage(void* ptr, size_t s) override {
                 *(std::uint64_t*)ptr = 1234;
-                ++counter;
+                counter += 1;
             }
             void destroy_storage(void* ptr, size_t s) override {
-                ++counter;
+                counter += 1000;
             }
             void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+                counter += 1000000;
             }
             size_t native_storage_size() override {
                 return 8;
@@ -51,7 +52,7 @@ return A();
 	ASSERT_EQ(val.as_object(vm).type(), "A");
     ASSERT_EQ(counter, 1);
     vm.run_gc();
-    ASSERT_EQ(counter, 2);
+    ASSERT_EQ(counter, 1001);
 }
 
 TEST_F(VariableTest, simple2)
@@ -73,11 +74,11 @@ return A();
         auto var = OwcaVariable{ vm };
         var = val;
         vm.run_gc();
-        ASSERT_EQ(counter, 1);
+        ASSERT_EQ(counter, 1000001);
     }
 
     vm.run_gc();
-    ASSERT_EQ(counter, 2);
+    ASSERT_EQ(counter, 1001001);
 }
 
 TEST_F(VariableTest, simple3)
@@ -98,9 +99,9 @@ return A();
     auto var = OwcaVariable{ vm };
     var = val;
     vm.run_gc();
-    ASSERT_EQ(counter, 1);
+    ASSERT_EQ(counter, 1000001);
 
     var = OwcaValue{};
     vm.run_gc();
-    ASSERT_EQ(counter, 2);
+    ASSERT_EQ(counter, 1001001);
 }

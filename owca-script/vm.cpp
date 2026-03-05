@@ -1182,12 +1182,12 @@ function native print(msg);
 			values.as_map(vm);
 		}
 		OwcaValue val;
-		{
-			stacktrace.push_back({ oc.code_->root()->line });
-			auto pop_stack = PopStack{ this };
 			RuntimeFunction::ScriptFunction sf;
 			RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
 			rt_temp.data = std::move(sf);
+		{
+			stacktrace.push_back(ExecutionFrame{ oc.code_->root()->line });
+			auto pop_stack = PopStack{ this };
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute_expression(vm);
 		}
@@ -1663,7 +1663,8 @@ function native print(msg);
 			if (obj->last_gc_mark != ggc) {
 				valid->next = obj->next;
 				obj->next->prev = valid;
-				delete obj;
+				obj->~AllocationBase();
+				std::free(obj);
 			}
 			else {
 				valid = valid->next;
