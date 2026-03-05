@@ -8,6 +8,7 @@ project(owca-script)
 
 include(CTest)
 enable_testing()
+set(CLANG_DEFAULT_CXX_STDLIB libc++)
 
 if(WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
