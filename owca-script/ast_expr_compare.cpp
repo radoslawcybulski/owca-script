@@ -231,6 +231,9 @@ namespace OwcaScript::Internal {
 			case OwcaValueKind::Object: return left.as_object(vm).internal_value() == right.as_object(vm).internal_value();
 			case OwcaValueKind::Array: return left.as_array(vm).internal_value() == right.as_array(vm).internal_value();
 			case OwcaValueKind::Tuple: return left.as_tuple(vm).internal_value() == right.as_tuple(vm).internal_value();
+			case OwcaValueKind::Set: return left.as_set(vm).internal_value() == right.as_set(vm).internal_value();
+			case OwcaValueKind::Iterator: return left.as_iterator(vm).internal_value() == right.as_iterator(vm).internal_value();
+			case OwcaValueKind::Completed: return true;
 			}
 			assert(false);
 			return false;

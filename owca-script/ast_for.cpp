@@ -67,7 +67,6 @@ namespace OwcaScript::Internal {
                 auto v = iter.next();
                 if (v.kind() == OwcaValueKind::Completed) break;
                 
-                std::cout << "QWERTY " << v.to_string() << "\n";
                 VM::get(vm).set_identifier(value_index, v);
 
                 try {

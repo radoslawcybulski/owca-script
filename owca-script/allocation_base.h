@@ -23,7 +23,6 @@ namespace OwcaScript {
 				Array,
 				Set,
 				BoundSelfObject,
-				Exception,
 				Iterator,
 			};
 #ifdef _DEBUG

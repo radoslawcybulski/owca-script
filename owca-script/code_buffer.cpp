@@ -15,7 +15,6 @@ namespace OwcaScript::Internal {
 	}
 	char* CodeBuffer::get_ptr(size_t size, size_t align) {
 		offset = (offset + align - 1) & ~(align - 1);
-		//std::cout << "Allocate " << offset << " " << size << "\n";
 		assert(offset + size <= storage.size());
 		char* ptr = storage.data() + offset;
 		offset += size;
@@ -23,7 +22,6 @@ namespace OwcaScript::Internal {
 	}
 	void CodeBufferSizeCalculator::CodeBufTemp::get_ptr(size_t size, size_t align) {
 		offset = (offset + align - 1) & ~(align - 1);
-		//std::cout << "Calculate " << offset << " " << size << "\n";
 		offset += size;
 	}
 	void* CodeBuffer::allocate_simple_with_copy(const void* source, size_t size_alloc, size_t size_copy, size_t align)
