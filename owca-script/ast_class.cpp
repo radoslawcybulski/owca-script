@@ -28,6 +28,7 @@ namespace OwcaScript::Internal {
 			assert(code);
 
 			auto cls = VM::get(vm).allocate<Class>(0, line, name, full_name, std::move(code), base_classes.size());
+			auto guard = VM::get(vm).set_currently_building_class(ClassToken{ cls });
 			for (auto b : base_classes) {
 				auto res = b->execute_expression(vm);
 				cls->initialize_add_base_class(vm, res);

@@ -589,7 +589,7 @@ namespace OwcaScript::Internal {
 			};
 		}
 
-		std::optional<Function> native_function(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") return adapt(range_init);
 			if (full_name == "Range.lower") return adapt(range_lower);
 			if (full_name == "Range.upper") return adapt(range_upper);
@@ -625,7 +625,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Exception.function") return adapt(exception_function);
 			return std::nullopt;
 		}
-		std::optional<GeneratorFunction> native_generator(std::string_view full_name, FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__iter__") return adapt2(range_iter);
 			if (full_name == "String.__iter__") return adapt2(string_iter);
 			if (full_name == "Map.__iter__") return adapt2(map_iter);
@@ -1074,7 +1074,7 @@ function native print(msg);
 			}
 		}
 
-		stacktrace.push_back({ it->second->fileline });
+		stacktrace.push_back(ExecutionFrame{ it->second->fileline });
 		auto& s = stacktrace.back();
 		s.runtime_functions = runtime_functions;
 		s.runtime_function = it->second;
@@ -1182,9 +1182,9 @@ function native print(msg);
 			values.as_map(vm);
 		}
 		OwcaValue val;
-			RuntimeFunction::ScriptFunction sf;
-			RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
-			rt_temp.data = std::move(sf);
+		RuntimeFunction::ScriptFunction sf;
+		RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
+		rt_temp.data = std::move(sf);
 		{
 			stacktrace.push_back(ExecutionFrame{ oc.code_->root()->line });
 			auto pop_stack = PopStack{ this };

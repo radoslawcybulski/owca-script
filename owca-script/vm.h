@@ -56,6 +56,7 @@ namespace OwcaScript {
 
 			std::optional<OwcaException> exception_being_handled;
 			std::optional<OwcaValue> value_to_yield;
+			std::optional<ClassToken> currently_building_class;
 
 			struct PopStack {
 				VM* vm = nullptr;
@@ -167,6 +168,21 @@ namespace OwcaScript {
 			size_t calculate_hash(OwcaValue);
 			bool calculate_if_true(OwcaValue);
 			OwcaIterator create_iterator(OwcaValue );
+
+			struct CurrentlyBuildingClassGuard {
+				VM &vm;
+				std::optional<ClassToken> previous;
+
+				CurrentlyBuildingClassGuard(VM &vm, std::optional<ClassToken> token) : vm(vm) {
+					previous = vm.currently_building_class;
+					vm.currently_building_class = token;
+				}
+				~CurrentlyBuildingClassGuard() {
+					vm.currently_building_class = previous;
+				}
+			};
+			CurrentlyBuildingClassGuard set_currently_building_class(std::optional<ClassToken> token) { return CurrentlyBuildingClassGuard{ *this, token }; }
+			auto get_currently_building_class() const { return currently_building_class; }
 
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;

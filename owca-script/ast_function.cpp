@@ -78,7 +78,7 @@ namespace OwcaScript::Internal {
 
 			if (auto native = rf->code->native_code_provider()) {
 				if (is_generator) {
-					auto fnc = native->native_generator(full_name, FunctionToken{ rf }, parameter_names);
+					auto fnc = native->native_generator(full_name, VM::get(vm).get_currently_building_class(), FunctionToken{ rf }, parameter_names);
 					RuntimeFunction::NativeGenerator nf;
 					nf.parameter_names = parameter_names;
 					if (fnc) {
@@ -90,7 +90,7 @@ namespace OwcaScript::Internal {
 					rf->data = std::move(nf);
 				}
 				else {
-					auto fnc = native->native_function(full_name, FunctionToken{ rf }, parameter_names);
+					auto fnc = native->native_function(full_name, VM::get(vm).get_currently_building_class(), FunctionToken{ rf }, parameter_names);
 					RuntimeFunction::NativeFunction nf;
 					nf.parameter_names = parameter_names;
 					if (fnc) {
