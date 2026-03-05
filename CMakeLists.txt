@@ -4,10 +4,15 @@ if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW) 
 endif()
 
+option(OWCA_SCRIPT_TESTING "Enable testing" OFF)
+
 project(owca-script)
 
-include(CTest)
-enable_testing()
+if (OWCA_SCRIPT_TESTING)
+	include(CTest)
+	enable_testing()
+endif()
+
 set(CLANG_DEFAULT_CXX_STDLIB libc++)
 
 if(WIN32)
@@ -17,7 +22,6 @@ if(WIN32)
 	add_definitions(-D_DISABLE_VECTOR_ANNOTATION=1)
 endif()
 
-add_subdirectory(googletest)
 
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 23)
@@ -33,10 +37,14 @@ file(GLOB_RECURSE hdr owca-script/*.h)
 add_library(owca-script-static STATIC ${src} ${hdr})
 target_include_directories(owca-script-static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-file(GLOB_RECURSE src tests/*.cpp)
-file(GLOB_RECURSE hdr tests/*.h)
+if (OWCA_SCRIPT_TESTING)
+	add_subdirectory(googletest)
 
-add_executable(owca-script-test ${src} ${hdr})
-target_link_libraries(owca-script-test PUBLIC owca-script-static gtest gtest_main)
+	file(GLOB_RECURSE src tests/*.cpp)
+	file(GLOB_RECURSE hdr tests/*.h)
 
-add_test(NAME owca-script-test COMMAND owca-script-test)
+	add_executable(owca-script-test ${src} ${hdr})
+	target_link_libraries(owca-script-test PUBLIC owca-script-static gtest gtest_main)
+
+	add_test(NAME owca-script-test COMMAND owca-script-test)
+endif()
