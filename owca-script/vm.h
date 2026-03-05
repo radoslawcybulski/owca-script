@@ -94,7 +94,7 @@ namespace OwcaScript {
 			~VM();
 			
 			void initialize_exception_object(Exception &);
-			void throw_exception(Class *exc, std::string_view msg);
+			[[noreturn]] void throw_exception(Class *exc, std::string_view msg);
 
 			struct ExceptionHandlingSentinel {
 				VM &vm;
