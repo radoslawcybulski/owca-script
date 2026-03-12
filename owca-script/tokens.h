@@ -5,10 +5,14 @@
 #include "owca_error_message.h"
 
 namespace OwcaScript {
+	namespace Internal {
+		struct Class;
+		struct RuntimeFunction;
+	}
 	class FunctionToken {
 		const void* tok = nullptr;
 	public:
-		explicit FunctionToken(const void* tok) : tok(tok) {}
+		explicit FunctionToken(const Internal::RuntimeFunction* tok) : tok(tok) {}
 
 		auto value() const { return tok; }
 
@@ -18,7 +22,7 @@ namespace OwcaScript {
 	class ClassToken {
 		const void* tok = nullptr;
 	public:
-		explicit ClassToken(const void* tok) : tok(tok) {}
+		explicit ClassToken(const Internal::Class* tok) : tok(tok) {}
 
 		auto value() const { return tok; }
 
