@@ -982,7 +982,7 @@ function native print(msg);
 		throw_exception(c_invalid_operation_exception, "container is empty");
 	}
 	
-	OwcaValue VM::member(OwcaValue val, const std::string& key)
+	OwcaValue VM::member(OwcaValue val, std::string_view key)
 	{
 		auto v = try_member(val, key);
 		if (!v) {
@@ -991,7 +991,7 @@ function native print(msg);
 		return *v;
 	}
 
-	std::optional<OwcaValue> VM::try_member(OwcaValue val, const std::string& key)
+	std::optional<OwcaValue> VM::try_member(OwcaValue val, std::string_view key)
 	{
 		auto vm = OwcaVM{ this };
 		OwcaValue tmp;
@@ -1061,7 +1061,7 @@ function native print(msg);
 		return *v;
 	}
 
-	void VM::member(OwcaValue val, const std::string& key, OwcaValue value)
+	void VM::member(OwcaValue val, std::string_view key, OwcaValue value)
 	{
 		val.visit(
 			[&](const OwcaObject &o) {
@@ -1079,7 +1079,7 @@ function native print(msg);
 						});
 					if (succ) return;
 				}
-				o.internal_value()->values[key] = value;
+				o.internal_value()->values[std::string{ key }] = value;
 			},
 			[&](const auto &) {
 				throw_value_cant_have_fields(val.type());
@@ -1388,7 +1388,7 @@ function native print(msg);
 					obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
 				}
 
-				auto it = cls->values.find("__init__");
+				auto it = cls->values.find(std::string_view{ "__init__" });
 				if (it == cls->values.end()) {
 					if (!arguments.empty()) {
 						throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {}", cls->full_name, arguments.size()));

@@ -18,7 +18,7 @@ namespace OwcaScript {
 		struct Class : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::Class;
 
-			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>> values;
+			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>, StringHash, StringCmp> values;
 			const std::string_view name, full_name;
 			std::shared_ptr<CodeBuffer> code;
 			Line fileline;
@@ -51,7 +51,7 @@ namespace OwcaScript {
 		struct Object : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::User;
 
-			std::unordered_map<std::string, OwcaValue> values;
+			std::unordered_map<std::string, OwcaValue, StringHash, StringCmp> values;
 			Class* type_;
 
 			Object(Class* type);

@@ -161,9 +161,9 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue str, size_t count);
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue get_identifier(unsigned int index);
-			OwcaValue member(OwcaValue val, const std::string& key);
-			std::optional<OwcaValue> try_member(OwcaValue val, const std::string& key);
-			void member(OwcaValue val, const std::string& key, OwcaValue);
+			OwcaValue member(OwcaValue val, std::string_view key);
+			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
+			void member(OwcaValue val, std::string_view key, OwcaValue);
 			Exception *is_exception(OwcaObject obj) const;
 
 			bool compare_values(CompareKind kind, OwcaValue left, OwcaValue right);

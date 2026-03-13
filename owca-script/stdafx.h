@@ -33,7 +33,31 @@ namespace OwcaScript {
 				using F::operator()...;
 			};
 			return std::visit(overloaded{std::forward<F>(fns)...}, std::forward<T>(t));
-		}	
+        }
+        struct StringHash {
+            using is_transparent = void;
+            size_t operator()(std::string_view str) const {
+                return std::hash<std::string_view>{}(str);
+            }
+            size_t operator()(const std::string &str) const {
+                return std::hash<std::string_view>{}(str);
+            }
+        };
+        struct StringCmp {
+            using is_transparent = void;
+            bool operator () (std::string_view a, std::string_view b) const {
+                return a == b;
+            }
+            bool operator () (const std::string &a, std::string_view b) const {
+                return a == b;
+            }
+            bool operator () (std::string_view a, const std::string &b) const {
+                return a == b;
+            }
+            bool operator () (const std::string &a, const std::string &b) const {
+                return a == b;
+            }
+        };
     }
 }
 #endif
