@@ -26,4 +26,14 @@
 #include <array>
 #include <cstring>
 
+namespace OwcaScript {
+    namespace Internal {
+		template <typename T, typename ... F> auto visit_variant(T && t, F &&...fns) {
+			struct overloaded : F... {
+				using F::operator()...;
+			};
+			return std::visit(overloaded{std::forward<F>(fns)...}, std::forward<T>(t));
+		}	
+    }
+}
 #endif

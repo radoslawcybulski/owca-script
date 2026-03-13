@@ -11,10 +11,7 @@ namespace OwcaScript {
 			std::variant<OwcaEmpty, OwcaInt, OwcaFloat, OwcaBool, std::string> value;
 			
 			template <typename ... F> auto visit(F &&...fns) const {
-				struct overloaded : F... {
-					using F::operator()...;
-				};
-				return std::visit(overloaded{std::forward<F>(fns)...}, value);
+				return visit_variant(value, std::forward<F>(fns)...);
 			}	
 		public:
 			AstExprConstant(Line line, OwcaEmpty value) : AstExpr (line), value(value) {}

@@ -43,18 +43,8 @@ namespace OwcaScript {
 
 			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method);
 
-			template <typename ... F> auto visit(F &&...fns) {
-				struct overloaded : F... {
-					using F::operator()...;
-				};
-				return std::visit(overloaded{std::forward<F>(fns)...}, data);
-			}
-			template <typename ... F> auto visit(F &&...fns) const {
-				struct overloaded : F... {
-					using F::operator()...;
-				};
-				return std::visit(overloaded{std::forward<F>(fns)...}, data);
-			}
+			template <typename ... F> auto visit(F &&...fns) { return visit_variant(data, std::forward<F>(fns)...); }
+			template <typename ... F> auto visit(F &&...fns) const { return visit_variant(data, std::forward<F>(fns)...); }
 			bool is_generator() const;
 			
 			std::string_view type() const override;

@@ -98,12 +98,7 @@ namespace OwcaScript {
 		OwcaValue member(OwcaVM vm, const std::string& key) const;
 		void member(OwcaVM vm, const std::string& key, OwcaValue val);
 
-		template <typename ... F> auto visit(F &&...fns) const {
-			struct overloaded : F... {
-				using F::operator()...;
-			};
-			return std::visit(overloaded{std::forward<F>(fns)...}, value_);
-		}
+		template <typename ... F> auto visit(F &&...fns) const { return Internal::visit_variant(value_, std::forward<F>(fns)...); }
 	};
 
     class Generator
