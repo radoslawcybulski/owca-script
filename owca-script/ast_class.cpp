@@ -7,8 +7,10 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, bool native) : 
-		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), name_(std::string{name}), full_name_(std::move(full_name)), native(native) {}
+	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool native) : 
+		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), variable_names(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), native(native) {
+			assert(this->variable_names.empty() || native);
+		}
 
 	class ImplExprScriptClass : public ImplExpr {
 	public:
@@ -18,7 +20,8 @@ namespace OwcaScript::Internal {
 			Q(name, std::string_view) \
 			Q(full_name, std::string_view) \
 			Q(base_classes, std::span<ImplExpr*>) \
-			Q(members, std::span<ImplExpr*>)
+			Q(members, std::span<ImplExpr*>) \
+			Q(native_variable_names, std::span<std::string_view>)
 
 		IMPL_DEFINE_EXPR(Kind::ScriptClass)
 
@@ -37,6 +40,9 @@ namespace OwcaScript::Internal {
 			for (auto m : members) {
 				auto f = m->execute_expression(vm);
 				cls->initialize_add_function(vm, f);
+			}
+			for(auto i = 0u; i < native_variable_names.size(); ++i) {
+				cls->initialize_add_variable(native_variable_names[i]);
 			}
 
 			cls->finalize_initializing(vm);
@@ -87,6 +93,11 @@ namespace OwcaScript::Internal {
 		for (auto i = 0u; i < members.size(); ++i) {
 			members[i]->calculate_size(ei);
 		}
+
+		ei.code_buffer.preallocate_array<std::string_view>(variable_names.size());
+		for (auto i = 0u; i < variable_names.size(); ++i) {
+			ei.code_buffer.allocate(variable_names[i]);
+		}
 	}
 
 	ImplExpr* AstClass::emit(EmitInfo& ei) {
@@ -107,13 +118,17 @@ namespace OwcaScript::Internal {
 		for (auto i = 0u; i < members.size(); ++i) {
 			fncs[i] = members[i]->emit(ei);
 		}
+		auto var_names = ei.code_buffer.preallocate_array<std::string_view>(variable_names.size());
+		for (auto i = 0u; i < variable_names.size(); ++i) {
+			var_names[i] = ei.code_buffer.allocate(variable_names[i]);
+		}
 
 		if (native) {
-			ret2->init(nm, fm, bc, fncs);
+			ret2->init(nm, fm, bc, fncs, var_names);
 			return ret2;
 		}
 		else {
-			ret1->init(nm, fm, bc, fncs);
+			ret1->init(nm, fm, bc, fncs, var_names);
 			return ret1;
 		}
 	}

@@ -678,6 +678,7 @@ namespace OwcaScript::Internal {
 		}
 		std::vector<std::unique_ptr<AstExpr>> base_classes;
 		std::vector<std::unique_ptr<AstFunction>> members;
+		std::vector<std::string> variable_names;
 
 		if (preview().second == "(") {
 			consume("(");
@@ -693,13 +694,32 @@ namespace OwcaScript::Internal {
 		}
 		auto full_name_updater = FullNameUpdater{ full_name, class_name };
 		consume("{");
-		while (preview().second != "}") {
-			auto f = compile_function_raw();
-			members.push_back(std::move(f));
+		while (true) {
+			auto [ line, t ] = preview();
+			if (t == "}") break;
+			if (t == "function") {
+				auto f = compile_function_raw();
+				members.push_back(std::move(f));
+			}
+			else if (use_native && t == "var") {
+				consume(t);
+				auto [ line2, ident ] = consume();
+				if (!is_identifier(ident)) {
+					add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected variable's identifier, got `{}`", ident));
+				}
+				consume(";");
+				variable_names.push_back(std::string{ ident });
+			}
+			else if (use_native) {
+				add_error_and_throw(OwcaErrorKind::ExpectedFunctionOrVariable, filename_, line, std::format("expected function or variable definition, got `{}`", t));
+			}
+			else {
+				add_error_and_throw(OwcaErrorKind::ExpectedFunction, filename_, line, std::format("expected function, got `{}`", t));
+			}
 		}
 		consume("}");
 
-		auto c = std::make_unique<AstClass>(line, std::string{ class_name }, std::string{ full_name }, std::move(base_classes), std::move(members), use_native);
+		auto c = std::make_unique<AstClass>(line, std::string{ class_name }, std::string{ full_name }, std::move(base_classes), std::move(members), std::move(variable_names), use_native);
 		return c;
 	}
 

@@ -77,6 +77,7 @@ namespace OwcaScript {
 			struct BuiltinProvider;
 		public:
 			OwcaVariableSet global_variables;
+			std::string_view current_class_in_progress;
 
 			struct AllocatedObjectsPointer {
 				std::vector<AllocationBase*> &allocated_objects;
@@ -139,6 +140,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_readonly(std::string_view msg);
 			[[noreturn]] void throw_cant_return_value_from_generator();
 			[[noreturn]] void throw_container_is_empty();
+			[[noreturn]] void throw_not_implemented(std::string_view msg);
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }

@@ -12,12 +12,13 @@ namespace OwcaScript {
 	namespace Internal {
 		class CodeBuffer;
 		struct RuntimeFunction;
+		struct RuntimeFunctions;
 		struct Object;
 
 		struct Class : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::Class;
 
-			std::unordered_map<std::string, OwcaValue> values;
+			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>> values;
 			const std::string_view name, full_name;
 			std::shared_ptr<CodeBuffer> code;
 			Line fileline;
@@ -25,6 +26,8 @@ namespace OwcaScript {
 			std::vector<Class*> base_classes;
 			std::vector<Class*> lookup_order;
 			std::vector<RuntimeFunction*> runtime_functions;
+			std::vector<std::string_view> runtime_variables;
+			std::unordered_map<std::string_view, Class*> member_names;
 			std::unordered_map<Class*, std::pair<size_t, size_t>> native_storage_pointers;
 			std::unique_ptr<NativeClassInterface> native;
 			size_t native_storage = 0;
@@ -38,6 +41,7 @@ namespace OwcaScript {
 
 			void initialize_add_base_class(OwcaVM vm, OwcaValue b);
 			void initialize_add_function(OwcaVM vm, OwcaValue f);
+			void initialize_add_variable(std::string_view name);
 			void finalize_initializing(OwcaVM vm);
 			char* native_storage_ptr(Object *) const;
 

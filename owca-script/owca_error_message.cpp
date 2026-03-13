@@ -7,6 +7,8 @@ namespace OwcaScript {
         switch(kind) {
 		case OwcaErrorKind::UnexpectedEndOfFile: return "UnexpectedEndOfFile";
 		case OwcaErrorKind::ExpectedIdentifier: return "ExpectedIdentifier";
+		case OwcaErrorKind::ExpectedFunction: return "ExpectedFunction";
+		case OwcaErrorKind::ExpectedFunctionOrVariable: return "ExpectedFunctionOrVariable";
 		case OwcaErrorKind::ExpectedValue: return "ExpectedValue";
 		case OwcaErrorKind::IndexOutOfRange: return "IndexOutOfRange";
 		case OwcaErrorKind::TooManyArgumentsForIndexing: return "TooManyArgumentsForIndexing";

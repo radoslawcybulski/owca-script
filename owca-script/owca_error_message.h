@@ -7,6 +7,8 @@ namespace OwcaScript {
 	enum class OwcaErrorKind {
 		UnexpectedEndOfFile,
 		ExpectedIdentifier,
+		ExpectedFunction,
+		ExpectedFunctionOrVariable,
 		ExpectedValue,
 		IndexOutOfRange,
 		TooManyArgumentsForIndexing,

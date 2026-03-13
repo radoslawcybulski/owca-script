@@ -838,6 +838,10 @@ function native print(msg);
 		throw res.as_exception(this);
 	}
 
+	void VM::throw_not_implemented(std::string_view msg)
+	{
+		throw_exception(c_invalid_operation_exception, msg);
+	}
 	void VM::throw_division_by_zero()
 	{
 		throw_exception(c_math_exception, "division by zero");
@@ -990,10 +994,17 @@ function native print(msg);
 	std::optional<OwcaValue> VM::try_member(OwcaValue val, const std::string& key)
 	{
 		auto vm = OwcaVM{ this };
+		OwcaValue tmp;
 		auto read_member = [&](Class *cls) -> OwcaValue * {
 			auto it = cls->values.find(key);
 			if (it == cls->values.end()) return nullptr;
-			return &it->second;
+			return visit_variant(it->second,
+				[&](RuntimeFunctions *rf) -> OwcaValue * {
+					tmp = OwcaFunctions{ rf };
+					return &tmp;
+				},
+				[&](Class* var) -> OwcaValue * { return nullptr; }
+				);
 		};
 		bool bind_if_needed = true;
 		auto v = val.visit(
@@ -1014,9 +1025,21 @@ function native print(msg);
 					return &it->second;
 				}
 
-				it = o.internal_value()->type_->values.find(key);
-				if (it != o.internal_value()->type_->values.end()) {
-					return &it->second;
+				auto it2 = o.internal_value()->type_->values.find(key);
+				if (it2 != o.internal_value()->type_->values.end()) {
+					return visit_variant(it2->second,
+						[&](RuntimeFunctions *rf) -> OwcaValue * {
+							tmp = OwcaFunctions{ rf };
+							return &tmp;
+						},
+						[&](Class* var) -> OwcaValue * {
+							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
+							auto old = current_class_in_progress;
+							current_class_in_progress = var->full_name;
+							var->native->get_member(this, key, native_storage, tmp);
+							current_class_in_progress = old;
+							return &tmp;
+						});
 				}
 
 				return nullptr;
@@ -1042,7 +1065,21 @@ function native print(msg);
 	{
 		val.visit(
 			[&](const OwcaObject &o) {
-				o.internal_value()->values[key] = std::move(value);
+				auto it2 = o.internal_value()->type_->values.find(key);
+				if (it2 != o.internal_value()->type_->values.end()) {
+					auto succ = visit_variant(it2->second,
+						[&](RuntimeFunctions *rf) -> bool { return false; },
+						[&](Class* var) -> bool {
+							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
+							auto old = current_class_in_progress;
+							current_class_in_progress = var->full_name;
+							var->native->set_member(this, key, native_storage, value);
+							current_class_in_progress = old;
+							return true;
+						});
+					if (succ) return;
+				}
+				o.internal_value()->values[key] = value;
 			},
 			[&](const auto &) {
 				throw_value_cant_have_fields(val.type());
@@ -1358,17 +1395,25 @@ function native print(msg);
 					}
 				}
 				else {
-					auto of = it->second.as_functions(vm);
-					auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
-					if (it2 == of.internal_value()->functions.end()) {
-						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
-					}
-					else {
-						auto of2 = of.bind(obj);
-						auto val = execute_call(of2, arguments);
-						if (cls->reload_self)
-							obj = val;
-					}
+					visit_variant(it->second,
+						[&](RuntimeFunctions *rf) -> void {
+							auto of = OwcaFunctions{ rf };
+							auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
+							if (it2 == of.internal_value()->functions.end()) {
+								throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
+							}
+							else {
+								auto of2 = of.bind(obj);
+								auto val = execute_call(of2, arguments);
+								if (cls->reload_self)
+									obj = val;
+							}
+							
+						},
+						[&](Class* var) -> void {
+							throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
+						}
+					);
 				}
 
 				return obj;

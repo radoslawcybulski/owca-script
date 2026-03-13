@@ -197,3 +197,81 @@ TEST_F(SimpleTest, native_class_with_funcs)
 		throw;
 	}
 }
+
+TEST_F(SimpleTest, native_class_with_vars)
+{
+	OwcaVM vm;
+	try {
+		struct Provider : public NativeCodeProvider {
+			unsigned int &reads, &writes;
+			Provider(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
+
+			struct NCI : public NativeClassInterface {
+				unsigned int &reads, &writes;
+				NCI(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
+
+				void initialize_storage(void* ptr, size_t s) override {
+					*(std::uint64_t*)ptr = 1234;
+				}
+				void destroy_storage(void* ptr, size_t s) override {
+				}
+				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				}
+				size_t native_storage_size() override {
+					return sizeof(std::uint64_t);
+				}
+				void get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == "value") {
+						++reads;
+						auto v = *(std::uint64_t*)native_storage.data();
+						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
+						return;
+					}
+					NativeClassInterface::get_member(vm, name, native_storage, val);
+				}
+				void set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+					if (name == "value") {
+						++writes;
+						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
+						return;
+					}
+					NativeClassInterface::set_member(vm, name, native_storage, val);
+				}
+			};
+			std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+				if (name == "A")
+					return std::make_unique<NCI>(reads, writes);
+				return nullptr;
+			}
+		};
+		unsigned int reads = 0, writes = 0;
+		auto code = vm.compile("test.os", R"(
+	class native A {
+		function __init__(self, a, b, c) {
+			self.value = a + b + c;
+		}
+		var value;
+	}
+	return A(q, b, c);
+	)", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>(reads, writes));
+		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+		auto val = vm.execute(code, vm.create_map(map_data));
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 0);
+		
+		code = vm.compile("test.os", "return a.value;", std::vector<std::string>{ "a" });
+		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
+		auto val2 = vm.execute(code, vm.create_map(map_data));
+		ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 1);
+	}
+	catch(std::exception &e) {
+		std::cerr << "Exception: " << e.what() << "\n";
+		throw;
+	}
+	catch(OwcaException e) {
+		std::cerr << "Exception: " << e.to_string() << "\n";
+		throw;
+	}
+}

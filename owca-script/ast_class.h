@@ -8,14 +8,16 @@
 namespace OwcaScript {
 	namespace Internal {
 		class AstClass : public AstExpr {
+		private:
 			std::vector<std::unique_ptr<AstExpr>> base_classes;
 			std::vector<std::unique_ptr<AstFunction>> members;
+			std::vector<std::string> variable_names;
 			std::string name_;
 			std::string full_name_;
 			bool native;
 
 		public:
-			AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, bool native);
+			AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool native);
 
 			const auto &name() const { return name_; }
 

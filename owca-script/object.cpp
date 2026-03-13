@@ -37,7 +37,11 @@ namespace OwcaScript::Internal {
 	void Class::gc_mark(OwcaVM vm, GenerationGC generation_gc)
 	{
 		for (auto& it : values) {
-			VM::get(vm).gc_mark(it.second, generation_gc);
+			visit_variant(it.second, [&](Class* p) {
+				VM::get(vm).gc_mark(p, generation_gc);
+			}, [&](RuntimeFunctions* &f) {
+				VM::get(vm).gc_mark(f, generation_gc);
+			});
 		}
 		for (auto c : base_classes) {
 			VM::get(vm).gc_mark(c, generation_gc);
@@ -56,6 +60,9 @@ namespace OwcaScript::Internal {
 	{
 		auto c = b.as_class(vm).internal_value();
 		base_classes.push_back(c);
+	}
+	void Class::initialize_add_variable(std::string_view name) {
+		runtime_variables.push_back(name);
 	}
 	void Class::initialize_add_function(OwcaVM vm, OwcaValue f)
 	{
@@ -88,12 +95,16 @@ namespace OwcaScript::Internal {
 				auto name = f->name;
 
 				auto it = values.insert({ std::string{ name }, {} });
-				if (it.second || it.first->second.kind() != OwcaValueKind::Functions) {
+				if (it.second || std::get_if<RuntimeFunctions*>(&it.first->second) == nullptr) {
 					auto rf = VM::get(vm).allocate<RuntimeFunctions>(0, name, f->full_name);
-					it.first->second = OwcaFunctions{ rf };
+					it.first->second = rf;
 				}
-				auto dst_fnc = it.first->second.as_functions(vm);
-				dst_fnc.internal_value()->functions[f->param_count] = f;
+				auto &dst_fnc = std::get<RuntimeFunctions*>(it.first->second);
+				dst_fnc->functions[f->param_count] = f;
+			}
+			for (auto name: lookup_order[i - 1]->runtime_variables) {
+				auto it = values.insert({ std::string{ name }, {} });
+				it.first->second = lookup_order[i - 1];
 			}
 		}
 		for(auto q : lookup_order) all_base_classes.insert(q);
