@@ -32,6 +32,15 @@ namespace OwcaScript {
 	{
 		return vm->execute_code_block(oc, values, output_dict);
 	}
+	OwcaValue OwcaVM::get_member(OwcaValue self, std::string_view key) {
+		return vm->member(self, key);
+	}
+	void OwcaVM::set_member(OwcaValue self, std::string_view key, OwcaValue value) {
+		vm->member(self, key, value);
+	}
+	OwcaValue OwcaVM::call(OwcaValue func, std::span<OwcaValue> values) {
+		return vm->execute_call(func, values);
+	}
 
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider)
 	{

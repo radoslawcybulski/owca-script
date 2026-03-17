@@ -275,3 +275,90 @@ TEST_F(SimpleTest, native_class_with_vars)
 		throw;
 	}
 }
+
+TEST_F(SimpleTest, get_set_member_and_exec)
+{
+	OwcaVM vm;
+	try {
+		struct Provider : public NativeCodeProvider {
+			unsigned int &reads, &writes;
+			Provider(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
+
+			struct NCI : public NativeClassInterface {
+				unsigned int &reads, &writes;
+				NCI(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
+
+				void initialize_storage(void* ptr, size_t s) override {
+					*(std::uint64_t*)ptr = 1234;
+				}
+				void destroy_storage(void* ptr, size_t s) override {
+				}
+				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				}
+				size_t native_storage_size() override {
+					return sizeof(std::uint64_t);
+				}
+				void get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == "value") {
+						++reads;
+						auto v = *(std::uint64_t*)native_storage.data();
+						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
+						return;
+					}
+					NativeClassInterface::get_member(vm, name, native_storage, val);
+				}
+				void set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+					if (name == "value") {
+						++writes;
+						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
+						return;
+					}
+					NativeClassInterface::set_member(vm, name, native_storage, val);
+				}
+			};
+			std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+				if (name == "A")
+					return std::make_unique<NCI>(reads, writes);
+				return nullptr;
+			}
+		};
+		unsigned int reads = 0, writes = 0;
+		auto code = vm.compile("test.os", R"(
+	class native A {
+		var value;
+
+		function get(self) {
+			return self.value + 100;
+		}
+	}
+	return A();
+	)", {}, std::make_unique<Provider>(reads, writes));
+		auto object = vm.execute(code);
+		ASSERT_EQ(writes, 0);
+		ASSERT_EQ(reads, 0);
+		
+		vm.set_member(object, "value", OwcaInt{ 6 });
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 0);
+
+		auto val = vm.get_member(object, "value");
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 1);
+		ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+
+		auto fnc = vm.get_member(object, "get");
+		val = vm.call(fnc, {});
+
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 2);
+		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+	}
+	catch(std::exception &e) {
+		std::cerr << "Exception: " << e.what() << "\n";
+		throw;
+	}
+	catch(OwcaException e) {
+		std::cerr << "Exception: " << e.to_string() << "\n";
+		throw;
+	}
+}

@@ -79,6 +79,9 @@ namespace OwcaScript {
 		OwcaValue execute(const OwcaCode&);
 		OwcaValue execute(const OwcaCode&, OwcaValue values);
 		OwcaValue execute(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
+		OwcaValue get_member(OwcaValue self, std::string_view key);
+		void set_member(OwcaValue self, std::string_view key, OwcaValue value);
+		OwcaValue call(OwcaValue func, std::span<OwcaValue> values);
 		OwcaValue create_array() const;
 		OwcaValue create_array(std::span<OwcaValue> values) const;
 		OwcaValue create_array(std::deque<OwcaValue> values) const;
