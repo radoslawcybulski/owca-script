@@ -29,7 +29,7 @@ namespace OwcaScript {
 			std::vector<std::string_view> runtime_variables;
 			std::unordered_map<std::string_view, Class*> member_names;
 			std::unordered_map<Class*, std::pair<size_t, size_t>> native_storage_pointers;
-			std::unique_ptr<NativeClassInterface> native;
+			std::shared_ptr<NativeClassInterface> native;
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
 			std::function<OwcaValue()> allocator_override;

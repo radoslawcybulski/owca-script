@@ -30,9 +30,9 @@ namespace {
                 return 8;
             }
         };
-        std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+        std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
             if (name == "A")
-                return std::make_unique<NCI>(counter);
+                return std::make_shared<NCI>(counter);
             return nullptr;
         }
     };

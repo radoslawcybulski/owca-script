@@ -634,8 +634,8 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.__iter__") return adapt2(tuple_iter);
 			return std::nullopt;
 		}
-		std::unique_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
-			if (full_name == "Exception") return std::make_unique<NativeClassInterfaceSimpleImplementation<Exception>>();
+		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
+			if (full_name == "Exception") return std::make_shared<NativeClassInterfaceSimpleImplementation<Exception>>();
 			return nullptr;
 		}
 	};

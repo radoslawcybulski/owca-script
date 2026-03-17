@@ -107,9 +107,9 @@ TEST_F(SimpleTest, native_class)
 				return 8;
 			}
 		};
-		std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+		std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 			if (name == "A")
-				return std::make_unique<NCI>();
+				return std::make_shared<NCI>();
 			return nullptr;
 		}
 	};
@@ -144,9 +144,9 @@ TEST_F(SimpleTest, native_class_with_funcs)
 					return sizeof(std::uint64_t);
 				}
 			};
-			std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 				if (name == "A")
-					return std::make_unique<NCI>();
+					return std::make_shared<NCI>();
 				return nullptr;
 			}
 			std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
@@ -238,9 +238,9 @@ TEST_F(SimpleTest, native_class_with_vars)
 					NativeClassInterface::set_member(vm, name, native_storage, val);
 				}
 			};
-			std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 				if (name == "A")
-					return std::make_unique<NCI>(reads, writes);
+					return std::make_shared<NCI>(reads, writes);
 				return nullptr;
 			}
 		};
@@ -316,9 +316,9 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					NativeClassInterface::set_member(vm, name, native_storage, val);
 				}
 			};
-			std::unique_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
 				if (name == "A")
-					return std::make_unique<NCI>(reads, writes);
+					return std::make_shared<NCI>(reads, writes);
 				return nullptr;
 			}
 		};
