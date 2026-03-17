@@ -220,22 +220,22 @@ TEST_F(SimpleTest, native_class_with_vars)
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				void get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
 						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
-						return;
+						return true;
 					}
-					NativeClassInterface::get_member(vm, name, native_storage, val);
+					return false;
 				}
-				void set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
-						return;
+						return true;
 					}
-					NativeClassInterface::set_member(vm, name, native_storage, val);
+					return false;
 				}
 			};
 			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
@@ -298,22 +298,22 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				void get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
 						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
-						return;
+						return true;
 					}
-					NativeClassInterface::get_member(vm, name, native_storage, val);
+					return false;
 				}
-				void set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
-						return;
+						return true;
 					}
-					NativeClassInterface::set_member(vm, name, native_storage, val);
+					return false;
 				}
 			};
 			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {

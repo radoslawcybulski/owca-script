@@ -1036,9 +1036,9 @@ function native print(msg);
 							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
 							auto old = current_class_in_progress;
 							current_class_in_progress = var->full_name;
-							var->native->get_member(this, key, native_storage, tmp);
+							auto got = var->native->get_member(this, key, native_storage, tmp);
 							current_class_in_progress = old;
-							return &tmp;
+							return got ? &tmp : nullptr;
 						});
 				}
 
@@ -1073,9 +1073,9 @@ function native print(msg);
 							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
 							auto old = current_class_in_progress;
 							current_class_in_progress = var->full_name;
-							var->native->set_member(this, key, native_storage, value);
+							auto got = var->native->set_member(this, key, native_storage, value);
 							current_class_in_progress = old;
-							return true;
+							return got;
 						});
 					if (succ) return;
 				}

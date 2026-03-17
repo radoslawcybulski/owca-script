@@ -21,8 +21,8 @@ namespace OwcaScript {
 		virtual void destroy_storage(void* ptr, size_t s) = 0;
 		virtual void gc_mark_members(void* ptr, size_t s, OwcaVM vm, GenerationGC generation_gc) = 0;
 		virtual size_t native_storage_size() = 0;
-		virtual void get_member(OwcaVM vm, std::string_view, std::span<char> native_storage, OwcaValue &);
-		virtual void set_member(OwcaVM vm, std::string_view, std::span<char> native_storage, const OwcaValue &);
+		virtual bool get_member(OwcaVM vm, std::string_view, std::span<char> native_storage, OwcaValue &) { return false; }
+		virtual bool set_member(OwcaVM vm, std::string_view, std::span<char> native_storage, const OwcaValue &) { return false; }
 	};
 	template <typename T> struct NativeClassInterfaceSimpleImplementation : public NativeClassInterface {
 		void initialize_storage(void* ptr, size_t s) override { new (ptr) T(); }
