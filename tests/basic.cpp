@@ -352,6 +352,12 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 2);
 		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+
+		val = fnc.call(vm, {});
+
+		ASSERT_EQ(writes, 1);
+		ASSERT_EQ(reads, 3);
+		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";

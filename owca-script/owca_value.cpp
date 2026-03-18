@@ -208,6 +208,10 @@ namespace OwcaScript {
 			);
 	}
 
+	OwcaValue OwcaValue::call(OwcaVM vm, std::span<OwcaValue> args) const {
+		return Internal::VM::get(vm).execute_call(*this, args);
+	}
+
 	OwcaValue OwcaValue::member(OwcaVM vm, const std::string& key) const
 	{
 		return Internal::VM::get(vm).member(*this, key);
