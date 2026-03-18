@@ -221,4 +221,52 @@ namespace OwcaScript {
 	{
 		return Internal::VM::get(vm).member(*this, key, std::move(val));
 	}
+
+	OwcaValue OwcaValue::call(std::span<OwcaValue> args) const {
+		return visit(
+			[&](OwcaFunctions o) -> OwcaValue {
+				return o.internal_value()->vm->execute_call(*this, args);
+			},
+			[&](OwcaClass o) -> OwcaValue {
+				return o.internal_value()->vm->execute_call(*this, args);
+			},
+			[&](OwcaObject o) -> OwcaValue {				
+				return o.internal_value()->vm->execute_call(*this, args);
+			},
+			[&](auto) -> OwcaValue { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
+			);
+	}
+
+	OwcaValue OwcaValue::member(const std::string& key) const
+	{
+		return visit(
+			[&](OwcaString o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaFunctions o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaMap o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaClass o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaObject o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaArray o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaTuple o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaSet o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaIterator o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](auto) -> OwcaValue { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
+			);
+	}
+
+	void OwcaValue::member(const std::string& key, OwcaValue val)
+	{
+		visit(
+			[&](OwcaString o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaFunctions o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaMap o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaClass o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaObject o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaArray o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaTuple o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaSet o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaIterator o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](auto) -> void { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
+			);
+	}
+
 }

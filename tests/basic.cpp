@@ -358,6 +358,22 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 3);
 		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+
+		object.member("value", OwcaInt{ 6 });
+		ASSERT_EQ(writes, 2);
+		ASSERT_EQ(reads, 3);
+
+		val = object.member("value");
+		ASSERT_EQ(writes, 2);
+		ASSERT_EQ(reads, 4);
+		ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+
+		fnc = object.member("get");
+		val = fnc.call({});
+
+		ASSERT_EQ(writes, 2);
+		ASSERT_EQ(reads, 5);
+		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";

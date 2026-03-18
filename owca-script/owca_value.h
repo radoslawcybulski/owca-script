@@ -99,6 +99,10 @@ namespace OwcaScript {
 		void member(OwcaVM vm, const std::string& key, OwcaValue val);
 		OwcaValue call(OwcaVM vm, std::span<OwcaValue> args) const;
 
+		OwcaValue member(const std::string& key) const;
+		void member(const std::string& key, OwcaValue val);
+		OwcaValue call(std::span<OwcaValue> args) const;
+
 		template <typename ... F> auto visit(F &&...fns) const { return Internal::visit_variant(value_, std::forward<F>(fns)...); }
 	};
 
