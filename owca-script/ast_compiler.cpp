@@ -274,25 +274,25 @@ namespace OwcaScript::Internal {
 		}
 
 		if (base > 0) {
-			OwcaIntInternal value = 0;
+			long long int value = 0;
 			auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, base);
 
 			if (ec == std::errc() && ptr == text.data() + text.size()) {
-				return std::make_unique<AstExprConstant>(line, OwcaInt{ value });
+				return std::make_unique<AstExprConstant>(line, value);
 			}
 			else if (ec == std::errc() || ec == std::errc::invalid_argument) {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` is not a valid number", orig_text));
 			}
 			else if (ec == std::errc::result_out_of_range) {
-				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for given OwcaIntInternal type",
-					orig_text, std::numeric_limits<OwcaIntInternal>::min(), std::numeric_limits<OwcaIntInternal>::max()));
+				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values ({} -> {})",
+					orig_text, std::numeric_limits<long long int>::min(), std::numeric_limits<long long int>::max()));
 			}
 			else {
 				assert(false);
 			}
 		}
 		else {
-			OwcaFloatInternal value = 0;
+			OwcaNumberUnderlying value = 0;
 			auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
 
 			if (ec == std::errc() && ptr == text.data() + text.size()) {
@@ -302,7 +302,7 @@ namespace OwcaScript::Internal {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` is not a valid number", orig_text));
 			}
 			else if (ec == std::errc::result_out_of_range) {
-				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", orig_text));
+				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values for given OwcaNumberUnderlying type", orig_text));
 			}
 			else {
 				assert(false);

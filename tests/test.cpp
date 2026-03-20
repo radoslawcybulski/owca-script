@@ -8,15 +8,6 @@ void SimpleTest::SetUp()
 #endif
 }
 
-bool operator == (OwcaScript::OwcaInt a, OwcaScript::OwcaInt b) {
-	return a.internal_value() == b.internal_value();
-}
-bool operator == (OwcaScript::OwcaInt a, OwcaScript::OwcaFloat b) {
-	return a.internal_value() == b.internal_value();
-}
-bool operator == (OwcaScript::OwcaFloat a, OwcaScript::OwcaInt b) {
-	return a.internal_value() == b.internal_value();
-}
 bool operator == (OwcaScript::OwcaFloat a, OwcaScript::OwcaFloat b) {
 	return a.internal_value() == b.internal_value();
 }

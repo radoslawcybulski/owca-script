@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 #include "owca_bool.h"
-#include "owca_int.h"
 #include "owca_float.h"
 #include "owca_string.h"
 #include "owca_functions.h"
@@ -29,7 +28,6 @@ namespace OwcaScript {
 		Completed,
 		Range,
 		Bool,
-		Int,
 		Float,
 		String,
 		Functions,
@@ -48,7 +46,7 @@ namespace OwcaScript {
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaInt, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -56,8 +54,9 @@ namespace OwcaScript {
 		OwcaValue(OwcaCompleted value) : value_(value) {}
 		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
-		OwcaValue(OwcaInt value) : value_(value) {}
+		OwcaValue(bool value) : value_(OwcaBool{value}) {}
 		OwcaValue(OwcaFloat value) : value_(value) {}
+		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_(OwcaFloat{ (OwcaNumberUnderlying)value }) {}
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
 		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
@@ -70,16 +69,14 @@ namespace OwcaScript {
 		OwcaValue(OwcaIterator value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
-		std::pair<const OwcaInt*, const OwcaFloat*> get_int_or_float() const;
-		OwcaIntInternal convert_to_int(OwcaVM ) const;
-		OwcaFloatInternal convert_to_float(OwcaVM ) const;
+		long long int convert_to_int(OwcaVM ) const;
+		OwcaNumberUnderlying convert_to_float(OwcaVM ) const;
 		bool is_true() const;
 
 		OwcaEmpty as_nul(OwcaVM ) const;
 		OwcaCompleted as_completed(OwcaVM ) const;
 		OwcaRange as_range(OwcaVM ) const;
 		OwcaBool as_bool(OwcaVM ) const;
-		OwcaInt as_int(OwcaVM ) const;
 		OwcaFloat as_float(OwcaVM ) const;
 		const OwcaString &as_string(OwcaVM ) const;
 		OwcaFunctions as_functions(OwcaVM ) const;

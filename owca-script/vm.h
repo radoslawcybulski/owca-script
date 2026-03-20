@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_VM_H
 
 #include "stdafx.h"
-#include "owca_int.h"
 #include "owca_float.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
@@ -115,7 +114,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_division_by_zero();
 			[[noreturn]] void throw_mod_division_by_zero();
 			[[noreturn]] void throw_cant_convert_to_float(std::string_view type);
-			[[noreturn]] void throw_cant_convert_to_integer(OwcaFloatInternal val);
+			[[noreturn]] void throw_cant_convert_to_integer(OwcaNumberUnderlying val);
 			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
 			[[noreturn]] void throw_not_a_number(std::string_view type);
 			[[noreturn]] void throw_overflow(std::string_view msg);

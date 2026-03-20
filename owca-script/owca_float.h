@@ -4,17 +4,18 @@
 #include "stdafx.h"
 
 namespace OwcaScript {
-	using OwcaFloatInternal = double;
+	using OwcaNumberUnderlying = double;
 
 	class OwcaFloat {
-		OwcaFloatInternal value;
+		OwcaNumberUnderlying value;
 
 	public:
 		OwcaFloat() = default;
-		OwcaFloat(OwcaFloatInternal value) : value(value) {}
+		OwcaFloat(OwcaNumberUnderlying value) : value(value) {}
 
 		auto internal_value() const { return value; }
-		explicit operator OwcaFloatInternal() const { return value; }
+		auto to_int() const { return (long long int)value; }
+		explicit operator OwcaNumberUnderlying() const { return value; }
 	};
 }
 

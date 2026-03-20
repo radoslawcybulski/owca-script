@@ -8,14 +8,13 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstExprConstant : public AstExpr {
 		private:
-			std::variant<OwcaEmpty, OwcaInt, OwcaFloat, OwcaBool, std::string> value;
+			std::variant<OwcaEmpty, OwcaFloat, OwcaBool, std::string> value;
 			
 			template <typename ... F> auto visit(F &&...fns) const {
 				return visit_variant(value, std::forward<F>(fns)...);
 			}	
 		public:
 			AstExprConstant(Line line, OwcaEmpty value) : AstExpr (line), value(value) {}
-			AstExprConstant(Line line, OwcaInt value) : AstExpr (line), value(value) {}
 			AstExprConstant(Line line, OwcaFloat value) : AstExpr (line), value(value) {}
 			AstExprConstant(Line line, OwcaBool value) : AstExpr (line), value(value) {}
 			AstExprConstant(Line line, std::string value) : AstExpr (line), value(std::move(value)) {}

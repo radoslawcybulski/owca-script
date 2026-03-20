@@ -189,11 +189,11 @@ namespace OwcaScript::Internal {
         }
     }
     void Serializer::serialize(float v) {
-        write(SerializationOperation::Int32);
+        write(SerializationOperation::Float32);
         write(&v, sizeof(v));
     }
     void Serializer::serialize(double v) {
-        write(SerializationOperation::Int64);
+        write(SerializationOperation::Float64);
         write(&v, sizeof(v));
     }
     void Serializer::serialize(bool v) {

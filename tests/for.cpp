@@ -13,7 +13,7 @@ static int run_for(std::string code_text, OwcaValue add_val)
     auto code = vm.compile("test.os", std::move(code_text), tmp);
     auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
     auto val = vm.execute(code, vm.create_map(map_data));
-    return (int)val.as_int(vm).internal_value();
+    return (int)val.convert_to_int(vm);
 }
 
 TEST_F(ForTest, simple1)
@@ -29,7 +29,7 @@ for(i = arr) {
     total = total + 1;
 }
 return total;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 
 TEST_F(ForTest, simple2)
@@ -45,7 +45,7 @@ for(i = arr) {
     total = total + 1;
 }
 return total;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(ForTest, simple3)
@@ -64,7 +64,7 @@ for(i = arr) {
     total = total + 1;
 }
 return total;
-	)", OwcaInt{ 2 }), 2);
+	)", 2), 2);
 }
 
 TEST_F(ForTest, loop_ident1)
@@ -84,7 +84,7 @@ l1: for(i = arr) {
     break;
 }
 return mode;
-	)", OwcaInt{ 0 }), 0);
+	)", 0), 0);
 }
 TEST_F(ForTest, loop_ident2)
 {
@@ -103,7 +103,7 @@ l1: for(i = arr) {
     break;
 }
 return mode;
-	)", OwcaInt{ 0 }), 2);
+	)", 0), 2);
 }
 TEST_F(ForTest, loop_ident3)
 {
@@ -122,7 +122,7 @@ l1: for(i = arr) {
     break;
 }
 return mode;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 TEST_F(ForTest, loop_ident4)
 {
@@ -141,5 +141,5 @@ l1: for(i = arr) {
     break;
 }
 return mode;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }

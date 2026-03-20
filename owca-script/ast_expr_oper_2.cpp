@@ -56,7 +56,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
-			return OwcaInt{ l | r };
+			return l | r;
 		}
 	};
 	class ImplExprBinAnd : public ImplExprOper2 {
@@ -67,7 +67,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
-			return OwcaInt{ l & r };
+			return l & r;
 		}
 	};
 	class ImplExprBinXor : public ImplExprOper2 {
@@ -78,7 +78,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
-			return OwcaInt{ l ^ r };
+			return l ^ r;
 		}
 	};
 	class ImplExprBinLShift : public ImplExprOper2 {
@@ -89,7 +89,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
-			return OwcaInt{ l << r };
+			return l << r;
 		}
 	};
 	class ImplExprBinRShift : public ImplExprOper2 {
@@ -100,7 +100,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm).convert_to_int(vm);
 			auto r = right->execute_expression(vm).convert_to_int(vm);
-			return OwcaInt{ l >> r };
+			return l >> r;
 		}
 	};
 	class ImplExprMakeRange : public ImplExprOper2 {
@@ -109,9 +109,9 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::MakeRange; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaIntInternal>::min();
-			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaIntInternal>::max();
-			return OwcaRange{ OwcaInt{ l }, OwcaInt{ r } };
+			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaNumberUnderlying>::lowest();
+			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaNumberUnderlying>::max();
+			return OwcaRange{ l, r };
 		}
 	};
 	class ImplExprAdd : public ImplExprOper2 {
@@ -122,18 +122,8 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
-			auto [ li, lf ] = l.get_int_or_float();
-			auto [ ri, rf ] = r.get_int_or_float();
-			if ((li || lf) && (ri || rf)) {
-				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-				auto val = lfloat + rfloat;
-
-				if (li && ri) {
-					auto val2 = li->internal_value() + ri->internal_value();
-					if (val == val2) return OwcaInt{ val2 };
-				}
-				return OwcaFloat{ val };
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
+				return l.as_float(vm).internal_value() + r.as_float(vm).internal_value();
 			}
 			if (l.kind() == OwcaValueKind::String && r.kind() == OwcaValueKind::String) {
 				return VM::get(vm).create_string(l, r);
@@ -149,18 +139,8 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
-			auto [ li, lf ] = l.get_int_or_float();
-			auto [ ri, rf ] = r.get_int_or_float();
-			if ((li || lf) && (ri || rf)) {
-				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-				auto val = lfloat - rfloat;
-
-				if (li && ri) {
-					auto val2 = li->internal_value() - ri->internal_value();
-					if (val == val2) return OwcaInt{ val2 };
-				}
-				return OwcaFloat{ val };
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
+				return l.as_float(vm).internal_value() - r.as_float(vm).internal_value();
 			}
 			VM::get(vm).throw_cant_call(std::format("can't execute {} - {}", l.type(), r.type()));
 		}
@@ -170,7 +150,7 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		Kind kind() const override { return Kind::Mul; }
-		static OwcaValue mul_string(OwcaVM vm, OwcaValue val, OwcaIntInternal mul) {
+		static OwcaValue mul_string(OwcaVM vm, OwcaValue val, OwcaNumberUnderlying mul) {
 			if (mul < 0)
 				Internal::VM::get(vm).throw_invalid_operand_for_mul_string(std::to_string(mul));
 			return VM::get(vm).create_string(val, (size_t)mul);
@@ -178,26 +158,14 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
-			auto [ li, lf ] = l.get_int_or_float();
-			auto [ ri, rf ] = r.get_int_or_float();
-			if ((li || lf) && (ri || rf)) {
-				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-				auto val = lfloat * rfloat;
-
-				if (li && ri) {
-					auto val2 = li->internal_value() * ri->internal_value();
-					if (val == val2) return OwcaInt{ val2 };
-				}
-				return OwcaFloat{ val };
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
+				return l.as_float(vm).internal_value() * r.as_float(vm).internal_value();
 			}
-			if (l.kind() == OwcaValueKind::String && (ri || rf)) {
-				auto rr = r.convert_to_int(vm);
-				return mul_string(vm, l, rr);
+			if (l.kind() == OwcaValueKind::String && r.kind() == OwcaValueKind::Float) {
+				return mul_string(vm, l, r.convert_to_int(vm));
 			}
-			if ((li || lf) && r.kind() == OwcaValueKind::String) {
-				auto ll = l.convert_to_int(vm);
-				return mul_string(vm, r, ll);
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::String) {
+				return mul_string(vm, r, l.convert_to_int(vm));
 			}
 			VM::get(vm).throw_cant_call(std::format("can't execute {} * {}", l.type(), r.type()));
 		}
@@ -210,21 +178,11 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
-			auto [ li, lf ] = l.get_int_or_float();
-			auto [ ri, rf ] = r.get_int_or_float();
-			if ((li || lf) && (ri || rf)) {
-				auto lfloat = li ? (OwcaFloatInternal)li->internal_value() : lf->internal_value();
-				auto rfloat = ri ? (OwcaFloatInternal)ri->internal_value() : rf->internal_value();
-				if (rfloat == 0) {
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
+				if (r.as_float(vm).internal_value() == 0) {
 					Internal::VM::get(vm).throw_division_by_zero();
 				}
-				auto val = lfloat + rfloat;
-
-				if (li && ri) {
-					auto val2 = li->internal_value() + ri->internal_value();
-					if (val == val2) return OwcaInt{ val2 };
-				}
-				return OwcaFloat{ val };
+				return l.as_float(vm).internal_value() / r.as_float(vm).internal_value();
 			}
 			VM::get(vm).throw_cant_call(std::format("can't execute {} / {}", l.type(), r.type()));
 		}
@@ -235,38 +193,37 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::Mod; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
-			if (r == 0) {
-				VM::get(vm).throw_mod_division_by_zero();
+			auto l = left->execute_expression(vm);
+			auto r = right->execute_expression(vm);
+			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
+				if (r.convert_to_int(vm) == 0) {
+					Internal::VM::get(vm).throw_mod_division_by_zero();
 			}
-			return OwcaInt{ l % r };
+				
+				return l.convert_to_int(vm) % r.convert_to_int(vm);
+			}
+			VM::get(vm).throw_cant_call(std::format("can't execute {} % {}", l.type(), r.type()));
 		}
 	};
-	static void update_key(OwcaVM vm, OwcaValue& key, OwcaIntInternal size) {
+	static void update_key(OwcaVM vm, OwcaValue& key, OwcaNumberUnderlying size) {
 		key.visit(
 			[&](OwcaFloat o) {
 				auto v = key.convert_to_int(vm);
 				if (v < 0) v += size;
-				key = OwcaInt{ v };
-			},
-			[&](OwcaInt o) {
-				auto v = o.internal_value();
-				if (v < 0) v += size;
-				key = OwcaInt{ v };
+				key = v;
 			},
 			[&](OwcaRange o) {
 				auto [v1, v2] = o.internal_values();
 				if (v1 < 0) v1 += size;
 				if (v2 < 0) v2 += size;
-				key = OwcaRange{ OwcaInt{ v1 }, OwcaInt{ v2 } };
+				key = OwcaRange{ v1, v2 };
 			},
 			[&](const auto&) {}
 		);
 	}
-	static size_t verify_key(OwcaVM vm, OwcaInt k, size_t size, OwcaValue orig_key, std::string_view name) {
+	static size_t verify_key(OwcaVM vm, OwcaFloat k, size_t size, OwcaValue orig_key, std::string_view name) {
 		auto v = k.internal_value();
-		if (v < 0 || v >= (OwcaIntInternal)size)
+		if (v < 0 || v >= (OwcaNumberUnderlying)size)
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is out of range for {} of size {}", orig_key, name, size));
 		auto v2 = (size_t)v;
 		if (v2 != v)
@@ -278,7 +235,7 @@ namespace OwcaScript::Internal {
 		if (v2 <= v1)
 			return { 0, 0 };
 		if (v1 < 0) v1 = 0;
-		if (v2 > (OwcaIntInternal)size) v2 = size;
+		if (v2 > (OwcaNumberUnderlying)size) v2 = size;
 		size_t v3 = (size_t)v1, v4 = (size_t)v2;
 		if (v3 != v1 || v2 != v4) {
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index values {} is out of range for array of size {} - size_t overflows", orig_key, size));
@@ -297,22 +254,18 @@ namespace OwcaScript::Internal {
 
 			return v.visit(
 				[&](const OwcaString& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.internal_value()->size();
+					const auto size = (OwcaNumberUnderlying)o.internal_value()->size();
 					if (size != o.internal_value()->size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("string size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->size(), std::numeric_limits<OwcaIntInternal>::max()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("string size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaInt k) {
-							auto v2 = verify_key(vm, k, size, orig_key, "string");
-							return o[v2];
-						},
 						[&](OwcaFloat k) {
-							auto z = (OwcaIntInternal)k.internal_value();
-							if (z != (OwcaIntInternal)k.internal_value())
+							auto z = (OwcaNumberUnderlying)k.internal_value();
+							if (z != (OwcaNumberUnderlying)k.internal_value())
 								Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is not a valid intenger", orig_key));
 
-							auto v2 = verify_key(vm, OwcaIntInternal{ z }, size, orig_key, "string");
+							auto v2 = verify_key(vm, z, size, orig_key, "string");
 							return o[v2];
 						},
 						[&](OwcaRange k) {
@@ -325,22 +278,18 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaArray& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaInt k) -> OwcaValue {
-							auto v2 = verify_key(vm, k, size, orig_key, "array");
-							return o[v2];
-						},
 						[&](OwcaFloat k) {
-							auto z = (OwcaIntInternal)k.internal_value();
-							if (z != (OwcaIntInternal)k.internal_value())
+							auto z = (OwcaNumberUnderlying)k.internal_value();
+							if (z != (OwcaNumberUnderlying)k.internal_value())
 								Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is not a valid intenger", orig_key));
 
-							auto v2 = verify_key(vm, OwcaIntInternal{ z }, size, orig_key, "array");
+							auto v2 = verify_key(vm, z, size, orig_key, "array");
 							return o[v2];
 						},
 						[&](OwcaRange k) -> OwcaValue {
@@ -353,22 +302,18 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaTuple& o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaInt k) -> OwcaValue {
-							auto v2 = verify_key(vm, k, size, orig_key, "tuple");
-							return o[v2];
-						},
 						[&](OwcaFloat k) {
-							auto z = (OwcaIntInternal)k.internal_value();
-							if (z != (OwcaIntInternal)k.internal_value())
+							auto z = (OwcaNumberUnderlying)k.internal_value();
+							if (z != (OwcaNumberUnderlying)k.internal_value())
 								Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is not a valid intenger", orig_key));
 
-							auto v2 = verify_key(vm, OwcaIntInternal{ z }, size, orig_key, "tuple");
+							auto v2 = verify_key(vm, z, size, orig_key, "tuple");
 							return o[v2];
 						},
 						[&](OwcaRange k) -> OwcaValue {
@@ -406,13 +351,13 @@ namespace OwcaScript::Internal {
 					return {};
 				},
 				[&](OwcaArray o) -> OwcaValue {
-					const auto size = (OwcaIntInternal)o.internal_value()->values.size();
+					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaIntInternal size to properly handle indexing, maximum value is {}", o.internal_value()->values.size(), std::numeric_limits<OwcaIntInternal>::max()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaInt k) -> OwcaValue {
+						[&](OwcaFloat k) -> OwcaValue {
 							auto v2 = verify_key(vm, k, size, orig_key, "array");
 							o[v2] = std::move(value);
 							return o[v2];

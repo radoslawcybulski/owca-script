@@ -101,9 +101,6 @@ namespace OwcaScript::Internal {
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaBool& l, const OwcaBool& r) { 
 		return build_result(kind, l.internal_value() == r.internal_value());
 	}
-	static Result compare_split(OwcaVM, CompareKind kind, const OwcaInt& l, const OwcaInt& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
-	static Result compare_split(OwcaVM, CompareKind kind, const OwcaInt& l, const OwcaFloat& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
-	static Result compare_split(OwcaVM, CompareKind kind, const OwcaFloat& l, const OwcaInt& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaFloat& l, const OwcaFloat& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaString& l, const OwcaString& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaRange& l, const OwcaRange& r) {
@@ -222,7 +219,6 @@ namespace OwcaScript::Internal {
 			case OwcaValueKind::Empty: return true;
 			case OwcaValueKind::Range: return left.as_range(vm).internal_values() == right.as_range(vm).internal_values();
 			case OwcaValueKind::Bool: return left.as_bool(vm).internal_value() == right.as_bool(vm).internal_value();
-			case OwcaValueKind::Int: return left.as_int(vm).internal_value() == right.as_int(vm).internal_value();
 			case OwcaValueKind::Float: return left.as_float(vm).internal_value() == right.as_float(vm).internal_value();
 			case OwcaValueKind::String: return compare(vm, CompareKind::Eq, left, right) == Result::True;
 			case OwcaValueKind::Functions: return left.as_functions(vm).internal_value() == right.as_functions(vm).internal_value() && left.as_functions(vm).internal_self_object() == right.as_functions(vm).internal_self_object();

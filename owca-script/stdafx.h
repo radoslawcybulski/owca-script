@@ -25,6 +25,7 @@
 #include <deque>
 #include <array>
 #include <cstring>
+#include <cmath>
 
 namespace OwcaScript {
     namespace Internal {

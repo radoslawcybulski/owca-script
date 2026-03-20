@@ -12,7 +12,7 @@ TEST_F(SimpleTest, simple)
 	OwcaVM vm;
 	auto code = vm.compile("test.os", "return 14;");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_int(vm).internal_value(), 14);
+	ASSERT_EQ(val.convert_to_float(vm), 14);
 }
 
 TEST_F(SimpleTest, string)
@@ -40,7 +40,7 @@ v = { 'a': 1, 'b': 2 };
 return v['a'] + v['b'];
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
+	ASSERT_EQ(val.convert_to_float(vm), 3);
 }
 TEST_F(SimpleTest, native_func)
 {
@@ -50,7 +50,7 @@ TEST_F(SimpleTest, native_func)
 			if (full_name == "foo" && !cls && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
-					return OwcaInt{ args[0].convert_to_int(vm) + args[1].convert_to_int(vm) };
+					return args[0].convert_to_float(vm) + args[1].convert_to_float(vm);
 					};
 			}
 			return std::nullopt;
@@ -61,7 +61,7 @@ function native foo(a, b);
 return foo(1, 2);
 )", std::make_shared<Provider>());
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
+	ASSERT_EQ(val.convert_to_float(vm), 3);
 }
 TEST_F(SimpleTest, external_vars)
 {
@@ -69,10 +69,10 @@ TEST_F(SimpleTest, external_vars)
 	auto code = vm.compile("test.os", R"(
 return q + b + c;
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 
-	ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+	ASSERT_EQ(val.convert_to_float(vm), 6);
 }
 TEST_F(SimpleTest, class_)
 {
@@ -85,10 +85,10 @@ class A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" });
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+	ASSERT_EQ(val2.convert_to_float(vm), 6);
 }
 
 TEST_F(SimpleTest, native_class)
@@ -121,10 +121,10 @@ class native A {
 }
 return A(q, b, c);
 )", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+	ASSERT_EQ(val2.convert_to_float(vm), 6);
 }
 
 TEST_F(SimpleTest, native_class_with_funcs)
@@ -164,7 +164,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 						assert(args.size() == 1);
 						auto self = args[0];
 						auto v = self.as_object(vm).user_data<std::uint64_t>(cls);
-						return OwcaInt{ static_cast<OwcaIntInternal>(v) };
+						return v;
 					};
 				}
 				return std::nullopt;
@@ -180,13 +180,13 @@ TEST_F(SimpleTest, native_class_with_funcs)
 	}
 	return A(q, b, c);
 	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
-		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 		auto val = vm.execute(code, vm.create_map(map_data));
 		
 		code = vm.compile("test.os", "return a.get_value();", std::vector<std::string>{ "a" });
 		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
 		auto val2 = vm.execute(code, vm.create_map(map_data));
-		ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+		ASSERT_EQ(val2.convert_to_float(vm), 6);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";
@@ -224,7 +224,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
-						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
+						val = v;
 						return true;
 					}
 					return false;
@@ -232,7 +232,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.convert_to_int(vm);
 						return true;
 					}
 					return false;
@@ -254,7 +254,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 	}
 	return A(q, b, c);
 	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>(reads, writes));
-		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
+		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 		auto val = vm.execute(code, vm.create_map(map_data));
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
@@ -262,7 +262,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 		code = vm.compile("test.os", "return a.value;", std::vector<std::string>{ "a" });
 		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
 		auto val2 = vm.execute(code, vm.create_map(map_data));
-		ASSERT_EQ(val2.as_int(vm).internal_value(), 6);
+		ASSERT_EQ(val2.convert_to_float(vm), 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
 	}
@@ -302,7 +302,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
-						val = OwcaInt{ static_cast<OwcaIntInternal>(v) };
+						val = v;
 						return true;
 					}
 					return false;
@@ -310,7 +310,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = val.as_int(vm).internal_value();
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.convert_to_int(vm);
 						return true;
 					}
 					return false;
@@ -337,43 +337,43 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		ASSERT_EQ(writes, 0);
 		ASSERT_EQ(reads, 0);
 		
-		vm.set_member(object, "value", OwcaInt{ 6 });
+		vm.set_member(object, "value", 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
 
 		auto val = vm.get_member(object, "value");
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
-		ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+		ASSERT_EQ(val.convert_to_float(vm), 6);
 
 		auto fnc = vm.get_member(object, "get");
 		val = vm.call(fnc, {});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 2);
-		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
 
 		val = fnc.call(vm, {});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 3);
-		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
 
-		object.member("value", OwcaInt{ 6 });
+		object.member("value", 6);
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 3);
 
 		val = object.member("value");
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 4);
-		ASSERT_EQ(val.as_int(vm).internal_value(), 6);
+		ASSERT_EQ(val.convert_to_float(vm), 6);
 
 		fnc = object.member("get");
 		val = fnc.call({});
 
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 5);
-		ASSERT_EQ(val.as_int(vm).internal_value(), 6 + 100);
+		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";

@@ -485,7 +485,6 @@ namespace OwcaScript {
 				Compare,
 				ConstantEmpty,
 				ConstantBool,
-				ConstantInt,
 				ConstantFloat,
 				ConstantString,
 				Ident,

@@ -13,7 +13,7 @@ static int run_gen(std::string code_text, OwcaValue add_val)
     auto code = vm.compile("test.os", std::move(code_text), tmp);
     auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
     auto val = vm.execute(code, vm.create_map(map_data));
-    return (int)val.as_int(vm).internal_value();
+    return (int)val.convert_to_int(vm);
 }
 
 static int run_try(int v)
@@ -38,7 +38,7 @@ static int run_try(int v)
         for(q = foo()) {
             return q;
         }
-        )", OwcaInt{ v });
+        )", v);
 }
 
 TEST_F(GeneratorTest, try1)
@@ -76,7 +76,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 
 TEST_F(GeneratorTest, while_simple2)
@@ -96,7 +96,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(GeneratorTest, while_simple3)
@@ -120,7 +120,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 2 }), 2);
+	)", 2), 2);
 }
 
 TEST_F(GeneratorTest, while_loop_ident1)
@@ -142,7 +142,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 0);
+	)", 0), 0);
 }
 TEST_F(GeneratorTest, while_loop_ident2)
 {
@@ -163,7 +163,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 2);
+	)", 0), 2);
 }
 TEST_F(GeneratorTest, while_loop_ident3)
 {
@@ -184,7 +184,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 TEST_F(GeneratorTest, while_loop_ident4)
 {
@@ -205,7 +205,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 
 
@@ -228,7 +228,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 
 TEST_F(GeneratorTest, for_simple2)
@@ -247,7 +247,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(GeneratorTest, for_simple3)
@@ -270,7 +270,7 @@ function generator foo() {
     yield total;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 2 }), 2);
+	)", 2), 2);
 }
 
 TEST_F(GeneratorTest, for_loop_ident1)
@@ -293,7 +293,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 0);
+	)", 0), 0);
 }
 TEST_F(GeneratorTest, for_loop_ident2)
 {
@@ -315,7 +315,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 2);
+	)", 0), 2);
 }
 TEST_F(GeneratorTest, for_loop_ident3)
 {
@@ -337,7 +337,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 TEST_F(GeneratorTest, for_loop_ident4)
 {
@@ -359,7 +359,7 @@ function generator foo() {
     yield mode;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 3);
+	)", 0), 3);
 }
 
 
@@ -378,7 +378,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaBool{ false }), 2);
+	)", false), 2);
 }
 
 TEST_F(GeneratorTest, if_simple2)
@@ -393,7 +393,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(GeneratorTest, if_simple3)
@@ -408,7 +408,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ true }), 1);
+	)", true), 1);
 }
 
 TEST_F(GeneratorTest, no_else1)
@@ -421,7 +421,7 @@ function generator foo() {
     yield 2;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(GeneratorTest, no_else2)
@@ -434,7 +434,7 @@ function generator foo() {
     yield 2;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 2 }), 1);
+	)", 2), 1);
 }
 
 TEST_F(GeneratorTest, no_else3)
@@ -447,7 +447,7 @@ function generator foo() {
     yield 2;
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 2);
+	)", 0), 2);
 }
 
 TEST_F(GeneratorTest, elif1)
@@ -468,7 +468,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 0 }), 4);
+	)", 0), 4);
 }
 
 TEST_F(GeneratorTest, elif2)
@@ -489,7 +489,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 1 }), 1);
+	)", 1), 1);
 }
 
 TEST_F(GeneratorTest, elif3)
@@ -510,7 +510,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 2 }), 2);
+	)", 2), 2);
 }
 
 TEST_F(GeneratorTest, elif4)
@@ -531,7 +531,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 3 }), 3);
+	)", 3), 3);
 }
 
 TEST_F(GeneratorTest, elif5)
@@ -552,7 +552,7 @@ function generator foo() {
     }
 }
 for(q = foo()) return q;
-	)", OwcaInt{ 4 }), 4);
+	)", 4), 4);
 }
 
 TEST_F(GeneratorTest, simple)
@@ -569,5 +569,5 @@ for(a = foo()) {
     b = b + a;
 }
 return b;
-)", OwcaInt{ 0 }), 6);
+)", 0), 6);
 }

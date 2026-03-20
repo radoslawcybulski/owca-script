@@ -23,7 +23,6 @@ namespace OwcaScript {
 		auto s = self.visit(
 			[](OwcaEmpty) -> Internal::AllocationBase * { return nullptr; },
 			[&](OwcaCompleted) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](OwcaInt) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaFloat) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaBool) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaRange) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },

@@ -22,7 +22,7 @@ namespace OwcaScript::Internal {
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
 			auto v = l.convert_to_int(vm);
-			return OwcaInt{ ~v };
+			return ~v;
 		}
 	};
 	class ImplExprLogNot : public ImplExprOper1 {
@@ -42,18 +42,7 @@ namespace OwcaScript::Internal {
 		Kind kind() const override { return Kind::Negate; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
-			auto [li, lf] = l.get_int_or_float();
-			if (li) {
-				auto v = -li->internal_value();
-				if (v == li->internal_value()) {
-					return OwcaFloat{ -(OwcaFloatInternal)li->internal_value() };
-				}
-				return OwcaInt{ v };
-			}
-			if (lf) {
-				return OwcaFloat{ -lf->internal_value() };
-			}
-			VM::get(vm).throw_not_a_number(l.type());
+			return -l.as_float(vm).internal_value();
 		}
 	};
 

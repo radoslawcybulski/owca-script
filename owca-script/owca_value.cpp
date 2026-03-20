@@ -14,41 +14,30 @@
 namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaException value) : value_(OwcaObject{ value.internal_owner() }) {}
 
-	std::pair<const OwcaInt*, const OwcaFloat*> OwcaValue::get_int_or_float() const
+	long long int OwcaValue::convert_to_int(OwcaVM vm) const
 	{
-		return visit(
-			[](const OwcaInt& o) -> std::pair<const OwcaInt*, const OwcaFloat*> { return { &o, nullptr }; },
-			[](const OwcaFloat& o) -> std::pair<const OwcaInt*, const OwcaFloat*> { return { nullptr, &o }; },
-			[](const auto&) -> std::pair<const OwcaInt*, const OwcaFloat*> { return { nullptr, nullptr }; }
-		);
-	}
-	OwcaIntInternal OwcaValue::convert_to_int(OwcaVM vm) const
-	{
-		auto [i, f] = get_int_or_float();
-		if (i) return i->internal_value();
-		if (f) {
-			auto ii = (OwcaIntInternal)f->internal_value();
-			if ((OwcaFloatInternal)ii == f->internal_value()) return ii;
-			Internal::VM::get(vm).throw_cant_convert_to_integer(f->internal_value());
+		if (kind() == OwcaValueKind::Float) {
+			auto f = as_float(vm);
+			if (std::isnan(f.internal_value()) || std::isinf(f.internal_value()))
+				Internal::VM::get(vm).throw_cant_convert_to_integer(f.internal_value());
+			return f.to_int();
 		}
 		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
 	}
 
-	OwcaFloatInternal OwcaValue::convert_to_float(OwcaVM vm) const
+	OwcaNumberUnderlying OwcaValue::convert_to_float(OwcaVM vm) const
 	{
-		auto [i, f] = get_int_or_float();
-		if (i) return (OwcaFloatInternal)i->internal_value();
-		if (f) return f->internal_value();
+		if (kind() == OwcaValueKind::Float) {
+			return as_float(vm).internal_value();
+		}
 		Internal::VM::get(vm).throw_cant_convert_to_float(type());
 	}
-
 	bool OwcaValue::is_true() const
 	{
 		return visit(
 			[](OwcaEmpty) { return false; },
 			[](OwcaCompleted) { return false; },
 			[](OwcaRange) { return true; },
-			[](OwcaInt o) { return o.internal_value() != 0; },
 			[](OwcaFloat o) { return o.internal_value() != 0; },
 			[](OwcaBool o) { return o.internal_value(); },
 			[](OwcaString o) { return o.internal_value()->size() != 0; },
@@ -88,12 +77,6 @@ namespace OwcaScript {
 		if (kind() != OwcaValueKind::Bool)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Bool");
 		return std::get<OwcaBool>(value_);
-	}
-	OwcaInt OwcaValue::as_int(OwcaVM vm) const
-	{
-		if (kind() != OwcaValueKind::Int)
-			Internal::VM::get(vm).throw_wrong_type(type(), "Integer");
-		return std::get<OwcaInt>(value_);
 	}
 	OwcaFloat OwcaValue::as_float(OwcaVM vm) const
 	{
@@ -172,7 +155,6 @@ namespace OwcaScript {
 			[](OwcaEmpty) -> std::string_view { return "Nul"; },
 			[](OwcaCompleted) -> std::string_view { return "Completed"; },
 			[](OwcaRange) -> std::string_view { return "Range"; },
-			[](OwcaInt) -> std::string_view { return "Integer"; },
 			[](OwcaFloat) -> std::string_view { return "Float"; },
 			[](OwcaBool) -> std::string_view { return "Bool"; },
 			[](OwcaString) -> std::string_view { return "String"; },
@@ -193,7 +175,6 @@ namespace OwcaScript {
 			[](OwcaEmpty o) -> std::string { return "nul"; },
 			[](OwcaCompleted o) -> std::string { return "completed"; },
 			[](OwcaRange o) -> std::string { return std::format("{}..{}", o.lower().internal_value(), o.upper().internal_value()); },
-			[](OwcaInt o) -> std::string { return std::to_string(o.internal_value()); },
 			[](OwcaFloat o) -> std::string { return std::to_string(o.internal_value()); },
 			[](OwcaBool o) -> std::string { return o.internal_value() ? "true" : "false"; },
 			[](OwcaString o) -> std::string { return o.internal_value()->to_string(); },

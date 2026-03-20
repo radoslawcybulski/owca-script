@@ -58,5 +58,5 @@ for(q = queue) {
     s = s + String(q);
 }
 return s;
-	)", OwcaInt{ 0 }), std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
+	)", 0), std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
 }
