@@ -220,13 +220,6 @@ TEST_F(CompareTest, set)
     run_basic_test(12);
 }
 
-// if (a == b) result = result | 1;
-// if (a != b) result = result | 2;
-// if (a <= b) result = result | 4;
-// if (a >= b) result = result | 8;
-// if (a <  b) result = result | 16;
-// if (a >  b) result = result | 32;
-
 static constexpr unsigned int Eq = 1, NotEq = 2, LessEq = 4, MoreEq = 8, Less = 16, More = 32, All = Eq | NotEq | LessEq | MoreEq | Less | More;
 
 TEST_F(CompareTest, array_order_eq)

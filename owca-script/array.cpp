@@ -34,16 +34,4 @@ namespace OwcaScript::Internal {
         }
         return temp;
     }
-
-    // std::vector<OwcaValue> Array::sub_array(size_t from, size_t to) const
-    // {
-    //     assert(from <= to);
-    //     assert(to <= values.size());
-    //     std::vector<OwcaValue> temp;
-    //     temp.reserve(to - from);
-    //     for(auto i = from; i < to; ++i) {
-    //         temp.push_back(values[i]);
-    //     }
-    //     return temp;
-    // }
 }

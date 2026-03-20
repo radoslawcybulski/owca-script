@@ -112,7 +112,7 @@ namespace OwcaScript {
         struct promise_type;
         using handle_type = std::coroutine_handle<promise_type>;
      
-        struct promise_type // required
+        struct promise_type
         {
             OwcaValue value_;
             std::exception_ptr exception_;

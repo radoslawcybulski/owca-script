@@ -30,10 +30,6 @@ namespace OwcaScript {
 				std::span<std::string_view> parameter_names;
 				NativeCodeProvider::GeneratorFunction generator;
 			};
-			// struct NativeGeneratorFunction {
-			// 	std::span<std::string_view> parameter_names;
-			// 	NativeCodeProvider::Generator function;
-			// };
 			std::shared_ptr<CodeBuffer> code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
 			std::string_view name, full_name;

@@ -11,7 +11,6 @@ namespace OwcaScript::Internal {
 		ImplExpr *expr;
 		ser.deserialize(expr);
 		this->storage = ser.take_loaded_data();
-		//assert(root() == expr);
 	}
 	char* CodeBuffer::get_ptr(size_t size, size_t align) {
 		offset = (offset + align - 1) & ~(align - 1);

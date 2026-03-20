@@ -371,7 +371,7 @@ namespace OwcaScript {
 					}
 				};
 			
-				struct promise_type // required
+				struct promise_type
 				{
 					State &st;
 			
@@ -392,12 +392,6 @@ namespace OwcaScript {
 						st.exception = std::current_exception(); 
 					}
 			
-					// std::suspend_always yield_value(OwcaValue v) {
-					// 	if constexpr (debug_print) std::cout << "yield_value(" << (void*)this << ")\n";
-					// 	assert(!Task::placeholder()->value);
-					// 	Task::placeholder()->value = v;
-					// 	return {};
-					// }
 					void return_void() {}
 			
 					template <typename T> void* operator new(std::size_t n, T&, OwcaVM, State &st)

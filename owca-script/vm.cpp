@@ -1685,6 +1685,7 @@ function native print(msg);
 		assert(stacktrace.empty());
 
 		auto ggc = GenerationGC{ ++generation_gc };
+
 		// mark
 		global_variables.gc_mark(this, ggc);
 

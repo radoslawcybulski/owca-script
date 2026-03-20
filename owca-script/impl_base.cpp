@@ -99,7 +99,6 @@ namespace OwcaScript::Internal {
     }
     std::vector<char> Deserializer::take_loaded_data()
     {
-        //assert(loaded_data.size() == loaded_data_size);
         return std::move(loaded_data);
     }
     Deserializer::SerializationOperation Deserializer::peek() {
@@ -129,7 +128,6 @@ namespace OwcaScript::Internal {
         p = (p + align - 1) & ~(align - 1);
         auto p2 = p + size;
         if (p2 > loaded_data.capacity()) throw OwcaVM::SerializationFailed{ std::format("{}: data corruption at output position {}, tried to allocate more (total {}) than expected ({})", fname, loaded_data.size(), p2, loaded_data.capacity()) };
-        //std::cout << "Allocate " << p << " " << size << "\n";
         loaded_data.resize(p2);
         return loaded_data.data() + p;
     }
