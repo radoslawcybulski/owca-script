@@ -42,17 +42,17 @@ namespace OwcaScript {
 		return vm->execute_call(func, values);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
 		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
 	}
 
-	OwcaCode OwcaVM::load(std::string filename, std::span<unsigned char> binary_content, std::unique_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::load(std::string filename, std::span<unsigned char> binary_content, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
 		auto code = std::make_shared<Internal::CodeBuffer>(std::move(filename), binary_content, std::move(native_code_provider));
 		return OwcaCode{ std::move(code) };
 	}
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::unique_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
 		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider) };
 		auto v = compiler.compile(additional_variables);

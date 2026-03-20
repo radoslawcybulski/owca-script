@@ -7,8 +7,8 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool native) : 
-		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), variable_names(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), native(native) {
+	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool all_variable_names, bool native) : 
+		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), variable_names(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), all_variable_names(all_variable_names), native(native) {
 			assert(this->variable_names.empty() || native);
 		}
 
@@ -21,7 +21,8 @@ namespace OwcaScript::Internal {
 			Q(full_name, std::string_view) \
 			Q(base_classes, std::span<ImplExpr*>) \
 			Q(members, std::span<ImplExpr*>) \
-			Q(native_variable_names, std::span<std::string_view>)
+			Q(native_variable_names, std::span<std::string_view>) \
+			Q(all_variables, bool)
 
 		IMPL_DEFINE_EXPR(Kind::ScriptClass)
 
@@ -41,8 +42,13 @@ namespace OwcaScript::Internal {
 				auto f = m->execute_expression(vm);
 				cls->initialize_add_function(vm, f);
 			}
-			for(auto i = 0u; i < native_variable_names.size(); ++i) {
-				cls->initialize_add_variable(native_variable_names[i]);
+			if (all_variables) {
+				cls->initialize_set_all_variables();
+			}
+			else {
+				for(auto i = 0u; i < native_variable_names.size(); ++i) {
+					cls->initialize_add_variable(native_variable_names[i]);
+				}
 			}
 
 			cls->finalize_initializing(vm);
@@ -124,11 +130,11 @@ namespace OwcaScript::Internal {
 		}
 
 		if (native) {
-			ret2->init(nm, fm, bc, fncs, var_names);
+			ret2->init(nm, fm, bc, fncs, var_names, all_variable_names);
 			return ret2;
 		}
 		else {
-			ret1->init(nm, fm, bc, fncs, var_names);
+			ret1->init(nm, fm, bc, fncs, var_names, all_variable_names);
 			return ret1;
 		}
 	}

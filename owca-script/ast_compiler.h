@@ -20,7 +20,7 @@ namespace OwcaScript {
 			Line content_line = Line{ 1 };
 			std::vector<OwcaErrorMessage> error_messages_;
 			std::vector<AstFunction*> functions_stack;
-			std::unique_ptr<NativeCodeProvider> native_code_provider;
+			std::shared_ptr<NativeCodeProvider> native_code_provider;
 			std::unordered_map<std::string_view, std::pair<Line, unsigned int>> loop_control_identifiers;
 			unsigned int loop_control_depth = 0;
 			VM &vm;
@@ -145,7 +145,7 @@ namespace OwcaScript {
 			struct RewriteAsWrite;
 			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
 		public:
-			AstCompiler(VM &vm, std::string filename_, std::string content, std::unique_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
+			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
 
 			const auto& filename() const { return filename_; }
 			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});

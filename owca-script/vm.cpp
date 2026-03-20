@@ -714,7 +714,7 @@ function native hash(value);
 function native print(msg);
 )" };
 		auto vm = OwcaVM{ this };
-		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_unique<BuiltinProvider>());
+		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());
 		OwcaValue builtin_dictionary;
 		vm.execute(std::move(code_compiled), {}, &builtin_dictionary);
 

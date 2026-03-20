@@ -59,7 +59,7 @@ TEST_F(SimpleTest, native_func)
 	auto code = vm.compile("test.os", R"(
 function native foo(a, b);
 return foo(1, 2);
-)", std::make_unique<Provider>());
+)", std::make_shared<Provider>());
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_int(vm).internal_value(), 3);
 }
@@ -120,7 +120,7 @@ class native A {
 	}
 }
 return A(q, b, c);
-)", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>());
+)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
 	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
@@ -179,7 +179,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 		function native get_value(self);
 	}
 	return A(q, b, c);
-	)", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>());
+	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
 		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
 		auto val = vm.execute(code, vm.create_map(map_data));
 		
@@ -253,7 +253,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 		var value;
 	}
 	return A(q, b, c);
-	)", std::vector<std::string>{ "q", "b", "c" }, std::make_unique<Provider>(reads, writes));
+	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>(reads, writes));
 		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", OwcaInt{ 1 } }, { "b", OwcaInt{ 2 } }, { "c", OwcaInt{ 3 } } } };
 		auto val = vm.execute(code, vm.create_map(map_data));
 		ASSERT_EQ(writes, 1);
@@ -332,7 +332,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		}
 	}
 	return A();
-	)", {}, std::make_unique<Provider>(reads, writes));
+	)", {}, std::make_shared<Provider>(reads, writes));
 		auto object = vm.execute(code);
 		ASSERT_EQ(writes, 0);
 		ASSERT_EQ(reads, 0);
@@ -382,5 +382,63 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 	catch(OwcaException e) {
 		std::cerr << "Exception: " << e.to_string() << "\n";
 		throw;
+	}
+}
+
+TEST_F(SimpleTest, variable_missing)
+{
+	OwcaVM vm;
+	OwcaValue object;
+	try {
+		struct Provider : public NativeCodeProvider {
+			struct NCI : public NativeClassInterface {
+				void initialize_storage(void* ptr, size_t s) override {
+					*(std::uint64_t*)ptr = 1234;
+				}
+				void destroy_storage(void* ptr, size_t s) override {
+				}
+				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				}
+				size_t native_storage_size() override {
+					return sizeof(std::uint64_t);
+				}
+				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == "value") return true;
+					return false;
+				}
+			};
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+				if (name == "A")
+					return std::make_shared<NCI>();
+				return nullptr;
+			}
+		};
+		auto code = vm.compile("test.os", R"(
+	class native A {
+		var value;
+
+		function get1(self) { return self.value; }
+		function get2(self) { return self.value2; }
+	}
+	return A();
+	)", {}, std::make_shared<Provider>());
+		object = vm.execute(code);
+	}
+	catch(std::exception &e) {
+		std::cerr << "Exception: " << e.what() << "\n";
+		throw;
+	}
+	catch(OwcaException e) {
+		std::cerr << "Exception: " << e.to_string() << "\n";
+		throw;
+	}
+
+	object.member(vm, "value");
+	try {
+		object.member(vm, "value2");
+		FAIL() << "no exception";
+	}
+	catch(OwcaException oe) {
+		ASSERT_TRUE(oe.message().find(std::format("doesn't have a member value2")) != std::string_view::npos) << oe.message();
 	}
 }

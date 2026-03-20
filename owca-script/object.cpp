@@ -64,6 +64,9 @@ namespace OwcaScript::Internal {
 	void Class::initialize_add_variable(std::string_view name) {
 		runtime_variables.push_back(name);
 	}
+	void Class::initialize_set_all_variables() {
+		all_variables = true;
+	}
 	void Class::initialize_add_function(OwcaVM vm, OwcaValue f)
 	{
 		auto fnc = f.as_functions(vm);

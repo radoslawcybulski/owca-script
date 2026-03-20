@@ -45,7 +45,7 @@ TEST_F(VariableTest, simple1)
 class native A {
 }
 return A();
-)", std::make_unique<Provider>(counter));
+)", std::make_shared<Provider>(counter));
     auto provider = Provider{ counter };
 
 	auto val = vm.execute(code);

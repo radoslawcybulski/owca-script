@@ -16,17 +16,17 @@ namespace OwcaScript {
 		class CodeBuffer {
 			std::string filename_;
 			std::vector<char> storage;
-			std::unique_ptr<NativeCodeProvider> native_code_provider_;
+			std::shared_ptr<NativeCodeProvider> native_code_provider_;
 			size_t offset = 0;
 
 			char* get_ptr(size_t size, size_t align);
 
 			void* allocate_simple_with_copy(const void* source, size_t size_alloc, size_t size_copy, size_t align);
 		public:
-			CodeBuffer(std::string filename, size_t size, std::unique_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
+			CodeBuffer(std::string filename, size_t size, std::shared_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename)), native_code_provider_(std::move(native_code_provider)) {
 				storage.resize(size);
 			}
-			CodeBuffer(std::string filename, std::span<unsigned char> storage, std::unique_ptr<NativeCodeProvider> native_code_provider);
+			CodeBuffer(std::string filename, std::span<unsigned char> storage, std::shared_ptr<NativeCodeProvider> native_code_provider);
 
 			std::string_view filename() const { return filename_; }
 			void validate_size(size_t size);
