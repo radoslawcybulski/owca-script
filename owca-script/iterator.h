@@ -21,7 +21,6 @@ namespace OwcaScript {
             ExecutionFrame frame;
             ImplStat::State state;
             std::optional<Generator> generator;
-			OwcaVariableSet variable_set;
 			std::vector<AllocationBase*> allocated_objects;
 
             Iterator(size_t sz, Line line) : frame(line), state(sz) {}

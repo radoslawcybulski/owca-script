@@ -13,7 +13,6 @@ namespace OwcaScript::Internal {
     }
     void Iterator::gc_mark(OwcaVM vm, GenerationGC generation_gc) {
         frame.gc_mark(vm, generation_gc);
-        variable_set.gc_mark(vm, generation_gc);
         for(auto q : allocated_objects)
             VM::get(vm).gc_mark(q, generation_gc);
     }
