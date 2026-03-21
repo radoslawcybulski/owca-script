@@ -1237,6 +1237,48 @@ function native print(msg);
 		return *value;
 	}
 
+	OwcaValue VM::create_user_class(Class *cls, std::span<OwcaValue> arguments) {
+		OwcaValue obj;
+		
+		if (cls->allocator_override) {
+			obj = cls->allocator_override();
+		}
+		else if (cls->reload_self) {
+			obj = {};
+		}
+		else {
+			obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
+		}
+
+		auto it = cls->values.find(std::string_view{ "__init__" });
+		if (it == cls->values.end()) {
+			if (!arguments.empty()) {
+				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} values", cls->full_name, arguments.size()));
+			}
+		}
+		else {
+			visit_variant(it->second,
+				[&](RuntimeFunctions *rf) -> void {
+					auto of = OwcaFunctions{ rf };
+					auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
+					if (it2 == of.internal_value()->functions.end()) {
+						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
+					}
+					else {
+						auto of2 = of.bind(obj);
+						auto val = execute_call(of2, arguments);
+						if (cls->reload_self)
+							obj = val;
+					}
+					
+				},
+				[&](Class* var) -> void {
+					throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
+				}
+			);
+		}
+		return obj;
+	}
 
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
@@ -1270,48 +1312,7 @@ function native print(msg);
 			[&](OwcaClass oc) -> OwcaValue {
 				auto vm = OwcaVM{ this };
 				auto cls = func.as_class(vm).internal_value();
-
-				OwcaValue obj;
-				
-				if (cls->allocator_override) {
-					obj = cls->allocator_override();
-				}
-				else if (cls->reload_self) {
-					obj = {};
-				}
-				else {
-					obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
-				}
-
-				auto it = cls->values.find(std::string_view{ "__init__" });
-				if (it == cls->values.end()) {
-					if (!arguments.empty()) {
-						throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {}", cls->full_name, arguments.size()));
-					}
-				}
-				else {
-					visit_variant(it->second,
-						[&](RuntimeFunctions *rf) -> void {
-							auto of = OwcaFunctions{ rf };
-							auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
-							if (it2 == of.internal_value()->functions.end()) {
-								throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
-							}
-							else {
-								auto of2 = of.bind(obj);
-								auto val = execute_call(of2, arguments);
-								if (cls->reload_self)
-									obj = val;
-							}
-							
-						},
-						[&](Class* var) -> void {
-							throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
-						}
-					);
-				}
-
-				return obj;
+				return create_user_class(cls, arguments);
 			},
 			[&](const auto&) -> OwcaValue {
 				throw_not_callable(func.type());

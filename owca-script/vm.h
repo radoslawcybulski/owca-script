@@ -159,6 +159,7 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue str, size_t start, size_t end);
 			OwcaValue create_string(OwcaValue str, size_t count);
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
+			OwcaValue create_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
