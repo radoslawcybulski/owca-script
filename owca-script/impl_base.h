@@ -511,6 +511,7 @@ namespace OwcaScript {
 				CreateTuple,
 				CreateSet,
 				CreateMap,
+				InterpretedString,
 				_Count
 			};
 

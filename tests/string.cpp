@@ -6,6 +6,46 @@ class StringTest : public SimpleTest {
 
 };
 
+TEST_F(StringTest, f_string_simple_1)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return `qwe{1}rty`;
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).text(), "qwe1rty");
+}
+
+TEST_F(StringTest, f_string_simple_2)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return `{1}rty`;
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).text(), "1rty");
+}
+
+TEST_F(StringTest, f_string_simple_3)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return `qwe{1}`;
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).text(), "qwe1");
+}
+
+TEST_F(StringTest, f_string_simple_4)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+return `qwe{1}rty{2}Z`;
+)");
+	auto val = vm.execute(code);
+	ASSERT_EQ(val.as_string(vm).text(), "qwe1rty2Z");
+}
+
 TEST_F(StringTest, size)
 {
 	OwcaVM vm;

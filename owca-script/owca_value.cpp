@@ -168,11 +168,11 @@ namespace OwcaScript {
 			[](OwcaEmpty o) -> std::string { return "nul"; },
 			[](OwcaCompleted o) -> std::string { return "completed"; },
 			[](OwcaRange o) -> std::string {
-				std::string l = o.lower() == std::numeric_limits<Number>::lowest() ? std::string{} : std::to_string(o.lower());
-				std::string r = o.upper() == std::numeric_limits<Number>::max() ? std::string{} : std::to_string(o.upper());
+				std::string l = o.lower() == std::numeric_limits<Number>::lowest() ? std::string{} : std::format("{}", o.lower());
+				std::string r = o.upper() == std::numeric_limits<Number>::max() ? std::string{} : std::format("{}", o.upper());
 				return std::format("{}:{}", l, r);
 			},
-			[](Number o) -> std::string { return std::to_string(o); },
+			[](Number o) -> std::string { return std::format("{}", o); },
 			[](OwcaBool o) -> std::string { return o.internal_value() ? "true" : "false"; },
 			[](OwcaString o) -> std::string { return o.internal_value()->to_string(); },
 			[](OwcaFunctions o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },

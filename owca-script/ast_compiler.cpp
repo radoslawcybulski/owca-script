@@ -11,6 +11,7 @@
 #include "ast_expr_member.h"
 #include "ast_expr_constant.h"
 #include "ast_expr_identifier.h"
+#include "ast_expr_interpreted_string.h"
 #include "ast_return.h"
 #include "ast_yield.h"
 #include "ast_class.h"
@@ -140,12 +141,54 @@ namespace OwcaScript::Internal {
 			if (is_alpha_or_underscore(c)) return preview_ident();
 			if (is_digit(c)) return preview_number();
 			if (c == '"' || c == '\'') return preview_string();
+			if (c == '`') {
+				++content_offset;
+				skip_string_fstring_part();
+				return std::string_view{ content }.substr(start, content_offset - start);
+			}
 			if (c == '.' && content_offset + 1 < content.size() && content[content_offset + 1] >= '0' && content[content_offset + 1] <= '9') return preview_number();
 			return preview_oper();
 			}();
 		content_line = line;
 		content_offset = start;
 		return{ line, text };
+	}
+	void AstCompiler::skip_string_fstring_part() {
+		while (!eof()) {
+			auto c = content[content_offset];
+			if (c == '{') {
+				if (content[content_offset + 1] == '{') {
+					content_offset += 2;
+				}
+				else {
+					break;
+				}
+			}
+			else if (c == '}') {
+				if (content[content_offset + 1] == '}') {
+					content_offset += 2;
+				}
+				else {
+					add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, "single `}` in f-string - did you forget to escape it as `}}`?");
+				}
+			}
+			else if (c == '`') {
+				++content_offset;
+				break;
+			}
+			else if (c == '\n') {
+				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, std::format("unexpected end of line in unfinished f-string"));
+			}
+			else {
+				++content_offset;
+			}
+		}
+	}
+	std::string_view AstCompiler::consume_as_follow_fstring_part()
+	{
+		auto start = content_offset;
+		skip_string_fstring_part();
+		return std::string_view{ content }.substr(start, content_offset - start);
 	}
 	std::pair<Line, std::string_view> AstCompiler::consume()
 	{
@@ -311,6 +354,44 @@ namespace OwcaScript::Internal {
 		return nullptr;
 	}
 
+	std::unique_ptr<AstExpr> AstCompiler::compile_interpreted_string_value(std::string_view tok) {
+		if (tok.size() > 1 && tok.ends_with('`')) {
+			return std::make_unique<AstExprConstant>(Line{ content_line.line }, std::string{ tok.substr(1, tok.size() - 2) });
+		}
+		std::vector<std::unique_ptr<AstExpr>> parts;
+		std::vector<std::uint32_t> sizes;
+		std::string strings;
+
+		strings.reserve(1024);
+		strings += tok.substr(1);
+		sizes.push_back(tok.size() - 1);
+		assert(content[content_offset] == '{');
+		auto start_line = content_line;
+		while(true) {
+			consume("{");
+			auto val = compile_expression_no_assign();
+			if (eof()) {
+				add_error_and_throw(OwcaErrorKind::UnexpectedEndOfFile, filename_, content_line, "unexpected end of file in unfinished f-string expression");
+			}
+			if (content[content_offset] != '}') {
+				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, "missing `}` in f-string expression");
+			}
+			consume("}");
+			parts.push_back(std::move(val));
+			if (content_line.line != start_line.line) {
+				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, start_line, "unexpected end of line in unfinished f-string expression");
+			}
+			auto str_part = consume_as_follow_fstring_part();
+			bool end = str_part.ends_with('`');
+			if (end) {
+				str_part = str_part.substr(0, str_part.size() - 1);
+			}
+			strings += str_part;
+			sizes.push_back(str_part.size());
+			if (end) break;
+		}
+		return std::make_unique<AstExprInterpretedString>(start_line, std::move(parts), std::move(sizes), std::move(strings));
+	}
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_value()
 	{
 		auto [line, tok] = consume();
@@ -327,6 +408,9 @@ namespace OwcaScript::Internal {
 		}
 		if (tok[0] == '\'' || tok[0] == '"') {
 			return std::make_unique<AstExprConstant>(line, std::string{ tok.substr(1, tok.size() - 2) });
+		}
+		if (tok[0] == '`') {
+			return compile_interpreted_string_value(tok);
 		}
 		if (tok == "(") {
 			AllowRangeSet allow_range_set{ allow_range, true };

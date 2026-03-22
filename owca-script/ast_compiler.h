@@ -101,6 +101,8 @@ namespace OwcaScript {
 			std::string_view preview_oper();
 			std::pair<Line, std::string_view> preview();
 			std::pair<Line, std::string_view> consume();
+			void skip_string_fstring_part();
+			std::string_view consume_as_follow_fstring_part();
 			Line consume(std::string_view);
 			bool is_keyword(std::string_view) const;
 			bool is_identifier(std::string_view) const;
@@ -111,6 +113,7 @@ namespace OwcaScript {
 
 			bool preview_is_loop_identifier();
 			bool preview_is_with_assignment();
+			std::unique_ptr<AstExpr> compile_interpreted_string_value(std::string_view tok);
 			std::unique_ptr<AstExpr> compile_expr_value();
 			std::unique_ptr<AstExpr> compile_expr_postfix();
 			std::unique_ptr<AstExpr> compile_expr_prefix();

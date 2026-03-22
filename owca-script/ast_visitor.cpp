@@ -9,6 +9,7 @@
 #include "ast_expr_oper_1.h"
 #include "ast_expr_oper_2.h"
 #include "ast_expr_oper_x.h"
+#include "ast_expr_interpreted_string.h"
 #include "ast_function.h"
 #include "ast_class.h"
 #include "ast_return.h"
@@ -33,6 +34,7 @@ namespace OwcaScript::Internal {
 			AstExprOper1::initialize_serialization_functions({ tmp.begin(), tmp.end() });
 			AstExprOper2::initialize_serialization_functions({ tmp.begin(), tmp.end() });
 			AstExprOperX::initialize_serialization_functions({ tmp.begin(), tmp.end() });
+			AstExprInterpretedString::initialize_serialization_functions({ tmp.begin(), tmp.end() });
 			AstFunction::initialize_serialization_functions({ tmp.begin(), tmp.end() });
 			AstClass::initialize_serialization_functions({ tmp.begin(), tmp.end() });
 
