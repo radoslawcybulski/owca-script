@@ -42,7 +42,7 @@ namespace OwcaScript::Internal {
 		Kind kind() const override { return Kind::Negate; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
-			return -l.as_float(vm).internal_value();
+			return -l.as_float(vm);
 		}
 	};
 

@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_OWCA_RANGE_H
 
 #include "stdafx.h"
-#include "owca_float.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -13,8 +12,8 @@ namespace OwcaScript {
 	public:
 		OwcaRange(OwcaNumberUnderlying lower_, OwcaNumberUnderlying upper_) : lower_(lower_), upper_(upper_) {}
 
-		OwcaFloat lower() const;
-		OwcaFloat upper() const;
+		OwcaNumberUnderlying lower() const { return lower_; }
+		OwcaNumberUnderlying upper() const { return upper_; }
 		std::pair<OwcaNumberUnderlying, OwcaNumberUnderlying> internal_values() const;
 	};
 }

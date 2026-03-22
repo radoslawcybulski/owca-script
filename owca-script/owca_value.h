@@ -3,7 +3,6 @@
 
 #include "stdafx.h"
 #include "owca_bool.h"
-#include "owca_float.h"
 #include "owca_string.h"
 #include "owca_functions.h"
 #include "owca_range.h"
@@ -46,7 +45,7 @@ namespace OwcaScript {
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaFloat, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaNumberUnderlying, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -55,8 +54,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
 		OwcaValue(bool value) : value_(OwcaBool{value}) {}
-		OwcaValue(OwcaFloat value) : value_(value) {}
-		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_(OwcaFloat{ (OwcaNumberUnderlying)value }) {}
+		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_((OwcaNumberUnderlying)value) {}
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
 		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
@@ -77,7 +75,7 @@ namespace OwcaScript {
 		OwcaCompleted as_completed(OwcaVM ) const;
 		OwcaRange as_range(OwcaVM ) const;
 		OwcaBool as_bool(OwcaVM ) const;
-		OwcaFloat as_float(OwcaVM ) const;
+		OwcaNumberUnderlying as_float(OwcaVM ) const;
 		const OwcaString &as_string(OwcaVM ) const;
 		OwcaFunctions as_functions(OwcaVM ) const;
 		OwcaMap as_map(OwcaVM ) const;

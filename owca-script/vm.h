@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_VM_H
 
 #include "stdafx.h"
-#include "owca_float.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
 #include "owca_value.h"

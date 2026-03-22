@@ -296,7 +296,7 @@ namespace OwcaScript::Internal {
 			auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
 
 			if (ec == std::errc() && ptr == text.data() + text.size()) {
-				return std::make_unique<AstExprConstant>(line, OwcaFloat{ value });
+				return std::make_unique<AstExprConstant>(line, value);
 			}
 			else if (ec == std::errc() || ec == std::errc::invalid_argument) {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` is not a valid number", orig_text));

@@ -40,7 +40,7 @@ namespace OwcaScript::Internal {
 		IMPL_DEFINE_EXPR(Kind::ConstantFloat)
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			return OwcaFloat{ value };
+			return value;
 		}
 	};
 	class ImplExprConstantString : public ImplExpr {
@@ -65,7 +65,7 @@ namespace OwcaScript::Internal {
 			[&](OwcaBool o) {
 				ei.code_buffer.preallocate<ImplExprConstantBool>(line);
 			},
-			[&](OwcaFloat o) {
+			[&](OwcaNumberUnderlying o) {
 				ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
 			},
 			[&](const std::string &o) {
@@ -86,9 +86,9 @@ namespace OwcaScript::Internal {
 				return ret;
 
 			},
-			[&](OwcaFloat o) -> ImplExpr* {
+			[&](OwcaNumberUnderlying o) -> ImplExpr* {
 				auto ret = ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
-				ret->init(o.internal_value());
+				ret->init(o);
 				return ret;
 
 			},
