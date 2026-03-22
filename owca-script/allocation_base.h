@@ -24,6 +24,7 @@ namespace OwcaScript {
 				Set,
 				BoundSelfObject,
 				Iterator,
+				Range,
 			};
 #ifdef _DEBUG
 			AllocationBase();

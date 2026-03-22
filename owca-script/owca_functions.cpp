@@ -9,6 +9,7 @@
 #include "array.h"
 #include "tuple.h"
 #include "iterator.h"
+#include "range.h"
 
 namespace OwcaScript {
 	OwcaFunctions::OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::AllocationBase* self_object) : functions(functions), self_object(self_object) {}
@@ -48,6 +49,7 @@ namespace OwcaScript {
 		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::DictionaryShared*>(self_object) };
 		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };
 		case Internal::AllocationBase::Kind::BoundSelfObject: return static_cast<Internal::BoundFunctionSelfObject*>(self_object)->self;
+		case Internal::AllocationBase::Kind::Range: return OwcaRange{ static_cast<Internal::Range*>(self_object) };
 		}
 		assert(false);
 		return {};

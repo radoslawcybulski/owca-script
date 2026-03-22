@@ -108,7 +108,7 @@ namespace OwcaScript::Internal {
 		return compare_impl(kind, l.internal_value()->text(), r.internal_value()->text());
 	}
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaRange& l, const OwcaRange& r) {
-		return build_result(kind, l.lower() == r.lower() && l.upper() == r.upper());
+		return build_result(kind, l.lower() == r.lower() && l.upper() == r.upper() && l.step() == r.step());
 	}
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaFunctions& l, const OwcaFunctions& r) {
 		return build_result(kind, l.internal_value() == r.internal_value() && l.internal_self_object() == r.internal_self_object());
@@ -221,7 +221,7 @@ namespace OwcaScript::Internal {
 
 			switch (left.kind()) {
 			case OwcaValueKind::Empty: return true;
-			case OwcaValueKind::Range: return left.as_range(vm).internal_values() == right.as_range(vm).internal_values();
+			case OwcaValueKind::Range: return left.as_range(vm).lower() == right.as_range(vm).lower() && left.as_range(vm).upper() == right.as_range(vm).upper() && left.as_range(vm).step() == right.as_range(vm).step();
 			case OwcaValueKind::Bool: return left.as_bool(vm).internal_value() == right.as_bool(vm).internal_value();
 			case OwcaValueKind::Float: return left.as_float(vm) == right.as_float(vm);
 			case OwcaValueKind::String: return compare(vm, CompareKind::Eq, left, right) == Result::True;

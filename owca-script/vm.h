@@ -117,9 +117,11 @@ namespace OwcaScript {
 			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
 			[[noreturn]] void throw_not_a_number(std::string_view type);
 			[[noreturn]] void throw_overflow(std::string_view msg);
+			[[noreturn]] void range_step_is_zero();
 
 			// invalid operation exception
 			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
+			[[noreturn]] void range_step_must_be_one_in_left_side_of_write_assign();
 			[[noreturn]] void throw_index_out_of_range(std::string msg);
 			[[noreturn]] void throw_string_too_large(size_t size);
 			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");

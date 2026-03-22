@@ -17,6 +17,7 @@
 #include "exception.h"
 #include "owca_exception.h"
 #include "iterator.h"
+#include "range.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -161,8 +162,26 @@ namespace OwcaScript::Internal {
 			return std::tuple_cat(std::tuple<OwcaVM>(vm), std::move(dst_args));
 		}
 		
-		static OwcaValue range_init(OwcaVM vm, OwcaRange, std::int64_t lower, std::int64_t upper) {
-			return OwcaRange{ (Number)lower, (Number)upper };
+		static OwcaValue range_init1(OwcaVM vm, OwcaRange self, Number upper) {
+			self.internal_object()->from = 0;
+			self.internal_object()->to = upper;
+			self.internal_object()->step = 1;
+			return self;
+		}
+		static OwcaValue range_init2(OwcaVM vm, OwcaRange self, Number lower, Number upper) {
+			self.internal_object()->from = lower;
+			self.internal_object()->to = upper;
+			self.internal_object()->step = 1;
+			return self;
+		}
+		static OwcaValue range_init3(OwcaVM vm, OwcaRange self, Number lower, Number upper, Number step) {
+			self.internal_object()->from = lower;
+			self.internal_object()->to = upper;
+			self.internal_object()->step = step;
+			if (step == 0) {
+				VM::get(vm).range_step_is_zero();
+			}
+			return self;
 		}
 		static OwcaValue range_lower(OwcaVM vm, OwcaRange r) {
 			return r.lower();
@@ -170,18 +189,14 @@ namespace OwcaScript::Internal {
 		static OwcaValue range_upper(OwcaVM vm, OwcaRange r) {
 			return r.upper();
 		}
-		static Generator range_iter(OwcaVM vm, OwcaRange o) {
-			auto lower = o.lower();
-			auto upper = o.upper();
-			Number step = (lower > upper) ? -1 : 1;
-			while(lower != upper) {
-				co_yield lower;
-				lower += step;
-			}
-		}
 		static OwcaValue range_size(OwcaVM vm, OwcaRange r) {
-			auto v = std::abs(r.upper() - r.lower());
-			return v;
+			return r.size();
+		}
+		static OwcaValue range_step(OwcaVM vm, OwcaRange r) {
+			return r.step();
+		}
+		static Generator range_iter(OwcaVM vm, OwcaRange o) {
+			return o.internal_object()->iter(vm);
 		}
 		static OwcaValue bool_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
@@ -259,7 +274,7 @@ namespace OwcaScript::Internal {
 			return r.visit(
 				[&](OwcaEmpty o) { return vm.create_string("nul"); },
 				[&](OwcaCompleted o) { return vm.create_string("completed"); },
-				[&](OwcaRange o) { return vm.create_string(std::format("{}..{}", o.lower(), o.upper())); },
+				[&](OwcaRange o) { return vm.create_string(o.to_string()); },
 				[&](Number o) { return vm.create_string(std::format("{}", o)); },
 				[&](OwcaBool o) { return vm.create_string(o.internal_value() ? "true" : "false"); },
 				[&](OwcaString o) -> OwcaValue { return o; },
@@ -488,9 +503,14 @@ namespace OwcaScript::Internal {
 		}
 
 		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
-			if (full_name == "Range.__init__") return adapt(range_init);
+			if (full_name == "Range.__init__") {
+				if (param_names.size() == 2) return adapt(range_init1);
+				if (param_names.size() == 3) return adapt(range_init2);
+				if (param_names.size() == 4) return adapt(range_init3);
+			}
 			if (full_name == "Range.lower") return adapt(range_lower);
 			if (full_name == "Range.upper") return adapt(range_upper);
+			if (full_name == "Range.step") return adapt(range_step);
 			if (full_name == "Range.size") return adapt(range_size);
 			if (full_name == "Bool.__init__") return adapt(bool_init);
 			if (full_name == "Float.__init__") return adapt(float_init);
@@ -533,6 +553,7 @@ namespace OwcaScript::Internal {
 		}
 		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
 			if (full_name == "Exception") return std::make_shared<NativeClassInterfaceSimpleImplementation<Exception>>();
+			if (full_name == "Range") return std::make_shared<NativeClassInterfaceSimpleImplementation<Range>>();
 			return nullptr;
 		}
 	};
@@ -543,10 +564,13 @@ class Nul {
 }
 class Iterator {
 }
-class Range {
+class native Range {
+	function native __init__(self, upper);
 	function native __init__(self, lower, upper);
+	function native __init__(self, lower, upper, step);
 	function native lower(self);
 	function native upper(self);
+	function native step(self);
 	function native size(self);
 	function native generator __iter__(self);
 }
@@ -629,7 +653,6 @@ function native print(msg);
 				}
 				else if (key == "Range") {
 					c_range = read(value_pair.second);
-					c_range->allocator_override = []() -> OwcaValue { return OwcaRange{ 0, 0 }; };
 				}
 				else if (key == "Bool") {
 					c_bool = read(value_pair.second);
@@ -731,6 +754,10 @@ function native print(msg);
 	{
 		throw_exception(c_invalid_operation_exception, msg);
 	}
+	void VM::range_step_is_zero()
+	{
+		throw_exception(c_math_exception, "step of a range can't be zero");
+	}
 	void VM::throw_division_by_zero()
 	{
 		throw_exception(c_math_exception, "division by zero");
@@ -764,6 +791,11 @@ function native print(msg);
 	void VM::throw_overflow(std::string_view msg)
 	{
 		throw_exception(c_math_exception, msg);
+	}
+
+	void VM::range_step_must_be_one_in_left_side_of_write_assign()
+	{
+		throw_exception(c_invalid_operation_exception, "step of a range must be 1 in left side of write assignment");
 	}
 
 	void VM::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
@@ -1504,9 +1536,7 @@ function native print(msg);
 		return value.visit(
 			[](OwcaEmpty o) -> size_t { return 3; },
 			[](OwcaCompleted o) -> size_t { return 12; },
-			[](OwcaRange o) -> size_t { 
-				return calc_hash(o.lower()) * 1009 + calc_hash(o.upper()) + 4;
-			},
+			[](OwcaRange o) -> size_t { return o.internal_object()->hash(); },
 			[](Number o) -> size_t { return calc_hash(o) * 1013 + 5; },
 			[](OwcaBool o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
 			[](OwcaString o) -> size_t { return o.hash() * 1031 + 8; },

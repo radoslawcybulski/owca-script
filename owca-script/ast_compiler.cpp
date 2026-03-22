@@ -596,7 +596,7 @@ namespace OwcaScript::Internal {
 	}
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_range()
 	{
-		std::unique_ptr<AstExpr> left, right;
+		std::unique_ptr<AstExpr> left, right, third;
 
 		if (!allow_range || preview().second != ":")
 			left = compile_expr_bitwise();
@@ -607,7 +607,14 @@ namespace OwcaScript::Internal {
 				tok = preview().second;
 				if (tok == "-" || tok == "~" || !is_operator(tok))
 					right = compile_expr_bitwise();
-				left = std::make_unique<AstExprOper2>(line, AstExprOper2::Kind::MakeRange, std::move(left), std::move(right));
+				tok = preview().second;
+				if (tok == ":") {
+					auto [line, tok] = consume();
+					tok = preview().second;
+					if (tok == "-" || tok == "~" || !is_operator(tok))
+						third = compile_expr_bitwise();
+				}
+				left = std::make_unique<AstExprOper2>(line, AstExprOper2::Kind::MakeRange, std::move(left), std::move(right), std::move(third));
 			}
 		}
 		return left;

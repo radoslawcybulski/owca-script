@@ -5,16 +5,23 @@
 
 namespace OwcaScript {
 	class OwcaValue;
+	namespace Internal {
+		struct Range;
+	}
 
 	class OwcaRange {
-		Number lower_, upper_;
+		Internal::Range *object;
 
 	public:
-		OwcaRange(Number lower_, Number upper_) : lower_(lower_), upper_(upper_) {}
+		OwcaRange(Internal::Range *object) : object(object) {}
 
-		Number lower() const { return lower_; }
-		Number upper() const { return upper_; }
-		std::pair<Number, Number> internal_values() const;
+		auto internal_object() const { return object; }
+
+		std::string to_string() const;
+		Number lower() const;
+		Number upper() const;
+		Number step() const;
+		Number size() const;
 	};
 }
 
@@ -25,7 +32,7 @@ namespace std {
 		template <typename FormatContext>
 		auto format(OwcaScript::OwcaRange v, FormatContext& ctx) const
 		{
-			return format_to(ctx.out(), "{}:{}", v.lower(), v.upper());  
+			return format_to(ctx.out(), "{}", v.to_string());  
 		}
 		template<class ParseContext>
 		constexpr ParseContext::iterator parse(ParseContext& ctx)
