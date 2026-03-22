@@ -13,7 +13,7 @@ static int run_for(std::string code_text, OwcaValue add_val)
     auto code = vm.compile("test.os", std::move(code_text), tmp);
     auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
     auto val = vm.execute(code, vm.create_map(map_data));
-    return (int)val.convert_to_int(vm);
+    return (int)val.as_int(vm);
 }
 
 TEST_F(ForTest, simple1)

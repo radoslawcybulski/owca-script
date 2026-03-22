@@ -25,7 +25,7 @@ c = bound_value(b).v;
 return c;
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 4);
+	ASSERT_EQ(val.as_float(vm), 4);
 }
 
 TEST_F(FunctionTest, bind)
@@ -49,7 +49,7 @@ d = c.bind(b);
 return d();
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 5);
+	ASSERT_EQ(val.as_float(vm), 5);
 }
 
 TEST_F(FunctionTest, overload_based_on_arg_number)
@@ -71,5 +71,5 @@ if (foo(1, 2, 3) != 3) return 3;
 return -1;
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), -1);
+	ASSERT_EQ(val.as_float(vm), -1);
 }

@@ -14,7 +14,7 @@
 namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaException value) : value_(OwcaObject{ value.internal_owner() }) {}
 
-	long long int OwcaValue::convert_to_int(OwcaVM vm) const
+	long long int OwcaValue::as_int(OwcaVM vm) const
 	{
 		if (kind() == OwcaValueKind::Float) {
 			auto f = as_float(vm);
@@ -25,13 +25,6 @@ namespace OwcaScript {
 		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
 	}
 
-	Number OwcaValue::convert_to_float(OwcaVM vm) const
-	{
-		if (kind() == OwcaValueKind::Float) {
-			return as_float(vm);
-		}
-		Internal::VM::get(vm).throw_cant_convert_to_float(type());
-	}
 	bool OwcaValue::is_true() const
 	{
 		return visit(

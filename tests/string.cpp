@@ -13,7 +13,7 @@ TEST_F(StringTest, size)
 return 'qwerty'.size();
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 6);
+	ASSERT_EQ(val.as_float(vm), 6);
 }
 
 TEST_F(StringTest, add_add_add)

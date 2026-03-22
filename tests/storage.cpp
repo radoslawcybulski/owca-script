@@ -38,5 +38,5 @@ return c;
 
     auto val = vm.execute(code);
     auto val2 = vm2.execute(loaded);
-    ASSERT_EQ(val.convert_to_float(vm), val2.convert_to_float(vm2));
+    ASSERT_EQ(val.as_float(vm), val2.as_float(vm2));
 }

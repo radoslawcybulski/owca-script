@@ -13,7 +13,7 @@ TEST_F(TupleTest, simple1)
 return ( 1, 2, 3, 4 )[1];
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 2);
+	ASSERT_EQ(val.as_float(vm), 2);
 }
 
 TEST_F(TupleTest, simple2)
@@ -23,5 +23,5 @@ TEST_F(TupleTest, simple2)
 return ( 1, 2, 3, 4 )[3];
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 4);
+	ASSERT_EQ(val.as_float(vm), 4);
 }

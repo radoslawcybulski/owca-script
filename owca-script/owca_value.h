@@ -67,8 +67,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaIterator value) : value_(std::move(value)) {}
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
-		long long int convert_to_int(OwcaVM ) const;
-		Number convert_to_float(OwcaVM ) const;
+		long long int as_int(OwcaVM ) const;
 		bool is_true() const;
 
 		OwcaEmpty as_nul(OwcaVM ) const;

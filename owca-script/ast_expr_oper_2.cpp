@@ -54,8 +54,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::BinOr; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
+			auto l = left->execute_expression(vm).as_int(vm);
+			auto r = right->execute_expression(vm).as_int(vm);
 			return l | r;
 		}
 	};
@@ -65,8 +65,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::BinAnd; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
+			auto l = left->execute_expression(vm).as_int(vm);
+			auto r = right->execute_expression(vm).as_int(vm);
 			return l & r;
 		}
 	};
@@ -76,8 +76,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::BinXor; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
+			auto l = left->execute_expression(vm).as_int(vm);
+			auto r = right->execute_expression(vm).as_int(vm);
 			return l ^ r;
 		}
 	};
@@ -87,8 +87,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::BinLShift; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
+			auto l = left->execute_expression(vm).as_int(vm);
+			auto r = right->execute_expression(vm).as_int(vm);
 			return l << r;
 		}
 	};
@@ -98,8 +98,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::BinRShift; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm).convert_to_int(vm);
-			auto r = right->execute_expression(vm).convert_to_int(vm);
+			auto l = left->execute_expression(vm).as_int(vm);
+			auto r = right->execute_expression(vm).as_int(vm);
 			return l >> r;
 		}
 	};
@@ -109,8 +109,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::MakeRange; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<Number>::lowest();
-			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<Number>::max();
+			auto l = left ? left->execute_expression(vm).as_int(vm) : std::numeric_limits<Number>::lowest();
+			auto r = right ? right->execute_expression(vm).as_int(vm) : std::numeric_limits<Number>::max();
 			return OwcaRange{ l, r };
 		}
 	};
@@ -162,10 +162,10 @@ namespace OwcaScript::Internal {
 				return l.as_float(vm) * r.as_float(vm);
 			}
 			if (l.kind() == OwcaValueKind::String && r.kind() == OwcaValueKind::Float) {
-				return mul_string(vm, l, r.convert_to_int(vm));
+				return mul_string(vm, l, r.as_int(vm));
 			}
 			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::String) {
-				return mul_string(vm, r, l.convert_to_int(vm));
+				return mul_string(vm, r, l.as_int(vm));
 			}
 			VM::get(vm).throw_cant_call(std::format("can't execute {} * {}", l.type(), r.type()));
 		}
@@ -196,11 +196,11 @@ namespace OwcaScript::Internal {
 			auto l = left->execute_expression(vm);
 			auto r = right->execute_expression(vm);
 			if (l.kind() == OwcaValueKind::Float && r.kind() == OwcaValueKind::Float) {
-				if (r.convert_to_int(vm) == 0) {
+				if (r.as_int(vm) == 0) {
 					Internal::VM::get(vm).throw_mod_division_by_zero();
 			}
 				
-				return l.convert_to_int(vm) % r.convert_to_int(vm);
+				return l.as_int(vm) % r.as_int(vm);
 			}
 			VM::get(vm).throw_cant_call(std::format("can't execute {} % {}", l.type(), r.type()));
 		}
@@ -208,7 +208,7 @@ namespace OwcaScript::Internal {
 	static void update_key(OwcaVM vm, OwcaValue& key, Number size) {
 		key.visit(
 			[&](Number o) {
-				auto v = key.convert_to_int(vm);
+				auto v = key.as_int(vm);
 				if (v < 0) v += size;
 				key = v;
 			},

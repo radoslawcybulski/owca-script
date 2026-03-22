@@ -12,7 +12,7 @@ TEST_F(SimpleTest, simple)
 	OwcaVM vm;
 	auto code = vm.compile("test.os", "return 14;");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 14);
+	ASSERT_EQ(val.as_float(vm), 14);
 }
 
 TEST_F(SimpleTest, string)
@@ -40,7 +40,7 @@ v = { 'a': 1, 'b': 2 };
 return v['a'] + v['b'];
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 3);
+	ASSERT_EQ(val.as_float(vm), 3);
 }
 TEST_F(SimpleTest, native_func)
 {
@@ -50,7 +50,7 @@ TEST_F(SimpleTest, native_func)
 			if (full_name == "foo" && !cls && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
-					return args[0].convert_to_float(vm) + args[1].convert_to_float(vm);
+					return args[0].as_float(vm) + args[1].as_float(vm);
 					};
 			}
 			return std::nullopt;
@@ -61,7 +61,7 @@ function native foo(a, b);
 return foo(1, 2);
 )", std::make_shared<Provider>());
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 3);
+	ASSERT_EQ(val.as_float(vm), 3);
 }
 TEST_F(SimpleTest, external_vars)
 {
@@ -72,7 +72,7 @@ return q + b + c;
 	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 
-	ASSERT_EQ(val.convert_to_float(vm), 6);
+	ASSERT_EQ(val.as_float(vm), 6);
 }
 TEST_F(SimpleTest, class_)
 {
@@ -88,7 +88,7 @@ return A(q, b, c);
 	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.convert_to_float(vm), 6);
+	ASSERT_EQ(val2.as_float(vm), 6);
 }
 
 TEST_F(SimpleTest, native_class)
@@ -124,7 +124,7 @@ return A(q, b, c);
 	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
 	auto val = vm.execute(code, vm.create_map(map_data));
 	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.convert_to_float(vm), 6);
+	ASSERT_EQ(val2.as_float(vm), 6);
 }
 
 TEST_F(SimpleTest, native_class_with_funcs)
@@ -154,7 +154,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 					return [cls = *cls](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 						assert(args.size() == 2);
 						auto self = args[0];
-						auto v = args[1].convert_to_int(vm);
+						auto v = args[1].as_int(vm);
 						self.as_object(vm).user_data<std::uint64_t>(cls) = v;
 						return {};
 					};
@@ -186,7 +186,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 		code = vm.compile("test.os", "return a.get_value();", std::vector<std::string>{ "a" });
 		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
 		auto val2 = vm.execute(code, vm.create_map(map_data));
-		ASSERT_EQ(val2.convert_to_float(vm), 6);
+		ASSERT_EQ(val2.as_float(vm), 6);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";
@@ -232,7 +232,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.convert_to_int(vm);
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
 						return true;
 					}
 					return false;
@@ -262,7 +262,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 		code = vm.compile("test.os", "return a.value;", std::vector<std::string>{ "a" });
 		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
 		auto val2 = vm.execute(code, vm.create_map(map_data));
-		ASSERT_EQ(val2.convert_to_float(vm), 6);
+		ASSERT_EQ(val2.as_float(vm), 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
 	}
@@ -310,7 +310,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.convert_to_int(vm);
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
 						return true;
 					}
 					return false;
@@ -344,20 +344,20 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		auto val = vm.get_member(object, "value");
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
-		ASSERT_EQ(val.convert_to_float(vm), 6);
+		ASSERT_EQ(val.as_float(vm), 6);
 
 		auto fnc = vm.get_member(object, "get");
 		val = vm.call(fnc, {});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 2);
-		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(vm), 6 + 100);
 
 		val = fnc.call(vm, {});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 3);
-		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(vm), 6 + 100);
 
 		object.member("value", 6);
 		ASSERT_EQ(writes, 2);
@@ -366,14 +366,14 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		val = object.member("value");
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 4);
-		ASSERT_EQ(val.convert_to_float(vm), 6);
+		ASSERT_EQ(val.as_float(vm), 6);
 
 		fnc = object.member("get");
 		val = fnc.call({});
 
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 5);
-		ASSERT_EQ(val.convert_to_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(vm), 6 + 100);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";

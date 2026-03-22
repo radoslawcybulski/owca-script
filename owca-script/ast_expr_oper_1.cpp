@@ -21,7 +21,7 @@ namespace OwcaScript::Internal {
 		Kind kind() const override { return Kind::BinNeg; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
-			auto v = l.convert_to_int(vm);
+			auto v = l.as_int(vm);
 			return ~v;
 		}
 	};

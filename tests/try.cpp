@@ -26,7 +26,7 @@ return 3;
         try {
             auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", mode } } };
             auto val = vm.execute(code, vm.create_map(map_data));
-            return (int)val.convert_to_int(vm);
+            return (int)val.as_int(vm);
         }
         catch(OwcaException oe) {
             return -1;

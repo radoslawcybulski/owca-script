@@ -18,5 +18,5 @@ a = {
 return a.size();
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.convert_to_float(vm), 3);
+	ASSERT_EQ(val.as_float(vm), 3);
 }
