@@ -34,21 +34,27 @@ namespace OwcaScript::Internal {
                 }
             }
 
-            auto str_obj = VM::get(vm).allocate<String>(0, "");
-            auto &str = str_obj->data;
-            str.reserve(strings.size() + evaluated_values_size);
+            auto new_size = strings.size() + evaluated_values_size;
+            if (new_size >= (size_t(1) << 31)) {
+                VM::get(vm).throw_string_too_large(new_size);
+            }
+            auto str_obj = VM::get(vm).allocate<String>(new_size, (std::uint32_t)new_size);
+            auto str = str_obj->pointer();
             size_t strings_ptr = 0;
             for(auto j = 0u; j < sizes.size(); ++j) {
                 if (j > 0) {
                     auto &ev = evaluated_values[j - 1];
                     if (ev.first.kind() == OwcaValueKind::String) {
-                        str += ev.first.as_string(vm).text();
+                        std::memcpy(str, ev.first.as_string(vm).text().data(), ev.first.as_string(vm).size());
+                        str += ev.first.as_string(vm).size();
                     }
                     else {
-                        str += ev.second;
+                        std::memcpy(str, ev.second.data(), ev.second.size());
+                        str += ev.second.size();
                     }
                 }
-                str += strings.substr(strings_ptr, sizes[j]);
+                std::memcpy(str, strings.data() + strings_ptr, sizes[j]);
+                str += sizes[j];
                 strings_ptr += sizes[j];
             }
             assert(strings_ptr == strings.size());

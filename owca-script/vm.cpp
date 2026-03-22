@@ -24,6 +24,7 @@ namespace OwcaScript::Internal {
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple({}).as_tuple(vm).internal_value();
+		empty_string = allocate<String>(0, 0u);
 	}
 	VM::~VM() {
 		stacktrace.clear();
@@ -256,20 +257,20 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue string_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return r.visit(
-				[&](OwcaEmpty o) { return vm.create_string_from_view("nul"); },
-				[&](OwcaCompleted o) { return vm.create_string_from_view("completed"); },
+				[&](OwcaEmpty o) { return vm.create_string("nul"); },
+				[&](OwcaCompleted o) { return vm.create_string("completed"); },
 				[&](OwcaRange o) { return vm.create_string(std::format("{}..{}", o.lower(), o.upper())); },
 				[&](Number o) { return vm.create_string(std::format("{}", o)); },
-				[&](OwcaBool o) { return vm.create_string_from_view(o.internal_value() ? "true" : "false"); },
+				[&](OwcaBool o) { return vm.create_string(o.internal_value() ? "true" : "false"); },
 				[&](OwcaString o) -> OwcaValue { return o; },
-				[&](OwcaFunctions s) { return vm.create_string_from_view(std::format("function {}", s.internal_value()->full_name)); },
+				[&](OwcaFunctions s) { return vm.create_string(std::format("function {}", s.internal_value()->full_name)); },
 				[&](OwcaMap s) { return vm.create_string(s.to_string()); },
 				[&](OwcaClass s) { return vm.create_string(s.to_string()); },
 				[&](OwcaObject s) { return vm.create_string(s.to_string()); },
 				[&](OwcaArray s) { return vm.create_string(s.to_string()); },
 				[&](OwcaTuple s) { return vm.create_string(s.to_string()); },
 				[&](OwcaSet s) { return vm.create_string(s.to_string()); },
-				[&](OwcaIterator s) { return vm.create_string_from_view("iterator"); }
+				[&](OwcaIterator s) { return vm.create_string("iterator"); }
 				);
 		}
 		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
@@ -305,10 +306,10 @@ namespace OwcaScript::Internal {
 			}
 		}
 		static OwcaValue class_name(OwcaVM vm, OwcaValue r) {
-			return vm.create_string_from_view(r.as_class(vm).internal_value()->name);
+			return vm.create_string(r.as_class(vm).internal_value()->name);
 		}
 		static OwcaValue class_full_name(OwcaVM vm, OwcaValue r) {
-			return vm.create_string_from_view(r.as_class(vm).internal_value()->full_name);
+			return vm.create_string(r.as_class(vm).internal_value()->full_name);
 		}
 		static OwcaValue array_init(OwcaVM vm, OwcaArray self, OwcaValue r) {
 			r.visit(
@@ -330,7 +331,7 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaString o) {
 					for(auto i = 0u; i < o.size(); ++i) {
-						self.internal_value()->values.push_back(vm.create_string_from_view(o.text().substr(i, 1)));
+						self.internal_value()->values.push_back(vm.create_string(o.text().substr(i, 1)));
 					}
 				},
 				[&](OwcaObject o) {
@@ -396,7 +397,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaString o) {
 					self.internal_value()->values.reserve(o.size());
 					for(auto i = 0u; i < o.size(); ++i) {
-						self.internal_value()->values.push_back(vm.create_string_from_view(o.text().substr(i, 1)));
+						self.internal_value()->values.push_back(vm.create_string(o.text().substr(i, 1)));
 					}
 				},
 				[&](OwcaObject o) {
@@ -435,7 +436,7 @@ namespace OwcaScript::Internal {
 			return self.count();
 		}
 		static OwcaValue exception_message(OwcaVM vm, OwcaException self) {
-			return vm.create_string_from_view(self.message());
+			return vm.create_string(self.message());
 		}
 		static OwcaValue exception_line(OwcaVM vm, OwcaException self, Number index) {
 			assert(self.count() > 0);
@@ -450,14 +451,14 @@ namespace OwcaScript::Internal {
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
 				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
-			return vm.create_string_from_view(self.frame(ind).filename);
+			return vm.create_string(self.frame(ind).filename);
 		}
 		static OwcaValue exception_function(OwcaVM vm, OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
 				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
-			return vm.create_string_from_view(self.frame(ind).function);
+			return vm.create_string(self.frame(ind).function);
 		}
 
 		static OwcaValue hash(OwcaVM vm, OwcaValue r) {
@@ -642,7 +643,7 @@ function native print(msg);
 				}
 				else if (key == "String") {
 					c_string = read(value_pair.second);
-					c_string->allocator_override = [&]() -> OwcaValue { return create_string(""); };
+					c_string->allocator_override = [&]() -> OwcaValue { return OwcaString{ empty_string }; };
 					c_string->reload_self = true;
 				}
 				else if (key == "Function") {
@@ -780,6 +781,10 @@ function native print(msg);
 		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
 	}
 
+	void VM::throw_string_too_large(size_t size)
+	{
+		throw_exception(c_invalid_operation_exception, std::format("string is too large ({} bytes)", size));
+	}
 	void VM::throw_index_out_of_range(std::string msg)
 	{
 		throw_exception(c_invalid_operation_exception, msg);
@@ -1358,60 +1363,40 @@ function native print(msg);
 		}
 		return OwcaValue{ OwcaSet{ ds } };
 	}
-	
-	static constexpr const size_t small_string_max_size = 32;
 	OwcaValue VM::create_string_from_view(std::string_view txt)
 	{
-		if (txt.size() > small_string_max_size) {
-			return create_string(std::string{ txt });
-		}
-		auto it = small_strings.find(txt);
-		if (it != small_strings.end())
-			return it->second;
-		return create_string(std::string{ txt });
-	}
-	OwcaValue VM::create_string(std::string txt)
-	{
-		if (txt.size() <= small_string_max_size) {
-			auto it = small_strings.find(txt);
-			if (it != small_strings.end())
-				return it->second;
-		}
+		if (txt.empty()) return OwcaString{ empty_string };
 		auto vm = OwcaVM{ this };
-		if ((std::uint32_t)txt.size() != txt.size()) {
-			throw_overflow(std::format("string is too large ({}) - it's size will not fit in 32 bit unsigned integer", txt.size()));
+		if (txt.size() >= (size_t(1) << 32)) {
+			throw_string_too_large(txt.size());
 		}
-		auto str = allocate<String>(0, std::move(txt));
-		auto os = OwcaString{ str };
-		if (txt.size() <= small_string_max_size) {
-			small_strings[str->text()] = os;
-		}
-		return OwcaValue{ os };
+		auto str = allocate<String>(txt.size(), (std::uint32_t)txt.size());
+		std::memcpy(str->pointer(), txt.data(), txt.size());
+		return OwcaValue{ OwcaString{ str } };
 	}
 	OwcaValue VM::create_string(OwcaValue str, size_t start, size_t end)
 	{
-		if (start >= end) return create_string("");
+		if (start >= end) return OwcaString{ empty_string };
 		auto size = end - start;
 		auto vm = OwcaVM{ this };
 		auto s = str.as_string(vm);
-		auto sz = s.size();
-		if (start >= sz) return create_string("");
-		if (start + size > sz) size = sz - start;
-		if (size == 0) return create_string("");
 		return create_string_from_view(s.text().substr(start, size));
 	}
 	OwcaValue VM::create_string(OwcaValue str, size_t count)
 	{
-		if (count == 0) return create_string("");
+		if (count == 0) return OwcaString{ empty_string };
 		auto vm = OwcaVM{ this };
 		auto s = str.as_string(vm);
-		if (s.size() == 0) return create_string("");
-		std::string new_s;
-		new_s.reserve(s.size() * count);
-		for(size_t i = 0; i < count; ++i) {
-			new_s += s.text();
+		if (s.size() == 0) return OwcaString{ empty_string };
+		if (s.size() * count >= (size_t(1) << 32)) {
+			throw_string_too_large(s.size() * count);
 		}
-		return create_string(std::move(new_s));
+
+		auto new_s = allocate<String>(s.size() * count, (std::uint32_t)(s.size() * count));
+		for(size_t i = 0; i < count; ++i) {
+			std::memcpy(new_s->pointer() + i * s.size(), s.text().data(), s.size());
+		}
+		return OwcaValue{ OwcaString{ new_s } };
 	}
 	OwcaValue VM::create_string(OwcaValue left, OwcaValue right)
 	{
@@ -1420,11 +1405,13 @@ function native print(msg);
 		auto r = right.as_string(vm);
 		if (l.size() == 0) return right;
 		if (r.size() == 0) return left;
-		std::string new_s;
-		new_s.reserve(l.size() + r.size());
-		new_s += l.text();
-		new_s += r.text();
-		return create_string(std::move(new_s));
+		if (l.size() + r.size() >= (size_t(1) << 32)) {
+			throw_string_too_large(l.size() + r.size());
+		}
+		auto new_s = allocate<String>(l.size() + r.size(), (std::uint32_t)(l.size() + r.size()));
+		std::memcpy(new_s->pointer(), l.text().data(), l.size());
+		std::memcpy(new_s->pointer() + l.size(), r.text().data(), r.size());
+		return OwcaValue{ OwcaString{ new_s } };
 	}
 
 	OwcaValue VM::get_identifier(unsigned int index)
@@ -1565,9 +1552,9 @@ function native print(msg);
 		// mark
 		global_variables.gc_mark(this, ggc);
 
-		for(auto &s : small_strings) {
-			gc_mark(s.second, ggc);
-		}
+		empty_tuple->gc_mark(this, ggc);
+		empty_string->gc_mark(this, ggc);
+
 		for (auto& s : stacktrace) {
 			s.gc_mark(this, ggc);
 		}

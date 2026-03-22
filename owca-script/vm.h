@@ -28,7 +28,6 @@ namespace OwcaScript {
 			std::vector<ExecutionFrame> stacktrace;
 			std::vector<AllocationBase*> allocated_objects;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
-			std::unordered_map<std::string_view, OwcaValue> small_strings;
 			
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
@@ -50,6 +49,7 @@ namespace OwcaScript {
 			Class *c_invalid_operation_exception = nullptr;
 			Class *c_iterator = nullptr;
 			Tuple *empty_tuple = nullptr;
+			String *empty_string = nullptr;
 			unsigned int generation_gc = 0;
 
 			std::optional<OwcaException> exception_being_handled;
@@ -121,6 +121,7 @@ namespace OwcaScript {
 			// invalid operation exception
 			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
 			[[noreturn]] void throw_index_out_of_range(std::string msg);
+			[[noreturn]] void throw_string_too_large(size_t size);
 			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
 			[[noreturn]] void throw_missing_member(std::string_view type, std::string_view ident);
 			[[noreturn]] void throw_cant_call(std::string_view msg);
@@ -153,7 +154,6 @@ namespace OwcaScript {
 			OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
 			OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
 			OwcaValue create_set(const std::span<OwcaValue> &arguments);
-			OwcaValue create_string(std::string txt);
 			OwcaValue create_string_from_view(std::string_view txt);
 			OwcaValue create_string(OwcaValue str, size_t start, size_t end);
 			OwcaValue create_string(OwcaValue str, size_t count);

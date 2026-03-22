@@ -53,8 +53,8 @@ namespace OwcaScript {
 		OwcaValue(OwcaCompleted value) : value_(value) {}
 		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
-		OwcaValue(bool value) : value_(OwcaBool{value}) {}
-		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_((Number)value) {}
+		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : value_(OwcaBool{ value }) {}
+		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, bool> && std::is_arithmetic_v<T>) : value_((Number)value) {}
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
 		OwcaValue(OwcaMap value) : value_(std::move(value)) {}

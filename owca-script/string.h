@@ -12,27 +12,21 @@ namespace OwcaScript {
 		struct String : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::String;
 
-			mutable std::string data;
             mutable size_t hash_value = 0;
-            mutable bool hash_calculated = false;
+			const std::uint32_t size_ : 31 = 0;
+			mutable std::uint32_t hash_calculated : 1 = 0;
 
-			template <typename ... F> auto visit(F &&...fns) const {
-				struct overloaded : F... {
-					using F::operator()...;
-				};
-				return std::visit(overloaded{std::forward<F>(fns)...}, data);
-			}
-	
 			std::string_view type() const override { return "String"; }
-			std::string to_string() const override { return data; }
+			std::string to_string() const override { return std::string{ text() }; }
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override {}
 			
-			String(std::string txt) : data(std::move(txt)) {}
+			String(std::uint32_t size) : size_(size) {}
 
-			void flatten() const;
-            std::string_view text() const { return data; }
-			size_t size() const { return data.size(); }
+            std::string_view text() const { return { pointer(), size_ };}
+			size_t size() const { return size_; }
             size_t hash() const;
+			char *pointer() { return (char*)this + sizeof(*this); }
+			const char *pointer() const { return (char*)this + sizeof(*this); }
 		};
 	}
 }

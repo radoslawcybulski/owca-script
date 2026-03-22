@@ -8,7 +8,7 @@ namespace OwcaScript::Internal {
         if (!hash_calculated) {
             hash_calculated = true;
             hash_value = 0;
-            hash_value = std::hash<std::string>()(data);
+            hash_value = std::hash<std::string_view>()(text());
         }
         return hash_value;
     }

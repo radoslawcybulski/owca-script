@@ -53,7 +53,7 @@ namespace OwcaScript::Internal {
 		IMPL_DEFINE_EXPR(Kind::ConstantString)
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			return vm.create_string_from_view(value);
+			return vm.create_string(value);
 		}
 	};
 

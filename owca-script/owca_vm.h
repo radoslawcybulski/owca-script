@@ -91,11 +91,7 @@ namespace OwcaScript {
 		OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const;
 		OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const;
 		OwcaValue create_set(const std::span<OwcaValue> &values) const;
-		OwcaValue create_string(std::string) const;
-		OwcaValue create_string_from_view(std::string_view) const;
-		OwcaValue create_string(OwcaValue str, size_t start, size_t end) const;
-		OwcaValue create_string(OwcaValue str, size_t count) const;
-		OwcaValue create_string(OwcaValue left, OwcaValue right) const;
+		OwcaValue create_string(std::string_view) const;
 		
 		void run_gc();
 		void gc_mark(OwcaValue, GenerationGC);
