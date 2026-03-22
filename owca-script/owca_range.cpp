@@ -3,7 +3,7 @@
 #include "owca_value.h"
 
 namespace OwcaScript {
-    std::pair<OwcaNumberUnderlying, OwcaNumberUnderlying> OwcaRange::internal_values() const {
+    std::pair<Number, Number> OwcaRange::internal_values() const {
         return { lower_, upper_ };
     }
 }

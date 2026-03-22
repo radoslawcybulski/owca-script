@@ -25,7 +25,7 @@ namespace OwcaScript {
 		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
 	}
 
-	OwcaNumberUnderlying OwcaValue::convert_to_float(OwcaVM vm) const
+	Number OwcaValue::convert_to_float(OwcaVM vm) const
 	{
 		if (kind() == OwcaValueKind::Float) {
 			return as_float(vm);
@@ -38,7 +38,7 @@ namespace OwcaScript {
 			[](OwcaEmpty) { return false; },
 			[](OwcaCompleted) { return false; },
 			[](OwcaRange) { return true; },
-			[](OwcaNumberUnderlying o) { return o != 0; },
+			[](Number o) { return o != 0; },
 			[](OwcaBool o) { return o.internal_value(); },
 			[](OwcaString o) { return o.internal_value()->size() != 0; },
 			[](OwcaFunctions) { return true; },
@@ -78,11 +78,11 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "Bool");
 		return std::get<OwcaBool>(value_);
 	}
-	OwcaNumberUnderlying OwcaValue::as_float(OwcaVM vm) const
+	Number OwcaValue::as_float(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Float)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Float");
-		return std::get<OwcaNumberUnderlying>(value_);
+		return std::get<Number>(value_);
 	}
 	const OwcaString &OwcaValue::as_string(OwcaVM vm) const
 	{
@@ -155,7 +155,7 @@ namespace OwcaScript {
 			[](OwcaEmpty) -> std::string_view { return "Nul"; },
 			[](OwcaCompleted) -> std::string_view { return "Completed"; },
 			[](OwcaRange) -> std::string_view { return "Range"; },
-			[](OwcaNumberUnderlying) -> std::string_view { return "Float"; },
+			[](Number) -> std::string_view { return "Float"; },
 			[](OwcaBool) -> std::string_view { return "Bool"; },
 			[](OwcaString) -> std::string_view { return "String"; },
 			[](OwcaFunctions) -> std::string_view { return "Function"; },
@@ -175,11 +175,11 @@ namespace OwcaScript {
 			[](OwcaEmpty o) -> std::string { return "nul"; },
 			[](OwcaCompleted o) -> std::string { return "completed"; },
 			[](OwcaRange o) -> std::string {
-				std::string l = o.lower() == std::numeric_limits<OwcaNumberUnderlying>::lowest() ? std::string{} : std::to_string(o.lower());
-				std::string r = o.upper() == std::numeric_limits<OwcaNumberUnderlying>::max() ? std::string{} : std::to_string(o.upper());
+				std::string l = o.lower() == std::numeric_limits<Number>::lowest() ? std::string{} : std::to_string(o.lower());
+				std::string r = o.upper() == std::numeric_limits<Number>::max() ? std::string{} : std::to_string(o.upper());
 				return std::format("{}:{}", l, r);
 			},
-			[](OwcaNumberUnderlying o) -> std::string { return std::to_string(o); },
+			[](Number o) -> std::string { return std::to_string(o); },
 			[](OwcaBool o) -> std::string { return o.internal_value() ? "true" : "false"; },
 			[](OwcaString o) -> std::string { return o.internal_value()->to_string(); },
 			[](OwcaFunctions o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },

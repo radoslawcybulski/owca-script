@@ -28,8 +28,8 @@
 #include <cmath>
 
 namespace OwcaScript {
-    using OwcaNumberUnderlying = double;
-    
+    using Number = double;
+
     namespace Internal {
 		template <typename T, typename ... F> auto visit_variant(T && t, F &&...fns) {
 			struct overloaded : F... {

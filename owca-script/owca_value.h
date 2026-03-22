@@ -45,7 +45,7 @@ namespace OwcaScript {
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, OwcaNumberUnderlying, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
+		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, Number, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
 
 	public:
 		OwcaValue() : value_(OwcaEmpty{}) {}
@@ -54,7 +54,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaRange value) : value_(value) {}
 		OwcaValue(OwcaBool value) : value_(value) {}
 		OwcaValue(bool value) : value_(OwcaBool{value}) {}
-		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_((OwcaNumberUnderlying)value) {}
+		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, void> && std::is_arithmetic_v<T>) : value_((Number)value) {}
 		OwcaValue(OwcaString value) : value_(std::move(value)) {}
 		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
 		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
@@ -68,14 +68,14 @@ namespace OwcaScript {
 
 		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
 		long long int convert_to_int(OwcaVM ) const;
-		OwcaNumberUnderlying convert_to_float(OwcaVM ) const;
+		Number convert_to_float(OwcaVM ) const;
 		bool is_true() const;
 
 		OwcaEmpty as_nul(OwcaVM ) const;
 		OwcaCompleted as_completed(OwcaVM ) const;
 		OwcaRange as_range(OwcaVM ) const;
 		OwcaBool as_bool(OwcaVM ) const;
-		OwcaNumberUnderlying as_float(OwcaVM ) const;
+		Number as_float(OwcaVM ) const;
 		const OwcaString &as_string(OwcaVM ) const;
 		OwcaFunctions as_functions(OwcaVM ) const;
 		OwcaMap as_map(OwcaVM ) const;

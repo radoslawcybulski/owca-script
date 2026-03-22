@@ -292,7 +292,7 @@ namespace OwcaScript::Internal {
 			}
 		}
 		else {
-			OwcaNumberUnderlying value = 0;
+			Number value = 0;
 			auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
 
 			if (ec == std::errc() && ptr == text.data() + text.size()) {
@@ -302,7 +302,7 @@ namespace OwcaScript::Internal {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` is not a valid number", orig_text));
 			}
 			else if (ec == std::errc::result_out_of_range) {
-				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values for given OwcaNumberUnderlying type", orig_text));
+				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` doesn't fit in range of allowed values for given Number type", orig_text));
 			}
 			else {
 				assert(false);

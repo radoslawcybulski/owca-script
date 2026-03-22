@@ -35,7 +35,7 @@ namespace OwcaScript::Internal {
 		using ImplExpr::ImplExpr;
 
 		#undef FIELDS
-		#define FIELDS(Q) Q(value, OwcaNumberUnderlying)
+		#define FIELDS(Q) Q(value, Number)
 
 		IMPL_DEFINE_EXPR(Kind::ConstantFloat)
 
@@ -65,7 +65,7 @@ namespace OwcaScript::Internal {
 			[&](OwcaBool o) {
 				ei.code_buffer.preallocate<ImplExprConstantBool>(line);
 			},
-			[&](OwcaNumberUnderlying o) {
+			[&](Number o) {
 				ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
 			},
 			[&](const std::string &o) {
@@ -86,7 +86,7 @@ namespace OwcaScript::Internal {
 				return ret;
 
 			},
-			[&](OwcaNumberUnderlying o) -> ImplExpr* {
+			[&](Number o) -> ImplExpr* {
 				auto ret = ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
 				ret->init(o);
 				return ret;

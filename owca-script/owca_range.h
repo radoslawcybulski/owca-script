@@ -7,14 +7,14 @@ namespace OwcaScript {
 	class OwcaValue;
 
 	class OwcaRange {
-		OwcaNumberUnderlying lower_, upper_;
+		Number lower_, upper_;
 
 	public:
-		OwcaRange(OwcaNumberUnderlying lower_, OwcaNumberUnderlying upper_) : lower_(lower_), upper_(upper_) {}
+		OwcaRange(Number lower_, Number upper_) : lower_(lower_), upper_(upper_) {}
 
-		OwcaNumberUnderlying lower() const { return lower_; }
-		OwcaNumberUnderlying upper() const { return upper_; }
-		std::pair<OwcaNumberUnderlying, OwcaNumberUnderlying> internal_values() const;
+		Number lower() const { return lower_; }
+		Number upper() const { return upper_; }
+		std::pair<Number, Number> internal_values() const;
 	};
 }
 

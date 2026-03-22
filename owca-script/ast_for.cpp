@@ -20,7 +20,7 @@ namespace OwcaScript::Internal {
         IMPL_DEFINE_STAT(Kind::For)
 
         void execute_statement_impl(OwcaVM vm) const override {
-            auto counter = (OwcaNumberUnderlying)0;
+            auto counter = (Number)0;
             auto iter_value = iterator->execute_expression(vm);
             auto iter = [&]() {
                 if (iter_value.kind() == OwcaValueKind::Iterator) return iter_value.as_iterator(vm);
@@ -56,7 +56,7 @@ namespace OwcaScript::Internal {
             VM::get(vm).update_execution_line(line);
             auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
 
-            auto counter = (OwcaNumberUnderlying)0;
+            auto counter = (Number)0;
             auto iter_value = iterator->execute_expression(vm);
             auto iter = VM::get(vm).create_iterator(iter_value);
 

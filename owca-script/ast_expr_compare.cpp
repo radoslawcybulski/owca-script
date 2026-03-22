@@ -101,7 +101,7 @@ namespace OwcaScript::Internal {
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaBool& l, const OwcaBool& r) { 
 		return build_result(kind, l.internal_value() == r.internal_value());
 	}
-	static Result compare_split(OwcaVM, CompareKind kind, const OwcaNumberUnderlying& l, const OwcaNumberUnderlying& r) { return compare_impl(kind, l, r); }
+	static Result compare_split(OwcaVM, CompareKind kind, const Number& l, const Number& r) { return compare_impl(kind, l, r); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaString& l, const OwcaString& r) { return compare_impl(kind, l.internal_value(), r.internal_value()); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaRange& l, const OwcaRange& r) {
 		return build_result(kind, l.lower() == r.lower() && l.upper() == r.upper());

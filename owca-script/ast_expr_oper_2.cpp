@@ -109,8 +109,8 @@ namespace OwcaScript::Internal {
 
 		Kind kind() const override { return Kind::MakeRange; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaNumberUnderlying>::lowest();
-			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<OwcaNumberUnderlying>::max();
+			auto l = left ? left->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<Number>::lowest();
+			auto r = right ? right->execute_expression(vm).convert_to_int(vm) : std::numeric_limits<Number>::max();
 			return OwcaRange{ l, r };
 		}
 	};
@@ -150,7 +150,7 @@ namespace OwcaScript::Internal {
 		using ImplExprOper2::ImplExprOper2;
 
 		Kind kind() const override { return Kind::Mul; }
-		static OwcaValue mul_string(OwcaVM vm, OwcaValue val, OwcaNumberUnderlying mul) {
+		static OwcaValue mul_string(OwcaVM vm, OwcaValue val, Number mul) {
 			if (mul < 0)
 				Internal::VM::get(vm).throw_invalid_operand_for_mul_string(std::to_string(mul));
 			return VM::get(vm).create_string(val, (size_t)mul);
@@ -205,9 +205,9 @@ namespace OwcaScript::Internal {
 			VM::get(vm).throw_cant_call(std::format("can't execute {} % {}", l.type(), r.type()));
 		}
 	};
-	static void update_key(OwcaVM vm, OwcaValue& key, OwcaNumberUnderlying size) {
+	static void update_key(OwcaVM vm, OwcaValue& key, Number size) {
 		key.visit(
-			[&](OwcaNumberUnderlying o) {
+			[&](Number o) {
 				auto v = key.convert_to_int(vm);
 				if (v < 0) v += size;
 				key = v;
@@ -221,8 +221,8 @@ namespace OwcaScript::Internal {
 			[&](const auto&) {}
 		);
 	}
-	static size_t verify_key(OwcaVM vm, OwcaNumberUnderlying v, size_t size, OwcaValue orig_key, std::string_view name) {
-		if (v < 0 || v >= (OwcaNumberUnderlying)size)
+	static size_t verify_key(OwcaVM vm, Number v, size_t size, OwcaValue orig_key, std::string_view name) {
+		if (v < 0 || v >= (Number)size)
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index value {} is out of range for {} of size {}", orig_key, name, size));
 		auto v2 = (size_t)v;
 		if (v2 != v)
@@ -234,7 +234,7 @@ namespace OwcaScript::Internal {
 		if (v2 <= v1)
 			return { 0, 0 };
 		if (v1 < 0) v1 = 0;
-		if (v2 > (OwcaNumberUnderlying)size) v2 = size;
+		if (v2 > (Number)size) v2 = size;
 		size_t v3 = (size_t)v1, v4 = (size_t)v2;
 		if (v3 != v1 || v2 != v4) {
 			Internal::VM::get(vm).throw_index_out_of_range(std::format("index values {} is out of range for array of size {} - size_t overflows", orig_key, size));
@@ -253,13 +253,13 @@ namespace OwcaScript::Internal {
 
 			return v.visit(
 				[&](const OwcaString& o) -> OwcaValue {
-					const auto size = (OwcaNumberUnderlying)o.internal_value()->size();
+					const auto size = (Number)o.internal_value()->size();
 					if (size != o.internal_value()->size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("string size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->size()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("string size {} is too large for Number size to properly handle indexing", o.internal_value()->size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaNumberUnderlying z) {
+						[&](Number z) {
 							auto v2 = verify_key(vm, z, size, orig_key, "string");
 							return o[v2];
 						},
@@ -273,13 +273,13 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaArray& o) -> OwcaValue {
-					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
+					const auto size = (Number)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaNumberUnderlying k) {
+						[&](Number k) {
 							auto v2 = verify_key(vm, k, size, orig_key, "array");
 							return o[v2];
 						},
@@ -293,13 +293,13 @@ namespace OwcaScript::Internal {
 					);
 				},
 				[&](const OwcaTuple& o) -> OwcaValue {
-					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
+					const auto size = (Number)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("tuple size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaNumberUnderlying k) {
+						[&](Number k) {
 							auto v2 = verify_key(vm, k, size, orig_key, "tuple");
 							return o[v2];
 						},
@@ -338,13 +338,13 @@ namespace OwcaScript::Internal {
 					return {};
 				},
 				[&](OwcaArray o) -> OwcaValue {
-					const auto size = (OwcaNumberUnderlying)o.internal_value()->values.size();
+					const auto size = (Number)o.internal_value()->values.size();
 					if (size != o.internal_value()->values.size()) {
-						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for OwcaNumberUnderlying size to properly handle indexing", o.internal_value()->values.size()));
+						Internal::VM::get(vm).throw_index_out_of_range(std::format("array size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
 					}
 					update_key(vm, key, size);
 					return key.visit(
-						[&](OwcaNumberUnderlying k) -> OwcaValue {
+						[&](Number k) -> OwcaValue {
 							auto v2 = verify_key(vm, k, size, orig_key, "array");
 							o[v2] = std::move(value);
 							return o[v2];

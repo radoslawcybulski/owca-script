@@ -18,7 +18,7 @@ namespace OwcaScript::Internal {
         IMPL_DEFINE_STAT(Kind::While)
 
 		void execute_statement_impl(OwcaVM vm) const override {
-            auto counter = (OwcaNumberUnderlying)0;
+            auto counter = (Number)0;
 
             while(true) {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
@@ -47,7 +47,7 @@ namespace OwcaScript::Internal {
             VM::get(vm).update_execution_line(line);
             auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
 
-            auto counter = (OwcaNumberUnderlying)0;
+            auto counter = (Number)0;
 
             while(true) {
                 if (loop_ident_index != std::numeric_limits<unsigned int>::max()) {
