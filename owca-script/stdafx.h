@@ -26,6 +26,7 @@
 #include <array>
 #include <cstring>
 #include <cmath>
+#include <bit>
 
 namespace OwcaScript {
     using Number = double;

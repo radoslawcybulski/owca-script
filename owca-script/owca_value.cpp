@@ -12,7 +12,20 @@
 #include "iterator.h"
 
 namespace OwcaScript {
-	OwcaValue::OwcaValue(OwcaException value) : value_(OwcaObject{ value.internal_owner() }) {}
+	OwcaValue::OwcaValue(OwcaEmpty value): OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
+	OwcaValue::OwcaValue(OwcaCompleted value): OwcaValue(OwcaValueKind::Completed, nullptr, nullptr) {}
+	OwcaValue::OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_owner(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaBool value): OwcaValue(OwcaValueKind::Bool, value.internal_value() ? (void*)16 : (void*)nullptr, nullptr) {}
+	OwcaValue::OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaArray value): OwcaValue(OwcaValueKind::Array, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
+	OwcaValue::OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
 
 	long long int OwcaValue::as_int(OwcaVM vm) const
 	{

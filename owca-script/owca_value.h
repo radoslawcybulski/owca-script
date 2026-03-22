@@ -18,11 +18,7 @@
 namespace OwcaScript {
 	class OwcaVM;
 
-	namespace Internal {
-		class VM;
-	}
-
-	enum class OwcaValueKind {
+	enum class OwcaValueKind : std::uint8_t {
 		Empty,
 		Completed,
 		Range,
@@ -37,7 +33,36 @@ namespace OwcaScript {
 		Array,
 		Set,
 		Iterator,
+		Exception,
+		_Count,
 	};
+
+	namespace Internal {
+		class VM;
+
+		template <bool LittleEndian> struct ValuePtrs;
+		template <> struct ValuePtrs<true> {
+			struct PtrsValue {
+				void *ptr1 = nullptr;
+				void *ptr2 = nullptr;
+			};
+			struct NumberValue {
+				OwcaValueKind kind;
+				Number value;
+			};
+		};
+		template <> struct ValuePtrs<false> {
+			struct PtrsValue {
+				void *ptr2 = nullptr;
+				void *ptr1 = nullptr;
+			};
+			struct NumberValue {
+				Number value;
+				std::byte padding[sizeof(void*) * 2 - sizeof(Number) + 1];
+				OwcaValueKind kind;
+			};
+		};
+	}
 
 	class OwcaEmpty {};
 	class OwcaCompleted {};
@@ -45,28 +70,35 @@ namespace OwcaScript {
 	class OwcaValue {
 		friend class Internal::VM;
 
-		std::variant<OwcaEmpty, OwcaCompleted, OwcaRange, OwcaBool, Number, OwcaString, OwcaFunctions, OwcaMap, OwcaClass, OwcaObject, OwcaTuple, OwcaArray, OwcaSet, OwcaIterator> value_ = OwcaEmpty{};
+		using PtrsValue = Internal::ValuePtrs<std::endian::native == std::endian::little>::PtrsValue;
+		using NumberValue = Internal::ValuePtrs<std::endian::native == std::endian::little>::NumberValue;
+		union {
+			PtrsValue ptrs;
+			NumberValue number;
+		} value_encoded_;
 
+		OwcaValue(OwcaValueKind, void *ptr1, void *ptr2);
+		OwcaValue(OwcaValueKind, Number num);
 	public:
-		OwcaValue() : value_(OwcaEmpty{}) {}
-		OwcaValue(OwcaEmpty value) : value_(value) {}
-		OwcaValue(OwcaCompleted value) : value_(value) {}
-		OwcaValue(OwcaRange value) : value_(value) {}
-		OwcaValue(OwcaBool value) : value_(value) {}
-		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : value_(OwcaBool{ value }) {}
+		OwcaValue() = default;
+		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : OwcaValue(OwcaBool{ value }) {}
 		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, bool> && std::is_arithmetic_v<T>) : value_((Number)value) {}
-		OwcaValue(OwcaString value) : value_(std::move(value)) {}
-		OwcaValue(OwcaFunctions value) : value_(std::move(value)) {}
-		OwcaValue(OwcaMap value) : value_(std::move(value)) {}
-		OwcaValue(OwcaClass value) : value_(std::move(value)) {}
-		OwcaValue(OwcaObject value) : value_(std::move(value)) {}
-		OwcaValue(OwcaTuple value) : value_(std::move(value)) {}
-		OwcaValue(OwcaArray value) : value_(std::move(value)) {}
-		OwcaValue(OwcaSet value) : value_(std::move(value)) {}
+		OwcaValue(OwcaEmpty value);
+		OwcaValue(OwcaCompleted value);
+		OwcaValue(OwcaRange value);
+		OwcaValue(OwcaBool value);
+		OwcaValue(OwcaString value);
+		OwcaValue(OwcaFunctions value);
+		OwcaValue(OwcaMap value);
+		OwcaValue(OwcaClass value);
+		OwcaValue(OwcaObject value);
+		OwcaValue(OwcaTuple value);
+		OwcaValue(OwcaArray value);
+		OwcaValue(OwcaSet value);
 		OwcaValue(OwcaException value);
-		OwcaValue(OwcaIterator value) : value_(std::move(value)) {}
+		OwcaValue(OwcaIterator value);
 
-		OwcaValueKind kind() const { return (OwcaValueKind)value_.index(); }
+		OwcaValueKind kind() const;
 		long long int as_int(OwcaVM ) const;
 		bool is_true() const;
 
