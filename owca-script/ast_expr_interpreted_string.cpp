@@ -35,7 +35,7 @@ namespace OwcaScript::Internal {
             }
 
             auto str_obj = VM::get(vm).allocate<String>(0, "");
-            auto &str = std::get<std::string>(str_obj->data);
+            auto &str = str_obj->data;
             str.reserve(strings.size() + evaluated_values_size);
             size_t strings_ptr = 0;
             for(auto j = 0u; j < sizes.size(); ++j) {

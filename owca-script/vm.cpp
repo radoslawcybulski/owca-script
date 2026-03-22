@@ -329,13 +329,9 @@ namespace OwcaScript::Internal {
 					} 
 				},
 				[&](OwcaString o) {
-					o.internal_value()->iterate_over_content(
-						[&](std::string_view txt) {
-							for(auto q : txt) {
-								self.internal_value()->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
-							}
-						}
-					);
+					for(auto i = 0u; i < o.size(); ++i) {
+						self.internal_value()->values.push_back(vm.create_string_from_view(o.text().substr(i, 1)));
+					}
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
@@ -399,13 +395,9 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaString o) {
 					self.internal_value()->values.reserve(o.size());
-					o.internal_value()->iterate_over_content(
-						[&](std::string_view txt) {
-							for(auto q : txt) {
-								self.internal_value()->values.push_back(vm.create_string_from_view(std::string_view{ &q, 1 }));
-							}
-						}
-					);
+					for(auto i = 0u; i < o.size(); ++i) {
+						self.internal_value()->values.push_back(vm.create_string_from_view(o.text().substr(i, 1)));
+					}
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
@@ -1406,26 +1398,20 @@ function native print(msg);
 		if (start >= sz) return create_string("");
 		if (start + size > sz) size = sz - start;
 		if (size == 0) return create_string("");
-		auto dpth = s.internal_value()->depth();
-		auto new_s = allocate<String>(0, String::Substr{ s.internal_value(), start, size, dpth + 1 });
-		if (new_s->depth() > String::max_depth) {
-			new_s->flatten();
-		}
-		auto os = OwcaString{ new_s };
-		return os;
+		return create_string_from_view(s.text().substr(start, size));
 	}
 	OwcaValue VM::create_string(OwcaValue str, size_t count)
 	{
 		if (count == 0) return create_string("");
 		auto vm = OwcaVM{ this };
 		auto s = str.as_string(vm);
-		auto dpth = s.internal_value()->depth();
-		auto new_s = allocate<String>(0, String::Mult{ s.internal_value(), count, dpth + 1 });
-		if (new_s->depth() > String::max_depth) {
-			new_s->flatten();
+		if (s.size() == 0) return create_string("");
+		std::string new_s;
+		new_s.reserve(s.size() * count);
+		for(size_t i = 0; i < count; ++i) {
+			new_s += s.text();
 		}
-		auto os = OwcaString{ new_s };
-		return os;
+		return create_string(std::move(new_s));
 	}
 	OwcaValue VM::create_string(OwcaValue left, OwcaValue right)
 	{
@@ -1434,13 +1420,11 @@ function native print(msg);
 		auto r = right.as_string(vm);
 		if (l.size() == 0) return right;
 		if (r.size() == 0) return left;
-		auto dpth = std::max(l.internal_value()->depth(), r.internal_value()->depth());
-		auto new_s = allocate<String>(0, String::Add{ l.internal_value(), r.internal_value(), dpth + 1 });
-		if (new_s->depth() > String::max_depth) {
-			new_s->flatten();
-		}
-		auto os = OwcaString{ new_s };
-		return os;
+		std::string new_s;
+		new_s.reserve(l.size() + r.size());
+		new_s += l.text();
+		new_s += r.text();
+		return create_string(std::move(new_s));
 	}
 
 	OwcaValue VM::get_identifier(unsigned int index)
