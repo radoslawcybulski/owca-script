@@ -43,24 +43,30 @@ namespace OwcaScript {
 		template <bool LittleEndian> struct ValuePtrs;
 		template <> struct ValuePtrs<true> {
 			struct PtrsValue {
-				void *ptr1 = nullptr;
-				void *ptr2 = nullptr;
+				std::uintptr_t ptr1;
+				void *ptr2;
 			};
+			static_assert(sizeof(PtrsValue) > sizeof(Number));
 			struct NumberValue {
-				OwcaValueKind kind;
+				std::uint8_t kind;
 				Number value;
 			};
+			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
 		};
 		template <> struct ValuePtrs<false> {
 			struct PtrsValue {
-				void *ptr2 = nullptr;
-				void *ptr1 = nullptr;
+				void *ptr2;
+				std::uintptr_t ptr1;
 			};
+
+			static_assert(sizeof(PtrsValue) > sizeof(Number));
 			struct NumberValue {
 				Number value;
-				std::byte padding[sizeof(void*) * 2 - sizeof(Number) + 1];
-				OwcaValueKind kind;
+				std::byte padding[sizeof(PtrsValue) - sizeof(Number) - 1];
+				std::uint8_t kind;
 			};
+
+			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
 		};
 	}
 
@@ -79,10 +85,13 @@ namespace OwcaScript {
 
 		OwcaValue(OwcaValueKind, void *ptr1, void *ptr2);
 		OwcaValue(OwcaValueKind, Number num);
+
+		void *internal_ptr1() const;
+		void *internal_ptr2() const;
 	public:
-		OwcaValue() = default;
-		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : OwcaValue(OwcaBool{ value }) {}
-		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, bool> && std::is_arithmetic_v<T>) : value_((Number)value) {}
+		OwcaValue() : OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
+		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : OwcaValue(OwcaValueKind::Bool, (Number)(value ? 1 : 0)) {}
+		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, bool> && std::is_arithmetic_v<T>) : OwcaValue(OwcaValueKind::Float, (Number)value) {}
 		OwcaValue(OwcaEmpty value);
 		OwcaValue(OwcaCompleted value);
 		OwcaValue(OwcaRange value);
@@ -107,7 +116,7 @@ namespace OwcaScript {
 		OwcaRange as_range(OwcaVM ) const;
 		OwcaBool as_bool(OwcaVM ) const;
 		Number as_float(OwcaVM ) const;
-		const OwcaString &as_string(OwcaVM ) const;
+		OwcaString as_string(OwcaVM ) const;
 		OwcaFunctions as_functions(OwcaVM ) const;
 		OwcaMap as_map(OwcaVM ) const;
 		OwcaClass as_class(OwcaVM ) const;
@@ -129,7 +138,32 @@ namespace OwcaScript {
 		void member(const std::string& key, OwcaValue val);
 		OwcaValue call(std::span<OwcaValue> args) const;
 
-		template <typename ... F> auto visit(F &&...fns) const { return Internal::visit_variant(value_, std::forward<F>(fns)...); }
+		template <typename ... F> auto visit(F &&...fns) const {
+			struct overloaded : F... {
+				using F::operator()...;
+			};
+			auto tmp = overloaded{std::forward<F>(fns)...};
+			switch(kind()) {
+			case OwcaValueKind::Empty: return tmp(OwcaEmpty{});
+			case OwcaValueKind::Completed: return tmp(OwcaCompleted{});
+			case OwcaValueKind::Range: return tmp(as_range(nullptr));
+			case OwcaValueKind::Bool: return tmp(as_bool(nullptr));
+			case OwcaValueKind::Float: return tmp(as_float(nullptr));
+			case OwcaValueKind::String: return tmp(as_string(nullptr));
+			case OwcaValueKind::Functions: return tmp(as_functions(nullptr));
+			case OwcaValueKind::Map: return tmp(as_map(nullptr));
+			case OwcaValueKind::Class: return tmp(as_class(nullptr));
+			case OwcaValueKind::Object: return tmp(as_object(nullptr));
+			case OwcaValueKind::Tuple: return tmp(as_tuple(nullptr));
+			case OwcaValueKind::Array: return tmp(as_array(nullptr));
+			case OwcaValueKind::Set: return tmp(as_set(nullptr));
+			case OwcaValueKind::Exception: return tmp(as_exception(nullptr));
+			case OwcaValueKind::Iterator: return tmp(as_iterator(nullptr));
+			case OwcaValueKind::_Count: break;
+			}
+			assert(false);
+			throw std::logic_error("invalid OwcaValueKind");
+		}
 	};
 
     class Generator

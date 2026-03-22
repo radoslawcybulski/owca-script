@@ -10,14 +10,16 @@
 #include "dictionary.h"
 #include "string.h"
 #include "iterator.h"
+#include "range.h"
+#include "exception.h"
 
 namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaEmpty value): OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
 	OwcaValue::OwcaValue(OwcaCompleted value): OwcaValue(OwcaValueKind::Completed, nullptr, nullptr) {}
-	OwcaValue::OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_owner(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaBool value): OwcaValue(OwcaValueKind::Bool, value.internal_value() ? (void*)16 : (void*)nullptr, nullptr) {}
+	OwcaValue::OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_object(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaBool value): OwcaValue(OwcaValueKind::Bool, (Number)(value.internal_value() ? 1 : 0)) {}
 	OwcaValue::OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), nullptr) {}
+	OwcaValue::OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), value.internal_self_object()) {}
 	OwcaValue::OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
 	OwcaValue::OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
 	OwcaValue::OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
@@ -26,6 +28,42 @@ namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
 	OwcaValue::OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
 	OwcaValue::OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
+
+	void *OwcaValue::internal_ptr1() const {
+		PtrsValue tmp;
+		std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
+		return (void*)(tmp.ptr1 & ~(std::uintptr_t)15);
+	}
+	void *OwcaValue::internal_ptr2() const {
+		PtrsValue tmp;
+		std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
+		return tmp.ptr2;
+	}
+
+	OwcaValue::OwcaValue(OwcaValueKind kind, void *ptr1, void *ptr2) {
+		std::uintptr_t k = (std::uintptr_t)ptr1;
+		assert((k & 15) == 0);
+		assert((int)kind < 16 && (int)kind >= 0);
+		k |= (std::uintptr_t)kind;
+		value_encoded_.ptrs.ptr1 = k;
+		value_encoded_.ptrs.ptr2 = ptr2;
+		assert(this->kind() == kind);
+		assert(internal_ptr1() == ptr1);
+		assert(internal_ptr2() == ptr2);
+	}
+	OwcaValue::OwcaValue(OwcaValueKind kind, Number num) {
+		assert((int)kind < 16 && (int)kind >= 0);
+		value_encoded_.number.value = num;
+		value_encoded_.number.kind = (std::uint8_t)kind;
+		assert(this->kind() == kind);
+	}
+	OwcaValueKind OwcaValue::kind() const {
+		NumberValue tmp;
+		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+		auto k = tmp.kind & 15;
+		assert(k < (int)OwcaValueKind::_Count);
+		return (OwcaValueKind)k;
+	}
 
 	long long int OwcaValue::as_int(OwcaVM vm) const
 	{
@@ -56,7 +94,8 @@ namespace OwcaScript {
 			[](OwcaArray o) { return !o.internal_value()->values.empty(); },
 			[](OwcaTuple o) { return !o.internal_value()->values.empty(); },
 			[](OwcaSet o) { return o.size() != 0; },
-			[](OwcaIterator o) { return !o.completed(); }
+			[](OwcaIterator o) { return !o.completed(); },
+			[](OwcaException o) { return true; }
 		);
 	}
 
@@ -76,83 +115,90 @@ namespace OwcaScript {
 	{
 		if (kind() != OwcaValueKind::Range)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Range");
-		return std::get<OwcaRange>(value_);
+		return OwcaRange{ (Internal::Range*)internal_ptr1() };
 	}
 	OwcaBool OwcaValue::as_bool(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Bool)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Bool");
-		return std::get<OwcaBool>(value_);
+		NumberValue tmp;
+		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+		return OwcaBool{ tmp.value != 0 };
 	}
 	Number OwcaValue::as_float(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Float)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Float");
-		return std::get<Number>(value_);
+		NumberValue tmp;
+		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+		return tmp.value;
 	}
-	const OwcaString &OwcaValue::as_string(OwcaVM vm) const
+	OwcaString OwcaValue::as_string(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::String)
 			Internal::VM::get(vm).throw_wrong_type(type(), "String");
-		return std::get<OwcaString>(value_);
+		return OwcaString{ (Internal::String*)internal_ptr1() };
 	}
 	OwcaFunctions OwcaValue::as_functions(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Functions)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Function");
-		return std::get<OwcaFunctions>(value_);
+		return OwcaFunctions{ (Internal::RuntimeFunctions*)internal_ptr1(), (Internal::AllocationBase*)internal_ptr2() };
 	}
 	OwcaMap OwcaValue::as_map(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Map)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Map");
-		return std::get<OwcaMap>(value_);
+		return OwcaMap{ (Internal::DictionaryShared*)internal_ptr1() };
 	}
 	OwcaClass OwcaValue::as_class(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Class)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Class");
-		return std::get<OwcaClass>(value_);
+		return OwcaClass{ (Internal::Class*)internal_ptr1() };
 	}
 	OwcaObject OwcaValue::as_object(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Object)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Object");
-		return std::get<OwcaObject>(value_);
+		return OwcaObject{ (Internal::Object*)internal_ptr1() };
 	}
 	OwcaArray OwcaValue::as_array(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Array)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Array");
-		return std::get<OwcaArray>(value_);
+		return OwcaArray{ (Internal::Array*)internal_ptr1() };
 	}
 	OwcaTuple OwcaValue::as_tuple(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Tuple)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Tuple");
-		return std::get<OwcaTuple>(value_);
+		return OwcaTuple{ (Internal::Tuple*)internal_ptr1() };
 	}
 	OwcaSet OwcaValue::as_set(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Set)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Set");
-		return std::get<OwcaSet>(value_);
+		return OwcaSet{ (Internal::DictionaryShared*)internal_ptr1() };
 	}
 	OwcaException OwcaValue::as_exception(OwcaVM vm) const
 	{
-		if (kind() != OwcaValueKind::Object)
-			Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
-		auto oo = as_object(vm);
-		auto oe = Internal::VM::get(vm).is_exception(oo);
-		if (!oe)
-			Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
-		return OwcaException{ oo.internal_value(), oe };
+		if (kind() == OwcaValueKind::Exception)
+			return OwcaException{ (Internal::Object*)internal_ptr1(), (Internal::Exception*)internal_ptr2() };
+		if (kind() == OwcaValueKind::Object) {
+			auto obj = as_object(vm);
+			auto oe = Internal::VM::get(vm).is_exception(obj);
+			if (oe != nullptr) {
+				return OwcaException{ obj.internal_value(), oe };
+			}
+		}
+		Internal::VM::get(vm).throw_wrong_type(type(), "Exception");
 	}
 	OwcaIterator OwcaValue::as_iterator(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Iterator)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Iterator");
-		return std::get<OwcaIterator>(value_);
+		return OwcaIterator{ (Internal::Iterator*)internal_ptr1() };
 	}
 
 	std::string_view OwcaValue::type() const
@@ -171,7 +217,8 @@ namespace OwcaScript {
 			[](OwcaArray) -> std::string_view { return "Array"; },
 			[](OwcaTuple) -> std::string_view { return "Tuple"; },
 			[](OwcaSet) -> std::string_view { return "Set"; },
-			[](OwcaIterator) -> std::string_view { return "Iterator"; }
+			[](OwcaIterator) -> std::string_view { return "Iterator"; },
+			[](OwcaException o) -> std::string_view { return o.internal_owner()->type(); }
 			);
 	}
 
@@ -191,7 +238,8 @@ namespace OwcaScript {
 			[](OwcaArray o) -> std::string { return o.to_string(); },
 			[](OwcaTuple o) -> std::string { return o.to_string(); },
 			[](OwcaSet o) -> std::string { return o.to_string(); },
-			[](OwcaIterator o) -> std::string { return o.internal_value()->to_string(); }
+			[](OwcaIterator o) -> std::string { return o.internal_value()->to_string(); },
+			[](OwcaException o) -> std::string { return o.internal_value()->to_string(); }
 			);
 	}
 

@@ -91,7 +91,7 @@ namespace OwcaScript::Internal {
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
 			return v.as_float(vm);
 		}
-		static const auto &convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v) {
+		static auto convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::String) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 			return v.as_string(vm);
@@ -285,6 +285,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaArray s) { return vm.create_string(s.to_string()); },
 				[&](OwcaTuple s) { return vm.create_string(s.to_string()); },
 				[&](OwcaSet s) { return vm.create_string(s.to_string()); },
+				[&](OwcaException s) { return vm.create_string(s.to_string()); },
 				[&](OwcaIterator s) { return vm.create_string("iterator"); }
 				);
 		}
@@ -932,6 +933,32 @@ function native print(msg);
 				);
 		};
 		bool bind_if_needed = true;
+		auto read_from_object = [&](Internal::Object *obj) -> OwcaValue* {
+			auto it = obj->values.find(key);
+			if (it != obj->values.end()) {
+				bind_if_needed = false;
+				return &it->second;
+			}
+
+			auto it2 = obj->type_->values.find(key);
+			if (it2 != obj->type_->values.end()) {
+				return visit_variant(it2->second,
+					[&](RuntimeFunctions *rf) -> OwcaValue * {
+						tmp = OwcaFunctions{ rf };
+						return &tmp;
+					},
+					[&](Class* var) -> OwcaValue * {
+						auto native_storage = obj->native_storage_raw(ClassToken{ var });
+						auto old = current_class_in_progress;
+						current_class_in_progress = var->full_name;
+						auto got = var->native->get_member(this, key, native_storage, tmp);
+						current_class_in_progress = old;
+						return got ? &tmp : nullptr;
+					});
+			}
+
+			return nullptr;
+		};
 		auto v = val.visit(
 			[&](OwcaEmpty o) -> OwcaValue* { return read_member(c_nul); },
 			[&](OwcaCompleted o) -> OwcaValue* { return read_member(c_completed); },
@@ -942,35 +969,11 @@ function native print(msg);
 			[&](OwcaFunctions o) -> OwcaValue* { return read_member(c_function); },
 			[&](OwcaMap o) -> OwcaValue* { return read_member(c_map); },
 			[&](OwcaClass o) -> OwcaValue* { return read_member(c_class); },
-			[&](OwcaObject o) -> OwcaValue* {
-				auto it = o.internal_value()->values.find(key);
-				if (it != o.internal_value()->values.end()) {
-					bind_if_needed = false;
-					return &it->second;
-				}
-
-				auto it2 = o.internal_value()->type_->values.find(key);
-				if (it2 != o.internal_value()->type_->values.end()) {
-					return visit_variant(it2->second,
-						[&](RuntimeFunctions *rf) -> OwcaValue * {
-							tmp = OwcaFunctions{ rf };
-							return &tmp;
-						},
-						[&](Class* var) -> OwcaValue * {
-							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
-							auto old = current_class_in_progress;
-							current_class_in_progress = var->full_name;
-							auto got = var->native->get_member(this, key, native_storage, tmp);
-							current_class_in_progress = old;
-							return got ? &tmp : nullptr;
-						});
-				}
-
-				return nullptr;
-			},
+			[&](OwcaObject o) -> OwcaValue* { return read_from_object(o.internal_value()); },
 			[&](OwcaArray o) -> OwcaValue* { return read_member(c_array); },
 			[&](OwcaTuple o) -> OwcaValue* { return read_member(c_tuple); },
 			[&](OwcaSet o) -> OwcaValue* { return read_member(c_set); },
+			[&](OwcaException o) -> OwcaValue* { return read_from_object(o.internal_owner()); },
 			[&](OwcaIterator o) -> OwcaValue* { return read_member(c_iterator); }
 		);
 
@@ -1523,6 +1526,9 @@ function native print(msg);
 			[&](OwcaSet value) -> bool {
 				return value.size() > 0;
 			},
+			[&](OwcaException value) -> bool {
+				return true;
+			},
 			[&](OwcaIterator value) -> bool {
 				return !value.completed();
 			}
@@ -1548,6 +1554,9 @@ function native print(msg);
 				return std::hash<void*>()(o.internal_value()) * 1009 + 10;
 			},
 			[&](OwcaObject o) -> size_t {
+				throw_not_hashable(value.type());
+			},
+			[&](OwcaException o) -> size_t {
 				throw_not_hashable(value.type());
 			},
 			[&](OwcaArray o) -> size_t {
@@ -1641,6 +1650,9 @@ function native print(msg);
 			},
 			[&](OwcaObject s) {
 				gc_mark(s.internal_value(), ggc);
+			},
+			[&](OwcaException s) {
+				gc_mark(s.internal_owner(), ggc);
 			},
 			[&](OwcaArray s) {
 				gc_mark(s.internal_value()->values, ggc);

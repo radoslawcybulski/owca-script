@@ -233,7 +233,9 @@ namespace OwcaScript::Internal {
 			case OwcaValueKind::Tuple: return left.as_tuple(vm).internal_value() == right.as_tuple(vm).internal_value();
 			case OwcaValueKind::Set: return left.as_set(vm).internal_value() == right.as_set(vm).internal_value();
 			case OwcaValueKind::Iterator: return left.as_iterator(vm).internal_value() == right.as_iterator(vm).internal_value();
+			case OwcaValueKind::Exception: return left.as_exception(vm).internal_owner() == right.as_exception(vm).internal_owner();
 			case OwcaValueKind::Completed: return true;
+			case OwcaValueKind::_Count: break;
 			}
 			assert(false);
 			return false;
