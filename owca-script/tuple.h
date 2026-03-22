@@ -15,6 +15,8 @@ namespace OwcaScript {
             using AllocationBase::AllocationBase;
 
             std::vector<OwcaValue> values;
+			mutable size_t hash_value = 0;
+			mutable bool hash_value_calculated = false;
 			
             Tuple(std::vector<OwcaValue> values) : values(std::move(values)) {}
 

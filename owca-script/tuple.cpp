@@ -26,14 +26,17 @@ namespace OwcaScript::Internal {
 
     size_t Tuple::hash() const
     {
-        size_t h = 13;
+        if (!hash_value_calculated) {
+            size_t h = 13;
 
-        for(auto q : values) {
-            auto v = vm->calculate_hash(q);
-            h = h * 1299709 + v;
+            for(auto q : values) {
+                auto v = vm->calculate_hash(q);
+                h = h * 1299709 + v;
+            }
+            hash_value = h;
+            hash_value_calculated = true;
         }
-
-        return h;
+        return hash_value;
     }
 
     std::vector<OwcaValue> Tuple::sub_array(size_t from, size_t to) const
