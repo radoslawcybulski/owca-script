@@ -13,6 +13,10 @@ namespace OwcaScript {
 	class NativeClassInterface;
 	class Generator;
 
+	namespace Internal {
+		class VM;
+	}
+	
 	class GenerationGC {
 		unsigned int value;
 	
@@ -22,10 +26,6 @@ namespace OwcaScript {
 		bool operator == (GenerationGC other) const { return value == other.value; }
 		bool operator != (GenerationGC other) const { return !(*this == other); }
 	};
-
-	namespace Internal {
-		class VM;
-	}
 
 	struct NativeCodeProvider {
 		virtual ~NativeCodeProvider() = default;

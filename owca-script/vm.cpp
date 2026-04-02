@@ -34,132 +34,7 @@ namespace OwcaScript::Internal {
 		run_gc();
 	}
 
-	namespace {
-		template <typename T> struct FuncToTuple {
-		};
-		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
-			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
-			static constexpr bool is_generator = false;
-		};
-		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, ARGS...)> {
-			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
-			static constexpr bool is_generator = true;
-		};
-	}
 	struct VM::BuiltinProvider : public NativeCodeProvider {
-		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Bool) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
-			return v.as_bool(vm);
-		}
-		template <std::integral T>
-		static T convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Float) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to integer value", I + 1, v.type()));
-			return (T)v.as_float(vm);
-		}
-		template <std::floating_point T>
-		static auto convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Float) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to integer value", I + 1, v.type()));
-			return (T)v.as_float(vm);
-		}
-		static std::string convert_impl2(OwcaVM vm, size_t I, std::string *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return std::string{ v.as_string(vm).text() };
-		}
-		static std::string_view convert_impl2(OwcaVM vm, size_t I, std::string_view *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string(vm).text();
-		}
-		static OwcaEmpty convert_impl2(OwcaVM vm, size_t I, OwcaEmpty *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Empty) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
-			return {};
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaRange *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Range) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
-			return v.as_range(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, Number *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Float) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
-			return v.as_float(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaFunctions *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Functions) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
-			return v.as_functions(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Map) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
-			return v.as_map(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Class) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
-			return v.as_class(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Object) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
-			return v.as_object(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Array) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
-			return v.as_array(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Tuple) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
-			return v.as_tuple(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Set) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
-			return v.as_set(vm);
-		}
-		static auto convert_impl2(OwcaVM vm, size_t I, OwcaException *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Object) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
-			auto oo = v.as_object(vm);
-			auto oe = VM::get(vm).is_exception(oo);
-			if (!oe)
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
-			return OwcaException{ oo.internal_value(), oe };
-		}
-		static OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, OwcaValue v) {
-			return v;
-		}
-
-		template <size_t I, typename ... ARGS> static auto convert_impl(OwcaVM vm, std::span<OwcaValue> args) {
-			if constexpr(I < sizeof...(ARGS)) {
-				using T = std::remove_cvref_t<std::tuple_element_t<I, std::tuple<ARGS...>>>;
-				std::tuple<T> tmp = { convert_impl2(vm, I, (T*)nullptr, args[I]) };
-				auto res = convert_impl<I + 1, ARGS...>(vm, args);
-				auto res2 = std::tuple_cat(std::move(tmp), std::move(res));
-				return res2;
-			}
-			else {
-				return std::tuple<>{};
-			}
-		}
-		template <typename ... ARGS> static std::tuple<OwcaVM, ARGS...> convert2(OwcaVM vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
-			assert(sizeof...(ARGS) == args.size());
-			std::tuple<ARGS...> dst_args = convert_impl<0, ARGS...>(vm, args);
-			return std::tuple_cat(std::tuple<OwcaVM>(vm), std::move(dst_args));
-		}
-		
 		static OwcaValue range_init1(OwcaVM vm, OwcaRange self, Number upper) {
 			self.internal_object()->from = 0;
 			self.internal_object()->to = upper;
@@ -483,24 +358,6 @@ namespace OwcaScript::Internal {
 			return {};
 		}
 
-		template <typename F>
-		static auto adapt(F &&f) {
-			if constexpr (FuncToTuple<std::remove_cvref_t<F>>::is_generator) {
-				return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> Generator {
-					using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
-					auto dest_args = convert2(vm, args, (T*)nullptr);
-					return std::apply(f, dest_args);
-				};
-			}
-			else {
-				return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
-					using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
-					auto dest_args = convert2(vm, args, (T*)nullptr);
-					return std::apply(f, dest_args);
-				};
-			}
-		}
-		
 		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") {
 				if (param_names.size() == 2) return adapt(range_init1);
@@ -769,9 +626,14 @@ function native print(msg);
 		throw_exception(c_math_exception, "modulo by zero");
 	}
 
+	void VM::throw_cant_convert_to_float_message(std::string_view msg)
+	{
+		throw_exception(c_math_exception, msg);
+	}
+
 	void VM::throw_cant_convert_to_float(std::string_view type)
 	{
-		throw_exception(c_math_exception, std::format("can't convert value of type `{}` to floating point", type));
+		throw_cant_convert_to_float_message(std::format("can't convert value of type `{}` to floating point", type));
 	}
 
 	void VM::throw_cant_convert_to_integer(Number val)

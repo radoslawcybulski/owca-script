@@ -239,6 +239,88 @@ namespace OwcaScript {
 	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaEmpty) {}
 	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaCompleted) {}		
 	template <typename T> inline void gc_mark_value(OwcaVM vm, GenerationGC gc, T) requires(std::is_arithmetic_v<T>) {}		
+
+	namespace Internal {
+		class VM;
+
+		void throw_cant_convert_to_number(OwcaVM vm, size_t I, OwcaValue v);
+		template <std::integral T>
+		static T convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
+			if (v.kind() != OwcaValueKind::Float) 
+				throw_cant_convert_to_number(vm, I, v);
+			return (T)v.as_float(vm);
+		}
+		template <std::floating_point T>
+		static auto convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
+			if (v.kind() != OwcaValueKind::Float) 
+				throw_cant_convert_to_number(vm, I, v);
+			return (T)v.as_float(vm);
+		}
+		bool convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v);
+		std::string convert_impl2(OwcaVM vm, size_t I, std::string *b, OwcaValue v);
+		std::string_view convert_impl2(OwcaVM vm, size_t I, std::string_view *b, OwcaValue v);
+		OwcaEmpty convert_impl2(OwcaVM vm, size_t I, OwcaEmpty *b, OwcaValue v);
+		OwcaRange convert_impl2(OwcaVM vm, size_t I, OwcaRange *b, OwcaValue v);
+		Number convert_impl2(OwcaVM vm, size_t I, Number *b, OwcaValue v);
+		OwcaString convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v);
+		OwcaFunctions convert_impl2(OwcaVM vm, size_t I, OwcaFunctions *b, OwcaValue v);
+		OwcaMap convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, OwcaValue v);
+		OwcaClass convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, OwcaValue v);
+		OwcaObject convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, OwcaValue v);
+		OwcaArray convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, OwcaValue v);
+		OwcaTuple convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, OwcaValue v);
+		OwcaSet convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, OwcaValue v);
+		OwcaException convert_impl2(OwcaVM vm, size_t I, OwcaException *b, OwcaValue v);
+		OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, OwcaValue v);
+
+		template <typename T> struct FuncToTuple {
+		};
+		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
+			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
+			static constexpr bool is_generator = false;
+		};
+		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, ARGS...)> {
+			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
+			static constexpr bool is_generator = true;
+		};
+
+		template <size_t I, typename ... ARGS> static auto convert_impl(OwcaVM vm, std::span<OwcaValue> args) {
+			if constexpr(I < sizeof...(ARGS)) {
+				using T = std::remove_cvref_t<std::tuple_element_t<I, std::tuple<ARGS...>>>;
+				std::tuple<T> tmp = { convert_impl2(vm, I, (T*)nullptr, args[I]) };
+				auto res = convert_impl<I + 1, ARGS...>(vm, args);
+				auto res2 = std::tuple_cat(std::move(tmp), std::move(res));
+				return res2;
+			}
+			else {
+				return std::tuple<>{};
+			}
+		}
+		template <typename ... ARGS> static std::tuple<OwcaVM, ARGS...> convert2(OwcaVM vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
+			assert(sizeof...(ARGS) == args.size());
+			std::tuple<ARGS...> dst_args = convert_impl<0, ARGS...>(vm, args);
+			return std::tuple_cat(std::tuple<OwcaVM>(vm), std::move(dst_args));
+		}
+
+	}
+
+	template <typename F>
+	static auto adapt(F &&f) {
+		if constexpr (Internal::FuncToTuple<std::remove_cvref_t<F>>::is_generator) {
+			return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> Generator {
+				using T = typename Internal::FuncToTuple<std::remove_cvref_t<F>>::type;
+				auto dest_args = Internal::convert2(vm, args, (T*)nullptr);
+				return std::apply(f, dest_args);
+			};
+		}
+		else {
+			return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+				using T = typename Internal::FuncToTuple<std::remove_cvref_t<F>>::type;
+				auto dest_args = Internal::convert2(vm, args, (T*)nullptr);
+				return std::apply(f, dest_args);
+			};
+		}
+	}
 }
 
 namespace std {

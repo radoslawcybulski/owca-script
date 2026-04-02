@@ -112,6 +112,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_division_by_zero();
 			[[noreturn]] void throw_mod_division_by_zero();
 			[[noreturn]] void throw_cant_convert_to_float(std::string_view type);
+			[[noreturn]] void throw_cant_convert_to_float_message(std::string_view msg);
 			[[noreturn]] void throw_cant_convert_to_integer(Number val);
 			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
 			[[noreturn]] void throw_not_a_number(std::string_view type);
