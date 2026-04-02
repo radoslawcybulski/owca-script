@@ -44,9 +44,6 @@ namespace OwcaScript::Internal {
 		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
 		};
-		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, OwcaVariableSet&, ARGS...)> {
-			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
-		};
 	}
 	struct VM::BuiltinProvider : public NativeCodeProvider {
 		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
@@ -1589,8 +1586,6 @@ function native print(msg);
 		auto ggc = GenerationGC{ ++generation_gc };
 
 		// mark
-		global_variables.gc_mark(this, ggc);
-
 		empty_tuple->gc_mark(this, ggc);
 		empty_string->gc_mark(this, ggc);
 

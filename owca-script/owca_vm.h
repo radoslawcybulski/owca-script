@@ -10,7 +10,6 @@ namespace OwcaScript {
 	class OwcaCode;
 	class OwcaValue;
 	class OwcaVariable;
-	class OwcaVariableSet;
 	class NativeClassInterface;
 	class Generator;
 

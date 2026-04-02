@@ -74,7 +74,6 @@ namespace OwcaScript {
 
 			struct BuiltinProvider;
 		public:
-			OwcaVariableSet global_variables;
 			std::string_view current_class_in_progress;
 
 			struct AllocatedObjectsPointer {

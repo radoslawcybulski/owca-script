@@ -8,27 +8,9 @@ namespace OwcaScript {
 	class OwcaVM;
     class OwcaVariable;
 
-    class OwcaVariableSet {
-        OwcaVariableSet *next = nullptr, *prev = nullptr;
-        
-    protected:
-        explicit OwcaVariableSet(OwcaVariableSet *);
+    class OwcaVariable : public OwcaValue {
     public:
-        OwcaVariableSet() : next(this), prev(this) {}
-        OwcaVariableSet(const OwcaVariableSet &) = delete;
-        OwcaVariableSet(OwcaVariableSet&&) = delete;
-        ~OwcaVariableSet();
-
-        OwcaVariableSet &operator = (const OwcaVariableSet &) = delete;
-        OwcaVariableSet &operator = (OwcaVariableSet &&) = delete;
-
-        void gc_mark(OwcaVM, GenerationGC) const;
-    };
-
-    class OwcaVariable : protected OwcaVariableSet, public OwcaValue {
-    public:
-        OwcaVariable(const OwcaVM &vm);
-        OwcaVariable(OwcaVariableSet &set) : OwcaVariableSet(&set) {}
+        OwcaVariable() = default;
         OwcaVariable(const OwcaVariable &) = delete;
         OwcaVariable(OwcaVariable&&) = delete;
         ~OwcaVariable() = default;
