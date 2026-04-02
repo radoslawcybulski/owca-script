@@ -39,9 +39,11 @@ namespace OwcaScript::Internal {
 		};
 		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
+			static constexpr bool is_generator = false;
 		};
 		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
+			static constexpr bool is_generator = true;
 		};
 	}
 	struct VM::BuiltinProvider : public NativeCodeProvider {
@@ -482,23 +484,23 @@ namespace OwcaScript::Internal {
 		}
 
 		template <typename F>
-		static std::function<OwcaValue(OwcaVM, std::span<OwcaValue> args)> adapt(F &&f) {
-			return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
-				using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
-				auto dest_args = convert2(vm, args, (T*)nullptr);
-				return std::apply(f, dest_args);
-			};
+		static auto adapt(F &&f) {
+			if constexpr (FuncToTuple<std::remove_cvref_t<F>>::is_generator) {
+				return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> Generator {
+					using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
+					auto dest_args = convert2(vm, args, (T*)nullptr);
+					return std::apply(f, dest_args);
+				};
+			}
+			else {
+				return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+					using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
+					auto dest_args = convert2(vm, args, (T*)nullptr);
+					return std::apply(f, dest_args);
+				};
+			}
 		}
 		
-		template <typename F>
-		static std::function<Generator(OwcaVM, std::span<OwcaValue> args)> adapt2(F &&f) {
-			return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> Generator {
-				using T = typename FuncToTuple<std::remove_cvref_t<F>>::type;
-				auto dest_args = convert2(vm, args, (T*)nullptr);
-				return std::apply(f, dest_args);
-			};
-		}
-
 		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") {
 				if (param_names.size() == 2) return adapt(range_init1);
@@ -540,12 +542,12 @@ namespace OwcaScript::Internal {
 			return std::nullopt;
 		}
 		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
-			if (full_name == "Range.__iter__") return adapt2(range_iter);
-			if (full_name == "String.__iter__") return adapt2(string_iter);
-			if (full_name == "Map.__iter__") return adapt2(map_iter);
-			if (full_name == "Set.__iter__") return adapt2(set_iter);
-			if (full_name == "Array.__iter__") return adapt2(array_iter);
-			if (full_name == "Tuple.__iter__") return adapt2(tuple_iter);
+			if (full_name == "Range.__iter__") return adapt(range_iter);
+			if (full_name == "String.__iter__") return adapt(string_iter);
+			if (full_name == "Map.__iter__") return adapt(map_iter);
+			if (full_name == "Set.__iter__") return adapt(set_iter);
+			if (full_name == "Array.__iter__") return adapt(array_iter);
+			if (full_name == "Tuple.__iter__") return adapt(tuple_iter);
 			return std::nullopt;
 		}
 		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
