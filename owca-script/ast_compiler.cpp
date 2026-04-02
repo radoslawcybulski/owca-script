@@ -321,7 +321,7 @@ namespace OwcaScript::Internal {
 			auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, base);
 
 			if (ec == std::errc() && ptr == text.data() + text.size()) {
-				return std::make_unique<AstExprConstant>(line, value);
+				return std::make_unique<AstExprConstant>(line, (Number)value);
 			}
 			else if (ec == std::errc() || ec == std::errc::invalid_argument) {
 				add_error_and_throw(OwcaErrorKind::InvalidNumber, filename_, line, std::format("`{}` is not a valid number", orig_text));
@@ -395,8 +395,8 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_value()
 	{
 		auto [line, tok] = consume();
-		if (tok == "true") return std::make_unique<AstExprConstant>(line, OwcaBool{ true });
-		if (tok == "false") return std::make_unique<AstExprConstant>(line, OwcaBool{ false });
+		if (tok == "true") return std::make_unique<AstExprConstant>(line, true);
+		if (tok == "false") return std::make_unique<AstExprConstant>(line, false);
 		if (tok == "nul") return std::make_unique<AstExprConstant>(line, OwcaEmpty{});
 		if (is_digit(tok[0]) || tok[0] == '.') return compile_parse_constant_number(line, tok);
 		

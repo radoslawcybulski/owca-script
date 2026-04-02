@@ -17,7 +17,6 @@ namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaEmpty value): OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
 	OwcaValue::OwcaValue(OwcaCompleted value): OwcaValue(OwcaValueKind::Completed, nullptr, nullptr) {}
 	OwcaValue::OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_object(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaBool value): OwcaValue(OwcaValueKind::Bool, (Number)(value.internal_value() ? 1 : 0)) {}
 	OwcaValue::OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
 	OwcaValue::OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), value.internal_self_object()) {}
 	OwcaValue::OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
@@ -83,7 +82,7 @@ namespace OwcaScript {
 			[](OwcaCompleted) { return false; },
 			[](OwcaRange) { return true; },
 			[](Number o) { return o != 0; },
-			[](OwcaBool o) { return o.internal_value(); },
+			[](bool o) { return o; },
 			[](OwcaString o) { return o.internal_value()->size() != 0; },
 			[](OwcaFunctions) { return true; },
 			[](OwcaMap o) { return o.size() != 0; },
@@ -117,13 +116,13 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "Range");
 		return OwcaRange{ (Internal::Range*)internal_ptr1() };
 	}
-	OwcaBool OwcaValue::as_bool(OwcaVM vm) const
+	bool OwcaValue::as_bool(OwcaVM vm) const
 	{
 		if (kind() != OwcaValueKind::Bool)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Bool");
 		NumberValue tmp;
 		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
-		return OwcaBool{ tmp.value != 0 };
+		return tmp.value != 0;
 	}
 	Number OwcaValue::as_float(OwcaVM vm) const
 	{
@@ -208,7 +207,7 @@ namespace OwcaScript {
 			[](OwcaCompleted) -> std::string_view { return "Completed"; },
 			[](OwcaRange) -> std::string_view { return "Range"; },
 			[](Number) -> std::string_view { return "Float"; },
-			[](OwcaBool) -> std::string_view { return "Bool"; },
+			[](bool) -> std::string_view { return "Bool"; },
 			[](OwcaString) -> std::string_view { return "String"; },
 			[](OwcaFunctions) -> std::string_view { return "Function"; },
 			[](OwcaMap) -> std::string_view { return "Map"; },
@@ -229,7 +228,7 @@ namespace OwcaScript {
 			[](OwcaCompleted o) -> std::string { return "completed"; },
 			[](OwcaRange o) -> std::string { return o.to_string(); },
 			[](Number o) -> std::string { return std::format("{}", o); },
-			[](OwcaBool o) -> std::string { return o.internal_value() ? "true" : "false"; },
+			[](bool o) -> std::string { return o ? "true" : "false"; },
 			[](OwcaString o) -> std::string { return o.internal_value()->to_string(); },
 			[](OwcaFunctions o) -> std::string { return "function-set " + std::string{ o.internal_value()->full_name }; },
 			[](OwcaMap o) -> std::string { return o.to_string(); },

@@ -8,9 +8,6 @@ void SimpleTest::SetUp()
 #endif
 }
 
-bool operator == (OwcaScript::OwcaBool a, OwcaScript::OwcaBool b) {
-	return a.internal_value() == b.internal_value();
-}
 bool operator == (OwcaScript::OwcaString a, OwcaScript::OwcaString b) {
 	return a.internal_value() == b.internal_value();
 }

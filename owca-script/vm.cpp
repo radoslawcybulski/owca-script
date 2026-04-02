@@ -36,7 +36,6 @@ namespace OwcaScript::Internal {
 
 	namespace {
 		template <typename T> struct FuncToTuple {
-
 		};
 		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
@@ -49,7 +48,7 @@ namespace OwcaScript::Internal {
 		static auto convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Bool) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
-			return v.as_bool(vm).internal_value();
+			return v.as_bool(vm);
 		}
 		template <std::integral T>
 		static T convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
@@ -196,12 +195,12 @@ namespace OwcaScript::Internal {
 			return o.internal_object()->iter(vm);
 		}
 		static OwcaValue bool_init(OwcaVM vm, OwcaValue, OwcaValue r) {
-			return OwcaBool{ VM::get(vm).calculate_if_true(r) };
+			return VM::get(vm).calculate_if_true(r);
 		}
 		static OwcaValue float_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return r.visit(
-				[&](OwcaBool value) -> Number {
-					return value.internal_value() ? 1.0f : 0.0f;
+				[&](bool value) -> Number {
+					return value ? 1.0f : 0.0f;
 				},
 				[&](Number value) -> Number {
 					return value;
@@ -273,7 +272,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaCompleted o) { return vm.create_string("completed"); },
 				[&](OwcaRange o) { return vm.create_string(o.to_string()); },
 				[&](Number o) { return vm.create_string(std::format("{}", o)); },
-				[&](OwcaBool o) { return vm.create_string(o.internal_value() ? "true" : "false"); },
+				[&](bool o) { return vm.create_string(o ? "true" : "false"); },
 				[&](OwcaString o) -> OwcaValue { return o; },
 				[&](OwcaFunctions s) { return vm.create_string(std::format("function {}", s.internal_value()->full_name)); },
 				[&](OwcaMap s) { return vm.create_string(s.to_string()); },
@@ -654,7 +653,7 @@ function native print(msg);
 				}
 				else if (key == "Bool") {
 					c_bool = read(value_pair.second);
-					c_bool->allocator_override = []() -> OwcaValue { return OwcaBool{ false }; };
+					c_bool->allocator_override = []() -> OwcaValue { return false; };
 					c_bool->reload_self = true;
 				}
 				else if (key == "Float") {
@@ -961,7 +960,7 @@ function native print(msg);
 			[&](OwcaCompleted o) -> OwcaValue* { return read_member(c_completed); },
 			[&](OwcaRange o) -> OwcaValue* { return read_member(c_range); },
 			[&](Number o) -> OwcaValue* { return read_member(c_float); },
-			[&](OwcaBool o) -> OwcaValue* { return read_member(c_bool); },
+			[&](bool o) -> OwcaValue* { return read_member(c_bool); },
 			[&](OwcaString o) -> OwcaValue* { return read_member(c_string); },
 			[&](OwcaFunctions o) -> OwcaValue* { return read_member(c_function); },
 			[&](OwcaMap o) -> OwcaValue* { return read_member(c_map); },
@@ -1493,8 +1492,8 @@ function native print(msg);
 			[&](OwcaRange value) -> bool {
 				return value.lower() != value.upper();
 			},
-			[&](OwcaBool value) -> bool {
-				return value.internal_value();
+			[&](bool value) -> bool {
+				return value;
 			},
 			[&](Number value) -> bool {
 				return value != 0.0;
@@ -1541,7 +1540,7 @@ function native print(msg);
 			[](OwcaCompleted o) -> size_t { return 12; },
 			[](OwcaRange o) -> size_t { return o.internal_object()->hash(); },
 			[](Number o) -> size_t { return calc_hash(o) * 1013 + 5; },
-			[](OwcaBool o) -> size_t { return (o.internal_value() ? 1 : 0) * 1021 + 7; },
+			[](bool o) -> size_t { return (o ? 1 : 0) * 1021 + 7; },
 			[](OwcaString o) -> size_t { return o.hash() * 1031 + 8; },
 			[](OwcaFunctions o) -> size_t { return calc_hash(o.name()) * 1033 + 9; },
 			[&](OwcaMap o) -> size_t {
@@ -1630,7 +1629,7 @@ function native print(msg);
 			[](OwcaCompleted o) { },
 			[](OwcaRange o) { },
 			[](Number o) { },
-			[](OwcaBool o) { },
+			[](bool o) { },
 			[](OwcaString o) { },
 			[&](OwcaFunctions s) {
 				gc_mark(s.internal_value(), ggc);

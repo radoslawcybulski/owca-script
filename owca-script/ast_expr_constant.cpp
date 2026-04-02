@@ -27,7 +27,7 @@ namespace OwcaScript::Internal {
 		IMPL_DEFINE_EXPR(Kind::ConstantBool)
 
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			return OwcaBool{ value };
+			return value;
 		}
 	};
 	class ImplExprConstantFloat : public ImplExpr {
@@ -62,7 +62,7 @@ namespace OwcaScript::Internal {
 			[&](OwcaEmpty) {
 				ei.code_buffer.preallocate<ImplExprConstantEmpty>(line);
 			},
-			[&](OwcaBool o) {
+			[&](bool o) {
 				ei.code_buffer.preallocate<ImplExprConstantBool>(line);
 			},
 			[&](Number o) {
@@ -80,9 +80,9 @@ namespace OwcaScript::Internal {
 				ret->init();
 				return ret;
 			},
-			[&](OwcaBool o) -> ImplExpr* {
+			[&](bool o) -> ImplExpr* {
 				auto ret = ei.code_buffer.preallocate<ImplExprConstantBool>(line);
-				ret->init(o.internal_value());
+				ret->init(o);
 				return ret;
 
 			},

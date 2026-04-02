@@ -8,7 +8,7 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstExprConstant : public AstExpr {
 		private:
-			std::variant<OwcaEmpty, Number, OwcaBool, std::string> value;
+			std::variant<OwcaEmpty, Number, bool, std::string> value;
 			
 			template <typename ... F> auto visit(F &&...fns) const {
 				return visit_variant(value, std::forward<F>(fns)...);
@@ -16,7 +16,7 @@ namespace OwcaScript {
 		public:
 			AstExprConstant(Line line, OwcaEmpty value) : AstExpr (line), value(value) {}
 			AstExprConstant(Line line, Number value) : AstExpr (line), value(value) {}
-			AstExprConstant(Line line, OwcaBool value) : AstExpr (line), value(value) {}
+			AstExprConstant(Line line, bool value) : AstExpr (line), value(value) {}
 			AstExprConstant(Line line, std::string value) : AstExpr (line), value(std::move(value)) {}
 
 			ImplExpr* emit(EmitInfo& ei) override;

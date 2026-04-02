@@ -32,7 +32,7 @@ namespace OwcaScript::Internal {
 		Kind kind() const override { return Kind::LogNot; }
 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
 			auto l = left->execute_expression(vm);
-			return OwcaBool{ !l.is_true() };
+			return !l.is_true();
 		}
 	};
 	class ImplExprNegate : public ImplExprOper1 {

@@ -100,8 +100,8 @@ namespace OwcaScript::Internal {
 		return Result::NotExec;
 	}
 
-	static Result compare_split(OwcaVM, CompareKind kind, const OwcaBool& l, const OwcaBool& r) { 
-		return build_result(kind, l.internal_value() == r.internal_value());
+	static Result compare_split(OwcaVM, CompareKind kind, const bool& l, const bool& r) { 
+		return build_result(kind, l == r);
 	}
 	static Result compare_split(OwcaVM, CompareKind kind, const Number& l, const Number& r) { return compare_impl(kind, l, r); }
 	static Result compare_split(OwcaVM, CompareKind kind, const OwcaString& l, const OwcaString& r) {
@@ -206,10 +206,10 @@ namespace OwcaScript::Internal {
 				auto right = next_value->execute_expression(vm);
 				VM::get(vm).update_execution_line(compare_line);
 
-				if (!AstExprCompare::execute_compare(vm, kind, left, right)) return OwcaBool{ false };
+				if (!AstExprCompare::execute_compare(vm, kind, left, right)) return false;
 				left = right;
 			}
-			return OwcaBool{ true };
+			return true;
 		}
 	};
 
@@ -222,7 +222,7 @@ namespace OwcaScript::Internal {
 			switch (left.kind()) {
 			case OwcaValueKind::Empty: return true;
 			case OwcaValueKind::Range: return left.as_range(vm).lower() == right.as_range(vm).lower() && left.as_range(vm).upper() == right.as_range(vm).upper() && left.as_range(vm).step() == right.as_range(vm).step();
-			case OwcaValueKind::Bool: return left.as_bool(vm).internal_value() == right.as_bool(vm).internal_value();
+			case OwcaValueKind::Bool: return left.as_bool(vm) == right.as_bool(vm);
 			case OwcaValueKind::Float: return left.as_float(vm) == right.as_float(vm);
 			case OwcaValueKind::String: return compare(vm, CompareKind::Eq, left, right) == Result::True;
 			case OwcaValueKind::Functions: return left.as_functions(vm).internal_value() == right.as_functions(vm).internal_value() && left.as_functions(vm).internal_self_object() == right.as_functions(vm).internal_self_object();

@@ -34,7 +34,7 @@ v = [ 1, 2, 3, 4 ][2:3];
 return v == [ 3 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple4)
@@ -45,7 +45,7 @@ v = [ 1, 2, 3, 4 ][2:6];
 return v == [ 3, 4 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple5)
@@ -56,7 +56,7 @@ v = [ 1, 2, 3, 4 ][-10:2];
 return v == [ 1, 2 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple6)
@@ -67,7 +67,7 @@ v = [ 1, 2, 3, 4 ][-2:-1];
 return v == [ 3 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple7)
@@ -78,7 +78,7 @@ v = [ 1, 2, 3, 4 ][-2:];
 return v == [ 3, 4 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple8)
@@ -89,7 +89,7 @@ v = [ 1, 2, 3, 4 ][:-2];
 return v == [ 1, 2 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, simple9)
@@ -100,7 +100,7 @@ v = [ 1, 2, 3, 4 ][:];
 return v == [ 1, 2, 3, 4 ];
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.as_bool(vm).internal_value());
+	ASSERT_TRUE(val.as_bool(vm));
 }
 
 TEST_F(ArrayTest, update)

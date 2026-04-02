@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_OWCA_VALUE_H
 
 #include "stdafx.h"
-#include "owca_bool.h"
 #include "owca_string.h"
 #include "owca_functions.h"
 #include "owca_range.h"
@@ -95,7 +94,6 @@ namespace OwcaScript {
 		OwcaValue(OwcaEmpty value);
 		OwcaValue(OwcaCompleted value);
 		OwcaValue(OwcaRange value);
-		OwcaValue(OwcaBool value);
 		OwcaValue(OwcaString value);
 		OwcaValue(OwcaFunctions value);
 		OwcaValue(OwcaMap value);
@@ -114,7 +112,7 @@ namespace OwcaScript {
 		OwcaEmpty as_nul(OwcaVM ) const;
 		OwcaCompleted as_completed(OwcaVM ) const;
 		OwcaRange as_range(OwcaVM ) const;
-		OwcaBool as_bool(OwcaVM ) const;
+		bool as_bool(OwcaVM ) const;
 		Number as_float(OwcaVM ) const;
 		OwcaString as_string(OwcaVM ) const;
 		OwcaFunctions as_functions(OwcaVM ) const;
