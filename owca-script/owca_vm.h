@@ -93,7 +93,6 @@ namespace OwcaScript {
 		OwcaValue create_string(std::string_view) const;
 		
 		void run_gc();
-		void gc_mark(OwcaValue, GenerationGC);
 	};
 }
 

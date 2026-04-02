@@ -35,7 +35,8 @@ namespace OwcaScript {
 
 			std::string_view type() const;
 			std::string to_string() const;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc);
+			
+			friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const Dictionary &);
 		};
 
 		struct DictionaryShared : public AllocationBase {
@@ -51,8 +52,8 @@ namespace OwcaScript {
 			std::string to_string() const override {
 				return dict.to_string();
 			}
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override {
-				return dict.gc_mark(vm, generation_gc);
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {
+				gc_mark_value(vm, generation_gc, dict);
 			}
 		};
 	}

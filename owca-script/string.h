@@ -18,7 +18,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "String"; }
 			std::string to_string() const override { return std::string{ text() }; }
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override {}
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {}
 			
 			String(std::uint32_t size) : size_(size) {}
 

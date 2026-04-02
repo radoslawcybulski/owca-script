@@ -29,4 +29,6 @@ namespace OwcaScript {
             return std::max(Number{ 0 }, std::floor((object->from + object->step * 0.5 - object->to) / -object->step));
         }
     }
+
+    void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaRange) {}
 }

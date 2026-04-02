@@ -35,6 +35,8 @@ namespace OwcaScript {
 			assert(sp.size() >= sizeof(T));
 			return *(T*)sp.data();
 		}
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaObject &);
 	};
 }
 

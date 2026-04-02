@@ -45,7 +45,7 @@ namespace OwcaScript {
 			
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
@@ -58,7 +58,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
@@ -70,7 +70,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "bound function's self helper object"; }
 			std::string to_string() const override { return std::string{ type() }; }
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 			BoundFunctionSelfObject* is_bound_function_self_object() override { return this; }
 		};
 	}

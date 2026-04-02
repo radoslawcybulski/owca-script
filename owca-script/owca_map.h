@@ -4,8 +4,6 @@
 #include "stdafx.h"
 
 namespace OwcaScript {
-	class OwcaValue;
-	
 	namespace Internal {
 		struct DictionaryShared;
 	}
@@ -69,6 +67,8 @@ namespace OwcaScript {
 
 		Iterator begin() const;
 		Iterator end() const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaMap &);
 	};
 }
 

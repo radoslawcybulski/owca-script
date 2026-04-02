@@ -101,7 +101,7 @@ TEST_F(SimpleTest, native_class)
 			}
 			void destroy_storage(void* ptr, size_t s) override {
 			}
-			void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+			void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 			}
 			size_t native_storage_size() override {
 				return 8;
@@ -138,7 +138,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
@@ -215,7 +215,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
@@ -293,7 +293,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
@@ -397,7 +397,7 @@ TEST_F(SimpleTest, variable_missing)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);

@@ -26,6 +26,8 @@ namespace OwcaScript {
 		OwcaValue pop_back();
 		OwcaValue pop_front();
         std::string to_string() const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaArray &);
 	};
 }
 

@@ -11,9 +11,9 @@ namespace OwcaScript::Internal {
     std::string Iterator::to_string() const {
         return "generator " + std::string{ frame.runtime_function->full_name };
     }
-    void Iterator::gc_mark(OwcaVM vm, GenerationGC generation_gc) {
-        frame.gc_mark(vm, generation_gc);
+    void Iterator::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
+        gc_mark_value(vm, generation_gc,  frame);
         for(auto q : allocated_objects)
-            VM::get(vm).gc_mark(q, generation_gc);
+            gc_mark_value(vm, generation_gc, q);
     }
 }

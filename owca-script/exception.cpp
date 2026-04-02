@@ -21,9 +21,9 @@ namespace OwcaScript::Internal {
         }
         return temp;
     }
-    void Exception::gc_mark(OwcaVM vm, GenerationGC generation_gc) {
-        if (parent_exception) {
-            VM::get(vm).gc_mark(parent_exception->internal_owner(), generation_gc);
+    void gc_mark_value(OwcaVM vm, GenerationGC gc, const Exception &e) {
+        if (e.parent_exception) {
+            gc_mark_value(vm, gc, *e.parent_exception);
         }
     }
 }

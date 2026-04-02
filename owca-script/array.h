@@ -23,7 +23,7 @@ namespace OwcaScript {
 			}
 			std::deque<OwcaValue> sub_deque(size_t from, size_t to) const;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 		};
 	}
 }

@@ -20,4 +20,8 @@ namespace OwcaScript {
 		auto it = object->all_base_classes.find(base.internal_value());
 		return it != object->all_base_classes.end();
 	}
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaClass &c) {
+		gc_mark_value(vm, gc, c.object);
+	}
 }

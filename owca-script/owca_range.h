@@ -22,6 +22,8 @@ namespace OwcaScript {
 		Number upper() const;
 		Number step() const;
 		Number size() const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaRange);
 	};
 }
 

@@ -27,4 +27,8 @@ namespace OwcaScript {
             object->frames[index].line
         };
     }
+
+    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaException &e) {
+        gc_mark_value(vm, gc, e.owner);
+    }
 }

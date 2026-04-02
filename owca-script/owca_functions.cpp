@@ -55,4 +55,10 @@ namespace OwcaScript {
 		assert(false);
 		return {};
 	}
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaFunctions &f) {
+		gc_mark_value(vm, gc, f.functions);
+		if (f.self_object)
+			gc_mark_value(vm, gc, f.self_object);
+	}
 }

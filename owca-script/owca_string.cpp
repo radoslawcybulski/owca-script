@@ -29,4 +29,6 @@ namespace OwcaScript {
     {
         return str->text();
     }
+
+    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaString &) {}
 }

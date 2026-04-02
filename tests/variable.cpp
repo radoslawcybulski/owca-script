@@ -23,7 +23,7 @@ namespace {
             void destroy_storage(void* ptr, size_t s) override {
                 counter += 1000;
             }
-            void gc_mark_members(void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+            void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
                 counter += 1000000;
             }
             size_t native_storage_size() override {

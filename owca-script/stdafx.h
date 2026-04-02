@@ -30,6 +30,9 @@
 
 namespace OwcaScript {
     using Number = double;
+	class OwcaValue;
+	class OwcaVM;
+	class GenerationGC;
 
     namespace Internal {
 		template <typename T, typename ... F> auto visit_variant(T && t, F &&...fns) {

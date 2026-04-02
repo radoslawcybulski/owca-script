@@ -34,26 +34,30 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Class::gc_mark(OwcaVM vm, GenerationGC generation_gc)
+	void Class::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
 	{
 		for (auto& it : values) {
-			visit_variant(it.second, [&](Class* p) {
-				VM::get(vm).gc_mark(p, generation_gc);
-			}, [&](RuntimeFunctions* &f) {
-				VM::get(vm).gc_mark(f, generation_gc);
+			visit_variant(it.second, [&](const Class* p) {
+				gc_mark_value(vm, generation_gc, p);
+			}, [&](const RuntimeFunctions* f) {
+				gc_mark_value(vm, generation_gc, f);
 			});
 		}
 		for (auto c : base_classes) {
-			VM::get(vm).gc_mark(c, generation_gc);
+			gc_mark_value(vm, generation_gc, c);
 		}
 		for (auto c : runtime_functions) {
-			VM::get(vm).gc_mark(c, generation_gc);
+			gc_mark_value(vm, generation_gc, c);
 		}
 	}
 
 	char* Class::native_storage_ptr(Object *o) const
 	{
 		return (char*)o + sizeof(*o);
+	}
+	const char* Class::native_storage_ptr(const Object *o) const
+	{
+		return (const char*)o + sizeof(*o);
 	}
 
 	void Class::initialize_add_base_class(OwcaVM vm, OwcaValue b)
@@ -133,11 +137,11 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Object::gc_mark(OwcaVM vm, GenerationGC generation_gc)
+	void Object::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
 	{
-		VM::get(vm).gc_mark(type_, generation_gc);
+		gc_mark_value(vm, generation_gc, type_);
 		for (auto& it : values)
-			VM::get(vm).gc_mark(it.second, generation_gc);
+			gc_mark_value(vm, generation_gc, it.second);
 		for(auto& it : type_->native_storage_pointers) {
 			auto p = type_->native_storage_ptr(this) + it.second.first;
 			auto size = it.second.second;

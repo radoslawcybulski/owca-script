@@ -27,6 +27,8 @@ namespace OwcaScript {
 		std::string_view type() const { return "class"; }
 		bool has_base_class(OwcaClass base) const;
 		OwcaValue operator [] (const std::string &key) const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaClass &);
 	};
 }
 

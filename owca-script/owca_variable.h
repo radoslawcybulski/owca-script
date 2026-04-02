@@ -18,6 +18,8 @@ namespace OwcaScript {
         OwcaVariable &operator = (const OwcaVariable &);
         OwcaVariable &operator = (OwcaVariable &&) = delete;
         OwcaVariable &operator = (OwcaValue);
+
+        friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaVariable &);
     };
 }
 

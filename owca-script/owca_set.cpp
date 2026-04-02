@@ -50,4 +50,8 @@ namespace OwcaScript {
 		auto p = dictionary->dict.find(key);
         return bool(p);
 	}
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaSet &o) {
+		gc_mark_value(vm, gc, o.dictionary);
+	}
 }

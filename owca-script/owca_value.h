@@ -233,7 +233,12 @@ namespace OwcaScript {
     private:
         handle_type h_;
         bool completed = false;
-    };	
+    };
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaValue);
+	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaEmpty) {}
+	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaCompleted) {}		
+	template <typename T> inline void gc_mark_value(OwcaVM vm, GenerationGC gc, T) requires(std::is_arithmetic_v<T>) {}		
 }
 
 namespace std {

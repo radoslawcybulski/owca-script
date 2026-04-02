@@ -23,6 +23,8 @@ namespace OwcaScript {
 		std::string_view name() const;
 		OwcaValue self() const;
 		OwcaValue bind(OwcaValue self) const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaFunctions &);
 	};
 }
 

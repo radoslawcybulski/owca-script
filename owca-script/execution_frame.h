@@ -26,7 +26,7 @@ namespace OwcaScript {
 			ExecutionFrame(Line line);
             ~ExecutionFrame();
 
-            void gc_mark(OwcaVM vm, GenerationGC generation_gc);
+            friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const ExecutionFrame &);
 		};
 	}
 }

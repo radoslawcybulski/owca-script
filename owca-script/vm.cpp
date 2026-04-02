@@ -550,7 +550,6 @@ namespace OwcaScript::Internal {
 		}
 		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
 			if (full_name == "Exception") return std::make_shared<NativeClassInterfaceSimpleImplementation<Exception>>();
-			if (full_name == "Range") return std::make_shared<NativeClassInterfaceSimpleImplementation<Range>>();
 			return nullptr;
 		}
 	};
@@ -561,7 +560,7 @@ class Nul {
 }
 class Iterator {
 }
-class native Range {
+class Range {
 	function native __init__(self, upper);
 	function native __init__(self, lower, upper);
 	function native __init__(self, lower, upper, step);
@@ -650,6 +649,9 @@ function native print(msg);
 				}
 				else if (key == "Range") {
 					c_range = read(value_pair.second);
+					c_range->allocator_override = [&]() -> OwcaValue {
+						return create_range();
+					};
 				}
 				else if (key == "Bool") {
 					c_bool = read(value_pair.second);
@@ -1358,6 +1360,11 @@ function native print(msg);
 		auto t = allocate<Tuple>(0, std::move(arguments));
 		return OwcaTuple{ t };
 	}
+	OwcaValue VM::create_range()
+	{
+		auto ds = allocate<Range>(0);
+		return OwcaValue{ OwcaRange{ ds } };
+	}
 	OwcaValue VM::create_map(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
@@ -1585,18 +1592,11 @@ function native print(msg);
 		auto ggc = GenerationGC{ ++generation_gc };
 
 		// mark
-		empty_tuple->gc_mark(this, ggc);
-		empty_string->gc_mark(this, ggc);
-
-		for (auto& s : stacktrace) {
-			s.gc_mark(this, ggc);
-		}
-		for(auto s : allocated_objects) {
-			gc_mark(s, ggc);
-		}
-		for(auto &s : builtin_objects) {
-			gc_mark(s.second, ggc);
-		}
+		gc_mark_value(this, ggc, empty_tuple);
+		gc_mark_value(this, ggc, empty_string);
+		gc_mark_value(this, ggc, stacktrace);
+		gc_mark_value(this, ggc, allocated_objects);
+		gc_mark_value(this, ggc, builtin_objects);
 
 		// sweep
 		AllocationBase *valid = &root_allocated_memory;
@@ -1614,65 +1614,10 @@ function native print(msg);
 		}
 	}
 
-	void VM::gc_mark(AllocationBase* ptr, GenerationGC ggc)
-	{
+	void gc_mark_value(OwcaVM vm, GenerationGC ggc, const AllocationBase* ptr) {
 		if (ptr->last_gc_mark != ggc) {
 			ptr->last_gc_mark = ggc;
-			ptr->gc_mark(this, ggc);
+			ptr->gc_mark(vm, ggc);
 		}
 	}
-
-	void VM::gc_mark(OwcaValue o, GenerationGC ggc)
-	{
-		o.visit(
-			[](OwcaEmpty o) { },
-			[](OwcaCompleted o) { },
-			[](OwcaRange o) { },
-			[](Number o) { },
-			[](bool o) { },
-			[](OwcaString o) { },
-			[&](OwcaFunctions s) {
-				gc_mark(s.internal_value(), ggc);
-				if (s.internal_self_object())
-					gc_mark(s.internal_self_object(), ggc);
-			},
-			[&](OwcaMap s) {
-				gc_mark(s.internal_value(), ggc);
-			},
-			[&](OwcaClass s) {
-				gc_mark(s.internal_value(), ggc);
-			},
-			[&](OwcaObject s) {
-				gc_mark(s.internal_value(), ggc);
-			},
-			[&](OwcaException s) {
-				gc_mark(s.internal_owner(), ggc);
-			},
-			[&](OwcaArray s) {
-				gc_mark(s.internal_value()->values, ggc);
-			},
-			[&](OwcaTuple s) {
-				gc_mark(s.internal_value()->values, ggc);
-			},
-			[&](OwcaSet s) {
-				gc_mark(s.internal_value(), ggc);
-			},
-			[&](OwcaIterator s) {
-				gc_mark(s.internal_value(), ggc);
-			}
-			);
-	}
-	void VM::gc_mark(const std::vector<OwcaValue>& o, GenerationGC ggc)
-	{
-		for (auto& q : o) {
-			gc_mark(q, ggc);
-		}
-	}
-	void VM::gc_mark(const std::deque<OwcaValue>& o, GenerationGC ggc)
-	{
-		for (auto& q : o) {
-			gc_mark(q, ggc);
-		}
-	}
-
 }

@@ -19,9 +19,9 @@ namespace OwcaScript::Internal {
         return temp;
     }
 
-    void Tuple::gc_mark(OwcaVM vm, GenerationGC generation_gc)
+    void Tuple::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
     {
-        VM::get(vm).gc_mark(values, generation_gc);
+        gc_mark_value(vm, generation_gc, values);
     }
 
     size_t Tuple::hash() const

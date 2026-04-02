@@ -25,7 +25,7 @@ namespace OwcaScript {
 			}
             std::vector<OwcaValue> sub_array(size_t from, size_t to) const;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override;
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
             size_t hash() const;
 		};
 	}

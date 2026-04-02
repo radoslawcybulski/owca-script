@@ -36,4 +36,8 @@ namespace OwcaScript {
 		}
 		return sp;
 	}
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaObject &obj)
+	{
+		gc_mark_value(vm, gc, obj.internal_value());
+	}
 }

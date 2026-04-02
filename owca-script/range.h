@@ -21,7 +21,7 @@ namespace OwcaScript {
 			}
 			std::string to_string() const override;
             Generator iter(OwcaVM vm) const;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) override {}
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {}
             size_t hash() const;
 		};
         struct RangeIterator {

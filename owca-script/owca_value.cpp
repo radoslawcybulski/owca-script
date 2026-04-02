@@ -303,4 +303,14 @@ namespace OwcaScript {
 			);
 	}
 
+	static void gc_mark_value_call(OwcaVM vm, GenerationGC gc, auto o) {
+		gc_mark_value(vm, gc, o);
+	}
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaValue o) {
+
+		o.visit([&](auto o) -> void {
+				gc_mark_value_call(vm, gc, o);
+			});
+	}
 }

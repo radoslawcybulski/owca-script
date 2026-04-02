@@ -8,10 +8,10 @@ namespace OwcaScript::Internal {
     ExecutionFrame::ExecutionFrame(Line line) : line(line) {}
     ExecutionFrame::~ExecutionFrame() = default;
 
-    void ExecutionFrame::gc_mark(OwcaVM vm, GenerationGC generation_gc)
+    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame &e)
     {
-        VM::get(vm).gc_mark(runtime_function, generation_gc);
-        VM::get(vm).gc_mark(runtime_functions, generation_gc);
-        VM::get(vm).gc_mark(values, generation_gc);
+        gc_mark_value(vm, generation_gc, e.runtime_function);
+        gc_mark_value(vm, generation_gc, e.runtime_functions);
+        gc_mark_value(vm, generation_gc, e.values);
     }
 }

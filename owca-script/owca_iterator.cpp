@@ -12,4 +12,7 @@ namespace OwcaScript {
     {
         return object->execute_next();
     }
+    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &o) {
+        gc_mark_value(vm, gc, o.object);
+    }
 }

@@ -151,6 +151,7 @@ namespace OwcaScript {
 			OwcaValue create_array(std::deque<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
 			OwcaValue create_exception();
+			OwcaValue create_range();
 			OwcaValue create_map(const std::span<OwcaValue> &arguments = {});
 			OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
 			OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
@@ -189,10 +190,6 @@ namespace OwcaScript {
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			std::shared_ptr<CodeBuffer> currently_running_code() const;
 			void run_gc();
-			void gc_mark(AllocationBase* ptr, GenerationGC ggc);
-			void gc_mark(OwcaValue , GenerationGC ggc);
-			void gc_mark(const std::vector<OwcaValue> &, GenerationGC ggc);
-			void gc_mark(const std::deque<OwcaValue> &, GenerationGC ggc);
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
 				auto align = std::max(alignof(T), size_t(16));
@@ -210,6 +207,30 @@ namespace OwcaScript {
 
 			static VM& get(const OwcaVM &v);
 		};
+
+		void gc_mark_value(OwcaVM vm, GenerationGC ggc, const AllocationBase* ptr);
+		template <std::integral T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, T) {}
+		template <std::floating_point T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, T) {}
+		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::string &) {}
+		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, std::string_view) {}
+		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::vector<T> &vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q);
+			}
+		}
+		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::deque<T> &vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q);
+			}
+		}
+		template <typename K, typename V, typename ... ARGS> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::unordered_map<K, V, ARGS...> &vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q.first);
+				gc_mark_value(vm, ggc, q.second);
+			}
+		}
+
+		//std::unordered_map<std::string, OwcaValue>
 	}
 }
 

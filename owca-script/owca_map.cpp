@@ -61,4 +61,9 @@ namespace OwcaScript {
 		if (!p) return nullptr;
 		return p->second;
 	}
+
+	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaMap &map) {
+		gc_mark_value(vm, gc, map.dictionary);
+
+	}
 }

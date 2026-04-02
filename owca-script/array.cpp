@@ -19,9 +19,9 @@ namespace OwcaScript::Internal {
         return temp;
     }
 
-    void Array::gc_mark(OwcaVM vm, GenerationGC generation_gc)
+    void Array::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
     {
-        VM::get(vm).gc_mark(values, generation_gc);
+        gc_mark_value(vm, generation_gc, values);
     }
 
     std::deque<OwcaValue> Array::sub_deque(size_t from, size_t to) const

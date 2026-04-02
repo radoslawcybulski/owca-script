@@ -29,6 +29,8 @@ namespace OwcaScript {
 
         bool completed() const;
         OwcaValue next() const;
+
+        friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &);
 	};
 }
 

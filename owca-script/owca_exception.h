@@ -29,6 +29,8 @@ namespace OwcaScript {
 			unsigned int line;
 		};
 		Frame frame(unsigned int) const;
+
+		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaException &);
 	};
 }
 
