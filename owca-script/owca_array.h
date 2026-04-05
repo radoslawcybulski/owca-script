@@ -28,6 +28,38 @@ namespace OwcaScript {
         std::string to_string() const;
 
 		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaArray &);
+
+		class Iterator {
+		public:
+			using value_type = OwcaValue;
+			using pointer = value_type*;
+			using reference = value_type;
+			using difference_type = std::ptrdiff_t;
+			using iterator_category = std::forward_iterator_tag;
+
+			Iterator(Internal::Array *array, size_t pos) : array(array), pos(pos) {}
+
+			reference operator*() const;
+			pointer operator->();
+
+			Iterator& operator++() { ++pos; return *this; }
+
+			Iterator operator++(int) {
+				Iterator temp = *this;
+				++(*this);
+				return temp;
+			}
+
+			friend bool operator==(Iterator a, Iterator b) { return a.array == b.array && a.pos == b.pos; }
+			friend bool operator!=(Iterator a, Iterator b) { return !(a == b); }
+
+		private:
+			Internal::Array *array;
+			size_t pos;
+		};
+
+		Iterator begin() { return Iterator(object, 0); }
+		Iterator end() { return Iterator(object, size()); }
 	};
 }
 

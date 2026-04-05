@@ -57,6 +57,16 @@ namespace OwcaScript {
         return v;
     }
 
+    OwcaArray::Iterator::reference OwcaArray::Iterator::operator*() const
+    {
+        return array->values[pos];
+    }
+
+    OwcaArray::Iterator::pointer OwcaArray::Iterator::operator->()
+    {
+        return &array->values[pos];
+    }
+
     void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaArray &o) {
         gc_mark_value(vm, gc, o.object);
     }

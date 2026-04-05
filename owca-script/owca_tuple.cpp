@@ -20,8 +20,15 @@ namespace OwcaScript {
         return object->to_string();
     }
 
-    std::vector<OwcaValue>::const_iterator OwcaTuple::begin() { return object->values.begin(); }
-    std::vector<OwcaValue>::const_iterator OwcaTuple::end() { return object->values.end(); }
+    OwcaTuple::Iterator::reference OwcaTuple::Iterator::operator*() const
+    {
+        return tuple->values[pos];
+    }
+
+    OwcaTuple::Iterator::pointer OwcaTuple::Iterator::operator->()
+    {
+        return &tuple->values[pos];
+    }
 
     void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaTuple &t) {
         gc_mark_value(vm, gc, t.object);

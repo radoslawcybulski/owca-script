@@ -22,8 +22,37 @@ namespace OwcaScript {
 
         std::string to_string() const;
 
-        std::vector<OwcaValue>::const_iterator begin();
-        std::vector<OwcaValue>::const_iterator end();
+		class Iterator {
+		public:
+			using value_type = OwcaValue;
+			using pointer = value_type*;
+			using reference = value_type;
+			using difference_type = std::ptrdiff_t;
+			using iterator_category = std::forward_iterator_tag;
+
+			Iterator(Internal::Tuple *tuple, size_t pos) : tuple(tuple), pos(pos) {}
+
+			reference operator*() const;
+			pointer operator->();
+
+			Iterator& operator++() { ++pos; return *this; }
+
+			Iterator operator++(int) {
+				Iterator temp = *this;
+				++(*this);
+				return temp;
+			}
+
+			friend bool operator==(Iterator a, Iterator b) { return a.tuple == b.tuple && a.pos == b.pos; }
+			friend bool operator!=(Iterator a, Iterator b) { return !(a == b); }
+
+		private:
+			Internal::Tuple *tuple;
+			size_t pos;
+		};
+
+		Iterator begin() { return Iterator(object, 0); }
+		Iterator end() { return Iterator(object, size()); }
 
 		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaTuple &);
 	};
