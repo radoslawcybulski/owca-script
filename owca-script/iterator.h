@@ -8,6 +8,7 @@
 #include "owca_iterator.h"
 #include "owca_value.h"
 #include "owca_variable.h"
+#include "generator.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -22,6 +23,8 @@ namespace OwcaScript {
             ImplStat::State state;
             std::optional<Generator> generator;
 			std::vector<AllocationBase*> allocated_objects;
+			OwcaValue value;
+			bool first_time = true;
 
             Iterator(size_t sz, Line line) : frame(line), state(sz) {}
 

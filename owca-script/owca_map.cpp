@@ -3,6 +3,7 @@
 #include "dictionary.h"
 #include "allocation_base.h"
 #include "owca_value.h"
+#include "generator.h"
 
 namespace OwcaScript {
 	std::string OwcaMap::to_string() const

@@ -114,3 +114,20 @@ return v[2];
 	auto val = vm.execute(code);
 	ASSERT_EQ(val.as_float(vm), 5);
 }
+
+TEST_F(ArrayTest, from_iter)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+function generator foo() {
+	yield 1;
+	yield 2;
+	yield 3;
+	yield 4;
+}
+return Array(foo()) == [ 1, 2, 3, 4 ];
+)");
+	auto val = vm.execute(code);
+	ASSERT_TRUE(val.as_bool(vm));
+}
+

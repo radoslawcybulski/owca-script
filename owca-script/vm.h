@@ -19,7 +19,6 @@ namespace OwcaScript {
 		struct Class;
 		struct Array;
 		struct RuntimeFunction;
-		struct IteratorBase;
 		struct Exception;
 		enum class CompareKind;
 

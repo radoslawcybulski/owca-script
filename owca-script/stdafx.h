@@ -31,6 +31,8 @@
 namespace OwcaScript {
     using Number = double;
 	class OwcaValue;
+    class Generator;
+    class Function;
 	class OwcaVM;
 	class GenerationGC;
 

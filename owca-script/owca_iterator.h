@@ -2,20 +2,13 @@
 #define RC_OWCA_SCRIPT_OWCA_ITERATOR_H
 
 #include "stdafx.h"
-#include "owca_map.h"
 
 namespace OwcaScript {
     class OwcaValue;
 
     namespace Internal {
         class VM;
-
-        struct IteratorBase {
-            virtual ~IteratorBase() = default;
-
-            virtual OwcaValue next() = 0;
-        };
-
+        struct DictionaryShared;
         struct Iterator;
     }
 
@@ -31,6 +24,47 @@ namespace OwcaScript {
         OwcaValue next() const;
 
         friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &);
+
+		class Iterator {
+            OwcaIterator *iter;
+		public:
+            Iterator(OwcaIterator *iter);
+			
+            using value_type = OwcaValue;
+			using pointer = value_type*;
+			using reference = value_type;
+			using difference_type = std::ptrdiff_t;
+			using iterator_category = std::forward_iterator_tag;
+
+			reference operator*() const;
+			pointer operator->() const;
+
+			Iterator& operator++();
+			Iterator operator++(int) {
+				Iterator temp = *this;
+				++(*this);
+				return temp;
+			}
+
+			friend bool operator==(Iterator a, Iterator b) {
+                if (!a.iter) {
+                    if (!b.iter) return true;
+                    return b == a;
+                }
+                if (!b.iter) {
+                    return a.iter->completed();
+                }
+                return false;
+            }
+			friend bool operator!=(Iterator a, Iterator b) { return !(a == b); }
+
+		private:
+			Internal::DictionaryShared *dictionary;
+			size_t pos;
+		};
+
+        Iterator begin() { return Iterator{ this }; }
+        Iterator end() { return Iterator{ nullptr }; }
 	};
 }
 

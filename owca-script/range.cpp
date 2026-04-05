@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "range.h"
 #include "owca_value.h"
+#include "generator.h"
 #include "vm.h"
 
 namespace OwcaScript::Internal {

@@ -229,6 +229,11 @@ namespace OwcaScript::Internal {
 						self.internal_value()->values.push_back(v);
 					}
 				},
+				[&](OwcaIterator o) {
+					for(auto v : o) {
+						self.internal_value()->values.push_back(v);
+					}
+				},
 				[&](const auto &) {
 					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
 				}
@@ -292,6 +297,11 @@ namespace OwcaScript::Internal {
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
 					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+						self.internal_value()->values.push_back(v);
+					}
+				},
+				[&](OwcaIterator o) {
+					for(auto v : o) {
 						self.internal_value()->values.push_back(v);
 					}
 				},
