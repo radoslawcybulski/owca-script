@@ -103,9 +103,9 @@ namespace OwcaScript::Internal {
 	void Dictionary::delete_pos(size_t pos, bool rehash)
 	{
 		std::get<0>(values[pos]) = Deleted;
-		if (rehash) try_rehash();
 		++version;
 		--elements;
+		if (rehash) try_rehash();
 	}	
 	OwcaValue Dictionary::pop(OwcaValue key, std::optional<OwcaValue> default_value)
 	{
@@ -132,6 +132,7 @@ namespace OwcaScript::Internal {
 
 	OwcaValue Dictionary::set_default(OwcaValue key, OwcaValue default_value)
 	{
+		try_rehash();
 		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
 			if (values.empty()) {

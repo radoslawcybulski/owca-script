@@ -489,6 +489,9 @@ namespace OwcaScript::Internal {
 			std::cout << r.to_string() << "\n";
 			return {};
 		}
+		static OwcaValue time(OwcaVM vm) {
+			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1'000'000'000.0;
+		}
 
 		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") {
@@ -535,6 +538,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.sort") return adapt(tuple_sort);
 			if (full_name == "hash") return adapt(hash);
 			if (full_name == "print") return adapt(print);
+			if (full_name == "time") return adapt(time);
 			if (full_name == "Exception.__init__") return adapt(exception_init);
 			if (full_name == "Exception.count") return adapt(exception_count);
 			if (full_name == "Exception.message") return adapt(exception_message);
@@ -649,6 +653,7 @@ class InvalidOperationException(Exception) {}
 
 function native hash(value);
 function native print(msg);
+function native time();
 )" };
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());

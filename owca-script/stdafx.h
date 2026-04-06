@@ -27,6 +27,7 @@
 #include <cstring>
 #include <cmath>
 #include <bit>
+#include <chrono>
 
 namespace OwcaScript {
     using Number = double;
