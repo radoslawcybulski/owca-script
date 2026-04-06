@@ -24,7 +24,7 @@ namespace OwcaScript::Internal {
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
-		empty_tuple = create_tuple({}).as_tuple(vm).internal_value();
+		empty_tuple = create_tuple(std::vector<OwcaValue>{}).as_tuple(vm).internal_value();
 		empty_string = allocate<String>(0, 0u);
 	}
 	VM::~VM() {
@@ -178,13 +178,135 @@ namespace OwcaScript::Internal {
 			auto f = r.as_functions(vm);
 			return f.self();
 		}
-		static OwcaValue map_size(OwcaVM vm, const OwcaMap &r) {
+		static OwcaValue map_has_key(OwcaVM vm, OwcaMap self, OwcaValue key) {
+			return self.has_key(key);
+		}
+		static OwcaValue map_pop(OwcaVM vm, OwcaMap self, OwcaValue key) {
+			return self.pop(key);
+		}
+		static OwcaValue map_pop_or_default_2(OwcaVM vm, OwcaMap self, OwcaValue key) {
+			return self.pop_or_default(key, {});
+		}
+		static OwcaValue map_pop_or_default_3(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+			return self.pop_or_default(key, default_value);
+		}
+		static OwcaValue map_get_or_default(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+			return self.get_or_default(key, default_value);
+		}
+		static OwcaValue map_set_default(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+			return self.set_default(key, default_value);
+		}		
+		static Generator map_keys(OwcaVM vm, OwcaMap self) {
+			return self.keys();
+		}
+		static Generator map_values(OwcaVM vm, OwcaMap self) {
+			return self.values();
+		}
+		static Generator map_items(OwcaVM vm, OwcaMap self) {
+			return self.items();
+		}
+		static OwcaValue map_init(OwcaVM vm, OwcaMap self, OwcaValue r) {
+			r.visit(
+				[&](OwcaArray o) {
+					for(auto v : o.internal_value()->values) {
+						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						self[pair.first] = pair.second;
+					}
+				},
+				[&](OwcaTuple o) {
+					for(auto v : o.internal_value()->values) {
+						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						self[pair.first] = pair.second;
+					}
+				},
+				[&](OwcaMap o) {
+					o.internal_value()->dict.clone_to(self.internal_value()->dict);
+				},
+				[&](OwcaIterator o) {
+					for(auto v : o) {
+						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						self[pair.first] = pair.second;
+					}
+				},
+				[&](OwcaObject o) {
+					auto iter = VM::get(vm).create_iterator(o);
+					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						self[pair.first] = pair.second;
+					}
+				},
+				[&](const auto &) {
+					VM::get(vm).throw_wrong_type(std::format("can't create a map from {}", r.type()));
+				}
+			);
+			return {};
+		}
+		static OwcaValue map_size(OwcaVM vm, OwcaMap r) {
 			return r.size();
 		}
 		static Generator map_iter(OwcaVM vm, OwcaMap o) {
 			for(auto v : o) {
 				co_yield v.first;
 			}
+		}
+		static OwcaValue set_init(OwcaVM vm, OwcaSet self, OwcaValue r) {
+			r.visit(
+				[&](OwcaArray o) {
+					for(auto v : o) {
+						self.add(v);
+					}
+				},
+				[&](OwcaTuple o) {
+					for(auto v : o) {
+						self.add(v);
+					}
+				},
+				[&](OwcaMap o) {
+					for(auto val : o) {
+						self.add(val.first);
+					}
+				},
+				[&](OwcaSet o) {
+					o.internal_value()->dict.clone_to(self.internal_value()->dict);
+				},
+				[&](OwcaString o) {
+					for(auto i = 0u; i < o.size(); ++i) {
+						self.add(o.substr(i, i + 1));
+					}
+				},
+				[&](OwcaObject o) {
+					auto iter = VM::get(vm).create_iterator(o);
+					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+						self.add(v);
+					}
+				},
+				[&](OwcaIterator o) {
+					for(auto v : o) {
+						self.add(v);
+					}
+				},
+				[&](const auto &) {
+					VM::get(vm).throw_wrong_type(std::format("can't create a set from {}", r.type()));
+				}
+			);
+			return {};
+		}
+		static OwcaValue set_union_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+			return self | other;
+		}
+		static OwcaValue set_intersection_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+			return self & other;
+		}
+		static OwcaValue set_difference_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+			return self - other;
+		}
+		static OwcaValue set_add(OwcaVM vm, OwcaSet self, OwcaValue v) {
+			self.add(v);
+			return {};
+		}
+		static OwcaValue set_remove(OwcaVM vm, OwcaSet self, OwcaValue v) {
+			self.remove(v);
+			return {};
 		}
 		static OwcaValue set_size(OwcaVM vm, const OwcaSet &r) {
 			return r.size();
@@ -384,8 +506,21 @@ namespace OwcaScript::Internal {
 			if (full_name == "String.size") return adapt(string_size);
 			if (full_name == "bound_value") return adapt(function_bound_value);
 			if (full_name == "Function.bind") return adapt(function_bind);
+			if (full_name == "Map.__init__") return adapt(map_init);
 			if (full_name == "Map.size") return adapt(map_size);
+			if (full_name == "Map.has_key") return adapt(map_has_key);
+			if (full_name == "Map.pop") return adapt(map_pop);
+			if (full_name == "Map.pop_or_default" && param_names.size() == 2) return adapt(map_pop_or_default_2);
+			if (full_name == "Map.pop_or_default" && param_names.size() == 3) return adapt(map_pop_or_default_3);
+			if (full_name == "Map.get_or_default") return adapt(map_get_or_default);
+			if (full_name == "Map.set_default") return adapt(map_set_default);
+			if (full_name == "Set.__init__") return adapt(set_init);
 			if (full_name == "Set.size") return adapt(set_size);
+			if (full_name == "Set.add") return adapt(set_add);
+			if (full_name == "Set.remove") return adapt(set_remove);
+			if (full_name == "Set.union_with") return adapt(set_union_with);
+			if (full_name == "Set.intersection_with") return adapt(set_intersection_with);
+			if (full_name == "Set.difference_with") return adapt(set_difference_with);
 			if (full_name == "Class.name") return adapt(class_name);
 			if (full_name == "Class.full_name") return adapt(class_full_name);
 			if (full_name == "Array.__init__") return adapt(array_init);
@@ -412,6 +547,9 @@ namespace OwcaScript::Internal {
 			if (full_name == "Range.__iter__") return adapt(range_iter);
 			if (full_name == "String.__iter__") return adapt(string_iter);
 			if (full_name == "Map.__iter__") return adapt(map_iter);
+			if (full_name == "Map.items") return adapt(map_items);
+			if (full_name == "Map.keys") return adapt(map_keys);
+			if (full_name == "Map.values") return adapt(map_values);
 			if (full_name == "Set.__iter__") return adapt(set_iter);
 			if (full_name == "Array.__iter__") return adapt(array_iter);
 			if (full_name == "Tuple.__iter__") return adapt(tuple_iter);
@@ -455,10 +593,26 @@ class Function {
 }
 function native bound_value(func);
 class Map {
+	function native __init__(self, value);
 	function native size(self);
 	function native generator __iter__(self);
+	function native has_key(self, key);
+	function native pop(self, key);
+	function native pop_or_default(self, key);
+	function native pop_or_default(self, key, default);
+	function native get_or_default(self, key, default);
+	function native set_default(self, key, default);
+	function native generator items(self);
+	function native generator keys(self);
+	function native generator values(self);
 }
 class Set {
+	function native __init__(self, value);
+	function native union_with(self, other);
+	function native intersection_with(self, other);
+	function native difference_with(self, other);
+	function native add(self, value);
+	function native remove(self, value);
 	function native size(self);
 	function native generator __iter__(self);
 }
@@ -570,7 +724,7 @@ function native print(msg);
 				else if (key == "Tuple") {
 					c_tuple = read(value_pair.second);
 					c_tuple->allocator_override = [&]() -> OwcaValue {
-						return create_tuple({});
+						return create_tuple(std::vector<OwcaValue>{});
 					};
 				}
 				else if (key == "Set") {
@@ -618,6 +772,10 @@ function native print(msg);
 		throw res.as_exception(this);
 	}
 
+	void VM::throw_dictionary_changed(bool is_dict)
+	{
+		throw_exception(c_invalid_operation_exception, is_dict ? "dictionary was changed during iteration" : "set was changed during iteration");
+	}
 	void VM::throw_not_implemented(std::string_view msg)
 	{
 		throw_exception(c_invalid_operation_exception, msg);
@@ -780,6 +938,39 @@ function native print(msg);
 		throw_exception(c_invalid_operation_exception, "container is empty");
 	}
 	
+	std::pair<OwcaValue, OwcaValue> VM::unpack_two_elements_or_raise(OwcaValue val) {
+		return val.visit(
+			[&](OwcaArray o) {
+				if (o.internal_value()->values.size() != 2) {
+					throw_exception(c_invalid_operation_exception, std::format("expected container with two elements, got {}", o.internal_value()->values.size()));
+				}
+				return std::make_pair(o[0], o[1]);
+			},
+			[&](OwcaTuple o) {
+				if (o.internal_value()->values.size() != 2) {
+					throw_exception(c_invalid_operation_exception, std::format("expected container with two elements, got {}", o.internal_value()->values.size()));
+				}
+				return std::make_pair(o[0], o[1]);
+			},
+			[&](OwcaIterator o) {
+				std::array<OwcaValue, 2> values;
+				size_t count = 0;
+				for(auto v : o) {
+					if (count >= 2) {
+						throw_exception(c_invalid_operation_exception, "expected container with two elements, got more");
+					}
+					values[count++] = v;
+				}
+				if (count < 2) {
+					throw_exception(c_invalid_operation_exception, std::format("expected container with two elements, got {}", count));
+				}
+				return std::make_pair(values[0], values[1]);
+			},
+			[&](const auto &) -> std::pair<OwcaValue, OwcaValue> {
+				throw_exception(c_invalid_operation_exception, std::format("expected container with two elements, got {}", val.type()));
+			}
+		);
+	}
 	OwcaValue VM::member(OwcaValue val, std::string_view key)
 	{
 		auto v = try_member(val, key);
@@ -1228,6 +1419,11 @@ function native print(msg);
 		auto t = allocate<Array>(0, std::move(arguments));
 		return OwcaArray{ t };
 	}
+	OwcaValue VM::create_tuple(std::pair<OwcaValue, OwcaValue> arguments)
+	{
+		auto t = allocate<Tuple>(0, std::vector<OwcaValue>{ arguments.first, arguments.second });
+		return OwcaTuple{ t };
+	}
 	OwcaValue VM::create_tuple(std::vector<OwcaValue> arguments)
 	{
 		if (arguments.empty() && empty_tuple != nullptr) return OwcaTuple{ empty_tuple };
@@ -1242,7 +1438,7 @@ function native print(msg);
 	OwcaValue VM::create_map(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm, true);
+		auto ds = allocate<DictionaryShared>(0, vm);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(arguments[i], arguments[i + 1]);
 		}
@@ -1251,7 +1447,7 @@ function native print(msg);
 	OwcaValue VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm, true);
+		auto ds = allocate<DictionaryShared>(0, vm);
 		for(auto q : arguments) {
 			ds->dict.write(q.first, q.second);
 		}
@@ -1260,7 +1456,7 @@ function native print(msg);
 	OwcaValue VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm, true);
+		auto ds = allocate<DictionaryShared>(0, vm);
 		for(auto q : arguments) {
 			ds->dict.write(create_string_from_view(q.first), q.second);
 		}
@@ -1269,7 +1465,7 @@ function native print(msg);
 	OwcaValue VM::create_set(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm, false);
+		auto ds = allocate<SetShared>(0, vm);
 		for (auto i = 0u; i < arguments.size(); ++i) {
 			ds->dict.write(arguments[i], OwcaEmpty{});
 		}

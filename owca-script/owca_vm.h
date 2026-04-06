@@ -85,6 +85,7 @@ namespace OwcaScript {
 		OwcaValue create_array(std::span<OwcaValue> values) const;
 		OwcaValue create_array(std::deque<OwcaValue> values) const;
 		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
+		OwcaValue create_tuple(std::pair<OwcaValue, OwcaValue> values) const;
 		OwcaValue create_map() const;
 		OwcaValue create_map(const std::span<OwcaValue> &values) const;
 		OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const;

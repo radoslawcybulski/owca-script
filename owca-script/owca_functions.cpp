@@ -47,7 +47,7 @@ namespace OwcaScript {
 		case Internal::AllocationBase::Kind::Class: return OwcaClass{ static_cast<Internal::Class*>(self_object) };
 		case Internal::AllocationBase::Kind::Tuple: return OwcaTuple{ static_cast<Internal::Tuple*>(self_object) };
 		case Internal::AllocationBase::Kind::Array: return OwcaArray{ static_cast<Internal::Array*>(self_object) };
-		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::DictionaryShared*>(self_object) };
+		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::SetShared*>(self_object) };
 		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };
 		case Internal::AllocationBase::Kind::BoundSelfObject: return static_cast<Internal::BoundFunctionSelfObject*>(self_object)->self;
 		case Internal::AllocationBase::Kind::Range: return OwcaRange{ static_cast<Internal::Range*>(self_object) };

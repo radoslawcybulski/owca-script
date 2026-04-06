@@ -7,23 +7,38 @@ namespace OwcaScript {
 	class OwcaValue;
 	
 	namespace Internal {
-		struct DictionaryShared;
+		struct SetShared;
 	}
 
 	class OwcaSet {
-		Internal::DictionaryShared *dictionary;
+		Internal::SetShared *dictionary;
 
 	public:
-		OwcaSet(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
+		OwcaSet(Internal::SetShared* dictionary) : dictionary(dictionary) {}
 		~OwcaSet() = default;
 
 		auto internal_value() const { return dictionary; }
 		
 		std::string to_string() const;
 		size_t size() const;
+		void add(OwcaValue key);
+		void remove(OwcaValue key);
+		OwcaSet copy() const;
 
 		bool has_value(OwcaValue key) const;
 
+		void union_with(OwcaSet other);
+		void intersection_with(OwcaSet other);
+		void difference_with(OwcaSet other);
+
+		OwcaSet operator | (OwcaSet other) const { auto v = copy(); v.union_with(other);  return v; }
+		OwcaSet operator & (OwcaSet other) const { auto v = copy(); v.intersection_with(other);  return v; }
+		OwcaSet operator - (OwcaSet other) const { auto v = copy(); v.difference_with(other);  return v; }
+
+		OwcaSet &operator |= (OwcaSet other) { union_with(other); return *this; }
+		OwcaSet &operator &= (OwcaSet other) { intersection_with(other); return *this; }
+		OwcaSet &operator -= (OwcaSet other) { difference_with(other); return *this; }
+		
 		class Iterator {
 		public:
 			using value_type = const OwcaValue&;
@@ -32,7 +47,7 @@ namespace OwcaScript {
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::forward_iterator_tag;
 
-			Iterator(Internal::DictionaryShared *dictionary, size_t pos) : dictionary(dictionary), pos(pos) {}
+			Iterator(Internal::SetShared *dictionary, size_t pos);
 
 			reference operator*() const;
 			pointer operator->();
@@ -49,8 +64,9 @@ namespace OwcaScript {
 			friend bool operator!=(Iterator a, Iterator b) { return a.pos != b.pos; }
 
 		private:
-			Internal::DictionaryShared *dictionary;
+			Internal::SetShared *dictionary;
 			size_t pos;
+			size_t version;
 		};
 
 		Iterator begin() const;

@@ -178,7 +178,7 @@ namespace OwcaScript {
 	{
 		if (kind() != OwcaValueKind::Set)
 			Internal::VM::get(vm).throw_wrong_type(type(), "Set");
-		return OwcaSet{ (Internal::DictionaryShared*)internal_ptr1() };
+		return OwcaSet{ (Internal::SetShared*)internal_ptr1() };
 	}
 	OwcaException OwcaValue::as_exception(OwcaVM vm) const
 	{

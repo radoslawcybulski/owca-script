@@ -25,9 +25,14 @@ namespace OwcaScript {
 		
 		OwcaValue *value(OwcaValue key) const;
 
-		std::vector<OwcaValue> keys() const;
-		std::vector<OwcaValue> values() const;
-		std::vector<std::pair<OwcaValue, OwcaValue>> items() const;
+		Generator keys() const;
+		Generator values() const;
+		Generator items() const;
+		OwcaValue has_key(OwcaValue key);
+		OwcaValue pop(OwcaValue key);
+		OwcaValue pop_or_default(OwcaValue key, OwcaValue default_value);
+		OwcaValue get_or_default(OwcaValue key, OwcaValue default_value);
+		OwcaValue set_default(OwcaValue key, OwcaValue default_value);
 
 		class Iterator {
 		public:
@@ -44,7 +49,7 @@ namespace OwcaScript {
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::forward_iterator_tag;
 
-			Iterator(Internal::DictionaryShared *dictionary, size_t pos) : dictionary(dictionary), pos(pos) {}
+			Iterator(Internal::DictionaryShared *dictionary, size_t pos);
 
 			reference operator*() const;
 			pointer operator->();
@@ -63,6 +68,7 @@ namespace OwcaScript {
 		private:
 			Internal::DictionaryShared *dictionary;
 			size_t pos;
+			size_t version;
 		};
 
 		Iterator begin() const;

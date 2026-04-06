@@ -141,6 +141,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_cant_return_value_from_generator();
 			[[noreturn]] void throw_container_is_empty();
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
+			[[noreturn]] void throw_dictionary_changed(bool is_dict);
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
@@ -150,6 +151,7 @@ namespace OwcaScript {
 			void set_yield_value(OwcaValue v);
 			OwcaValue create_array(std::deque<OwcaValue> arguments);
 			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
+			OwcaValue create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
 			OwcaValue create_exception();
 			OwcaValue create_range();
 			OwcaValue create_map(const std::span<OwcaValue> &arguments = {});
@@ -162,6 +164,7 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue create_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
+			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
 			void member(OwcaValue val, std::string_view key, OwcaValue);

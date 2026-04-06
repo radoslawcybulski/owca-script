@@ -74,6 +74,10 @@ namespace OwcaScript {
 	{
 		return vm->create_array(std::move(values));
 	}
+	OwcaValue OwcaVM::create_tuple(std::pair<OwcaValue, OwcaValue> values) const
+	{
+		return vm->create_tuple(values);
+	}
 	OwcaValue OwcaVM::create_tuple(std::vector<OwcaValue> values) const
 	{
 		return vm->create_tuple(std::move(values));

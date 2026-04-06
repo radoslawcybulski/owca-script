@@ -9,10 +9,13 @@ namespace OwcaScript {
 	class OwcaVM;
 
 	namespace Internal {
+		struct DictionaryShared;
+
 		struct Dictionary {
 			std::vector<std::tuple<size_t, OwcaValue, OwcaValue>> values;
 			size_t elements = 0;
 			size_t mask = 0;
+			size_t version = 0;
 			OwcaVM vm;
 			const bool is_map = true;
 
@@ -25,9 +28,20 @@ namespace OwcaScript {
 			OwcaValue &item(OwcaValue key);
 			OwcaValue read(OwcaValue key);
 			void write(OwcaValue key, OwcaValue value);
-			OwcaValue pop(OwcaValue key);
+			void delete_pos(size_t pos, bool rehash = true);
+			OwcaValue pop(OwcaValue key, std::optional<OwcaValue> default_value = std::nullopt);
 			std::optional<std::pair<const OwcaValue*, OwcaValue*>> find(OwcaValue key);
 			std::optional<std::pair<const OwcaValue*, const OwcaValue*>> find(OwcaValue key) const;
+			OwcaValue get_or_default(OwcaValue key, OwcaValue default_value);
+			OwcaValue set_default(OwcaValue key, OwcaValue default_value);
+			Generator iter_keys() const;
+			Generator iter_values() const;
+			Generator iter_items() const;
+			void clone_to(Dictionary &) const;
+			
+			void union_with(Dictionary &other);
+			void intersection_with(Dictionary &other);
+			void difference_with(Dictionary &other);
 
 			size_t next(size_t pos = (size_t)-1) const;
 			std::pair<const OwcaValue *, OwcaValue *> read(size_t pos);
@@ -44,8 +58,28 @@ namespace OwcaScript {
 
 			Dictionary dict;
 
-			DictionaryShared(OwcaVM vm, bool is_map) : dict(vm, is_map) {}
+			DictionaryShared(OwcaVM vm) : dict(vm, true) {}
 			
+			DictionaryShared *clone() const;
+			std::string_view type() const override {
+				return dict.type();
+			}
+			std::string to_string() const override {
+				return dict.to_string();
+			}
+			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {
+				gc_mark_value(vm, generation_gc, dict);
+			}
+		};
+
+		struct SetShared : public AllocationBase {
+			static constexpr const Kind object_kind = Kind::Set;
+
+			Dictionary dict;
+
+			SetShared(OwcaVM vm) : dict(vm, false) {}
+			
+			SetShared *clone() const;
 			std::string_view type() const override {
 				return dict.type();
 			}

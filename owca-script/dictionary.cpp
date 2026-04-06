@@ -1,11 +1,13 @@
 #include "stdafx.h"
 #include "dictionary.h"
 #include "owca_value.h"
+#include "generator.h"
 #include "vm.h"
 
 namespace OwcaScript::Internal {
 	static constexpr const size_t Deleted = 1;
 	static constexpr const size_t Empty = 0;
+	static constexpr const size_t AllocatedMin = 2;
 	static constexpr const size_t minimum_size = 16;
 	static constexpr const float max_allocation = 0.7f, min_allocation = 0.25f;
 
@@ -41,6 +43,7 @@ namespace OwcaScript::Internal {
 		while (elements > minimum_size && elements < new_size * min_allocation) new_size /= 2;
 
 		if (new_size != values.size()) {
+			++version;
 			auto old_values = std::move(values);
 			values.resize(new_size);
 			mask = new_size - 1;
@@ -78,6 +81,7 @@ namespace OwcaScript::Internal {
 			std::get<0>(values[index]) = hash;
 			std::get<1>(values[index]) = key;
 			std::get<2>(values[index]) = {};
+			++version;
 			++elements;
 		}
 		return std::get<2>(values[index]);
@@ -96,17 +100,117 @@ namespace OwcaScript::Internal {
 		item(key) = std::move(value);
 	}
 
-	OwcaValue Dictionary::pop(OwcaValue key)
+	void Dictionary::delete_pos(size_t pos, bool rehash)
+	{
+		std::get<0>(values[pos]) = Deleted;
+		if (rehash) try_rehash();
+		++version;
+		--elements;
+	}	
+	OwcaValue Dictionary::pop(OwcaValue key, std::optional<OwcaValue> default_value)
 	{
 		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
+			if (default_value.has_value()) {
+				return *default_value;
+			}
 			VM::get(vm).throw_missing_key(key.to_string());
 		}
-		--elements;
-		std::get<0>(values[index]) = Deleted;
 		auto v = std::get<2>(values[index]);
-		try_rehash();
+		delete_pos(index);
 		return v;
+	}
+
+	OwcaValue Dictionary::get_or_default(OwcaValue key, OwcaValue default_value)
+	{
+		auto [index, hash, exists] = find_place(key);
+		if (!exists) {
+			return default_value;
+		}
+		return std::get<2>(values[index]);
+	}
+
+	OwcaValue Dictionary::set_default(OwcaValue key, OwcaValue default_value)
+	{
+		auto [index, hash, exists] = find_place(key);
+		if (!exists) {
+			if (values.empty()) {
+				values.resize(minimum_size);
+				mask = minimum_size - 1;
+			}
+			std::get<0>(values[index]) = hash;
+			std::get<1>(values[index]) = key;
+			std::get<2>(values[index]) = default_value;
+			++version;
+			++elements;
+		}
+		return std::get<2>(values[index]);
+	}
+
+	Generator Dictionary::iter_keys() const { // AllocatedMin
+		size_t ver = version;
+		for(auto &q : values) {
+			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (std::get<0>(q) < AllocatedMin) continue;
+			co_yield std::get<1>(q);
+		}
+	}
+	Generator Dictionary::iter_values() const {
+		size_t ver = version;
+		for(auto &q : values) {
+			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (std::get<0>(q) < AllocatedMin) continue;
+			co_yield std::get<2>(q);
+		}
+	}
+	Generator Dictionary::iter_items() const {
+		size_t ver = version;
+		for(auto &q : values) {
+			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (std::get<0>(q) < AllocatedMin) continue;
+			auto t = Internal::VM::get(vm).create_tuple(std::pair{ std::get<1>(q), std::get<2>(q) });
+			co_yield t;
+		}
+	}
+	void Dictionary::clone_to(Dictionary &dest) const {
+		dest.values = values;
+		dest.elements = elements;
+		dest.mask = mask;
+		dest.version = version;
+	}
+	DictionaryShared *DictionaryShared::clone() const {
+		auto new_shared = Internal::VM::get(vm).allocate<DictionaryShared>(0, vm);
+		dict.clone_to(new_shared->dict);
+		return new_shared;
+	}
+	SetShared *SetShared::clone() const {
+		auto new_shared = Internal::VM::get(vm).allocate<SetShared>(0, vm);
+		dict.clone_to(new_shared->dict);
+		return new_shared;
+	}
+	void Dictionary::union_with(Dictionary &other) {
+		for(auto pos = other.next(); pos < other.values.size(); pos = other.next(pos)) {
+			auto v = other.read(pos);
+			write(*v.first, *v.second);
+		}		
+	}
+	void Dictionary::intersection_with(Dictionary &other) {
+		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
+			auto v = read(pos);
+			if (!other.find(*v.first)) {
+				delete_pos(pos, false);
+			}
+		}
+		try_rehash();
+	}
+	void Dictionary::difference_with(Dictionary &other) {
+		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
+			auto v = read(pos);
+			if (other.find(*v.first)) {
+				delete_pos(pos, false);
+			}
+		}
+		try_rehash();
 	}
 
 	std::optional<std::pair<const OwcaValue*, OwcaValue*>> Dictionary::find(OwcaValue key)
