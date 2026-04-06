@@ -982,16 +982,25 @@ namespace OwcaScript::Internal {
 	{
 		auto line = consume("for");
 		consume("(");
+		std::vector<std::string_view> idents;
 		auto [ text_line, text ] = consume();
 		if (!is_identifier(text))
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, text_line, std::format("expected identifier for iteration's value, got `{}`", text));
+		idents.push_back(text);
+		while(preview().second == ",") {
+			consume(",");
+			auto [ text_line, text ] = consume();
+			if (!is_identifier(text))
+				add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, text_line, std::format("expected identifier for iteration's value, got `{}`", text));
+			idents.push_back(text);
+		}
 		consume("=");
 		std::unique_ptr<AstExpr> iterator = compile_expression_no_assign();
 		consume(")");
 		auto control_depth = loop_control_depth;
 		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
 		auto body = compile_stat();
-		return std::make_unique<AstFor>(line, control_depth, loop_ident, text, std::move(iterator), std::move(body));
+		return std::make_unique<AstFor>(line, control_depth, loop_ident, std::move(idents), std::move(iterator), std::move(body));
 	}
 
 	std::unique_ptr<AstStat> AstCompiler::compile_with()
@@ -1267,15 +1276,21 @@ namespace OwcaScript::Internal {
 				if (!o.get_loop_identifier().empty()) {
 					current_stack->define_identifier(o.get_loop_identifier());
 				}
-				current_stack->define_identifier(o.get_value());
+				for(auto &ident : o.get_values()) {
+					current_stack->define_identifier(ident);
+				}
 			}
 			else {
 				if (!o.get_loop_identifier().empty()) {
 					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
 					o.update_loop_ident_index(index);
 				}
-				auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_value());
-				o.update_value_index(index);
+				std::vector<unsigned int> value_indexes;
+				value_indexes.resize(o.get_values().size());
+				for(size_t i = 0; i < o.get_values().size(); ++i) {
+					 value_indexes[i] = current_stack->ensure_writable_identifier(compiler, o.line, o.get_values()[i]);
+				}
+				o.update_value_indexes(std::move(value_indexes));
 			}
 			apply(static_cast<AstStat&>(o));
 		}

@@ -772,6 +772,14 @@ function native print(msg);
 		throw res.as_exception(this);
 	}
 
+	void VM::throw_too_many_elements(size_t expected)
+	{
+		throw_exception(c_invalid_operation_exception, std::format("expected at most {} elements", expected));
+	}
+	void VM::throw_not_enough_elements(size_t expected, size_t got)
+	{
+		throw_exception(c_invalid_operation_exception, std::format("expected at least {} elements, got {}", expected, got));
+	}
 	void VM::throw_dictionary_changed(bool is_dict)
 	{
 		throw_exception(c_invalid_operation_exception, is_dict ? "dictionary was changed during iteration" : "set was changed during iteration");
@@ -937,7 +945,58 @@ function native print(msg);
 	{
 		throw_exception(c_invalid_operation_exception, "container is empty");
 	}
-	
+	Generator VM::iterate_value(OwcaValue val)
+	{
+		return val.visit(
+			[&](OwcaArray o) -> Generator {
+				for(auto v : o) {
+					co_yield v;
+				}
+				co_return;
+			},
+			[&](OwcaTuple o) -> Generator {
+				for(auto v : o) {
+					co_yield v;
+				}
+				co_return;
+			},
+			[&](OwcaMap o) -> Generator {
+				for(auto val : o) {
+					co_yield val.first;
+				}
+				co_return;
+			},
+			[&](OwcaSet o) -> Generator {
+				for(auto val : o) {
+					co_yield val;
+				}
+				co_return;
+			},
+			[&](OwcaString o) -> Generator {
+				for(auto i = 0u; i < o.size(); ++i) {
+					co_yield o.substr(i, i + 1);
+				}
+				co_return;
+			},
+			[&](OwcaIterator o) -> Generator {
+				for(auto v : o) {
+					co_yield v;
+				}
+				co_return;
+			},
+			[&](OwcaObject o) -> Generator {
+				auto iter = VM::get(this).create_iterator(o);
+				for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
+					co_yield v;
+				}
+				co_return;
+			},
+			[&](const auto &) -> Generator {
+				throw_wrong_type(std::format("can't create an iterator from {}", val.type()));
+			}
+		);
+	}
+
 	std::pair<OwcaValue, OwcaValue> VM::unpack_two_elements_or_raise(OwcaValue val) {
 		return val.visit(
 			[&](OwcaArray o) {

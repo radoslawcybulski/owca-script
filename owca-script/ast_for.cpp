@@ -4,6 +4,7 @@
 #include "owca_value.h"
 #include "flow_control.h"
 #include "owca_iterator.h"
+#include "generator.h"
 
 namespace OwcaScript::Internal {
 	class ImplFor : public ImplStat {
@@ -13,7 +14,7 @@ namespace OwcaScript::Internal {
 		#define FIELDS(Q) \
             Q(depth, unsigned int) \
             Q(loop_ident_index, unsigned int) \
-            Q(value_index, unsigned int) \
+            Q(value_indexes, std::span<unsigned int>) \
             Q(iterator, ImplExpr*) \
             Q(body, ImplStat*)
     
@@ -34,7 +35,24 @@ namespace OwcaScript::Internal {
                 auto v = iter.next();
                 if (v.kind() == OwcaValueKind::Completed) break;
 
-                VM::get(vm).set_identifier(value_index, v);
+                if (value_indexes.size() == 1) {
+                    VM::get(vm).set_identifier(value_indexes[0], v);
+                }
+                else {
+                    auto iter = VM::get(vm).iterate_value(v);
+                    size_t index = 0;
+
+                    while(auto vv = iter.next()) {
+                        if (index >= value_indexes.size()) {
+                            VM::get(vm).throw_too_many_elements(value_indexes.size());
+                        }
+                        VM::get(vm).set_identifier(value_indexes[index], *vv);
+                        ++index;
+                    }
+                    if (index < value_indexes.size()) {
+                        VM::get(vm).throw_not_enough_elements(value_indexes.size(), index);
+                    }
+                }
 
                 try {
                     body->execute_statement(vm);
@@ -67,7 +85,24 @@ namespace OwcaScript::Internal {
                 auto v = iter.next();
                 if (v.kind() == OwcaValueKind::Completed) break;
                 
-                VM::get(vm).set_identifier(value_index, v);
+                if (value_indexes.size() == 1) {
+                    VM::get(vm).set_identifier(value_indexes[0], v);
+                }
+                else {
+                    auto iter = VM::get(vm).iterate_value(v);
+                    size_t index = 0;
+
+                    while(auto vv = iter.next()) {
+                        if (index >= value_indexes.size()) {
+                            VM::get(vm).throw_too_many_elements(value_indexes.size());
+                        }
+                        VM::get(vm).set_identifier(value_indexes[index], *vv);
+                        ++index;
+                    }
+                    if (index < value_indexes.size()) {
+                        VM::get(vm).throw_not_enough_elements(value_indexes.size(), index);
+                    }
+                }
 
                 try {
                     co_await body->execute_generator_statement(vm, st);
@@ -94,15 +129,20 @@ namespace OwcaScript::Internal {
 	void AstFor::calculate_size(CodeBufferSizeCalculator &ei) const
 	{
 		ei.code_buffer.preallocate<ImplFor>(line);
+        ei.code_buffer.preallocate_array<unsigned int>(value_indexes.size());
         iterator->calculate_size(ei);
         body->calculate_size(ei);
 	}
 	ImplStat* AstFor::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplFor>(line);
+        auto vi = ei.code_buffer.preallocate_array<unsigned int>(value_indexes.size());
         auto v = iterator->emit(ei);
 		auto b = body->emit(ei);
+        for(auto i = 0u; i < value_indexes.size(); ++i) {
+            vi[i] = value_indexes[i];
+        }
         auto lii = loop_ident_index ? *loop_ident_index : std::numeric_limits<unsigned int>::max();
-		ret->init(flow_control_depth, lii, value_index, v, b);
+		ret->init(flow_control_depth, lii, vi, v, b);
 		return ret;
 	}
 

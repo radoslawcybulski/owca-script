@@ -9,24 +9,24 @@ namespace OwcaScript {
 		class AstFor : public AstStat {
 		private:
             std::string_view loop_identifier;
-			std::string_view value;
+			std::vector<std::string_view> values;
 			std::unique_ptr<AstExpr> iterator;
             std::unique_ptr<AstStat> body;
             unsigned int flow_control_depth;
             std::optional<unsigned int> loop_ident_index;
-			unsigned int value_index;
+			std::vector<unsigned int> value_indexes;
 
 		public:
-            AstFor(Line line, unsigned int flow_control_depth, std::string_view loop_identifier, std::string_view value, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier(loop_identifier), 
-				value(value), iterator(std::move(iterator)), body(std::move(body)), flow_control_depth(flow_control_depth) {}
+            AstFor(Line line, unsigned int flow_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier(loop_identifier), 
+				values(std::move(values)), iterator(std::move(iterator)), body(std::move(body)), flow_control_depth(flow_control_depth) {}
 
             auto get_loop_identifier() const { return loop_identifier; }
-			auto get_value() const { return value; }
+			auto get_values() const { return values; }
             void update_loop_ident_index(unsigned int index) {
                 loop_ident_index = index;
             }
-			void update_value_index(unsigned int v) {
-				value_index = v;
+			void update_value_indexes(std::vector<unsigned int> v) {
+				value_indexes = std::move(v);
 			}
 			ImplStat* emit(EmitInfo& ei) override;
 			void calculate_size(CodeBufferSizeCalculator &) const override;

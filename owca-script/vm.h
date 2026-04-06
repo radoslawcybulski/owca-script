@@ -142,6 +142,8 @@ namespace OwcaScript {
 			[[noreturn]] void throw_container_is_empty();
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
+			[[noreturn]] void throw_too_many_elements(size_t expected);
+			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 
 			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
@@ -164,6 +166,7 @@ namespace OwcaScript {
 			OwcaValue create_string(OwcaValue left, OwcaValue right);
 			OwcaValue create_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
+			Generator iterate_value(OwcaValue val);
 			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
