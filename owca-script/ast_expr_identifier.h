@@ -11,7 +11,7 @@ namespace OwcaScript {
 		class AstExprIdentifier : public AstExpr {
 			std::string_view identifier_;
 			std::unique_ptr<AstExpr> value_to_write_ = nullptr;
-			unsigned int value_to_write_index_ = std::numeric_limits<unsigned int>::max();
+			std::uint32_t value_to_write_index_ = std::numeric_limits<std::uint32_t>::max();
 			bool function_write_ = false;
 
 		public:
@@ -22,16 +22,14 @@ namespace OwcaScript {
 			auto value_to_write_index() const { return value_to_write_index_; }
 			auto function_write() const { return function_write_; }
 			bool write() const { return value_to_write_ != nullptr; }
-			void update_value_to_write_index(unsigned int index) { value_to_write_index_ = index; }
+			void update_value_to_write_index(std::uint32_t index) { value_to_write_index_ = index; }
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write_ = std::move(v); }
 			void set_function_write() { function_write_ = true; }
 
-			ImplExpr* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

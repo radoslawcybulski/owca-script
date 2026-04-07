@@ -188,30 +188,30 @@ namespace OwcaScript::Internal {
 			);
 	}
 
-	class ImplExprCompare : public ImplExpr {
-	public:
-		using ImplExpr::ImplExpr;
+// 	class ImplExprCompare : public ImplExpr {
+// 	public:
+// 		using ImplExpr::ImplExpr;
 
-#define FIELDS(Q) \
-	Q(first, ImplExpr*) \
-	Q(nexts, std::span<std::tuple<CompareKind, Line, ImplExpr*>>)
+// #define FIELDS(Q) \
+// 	Q(first, ImplExpr*) \
+// 	Q(nexts, std::span<std::tuple<CompareKind, Line, ImplExpr*>>)
 
-		IMPL_DEFINE_EXPR(Kind::Compare)
+// 		IMPL_DEFINE_EXPR(Kind::Compare)
 
-		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto left = first->execute_expression(vm);
+// 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
+// 			auto left = first->execute_expression(vm);
 
-			for (auto i = 0u; i < nexts.size(); ++i) {
-				auto [kind, compare_line, next_value] = nexts[i];
-				auto right = next_value->execute_expression(vm);
-				VM::get(vm).update_execution_line(compare_line);
+// 			for (auto i = 0u; i < nexts.size(); ++i) {
+// 				auto [kind, compare_line, next_value] = nexts[i];
+// 				auto right = next_value->execute_expression(vm);
+// 				VM::get(vm).update_execution_line(compare_line);
 
-				if (!AstExprCompare::execute_compare(vm, kind, left, right)) return false;
-				left = right;
-			}
-			return true;
-		}
-	};
+// 				if (!AstExprCompare::execute_compare(vm, kind, left, right)) return false;
+// 				left = right;
+// 			}
+// 			return true;
+// 		}
+// 	};
 
 	bool AstExprCompare::execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right)
 	{
@@ -260,27 +260,32 @@ namespace OwcaScript::Internal {
 		VM::get(vm).throw_cant_compare(kind, left.type(), right.type());
 	}
 
-	ImplExpr* AstExprCompare::emit(EmitInfo& ei) {
-		auto ret = ei.code_buffer.preallocate<ImplExprCompare>(line);
-		auto f = first->emit(ei);
-		auto arr = ei.code_buffer.preallocate_array<std::tuple<CompareKind, Line, ImplExpr*>>(nexts.size());
-		for (auto i = 0u; i < nexts.size(); ++i) {
-			std::get<0>(arr[i]) = std::get<0>(nexts[i]);
-			std::get<1>(arr[i]) = std::get<1>(nexts[i]);
-			std::get<2>(arr[i]) = std::get<2>(nexts[i])->emit(ei);
+	void AstExprCompare::emit(EmitInfo& ei) {
+		std::vector<ExecuteBufferWriter::Placeholder<std::uint32_t>> jump_placeholders;
+		first_->emit(ei);
+		for (auto& q : nexts_) {
+			std::get<2>(q)->emit(ei);
+			switch(std::get<0>(q)) {
+			case CompareKind::Eq: ei.code_writer.append(line, ExecuteOp::ExprCompareEq); break;
+			case CompareKind::NotEq: ei.code_writer.append(line, ExecuteOp::ExprCompareNotEq); break;
+			case CompareKind::LessEq: ei.code_writer.append(line, ExecuteOp::ExprCompareLessEq); break;
+			case CompareKind::MoreEq: ei.code_writer.append(line, ExecuteOp::ExprCompareMoreEq); break;
+			case CompareKind::Less: ei.code_writer.append(line, ExecuteOp::ExprCompareLess); break;
+			case CompareKind::More: ei.code_writer.append(line, ExecuteOp::ExprCompareMore); break;
+			case CompareKind::Is: ei.code_writer.append(line, ExecuteOp::ExprCompareIs); break;
+			}
+			jump_placeholders.emplace_back(ei.code_writer.append_placeholder<std::uint32_t>(line));
 		}
-		ret->init(f, arr);
-		return ret;
+		auto pos = ei.code_writer.position();
+		for (auto& ph : jump_placeholders) {
+			ei.code_writer.update_placeholder(ph, (std::uint32_t)pos);
+		}
 	}
 	void AstExprCompare::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprCompare::visit_children(AstVisitor& vis) {
-		first->visit(vis);
-		for (auto& q : nexts) {
+		first_->visit(vis);
+		for (auto& q : nexts_) {
 			std::get<2>(q)->visit(vis);
 		}
-	}
-	void AstExprCompare::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
-	{
-		functions[(size_t)ImplExpr::Kind::Compare] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprCompare>(line); };
 	}
 }

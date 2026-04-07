@@ -14,10 +14,18 @@ namespace OwcaScript {
             using type = T;
         };
         template <typename T> concept Span = IsSpan<T>::value;
+        template <typename T> struct IsVector {
+            static constexpr bool value = false;
+        };
+        template <typename T> struct IsVector<std::vector<T>> {
+            static constexpr bool value = true;
+            using type = T;
+        };
+        template <typename T> concept Vector = IsVector<T>::value;
 
         enum class ExecuteOp : std::uint8_t {
             Class,
-            ExprAsStat,
+            ExprPopAndIgnore,
             ExprCompareEq,
             ExprCompareNotEq,
             ExprCompareLessEq,
@@ -58,21 +66,40 @@ namespace OwcaScript {
             ExprOperXCreateTuple,
             ExprOperXCreateSet,
             ExprOperXCreateMap,
-            For,
+            ForInit,
+            ForNext,
+            ForCondition,
+            ForCompleted,
             Function,
             If,
-            LoopControl,
+            LoopControlBreak,
+            LoopControlContinue,
             Return,
+            ReturnValue,
             Throw,
             Try,
-            While,
-            With,
+            TryCompleted,
+            TryCatchTypeDone,
+            WhileInit,
+            WhileNext,
+            WhileCondition,
+            WhileCompleted,
+            WithInit,
+            WithCompleted,
             Yield,
             Jump,
         };
 
         class ExecuteBufferReader {
         public:
+            struct LineEntry {
+                std::uint32_t code_pos;
+                std::uint32_t line;
+
+                bool operator <(const LineEntry &other) const {
+                    return code_pos < other.code_pos;
+                }
+            };
             enum class DataKind {
                 Other,
                 Op,
@@ -89,7 +116,7 @@ namespace OwcaScript {
             };
             using Op = ExecuteOp;
 
-            ExecuteBufferReader(std::span<const unsigned char> code, std::span<const DataKind> data_kinds, std::span<const std::pair<size_t, size_t>> lines) : code(code), data_kinds(data_kinds), lines(lines), pos(0) {}
+            ExecuteBufferReader(std::span<const unsigned char> code, std::span<const DataKind> data_kinds, std::span<const LineEntry> lines) : code(code), data_kinds(data_kinds), lines(lines), pos(0) {}
 
             template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
                 auto size = decode_size();
@@ -107,7 +134,7 @@ namespace OwcaScript {
             }
             template <typename T> T decode() requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
-                auto p = align_pos(alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
+                auto p = align_pos(alignof(T), sizeof(T));
                 if (std::is_same_v<T, bool>) {
                     ensure_data_kind(DataKind::Bool, p);
                 } else if (sizeof(T) == 1) {
@@ -125,7 +152,7 @@ namespace OwcaScript {
             }
             template <typename T> T decode() requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
-                auto p = align_pos(alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
+                auto p = align_pos(alignof(T), sizeof(T));
                 if (sizeof(T) == 4) {
                     ensure_data_kind(DataKind::Float32, p);
                 } else if (sizeof(T) == 8) {
@@ -141,7 +168,9 @@ namespace OwcaScript {
                 ensure_data_kind(DataKind::Blob, p);
                 return T((typename IsSpan<T>::type*)(code.data() + p), sz);
             }
-
+            template <typename T> T decode() {
+                return T{ *this };
+            }
         private:
             size_t decode_size() {
                 auto p = align_pos(alignof(std::uint32_t), sizeof(std::uint32_t));
@@ -163,14 +192,14 @@ namespace OwcaScript {
             }
             std::span<const unsigned char> code;
             std::span<const DataKind> data_kinds;
-            std::span<const std::pair<size_t, size_t>> lines;
+            std::span<const LineEntry> lines;
             size_t pos;
         };
 
         class ExecuteBufferWriter {
             std::vector<unsigned char> buffer;
             std::vector<ExecuteBufferReader::DataKind> data_kinds;
-            std::vector<std::pair<std::uint32_t, std::uint32_t>> lines;
+            std::vector<ExecuteBufferReader::LineEntry> lines;
 
             template <typename T> std::uint32_t prepare(const T *data, size_t sz, ExecuteBufferReader::DataKind kind) {
                 auto align = alignof(T);
@@ -191,13 +220,17 @@ namespace OwcaScript {
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
             }
             void handle_line(Line line) {
-                if (!lines.empty() || lines.back().second != line.line) {
-                    lines.emplace_back(buffer.size(), line.line);
+                if (lines.empty() || lines.back().line != line.line) {
+                    lines.emplace_back(ExecuteBufferReader::LineEntry{static_cast<std::uint32_t>(buffer.size()), line.line});
                 }
             }
         public:
             ExecuteBufferWriter() = default;
 
+            Line current_line() const {
+                if (lines.empty()) return Line{ 0 };
+                return Line{ lines.back().line };
+            }
             auto take() && {
                 return std::make_tuple(std::move(buffer), std::move(data_kinds), std::move(lines));
             }
@@ -228,7 +261,16 @@ namespace OwcaScript {
                 }
                 append_impl(value, kind);
             }
+            void append(Line line, const char *str) {
+                auto sz = strlen(str);
+                append(line, (std::uint32_t)sz);
+                append_impl_vec(str, sz);
+            }
             void append(Line line, std::string_view str) {
+                append(line, (std::uint32_t)str.size());
+                append_impl_vec(str.data(), str.size());
+            }
+            void append(Line line, const std::string &str) {
                 append(line, (std::uint32_t)str.size());
                 append_impl_vec(str.data(), str.size());
             }
@@ -238,6 +280,9 @@ namespace OwcaScript {
                     append(line, v);
                 }
             }
+            template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
+                serialize_object(*this, line, t);
+            }
 
             std::uint32_t position() const { return buffer.size(); }
 
@@ -246,8 +291,17 @@ namespace OwcaScript {
             };
 
             template <typename T> Placeholder<T> append_placeholder(Line line) {
+                ExecuteBufferReader::DataKind kind;
+                if constexpr (std::is_same_v<T, bool>) kind = ExecuteBufferReader::DataKind::Bool;
+                else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>) kind = ExecuteBufferReader::DataKind::Int8;
+                else if constexpr (std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>) kind = ExecuteBufferReader::DataKind::Int16;
+                else if constexpr (std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t>) kind = ExecuteBufferReader::DataKind::Int32;
+                else if constexpr (std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>) kind = ExecuteBufferReader::DataKind::Int64;
+                else {
+                    static_assert(sizeof(T) == 0, "Unsupported integral type");
+                }
                 handle_line(line);
-                auto pos = prepare((T*)nullptr, 1);
+                auto pos = prepare((T*)nullptr, 1, kind);
                 return Placeholder<T>{ pos };
             }
             template <typename T> void update_placeholder(const Placeholder<T> &placeholder, T value) {

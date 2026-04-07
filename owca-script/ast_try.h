@@ -17,17 +17,15 @@ namespace OwcaScript {
             size_t catch_count() const { return catches_.size(); }
 			auto &body() { return *body_; }
 			const auto &catches() const { return catches_; }
-			
+
             auto catch_identifier(size_t index) { return std::get<0>(catches_[index]); }
             void update_catch_index(size_t index, unsigned int var_index) { std::get<1>(catches_[index]) = var_index; }
 			auto catch_line(size_t index) { return std::get<3>(catches_[index])->line; }
 
-			ImplStat* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions);
 		};
 	}
 }

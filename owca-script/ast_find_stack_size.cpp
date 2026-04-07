@@ -115,8 +115,8 @@ namespace OwcaScript {
         void FindStackSizeVisitor::apply(AstFor& o) {
             auto _ = AssertTheSameSize(*this);
             o.iterator().visit(*this);
+            pop();
             o.body().visit(*this);
-            pop(); // we pop iterator at end
         }
         void FindStackSizeVisitor::apply(AstLoopControl& o) {
         }

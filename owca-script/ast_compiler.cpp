@@ -1259,13 +1259,13 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstWhile &o) override {
 			if (first_run) {
-				if (!o.get_loop_identifier().empty()) {
-					current_stack->define_identifier(o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					current_stack->define_identifier(o.loop_identifier());
 				}
 			}
 			else {
-				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.loop_identifier());
 					o.update_loop_ident_index(index);
 				}
 			}
@@ -1273,22 +1273,22 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstFor &o) override {
 			if (first_run) {
-				if (!o.get_loop_identifier().empty()) {
-					current_stack->define_identifier(o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					current_stack->define_identifier(o.loop_identifier());
 				}
-				for(auto &ident : o.get_values()) {
+				for(auto &ident : o.values()) {
 					current_stack->define_identifier(ident);
 				}
 			}
 			else {
-				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.loop_identifier());
 					o.update_loop_ident_index(index);
 				}
 				std::vector<unsigned int> value_indexes;
-				value_indexes.resize(o.get_values().size());
-				for(size_t i = 0; i < o.get_values().size(); ++i) {
-					 value_indexes[i] = current_stack->ensure_writable_identifier(compiler, o.line, o.get_values()[i]);
+				value_indexes.resize(o.values().size());
+				for(size_t i = 0; i < o.values().size(); ++i) {
+					 value_indexes[i] = current_stack->ensure_writable_identifier(compiler, o.line, o.values()[i]);
 				}
 				o.update_value_indexes(std::move(value_indexes));
 			}
@@ -1296,13 +1296,13 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstWith &o) override {
 			if (first_run) {
-				if (!o.get_identifier().empty()) {
-					current_stack->define_identifier(o.get_identifier());
+				if (!o.identifier().empty()) {
+					current_stack->define_identifier(o.identifier());
 				}
 			}
 			else {
-				if (!o.get_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_identifier());
+				if (!o.identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.identifier());
 					o.update_ident_index(index);
 				}
 			}
@@ -1344,7 +1344,7 @@ namespace OwcaScript::Internal {
 						if (!writable) 
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_index(index);
+					o.update_value_to_write_index(index);
 				}
 			}
 			apply(static_cast<AstExpr&>(o));

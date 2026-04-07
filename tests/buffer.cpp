@@ -63,7 +63,7 @@ TEST_F(BufferTest, string)
     ASSERT_EQ(reader.decode<std::string_view>(), "qwerty");
 }
 
-TEST_F(BufferTest, string)
+TEST_F(BufferTest, vector)
 {
     Internal::ExecuteBufferWriter tmp;
     std::vector<int> tmp_vec = {1, 2, 3, 4, 5};

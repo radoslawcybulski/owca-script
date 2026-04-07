@@ -28,12 +28,10 @@ namespace OwcaScript {
 			bool all_variable_names() const { return all_variable_names_; }
 			bool is_native() const { return native_; }
 
-			ImplExpr* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

@@ -19,14 +19,12 @@ namespace OwcaScript {
 			AstExprConstant(Line line, bool value) : AstExpr (line), value_(value) {}
 			AstExprConstant(Line line, std::string value) : AstExpr (line), value_(std::move(value)) {}
 
-			ImplExpr* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			auto value() const { return value_; }
-			
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

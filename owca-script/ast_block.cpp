@@ -3,61 +3,49 @@
 #include "vm.h"
 
 namespace OwcaScript::Internal {
-	class ImplBlock : public ImplStat {
-	public:
-		using ImplStat::ImplStat;
+// 	class ImplBlock : public ImplStat {
+// 	public:
+// 		using ImplStat::ImplStat;
 
-#define FIELDS(Q) \
-		Q(stats, std::span<ImplStat*>)
+// #define FIELDS(Q) \
+// 		Q(stats, std::span<ImplStat*>)
 
-		IMPL_DEFINE_STAT(Kind::Block)
+// 		IMPL_DEFINE_STAT(Kind::Block)
 
-		void execute_statement_impl(OwcaVM vm) const override{
-			for (auto c : stats) {
-				c->execute_statement(vm);
-			}
-		}
-		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
- 			VM::get(vm).update_execution_line(line);
-			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
-			for (auto c : stats) {
-				co_await c->execute_generator_statement(vm, st);
-			}
-		}
-		size_t calculate_generator_allocation_size() const override {
-			size_t sz = 0;
-			for(auto c : stats) {
-				sz = std::max(sz, c->calculate_generator_allocation_size());
-			}
-			return sz + calculate_generator_object_size_for_this();
-		}
-	};
+// 		void execute_statement_impl(OwcaVM vm) const override{
+// 			for (auto c : stats) {
+// 				c->execute_statement(vm);
+// 			}
+// 		}
+// 		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
+//  			VM::get(vm).update_execution_line(line);
+// 			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
+// 			for (auto c : stats) {
+// 				co_await c->execute_generator_statement(vm, st);
+// 			}
+// 		}
+// 		size_t calculate_generator_allocation_size() const override {
+// 			size_t sz = 0;
+// 			for(auto c : stats) {
+// 				sz = std::max(sz, c->calculate_generator_allocation_size());
+// 			}
+// 			return sz + calculate_generator_object_size_for_this();
+// 		}
+// 	};
 
-	ImplStat* AstBlock::emit(EmitInfo& ei) {
-		if (children.size() == 1)
-			return children[0]->emit(ei);
+	void AstBlock::emit(EmitInfo& ei) {
+		if (children_.size() == 1)
+			return children_[0]->emit(ei);
 
-		auto ret = ei.code_buffer.preallocate<ImplBlock>(line);
-		if (children.empty()) {
-			ret->init({});
-			return ret;
+		for(auto &c : children_) {
+			c->emit(ei);
 		}
-		auto arr = ei.code_buffer.preallocate_array<ImplStat*>(children.size());
-		for(auto i = 0u; i < children.size(); ++i) {
-			arr[i] = children[i]->emit(ei);
-		}
-		ret->init(arr);
-		return ret;
 	}
 
 	void AstBlock::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstBlock::visit_children(AstVisitor& vis) {
-		for (auto& c : children) {
+		for (auto& c : children_) {
 			c->visit(vis);
 		}
-	}
-	void AstBlock::initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions)
-	{
-		functions[(size_t)ImplStat::Kind::Block] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplBlock>(line); };
 	}
 }

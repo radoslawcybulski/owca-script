@@ -20,7 +20,7 @@ namespace OwcaScript {
 		struct Array;
 		struct RuntimeFunction;
 		struct Exception;
-		enum class CompareKind;
+		enum class CompareKind : std::uint8_t;
 
 		class VM {
 			AllocationEmpty root_allocated_memory;

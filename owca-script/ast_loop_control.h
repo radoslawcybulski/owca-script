@@ -12,20 +12,18 @@ namespace OwcaScript {
                 Break, Continue
             };
 		private:
-			unsigned int depth_;
+			std::uint8_t depth_;
             Mode mode_;
 		public:        
-			AstLoopControl(Line line, Mode mode, unsigned int depth) : AstStat(line), depth_(depth), mode_(mode) {}
+			AstLoopControl(Line line, Mode mode, std::uint8_t depth) : AstStat(line), depth_(depth), mode_(mode) {}
 
 			auto mode() const { return mode_; }
 			auto depth() const { return depth_; }
 
-			ImplStat* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions);
 		};
 	}
 }

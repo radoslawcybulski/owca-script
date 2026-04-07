@@ -7,19 +7,21 @@
 
 namespace OwcaScript {
 	namespace Internal {
-		class Serializer;
-		class Deserializer;
+		class ExecuteBufferWriter;
+		class ExecuteBufferReader;
 
 		class AstFunction : public AstExpr {
 		public:
 			enum class Native : unsigned char { No = 0, Yes = 1 };
 			enum class Generator : unsigned char { No = 0, Yes = 1 };
 			struct CopyFromParent {
-				unsigned int index_in_parent;
-				unsigned int index_in_child;
+				std::uint32_t index_in_parent;
+				std::uint32_t index_in_child;
 
-				void serialize_object(Serializer &) const;
-				void deserialize_object(Deserializer &);
+				CopyFromParent(std::uint32_t index_in_parent, std::uint32_t index_in_child) : index_in_parent(index_in_parent), index_in_child(index_in_child) {}
+				explicit CopyFromParent(ExecuteBufferReader &);
+
+				friend void serialize_object(ExecuteBufferWriter &writer, Line line, const CopyFromParent &o);
 				bool compare(const CopyFromParent &o) const {
 					return index_in_child == o.index_in_child && index_in_parent == o.index_in_parent;
 				}
@@ -54,12 +56,10 @@ namespace OwcaScript {
 			}
 			bool is_generator() const { return generator_ == Generator::Yes; }
 			const auto& parameters() const { return params_; }
-			ImplExpr* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

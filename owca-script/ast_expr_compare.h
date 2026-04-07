@@ -6,7 +6,7 @@
 
 namespace OwcaScript {
 	namespace Internal {
-		enum class CompareKind {
+		enum class CompareKind : std::uint8_t {
 			Less,
 			LessEq,
 			More,
@@ -26,14 +26,12 @@ namespace OwcaScript {
 			auto &first() const { return *first_; }
 			const auto &nexts() const { return nexts_; }
 
-			ImplExpr* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 
 			static bool execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right);
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

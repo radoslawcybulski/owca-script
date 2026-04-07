@@ -5,74 +5,66 @@
 #include "owca_vm.h"
 
 namespace OwcaScript::Internal {
-	class ImplExprOper1 : public ImplExpr {
-	public:
-		using ImplExpr::ImplExpr;
+	// class ImplExprOper1 : public ImplExpr {
+	// public:
+	// 	using ImplExpr::ImplExpr;
 
-		#define FIELDS(Q) \
-			Q(left, ImplExpr*)
+	// 	#define FIELDS(Q) \
+	// 		Q(left, ImplExpr*)
 
-		IMPL_DEFINE_EXPR(Kind::BinNeg)
-	};
-	class ImplExprBinNeg : public ImplExprOper1 {
-	public:
-		using ImplExprOper1::ImplExprOper1;
+	// 	IMPL_DEFINE_EXPR(Kind::BinNeg)
+	// };
+	// class ImplExprBinNeg : public ImplExprOper1 {
+	// public:
+	// 	using ImplExprOper1::ImplExprOper1;
 
-		Kind kind() const override { return Kind::BinNeg; }
-		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm);
-			auto v = l.as_int(vm);
-			return ~v;
+	// 	Kind kind() const override { return Kind::BinNeg; }
+	// 	OwcaValue execute_expression_impl(OwcaVM vm) const override {
+	// 		auto l = left->execute_expression(vm);
+	// 		auto v = l.as_int(vm);
+	// 		return ~v;
+	// 	}
+	// };
+	// class ImplExprLogNot : public ImplExprOper1 {
+	// public:
+	// 	using ImplExprOper1::ImplExprOper1;
+
+	// 	Kind kind() const override { return Kind::LogNot; }
+	// 	OwcaValue execute_expression_impl(OwcaVM vm) const override {
+	// 		auto l = left->execute_expression(vm);
+	// 		return !l.is_true();
+	// 	}
+	// };
+	// class ImplExprNegate : public ImplExprOper1 {
+	// public:
+	// 	using ImplExprOper1::ImplExprOper1;
+
+	// 	Kind kind() const override { return Kind::Negate; }
+	// 	OwcaValue execute_expression_impl(OwcaVM vm) const override {
+	// 		auto l = left->execute_expression(vm);
+	// 		return -l.as_float(vm);
+	// 	}
+	// };
+
+	// template <typename T> static ImplExpr* make(AstBase::EmitInfo& ei, Line line, const std::unique_ptr<AstExpr>& left)
+	// {
+	// 	auto ret = ei.code_buffer.preallocate<T>(line);
+	// 	auto l = left->emit(ei);
+	// 	ret->init(l);
+	// 	return ret;
+	// }
+
+	void AstExprOper1::emit(EmitInfo& ei) {
+		switch (kind_) {
+		case Kind::BinNeg: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
+		case Kind::LogNot: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
+		case Kind::Negate: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
 		}
-	};
-	class ImplExprLogNot : public ImplExprOper1 {
-	public:
-		using ImplExprOper1::ImplExprOper1;
-
-		Kind kind() const override { return Kind::LogNot; }
-		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm);
-			return !l.is_true();
-		}
-	};
-	class ImplExprNegate : public ImplExprOper1 {
-	public:
-		using ImplExprOper1::ImplExprOper1;
-
-		Kind kind() const override { return Kind::Negate; }
-		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-			auto l = left->execute_expression(vm);
-			return -l.as_float(vm);
-		}
-	};
-
-	template <typename T> static ImplExpr* make(AstBase::EmitInfo& ei, Line line, const std::unique_ptr<AstExpr>& left)
-	{
-		auto ret = ei.code_buffer.preallocate<T>(line);
-		auto l = left->emit(ei);
-		ret->init(l);
-		return ret;
-
-	}
-
-	ImplExpr* AstExprOper1::emit(EmitInfo& ei) {
-		switch (kind) {
-		case Kind::BinNeg: return make<ImplExprBinNeg>(ei, line, left);
-		case Kind::LogNot: return make<ImplExprLogNot>(ei, line, left);
-		case Kind::Negate: return make<ImplExprNegate>(ei, line, left);
-		}
-		assert(false);
-		return nullptr;
+		left_->emit(ei);
 	}
 
 	void AstExprOper1::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprOper1::visit_children(AstVisitor& vis) {
-		left->visit(vis);
-	}
-	void AstExprOper1::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
-	{
-		functions[(size_t)ImplExpr::Kind::BinNeg] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprBinNeg>(line); };
-		functions[(size_t)ImplExpr::Kind::LogNot] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprLogNot>(line); };
-		functions[(size_t)ImplExpr::Kind::Negate] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprNegate>(line); };
+		left_->visit(vis);
 	}
 }

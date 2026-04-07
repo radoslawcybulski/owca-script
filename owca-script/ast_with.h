@@ -9,7 +9,7 @@ namespace OwcaScript {
 		class AstWith : public AstStat {
 		private:
             std::string_view identifier_;
-            std::optional<unsigned int> ident_index_;
+            std::optional<std::uint32_t> ident_index_;
 			std::unique_ptr<AstExpr> value_;
             std::unique_ptr<AstStat> body_;
 
@@ -20,15 +20,13 @@ namespace OwcaScript {
 			auto &value() { return *value_; }
 			auto &body() { return *body_; }
             auto identifier() const { return identifier_; }
-            void update_ident_index(unsigned int index) {
+            void update_ident_index(std::uint32_t index) {
                 ident_index_ = index;
             }
-			ImplStat* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions);
 		};
 	}
 }

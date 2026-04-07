@@ -16,12 +16,10 @@ namespace OwcaScript {
 			bool has_value() const { return value_ != nullptr; }
 			auto &value() { return *value_; }
 
-			ImplStat* emit(EmitInfo& ei) override;
+			void emit(EmitInfo& ei) override;
 			
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions);
 		};
 	}
 }
