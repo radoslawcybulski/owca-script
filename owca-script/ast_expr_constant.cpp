@@ -57,49 +57,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstExprConstant::calculate_size(CodeBufferSizeCalculator &ei) const {
-		return visit(
-			[&](OwcaEmpty) {
-				ei.code_buffer.preallocate<ImplExprConstantEmpty>(line);
-			},
-			[&](bool o) {
-				ei.code_buffer.preallocate<ImplExprConstantBool>(line);
-			},
-			[&](Number o) {
-				ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
-			},
-			[&](const std::string &o) {
-				ei.code_buffer.preallocate<ImplExprConstantString>(line);
-				ei.code_buffer.allocate(o);
-			}
-		);	}
-	ImplExpr* AstExprConstant::emit(EmitInfo& ei) {
-		return visit(
-			[&](OwcaEmpty) -> ImplExpr* {
-				auto ret = ei.code_buffer.preallocate<ImplExprConstantEmpty>(line);
-				ret->init();
-				return ret;
-			},
-			[&](bool o) -> ImplExpr* {
-				auto ret = ei.code_buffer.preallocate<ImplExprConstantBool>(line);
-				ret->init(o);
-				return ret;
-
-			},
-			[&](Number o) -> ImplExpr* {
-				auto ret = ei.code_buffer.preallocate<ImplExprConstantFloat>(line);
-				ret->init(o);
-				return ret;
-
-			},
-			[&](const std::string &o) -> ImplExpr* {
-				auto ret = ei.code_buffer.preallocate<ImplExprConstantString>(line);
-				auto txt = ei.code_buffer.allocate(o);
-				ret->init(txt);
-				return ret;
-			}
-		);
-	}
 	void AstExprConstant::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprConstant::visit_children(AstVisitor& vis) {
 	}

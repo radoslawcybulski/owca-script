@@ -126,13 +126,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstFor::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplFor>(line);
-        ei.code_buffer.preallocate_array<unsigned int>(value_indexes.size());
-        iterator->calculate_size(ei);
-        body->calculate_size(ei);
-	}
 	ImplStat* AstFor::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplFor>(line);
         auto vi = ei.code_buffer.preallocate_array<unsigned int>(value_indexes.size());

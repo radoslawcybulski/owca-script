@@ -27,30 +27,35 @@ namespace OwcaScript {
 		
 		private:
 			std::string name_, full_name_;
-			std::vector<std::string> params;
-			std::vector<CopyFromParent> copy_from_parents;
-			std::vector<std::string_view> identifier_names;
-			std::unique_ptr<AstStat> body;
-			Native native;
-			Generator generator;
+			std::vector<std::string> params_;
+			std::vector<CopyFromParent> copy_from_parents_;
+			std::vector<std::string_view> identifier_names_;
+			std::unique_ptr<AstStat> body_;
+			Native native_;
+			Generator generator_;
+			unsigned int max_stack_size_ = 0;
 		public:
-			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params(std::move(params)), 
-				native(native), generator(generator) {}
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params_(std::move(params)), 
+				native_(native), generator_(generator) {}
 
 			const auto &name() const { return name_; }
+			const auto &full_name() const { return full_name_; }
+			auto &body() { return *body_; }
+			auto max_stack_size() const { return max_stack_size_; }
+			void update_max_stack_size(unsigned int s) { max_stack_size_ = s; }
 			void update_body(std::unique_ptr<AstStat> body) {
-				this->body = std::move(body);
+				this->body_ = std::move(body);
 			}
 			void update_copy_from_parents(std::vector<CopyFromParent> copy_from_parents) {
-				this->copy_from_parents = std::move(copy_from_parents);
+				this->copy_from_parents_ = std::move(copy_from_parents);
 			}
 			void update_identifier_names(std::vector<std::string_view> identifier_names) {
-				this->identifier_names = std::move(identifier_names);
+				this->identifier_names_ = std::move(identifier_names);
 			}
-			bool is_generator() const { return generator == Generator::Yes; }
-			const auto& parameters() const { return params; }
+			bool is_generator() const { return generator_ == Generator::Yes; }
+			const auto& parameters() const { return params_; }
 			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

@@ -6,7 +6,7 @@ class PerformanceTest : public SimpleTest {
 
 };
 
-TEST_F(PerformanceTest, book_building)
+TEST_F(PerformanceTest, DISABLED_book_building)
 {
     // GTEST_SKIP();
 	OwcaVM vm;

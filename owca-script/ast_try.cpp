@@ -84,18 +84,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstTry::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplTry>(line);
-        body->calculate_size(ei);
-        for(auto &q : catches) {
-            for(auto &w : std::get<2>(q))
-                w->calculate_size(ei);
-            ei.code_buffer.preallocate_array<ImplExpr*>(std::get<2>(q).size());
-            std::get<3>(q)->calculate_size(ei);
-        }
-        ei.code_buffer.preallocate_array<std::tuple<unsigned int, std::span<ImplExpr*>, ImplStat*>>(catches.size());
-	}
 	ImplStat* AstTry::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplTry>(line);
 		auto b = body->emit(ei);

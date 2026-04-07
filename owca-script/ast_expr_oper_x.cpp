@@ -94,20 +94,6 @@ namespace OwcaScript::Internal {
 		ret->init(tmp);
 		return ret;
 	}
-	void AstExprOperX::calculate_size(CodeBufferSizeCalculator& ei) const
-	{
-		switch (kind) {
-		case Kind::Call: ei.code_buffer.preallocate<ImplExprCall>(line); break;
-		case Kind::CreateArray: ei.code_buffer.preallocate<ImplExprCreateArray>(line); break;
-		case Kind::CreateTuple: ei.code_buffer.preallocate<ImplExprCreateTuple>(line); break;
-		case Kind::CreateSet: ei.code_buffer.preallocate<ImplExprCreateSet>(line); break;
-		case Kind::CreateMap: ei.code_buffer.preallocate<ImplExprCreateMap>(line); break;
-		}
-		ei.code_buffer.preallocate_array<ImplExpr*>(args.size());
-		for (auto i = 0u; i < args.size(); ++i) {
-			args[i]->calculate_size(ei);
-		}
-	}
 	ImplExpr* AstExprOperX::emit(EmitInfo& ei) {
 		switch (kind) {
 		case Kind::Call: return make<ImplExprCall>(ei, line, args);

@@ -48,17 +48,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstLoopControl::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-        switch(mode) {
-        case Mode::Break:
-		    ei.code_buffer.preallocate<ImplLoopControlBreak>(line);
-            break;
-        case Mode::Continue:
-		    ei.code_buffer.preallocate<ImplLoopControlContinue>(line);
-            break;
-        }
-	}
 	ImplStat* AstLoopControl::emit(EmitInfo& ei) {
         switch(mode) {
         case Mode::Break: {

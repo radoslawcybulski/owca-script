@@ -111,31 +111,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstFunction::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		if (native == Native::Yes) {
-			ei.code_buffer.preallocate<ImplExprNativeFunction>(line);
-			ei.code_buffer.preallocate_array<std::string_view>(params.size());
-			for (auto i = 0u; i < params.size(); ++i) {
-				ei.code_buffer.allocate(params[i]);
-			}
-			ei.code_buffer.allocate(name_);
-			ei.code_buffer.allocate(full_name_);
-		}
-		else {
-			assert(body);
-			ei.code_buffer.preallocate<ImplExprScriptFunction>(line);
-			ei.code_buffer.preallocate_array<CopyFromParent>(copy_from_parents.size());
-			ei.code_buffer.preallocate_array<std::string_view>(identifier_names.size());
-			for (auto i = 0u; i < identifier_names.size(); ++i) {
-				ei.code_buffer.allocate(identifier_names[i]);
-			}
-			ei.code_buffer.allocate(name_);
-			ei.code_buffer.allocate(full_name_);
-			body->calculate_size(ei);
-		}
-	}
-
 	ImplExpr* AstFunction::emit(EmitInfo& ei) {
 		if (native == Native::Yes) {
 			auto ret = ei.code_buffer.preallocate<ImplExprNativeFunction>(line);

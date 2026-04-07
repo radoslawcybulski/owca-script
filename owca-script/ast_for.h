@@ -8,28 +8,30 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstFor : public AstStat {
 		private:
-            std::string_view loop_identifier;
-			std::vector<std::string_view> values;
-			std::unique_ptr<AstExpr> iterator;
-            std::unique_ptr<AstStat> body;
-            unsigned int flow_control_depth;
-            std::optional<unsigned int> loop_ident_index;
+            std::string_view loop_identifier_;
+			std::vector<std::string_view> values_;
+			std::unique_ptr<AstExpr> iterator_;
+            std::unique_ptr<AstStat> body_;
+            unsigned int flow_control_depth_;
+            std::optional<unsigned int> loop_ident_index_;
 			std::vector<unsigned int> value_indexes;
 
 		public:
-            AstFor(Line line, unsigned int flow_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier(loop_identifier), 
-				values(std::move(values)), iterator(std::move(iterator)), body(std::move(body)), flow_control_depth(flow_control_depth) {}
+            AstFor(Line line, unsigned int flow_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), 
+				values_(std::move(values)), iterator_(std::move(iterator)), body_(std::move(body)), flow_control_depth_(flow_control_depth) {}
 
-            auto get_loop_identifier() const { return loop_identifier; }
-			auto get_values() const { return values; }
+			const auto &values() const { return values_; }
+			auto &iterator() { return *iterator_; }
+			auto &body() { return *body_; }
+            auto loop_identifier() const { return loop_identifier_; }
             void update_loop_ident_index(unsigned int index) {
-                loop_ident_index = index;
+                loop_ident_index_ = index;
             }
 			void update_value_indexes(std::vector<unsigned int> v) {
 				value_indexes = std::move(v);
 			}
 			ImplStat* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

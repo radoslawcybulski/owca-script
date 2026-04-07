@@ -18,7 +18,7 @@ namespace OwcaScript::Internal {
 		Task execute_generator_statement_impl(OwcaVM vm, State &st) const override {
 			VM::get(vm).update_execution_line(line);
 			auto pp = VM::AllocatedObjectsPointer{ VM::get(vm) };
-				value->execute_expression(vm);
+			value->execute_expression(vm);
 			co_return;
 		}
 		size_t calculate_generator_allocation_size() const override {
@@ -26,10 +26,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstExprAsStat::calculate_size(CodeBufferSizeCalculator &ei) const {
-		ei.code_buffer.preallocate<ImplExprAsStat>(line);
-		child->calculate_size(ei);
-	}
 	ImplStat* AstExprAsStat::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprAsStat>(line);
 		auto val = child->emit(ei);

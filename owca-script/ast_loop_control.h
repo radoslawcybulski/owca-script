@@ -12,13 +12,16 @@ namespace OwcaScript {
                 Break, Continue
             };
 		private:
-			unsigned int depth;
-            Mode mode;
+			unsigned int depth_;
+            Mode mode_;
 		public:        
-			AstLoopControl(Line line, Mode mode, unsigned int depth) : AstStat(line), depth(depth), mode(mode) {}
+			AstLoopControl(Line line, Mode mode, unsigned int depth) : AstStat(line), depth_(depth), mode_(mode) {}
+
+			auto mode() const { return mode_; }
+			auto depth() const { return depth_; }
 
 			ImplStat* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

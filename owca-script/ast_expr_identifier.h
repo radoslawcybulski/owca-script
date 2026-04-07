@@ -10,21 +10,24 @@ namespace OwcaScript {
 
 		class AstExprIdentifier : public AstExpr {
 			std::string_view identifier_;
-			std::unique_ptr<AstExpr> value_to_write = nullptr;
-			unsigned int index = std::numeric_limits<unsigned int>::max();
-			bool function_write = false;
+			std::unique_ptr<AstExpr> value_to_write_ = nullptr;
+			unsigned int value_to_write_index_ = std::numeric_limits<unsigned int>::max();
+			bool function_write_ = false;
 
 		public:
 			AstExprIdentifier(Line line, std::string_view identifier_) : AstExpr (line), identifier_(std::move(identifier_)) {}
 
 			auto identifier() const { return identifier_; }
-			bool write() const { return value_to_write != nullptr; }
-			void update_index(unsigned int index) { this->index = index; }
-			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write = std::move(v); }
-			void set_function_write() { function_write = true; }
+			auto &value_to_write() const { return *value_to_write_; }
+			auto value_to_write_index() const { return value_to_write_index_; }
+			auto function_write() const { return function_write_; }
+			bool write() const { return value_to_write_ != nullptr; }
+			void update_value_to_write_index(unsigned int index) { value_to_write_index_ = index; }
+			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write_ = std::move(v); }
+			void set_function_write() { function_write_ = true; }
 
 			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

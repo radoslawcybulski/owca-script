@@ -26,12 +26,6 @@ namespace OwcaScript::Internal {
 			return VM::get(vm).get_identifier(index);
 		}
 	};
-	void AstExprIdentifier::calculate_size(CodeBufferSizeCalculator& ei) const
-	{
-		ei.code_buffer.preallocate<ImplExprIdentifier>(line);
-		ei.code_buffer.allocate(identifier_);
-		if (value_to_write) value_to_write->calculate_size(ei);
-	}
 
 	ImplExpr* AstExprIdentifier::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprIdentifier>(line);

@@ -46,13 +46,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstIf::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplIf>(line);
-        value->calculate_size(ei);
-        if_true->calculate_size(ei);
-        if (if_false) if_false->calculate_size(ei);
-	}
 	ImplStat* AstIf::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplIf>(line);
 		ImplExpr* v = value->emit(ei);

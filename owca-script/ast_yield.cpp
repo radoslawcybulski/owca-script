@@ -29,11 +29,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstYield::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplYield>(line);
-		value->calculate_size(ei);
-	}
 	ImplStat* AstYield::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplYield>(line);
 		auto v = value->emit(ei);

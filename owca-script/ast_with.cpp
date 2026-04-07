@@ -72,12 +72,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstWith::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplWith>(line);
-        value->calculate_size(ei);
-        body->calculate_size(ei);
-	}
 	ImplStat* AstWith::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplWith>(line);
         auto v = value->emit(ei);

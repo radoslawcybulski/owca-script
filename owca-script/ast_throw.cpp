@@ -31,11 +31,6 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstThrow::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		ei.code_buffer.preallocate<ImplThrow>(line);
-        value->calculate_size(ei);
-	}
 	ImplStat* AstThrow::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplThrow>(line);
         auto v = value->emit(ei);

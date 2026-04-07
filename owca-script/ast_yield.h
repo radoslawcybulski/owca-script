@@ -8,13 +8,15 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstYield : public AstStat {
 		private:
-			std::unique_ptr<AstExpr> value;
+			std::unique_ptr<AstExpr> value_;
 
 		public:
-		AstYield(Line line, std::unique_ptr<AstExpr> value) : AstStat(line), value(std::move(value)) {}
+			AstYield(Line line, std::unique_ptr<AstExpr> value) : AstStat(line), value_(std::move(value)) {}
+
+			auto &value() { return *value_; }
 
 			ImplStat* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 

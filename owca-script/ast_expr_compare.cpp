@@ -260,14 +260,6 @@ namespace OwcaScript::Internal {
 		VM::get(vm).throw_cant_compare(kind, left.type(), right.type());
 	}
 
-	void AstExprCompare::calculate_size(CodeBufferSizeCalculator &ei) const {
-		ei.code_buffer.preallocate<ImplExprCompare>(line);
-		first->calculate_size(ei);
-		ei.code_buffer.preallocate_array<std::tuple<CompareKind, Line, ImplExpr*>>(nexts.size());
-		for (auto i = 0u; i < nexts.size(); ++i) {
-			std::get<2>(nexts[i])->calculate_size(ei);
-		}
-	}
 	ImplExpr* AstExprCompare::emit(EmitInfo& ei) {
 		auto ret = ei.code_buffer.preallocate<ImplExprCompare>(line);
 		auto f = first->emit(ei);
