@@ -86,22 +86,27 @@ namespace OwcaScript::Internal {
 
 	void AstTry::emit(EmitInfo& ei) {
         auto start = ei.code_writer.position();
+        ei.push_storage();
+        ei.code_writer.append(line, ExecuteOp::TryInit);
+        auto body_start = ei.code_writer.append_placeholder<std::uint32_t>(line);
+        ei.code_writer.append(line, (std::uint32_t)catches_.size());
+        for(auto &c : catches_) {
+            for(auto &q : std::get<2>(c)) {
+                q->emit(ei);
+            }
+            auto &line = std::get<3>(c)->line;
+            ei.code_writer.append(line, ExecuteOp::TryCatchType);
+            ei.code_writer.append(line, (std::uint32_t)std::get<2>(c).size());
+            ei.code_writer.append(line, std::get<1>(c));
+            auto skip = ei.code_writer.append_placeholder<std::uint32_t>(line);
+            std::get<3>(c)->emit(ei);
+            ei.code_writer.update_placeholder(skip, ei.code_writer.position());
+        }
+        ei.code_writer.append(line, ExecuteOp::TryCatchTypeCompleted);
+        ei.code_writer.update_placeholder(body_start, ei.code_writer.position());
         body_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::TryCompleted);
-        auto end = ei.code_writer.position();
-
-        for(auto &c : catches_) {
-            ei.catch_block_emiters.push_back([start, end, &c](EmitInfo& ei) -> std::tuple<std::uint32_t, std::uint32_t, std::uint32_t> {
-                for(auto &q : std::get<2>(c)) {
-                    q->emit(ei);
-                }
-                ei.code_writer.append(std::get<3>(c)->line, ExecuteOp::TryCatchTypeDone);
-                auto pos = ei.code_writer.position();
-                std::get<3>(c)->emit(ei);
-                ei.code_writer.append(std::get<3>(c)->line, end);
-                return { start, end, pos };
-            });
-        }
+        ei.pop_storage();
 	}
 
 	void AstTry::visit(AstVisitor& vis) { vis.apply(*this); }

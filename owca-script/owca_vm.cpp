@@ -3,7 +3,6 @@
 #include "vm.h"
 #include "owca_code.h"
 #include "ast_compiler.h"
-#include "code_buffer.h"
 
 namespace OwcaScript {
 	OwcaVM::CompilationFailed::CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_) : filename_(std::move(filename_)), error_messages_(std::move(error_messages_)) {
@@ -47,11 +46,6 @@ namespace OwcaScript {
 		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
 	}
 
-	OwcaCode OwcaVM::load(std::string filename, std::span<unsigned char> binary_content, std::shared_ptr<NativeCodeProvider> native_code_provider)
-	{
-		auto code = std::make_shared<Internal::CodeBuffer>(std::move(filename), binary_content, std::move(native_code_provider));
-		return OwcaCode{ std::move(code) };
-	}
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
 		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider) };
@@ -59,7 +53,7 @@ namespace OwcaScript {
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
 
-		return OwcaCode{ std::move(v) };
+		return std::move(*v);
 	}
 
 	OwcaValue OwcaVM::create_array() const

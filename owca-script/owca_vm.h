@@ -72,7 +72,6 @@ namespace OwcaScript {
 			}
 		};
 
-		OwcaCode load(std::string filename, std::span<unsigned char> binary_content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue execute(const OwcaCode&);

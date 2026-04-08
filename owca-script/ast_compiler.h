@@ -8,8 +8,9 @@
 #include "owca_vm.h"
 
 namespace OwcaScript {
+	class OwcaCode;
+
 	namespace Internal {
-		class CodeBuffer;
 		class AstFunction;
 
 		class AstCompiler {
@@ -142,16 +143,16 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_break_or_continue();
 			std::unique_ptr<AstStat> compile_stat();
-			std::unique_ptr<AstFunction> compile_main_block();
+			std::unique_ptr<AstFunction> compile_main_block(std::vector<std::string> variables);
 
 			struct Phase2;
 			struct RewriteAsWrite;
-			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
+			void compile_phase_2(AstFunction& root);
 		public:
 			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
 
 			const auto& filename() const { return filename_; }
-			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});
+			std::optional<OwcaCode> compile(std::vector<std::string> additional_variables = {});
 			auto take_error_messages() const { return std::move(error_messages_); }
 		};
 	}

@@ -2,7 +2,6 @@
 #define RC_OWCA_SCRIPT_AST_BASE_H
 
 #include "stdafx.h"
-#include "code_buffer.h"
 #include "impl_base.h"
 #include "ast_visitor.h"
 #include "line.h"
@@ -16,7 +15,6 @@ namespace OwcaScript {
 
 			struct EmitInfo {
 				ExecuteBufferWriter code_writer;
-				std::vector<std::function<std::tuple<std::uint32_t, std::uint32_t, std::uint32_t>(EmitInfo &)>> catch_block_emiters;
 				std::uint32_t max_storage_counter = 0;
 				std::uint32_t current_storage_counter = 0;
 

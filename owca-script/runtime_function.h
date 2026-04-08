@@ -5,11 +5,10 @@
 #include "allocation_base.h"
 #include "ast_function.h"
 #include "owca_vm.h"
+#include "owca_code.h"
 
 namespace OwcaScript {
 	namespace Internal {
-		class CodeBuffer;
-
 		struct RuntimeFunction : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::RuntimeFunction;
 
@@ -30,14 +29,14 @@ namespace OwcaScript {
 				std::span<std::string_view> parameter_names;
 				NativeCodeProvider::GeneratorFunction generator;
 			};
-			std::shared_ptr<CodeBuffer> code;
+			OwcaCode code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
 			std::string_view name, full_name;
 			Line fileline;
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method);
+			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method);
 
 			template <typename ... F> auto visit(F &&...fns) { return visit_variant(data, std::forward<F>(fns)...); }
 			template <typename ... F> auto visit(F &&...fns) const { return visit_variant(data, std::forward<F>(fns)...); }

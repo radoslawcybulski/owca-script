@@ -134,9 +134,11 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(line, copy_from_parents_);
 			ei.code_writer.append(line, identifier_names_);
 			ei.code_writer.append(line, max_stack_size_);
+			auto next = ei.code_writer.append_placeholder<std::uint32_t>(line);
 
 			assert(body_);
 			body_->emit(ei);
+			ei.code_writer.update_placeholder(next, ei.code_writer.position());
 		}
 	}
 

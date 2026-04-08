@@ -8,6 +8,7 @@
 #include "execution_frame.h"
 #include "impl_base.h"
 #include "owca_variable.h"
+#include "owca_code.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -194,7 +195,7 @@ namespace OwcaScript {
 			auto get_currently_building_class() const { return currently_building_class; }
 
 			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
-			std::shared_ptr<CodeBuffer> currently_running_code() const;
+			OwcaCode currently_running_code() const;
 			void run_gc();
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {

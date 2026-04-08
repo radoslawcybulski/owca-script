@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "ast_compiler.h"
-#include "code_buffer.h"
 #include "ast_block.h"
 #include "ast_expr_as_stat.h"
 #include "ast_expr_oper_2.h"
@@ -23,6 +22,8 @@
 #include "ast_loop_control.h"
 #include "vm.h"
 #include "ast_with.h"
+#include "owca_code.h"
+#include "exec_buffer.h"
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
@@ -1157,11 +1158,11 @@ namespace OwcaScript::Internal {
 		return compile_expression_as_stat();
 	}
 
-	std::unique_ptr<AstFunction> AstCompiler::compile_main_block()
+	std::unique_ptr<AstFunction> AstCompiler::compile_main_block(std::vector<std::string> variables)
 	{
 		functions_stack.clear();
 		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{}, AstFunction::Native::No, AstFunction::Generator::No);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::move(variables), AstFunction::Native::No, AstFunction::Generator::No);
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -1243,12 +1244,11 @@ namespace OwcaScript::Internal {
 			}
 		};
 		std::unordered_map<AstFunction*, Stack> stacks;
-		std::span<const std::string> additional_variables;
 		Stack* current_stack = nullptr;
 		bool first_run = true;
 		AstCompiler* compiler;
 
-		Phase2(AstCompiler* compiler, std::span<const std::string> additional_variables) : additional_variables(additional_variables), compiler(compiler) {}
+		Phase2(AstCompiler* compiler) : compiler(compiler) {}
 
 		void add_error(OwcaErrorKind kind, Line line, std::string msg) {
 			compiler->add_error(kind, compiler->filename_, line, std::move(msg));
@@ -1360,8 +1360,6 @@ namespace OwcaScript::Internal {
 					for(auto &it : compiler->vm.get_builtin_objects()) {
 						current_stack->define_identifier(it.first);
 					}
-					for (auto& ident : additional_variables)
-						current_stack->define_identifier(ident);
 				}
 				for (auto& p : o.parameters()) {
 					current_stack->define_identifier(p);
@@ -1379,37 +1377,42 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstCompiler::compile_phase_2(AstFunction &root, std::span<const std::string> additional_variables)
+	void AstCompiler::compile_phase_2(AstFunction &root)
 	{
-		auto p = Phase2{ this, additional_variables };
+		auto p = Phase2{ this };
 		p.first_run = true;
 		root.visit(p);
 		p.first_run = false;
 		root.visit(p);
 	}
 
-	std::shared_ptr<CodeBuffer> AstCompiler::compile(std::span<const std::string> additional_variables)
+	std::optional<OwcaCode> AstCompiler::compile(std::vector<std::string> additional_variables)
 	{
-		auto root = compile_main_block();
+		auto root = compile_main_block(std::move(additional_variables));
 		if (!error_messages_.empty()) {
 			assert(!error_messages_.empty());
-			return nullptr;
+			return std::nullopt;
 		}
 		assert(root);
 
-		compile_phase_2(*root, additional_variables);
+		compile_phase_2(*root);
 		if (!error_messages_.empty()) {
-			return nullptr;
+			return std::nullopt;
 		}
 
-		auto code_buffer_size_calc = CodeBufferSizeCalculator{};
-		root->calculate_size(code_buffer_size_calc);
+		auto ei = AstBase::EmitInfo{};
+		root->emit(ei);
+		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
+		assert(error_messages_.empty());
 
-		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ filename(), code_buffer_size_calc.get_total_size(), std::move(native_code_provider) } };
-		root->emit(emit_info);
+		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
+		auto buffer_span = std::span{ buffer.data(), buffer.size() };
+		auto data_kinds_span = std::span{ data_kinds.data(), data_kinds.size() };
+		auto lines_span = std::span{ lines.data(), lines.size() };
+		auto fname = std::vector<char>(filename_.begin(), filename_.end());
+		auto fname_sv = std::string_view{ fname.data(), fname.size() };
 
-		emit_info.code_buffer.validate_size(code_buffer_size_calc.get_total_size());
-
-		return std::make_shared<CodeBuffer>(std::move(emit_info.code_buffer));
+		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds), lines = std::move(lines), fname = std::move(fname)]() {};
+		return OwcaCode{ fname_sv, buffer_span, data_kinds_span, lines_span, std::move(dstr) };
 	}
 }

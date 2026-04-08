@@ -3,7 +3,6 @@
 #include "owca_value.h"
 #include "runtime_function.h"
 #include "owca_code.h"
-#include "code_buffer.h"
 #include "owca_vm.h"
 #include "owca_value.h"
 #include "flow_control.h"
@@ -754,8 +753,7 @@ function native time();
 	void VM::initialize_exception_object(Exception &exc)
 	{
 		for(auto &st : stacktrace) {
-			exc.frames.push_back({});
-			exc.frames.back().code = st.runtime_function->code;
+			exc.frames.push_back({ .code = st.runtime_function->code });
 			exc.frames.back().line = st.line.line;
 			exc.frames.back().function = st.runtime_function->full_name;
 		}
@@ -1274,10 +1272,10 @@ function native time();
 		}
 		OwcaValue val;
 		RuntimeFunction::ScriptFunction sf;
-		RuntimeFunction rt_temp{ oc.code_, "", "", Line{0}, 0, false};
+		RuntimeFunction rt_temp{ oc, "", "", Line{0}, 0, false};
 		rt_temp.data = std::move(sf);
 		{
-			stacktrace.push_back(ExecutionFrame{ oc.code_->root()->line });
+			stacktrace.push_back(ExecutionFrame{ oc.first_line() });
 			auto pop_stack = PopStack{ this };
 			stacktrace.back().runtime_function = &rt_temp;
 			val = oc.code_->root()->execute_expression(vm);
@@ -1612,11 +1610,12 @@ function native time();
 		}
 		s.values[index] = std::move(value);
 	}
-	std::shared_ptr<CodeBuffer> VM::currently_running_code() const
+	OwcaCode VM::currently_running_code() const
 	{
 		auto& s = stacktrace.back();
 		return s.runtime_function->code;
 	}
+
 	bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
 	{
 		return AstExprCompare::execute_compare(this, kind, left, right);

@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "allocation_base.h"
+#include "owca_code.h"
 #include "line.h"
 
 namespace OwcaScript {
@@ -10,7 +11,6 @@ namespace OwcaScript {
 	class NativeClassInterface;
 
 	namespace Internal {
-		class CodeBuffer;
 		struct RuntimeFunction;
 		struct RuntimeFunctions;
 		struct Object;
@@ -20,7 +20,7 @@ namespace OwcaScript {
 
 			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>, StringHash, StringCmp> values;
 			const std::string_view name, full_name;
-			std::shared_ptr<CodeBuffer> code;
+			OwcaCode code;
 			Line fileline;
 			std::unordered_set<Class*> all_base_classes;
 			std::vector<Class*> base_classes;
@@ -48,7 +48,7 @@ namespace OwcaScript {
 			char* native_storage_ptr(Object *) const;
 			const char* native_storage_ptr(const Object *) const;
 
-			Class(Line line, std::string_view type, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count);
+			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code, size_t base_class_count);
 		};
 
 		struct Object : public AllocationBase {

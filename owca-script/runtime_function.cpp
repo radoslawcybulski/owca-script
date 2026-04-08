@@ -3,7 +3,7 @@
 #include "vm.h"
 
 namespace OwcaScript::Internal {
-	RuntimeFunction::RuntimeFunction(std::shared_ptr<CodeBuffer> code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method) :
+	RuntimeFunction::RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method) :
 		code(std::move(code)), name(name), full_name(full_name), fileline(fileline), param_count(param_count), is_method(is_method) {}
 
 	RuntimeFunction::ScriptFunction::ScriptFunction() = default;

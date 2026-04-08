@@ -14,8 +14,6 @@ namespace OwcaScript {
 	class OwcaVM;
 
 	namespace Internal {
-        class CodeBuffer;
-
 		struct Iterator : public AllocationBase {
             static constexpr const Kind object_kind = Kind::Iterator;
 
