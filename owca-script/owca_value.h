@@ -69,9 +69,6 @@ namespace OwcaScript {
 		};
 	}
 
-	class OwcaEmpty {};
-	class OwcaCompleted {};
-
 	class OwcaValue {
 		friend class Internal::VM;
 

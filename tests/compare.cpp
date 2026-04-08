@@ -29,7 +29,7 @@ if (a <  b) result = result | 16;
 if (a >  b) result = result | 32;
 return result;
     )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"), std::vector<std::string>{ "b" });
-        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array(std::span{ pp.begin(), pp.end() }) } } };
+        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? OwcaValue{ vm.create_tuple(std::move(pp)) } : OwcaValue{ vm.create_array(std::span{ pp.begin(), pp.end() }) } } } };
         auto val = vm.execute(code, vm.create_map(map_data));
         ASSERT_EQ(val.as_float(vm), expected) << val.to_string();
     }

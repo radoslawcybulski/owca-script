@@ -23,12 +23,11 @@ namespace OwcaScript::Internal {
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
-		empty_tuple = create_tuple(std::vector<OwcaValue>{}).as_tuple(vm).internal_value();
+		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
 		empty_string = allocate<String>(0, 0u);
 	}
 	VM::~VM() {
 		stacktrace.clear();
-		allocated_objects.clear();
 		builtin_objects.clear();
 		run_gc();
 	}
@@ -144,21 +143,21 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue string_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return r.visit(
-				[&](OwcaEmpty o) { return vm.create_string("nul"); },
-				[&](OwcaCompleted o) { return vm.create_string("completed"); },
-				[&](OwcaRange o) { return vm.create_string(o.to_string()); },
-				[&](Number o) { return vm.create_string(std::format("{}", o)); },
-				[&](bool o) { return vm.create_string(o ? "true" : "false"); },
+				[&](OwcaEmpty o) -> OwcaValue { return vm.create_string("nul"); },
+				[&](OwcaCompleted o) -> OwcaValue { return vm.create_string("completed"); },
+				[&](OwcaRange o) -> OwcaValue { return vm.create_string(o.to_string()); },
+				[&](Number o) -> OwcaValue { return vm.create_string(std::format("{}", o)); },
+				[&](bool o) -> OwcaValue { return vm.create_string(o ? "true" : "false"); },
 				[&](OwcaString o) -> OwcaValue { return o; },
-				[&](OwcaFunctions s) { return vm.create_string(std::format("function {}", s.internal_value()->full_name)); },
-				[&](OwcaMap s) { return vm.create_string(s.to_string()); },
-				[&](OwcaClass s) { return vm.create_string(s.to_string()); },
-				[&](OwcaObject s) { return vm.create_string(s.to_string()); },
-				[&](OwcaArray s) { return vm.create_string(s.to_string()); },
-				[&](OwcaTuple s) { return vm.create_string(s.to_string()); },
-				[&](OwcaSet s) { return vm.create_string(s.to_string()); },
-				[&](OwcaException s) { return vm.create_string(s.to_string()); },
-				[&](OwcaIterator s) { return vm.create_string("iterator"); }
+				[&](OwcaFunctions s) -> OwcaValue { return vm.create_string(std::format("function {}", s.internal_value()->full_name)); },
+				[&](OwcaMap s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaClass s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaObject s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaArray s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaTuple s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaSet s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaException s) -> OwcaValue { return vm.create_string(s.to_string()); },
+				[&](OwcaIterator s) -> OwcaValue { return vm.create_string("iterator"); }
 				);
 		}
 		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
@@ -175,7 +174,7 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue function_bound_value(OwcaVM vm, OwcaValue r) {
 			auto f = r.as_functions(vm);
-			return f.self();
+			return f.self().value_or(OwcaValue{});
 		}
 		static OwcaValue map_has_key(OwcaVM vm, OwcaMap self, OwcaValue key) {
 			return self.has_key(key);
@@ -1151,250 +1150,249 @@ function native time();
 		value_to_yield = v;
 	}
 
-	VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value)
+	// VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value)
+	// {
+	// 	auto it = runtime_functions->functions.find(index + (has_self_value ? 1 : 0));
+	// 	if (it == runtime_functions->functions.end()) {
+	// 		it = runtime_functions->functions.find(index);
+	// 		if (it == runtime_functions->functions.end() || it->second->is_method) {
+	// 			auto tmp = std::string{ "function " };
+	// 			tmp += runtime_functions->name;
+	// 			throw_not_callable_wrong_number_of_params(std::move(tmp), index);
+	// 		}
+	// 	}
+
+	// 	stacktrace.push_back(ExecutionFrame{ it->second->fileline });
+	// 	auto& s = stacktrace.back();
+	// 	s.runtime_functions = runtime_functions;
+	// 	s.runtime_function = it->second;
+	// 	s.runtime_function->visit(
+	// 		[&](const RuntimeFunction::NativeFunction& nf) {
+	// 			s.values.resize(nf.parameter_names.size());
+	// 		},
+	// 		[&](const RuntimeFunction::NativeGenerator& nf) {
+	// 			s.values.resize(nf.parameter_names.size());
+	// 		},
+	// 		[&](const RuntimeFunction::ScriptFunction& sf) {
+	// 			s.values.resize(sf.identifier_names.size());
+	// 			assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
+
+	// 			for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
+	// 				s.values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
+	// 			}
+	// 		});
+
+	// 	return PopStack{ this };
+	// }
+
+	// Generator VM::execute_generator(ImplStat::State &state, ImplStat *body)
+	// {
+	// 	assert(state.storage.empty());
+	// 	body->execute_generator_statement(OwcaVM{ this }, state);
+	// 	assert(!state.storage.empty());
+	// 	std::optional<OwcaValue> last_yield;
+	// 	try {
+	// 		while(!state.storage.empty()) {
+	// 			try {
+	// 				state.top()->resume();
+	// 			}
+	// 			catch(OwcaException) {
+	// 				state.exception = std::current_exception();
+	// 				continue;
+	// 			}
+	// 			catch(FlowControlContinue) {
+	// 				state.exception = std::current_exception();
+	// 				continue;
+	// 			}
+	// 			catch(FlowControlBreak) {
+	// 				state.exception = std::current_exception();
+	// 				continue;
+	// 			}
+	// 			if (value_to_yield) {
+	// 				auto v = *value_to_yield;
+	// 				value_to_yield.reset();
+	// 				co_yield v;
+	// 			}
+	// 		}
+	// 	}
+	// 	catch(FlowControlReturn o) {
+	// 		assert(o.value.kind() == OwcaValueKind::Empty || o.value.kind() == OwcaValueKind::Completed);
+	// 		last_yield = o.value;
+	// 	}
+	// 	if (last_yield) co_yield *last_yield;
+	// 	co_return;
+	// }
+
+	// OwcaValue VM::execute()
+	// {
+	// 	auto pp = AllocatedObjectsPointer{ *this };
+	// 	auto& s = stacktrace.back();
+	// 	auto vm = OwcaVM{ this };
+
+	// 	return s.runtime_function->visit(
+	// 		[&](const RuntimeFunction::NativeFunction& nf) -> OwcaValue {
+	// 			auto vm = OwcaVM{ this };
+
+	// 			return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
+	// 		},
+	// 		[&](const RuntimeFunction::NativeGenerator& nf) -> OwcaValue {
+	// 			auto vm = OwcaVM{ this };
+	// 			auto gen = allocate<Iterator>(0, (size_t)0, s.runtime_function->fileline);
+	// 			gen->frame = std::move(s);
+	// 			gen->generator = nf.generator(vm, std::span{ gen->frame.values.begin(), gen->frame.values.end() });
+	// 			return OwcaIterator{ gen };
+	// 		},
+	// 		[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
+	// 			if (sf.is_generator) {
+	// 				auto gen_size = sf.body->calculate_generator_allocation_size();
+	// 				auto gen = allocate<Iterator>(0, gen_size, s.runtime_function->fileline);
+	// 				gen->frame = std::move(s);
+	// 				gen->generator = execute_generator(gen->state, sf.body);
+	// 				return OwcaIterator{ gen };
+	// 			}
+	// 			else {
+	// 				try {
+	// 					sf.body->execute_statement(vm);
+	// 					return {};
+	// 				}
+	// 				catch (FlowControlReturn o) {
+	// 					return std::move(o.value);
+	// 				}
+	// 			}
+	// 		});
+	// }
+
+	OwcaValue VM::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
 	{
-		auto it = runtime_functions->functions.find(index + (has_self_value ? 1 : 0));
-		if (it == runtime_functions->functions.end()) {
-			it = runtime_functions->functions.find(index);
-			if (it == runtime_functions->functions.end() || it->second->is_method) {
-				auto tmp = std::string{ "function " };
-				tmp += runtime_functions->name;
-				throw_not_callable_wrong_number_of_params(std::move(tmp), index);
-			}
-		}
-
-		stacktrace.push_back(ExecutionFrame{ it->second->fileline });
-		auto& s = stacktrace.back();
-		s.runtime_functions = runtime_functions;
-		s.runtime_function = it->second;
-		s.runtime_function->visit(
-			[&](const RuntimeFunction::NativeFunction& nf) {
-				s.values.resize(nf.parameter_names.size());
-			},
-			[&](const RuntimeFunction::NativeGenerator& nf) {
-				s.values.resize(nf.parameter_names.size());
-			},
-			[&](const RuntimeFunction::ScriptFunction& sf) {
-				s.values.resize(sf.identifier_names.size());
-				assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
-
-				for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
-					s.values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
-				}
-			});
-
-		return PopStack{ this };
-	}
-
-	Generator VM::execute_generator(ImplStat::State &state, ImplStat *body)
-	{
-		assert(state.storage.empty());
-		body->execute_generator_statement(OwcaVM{ this }, state);
-		assert(!state.storage.empty());
-		std::optional<OwcaValue> last_yield;
-		try {
-			while(!state.storage.empty()) {
-				try {
-					state.top()->resume();
-				}
-				catch(OwcaException) {
-					state.exception = std::current_exception();
-					continue;
-				}
-				catch(FlowControlContinue) {
-					state.exception = std::current_exception();
-					continue;
-				}
-				catch(FlowControlBreak) {
-					state.exception = std::current_exception();
-					continue;
-				}
-				if (value_to_yield) {
-					auto v = *value_to_yield;
-					value_to_yield.reset();
-					co_yield v;
-				}
-			}
-		}
-		catch(FlowControlReturn o) {
-			assert(o.value.kind() == OwcaValueKind::Empty || o.value.kind() == OwcaValueKind::Completed);
-			last_yield = o.value;
-		}
-		if (last_yield) co_yield *last_yield;
-		co_return;
-	}
-
-	OwcaValue VM::execute()
-	{
-		auto pp = AllocatedObjectsPointer{ *this };
-		auto& s = stacktrace.back();
-		auto vm = OwcaVM{ this };
-
-		return s.runtime_function->visit(
-			[&](const RuntimeFunction::NativeFunction& nf) -> OwcaValue {
-				auto vm = OwcaVM{ this };
-
-				return nf.function(vm, std::span{ s.values.begin(), s.values.end() });
-			},
-			[&](const RuntimeFunction::NativeGenerator& nf) -> OwcaValue {
-				auto vm = OwcaVM{ this };
-				auto gen = allocate<Iterator>(0, (size_t)0, s.runtime_function->fileline);
-				gen->frame = std::move(s);
-				gen->generator = nf.generator(vm, std::span{ gen->frame.values.begin(), gen->frame.values.end() });
-				return OwcaIterator{ gen };
-			},
-			[&](const RuntimeFunction::ScriptFunction& sf) -> OwcaValue {
-				if (sf.is_generator) {
-					auto gen_size = sf.body->calculate_generator_allocation_size();
-					auto gen = allocate<Iterator>(0, gen_size, s.runtime_function->fileline);
-					gen->frame = std::move(s);
-					gen->generator = execute_generator(gen->state, sf.body);
-					return OwcaIterator{ gen };
-				}
-				else {
-					try {
-						sf.body->execute_statement(vm);
-						return {};
-					}
-					catch (FlowControlReturn o) {
-						return std::move(o.value);
-					}
-				}
-			});
-	}
-
-	OwcaValue VM::execute_code_block(const OwcaCode &oc, OwcaValue values, OwcaValue *dict_output)
-	{
-		auto pp = AllocatedObjectsPointer{ *this };
-		auto vm = OwcaVM{ this };
-		if (values.kind() != OwcaValueKind::Empty) {
-			values.as_map(vm);
-		}
-		OwcaValue val;
-		RuntimeFunction::ScriptFunction sf;
-		RuntimeFunction rt_temp{ oc, "", "", Line{0}, 0, false};
-		rt_temp.data = std::move(sf);
-		{
-			stacktrace.push_back(ExecutionFrame{ oc.first_line() });
-			auto pop_stack = PopStack{ this };
-			stacktrace.back().runtime_function = &rt_temp;
-			val = oc.code_->root()->execute_expression(vm);
-		}
-		assert(val.kind() == OwcaValueKind::Functions);
-		auto functions = val.as_functions(vm);
-		auto pop_stack = prepare_exec(functions.internal_value(), 0, false);
-		auto& s = stacktrace.back();
-		s.runtime_function->visit(
-			[&](RuntimeFunction::ScriptFunction& sf) -> void {
-				std::unordered_map<std::string_view, unsigned int> value_index_map;
-				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
-					value_index_map[sf.identifier_names[i]] = i;
-				}
+		prepare_exec(oc);
+		auto res = run();
+		auto fnc = res.as_functions(this);
+		auto &functions = fnc.internal_value()->functions;
+		assert(fnc.internal_self_object() == nullptr);
+		assert(fnc.internal_value()->name.find("main-block") != std::string::npos);
+		assert(functions.size() == 1);
+		auto &function = functions.begin()->second;
+		assert(function->is_method == false);
+		prepare_exec(fnc.internal_value(), function->param_count, values);
+		return run(dict_output);
+		
+		// OwcaValue val;
+		// RuntimeFunction::ScriptFunction sf;
+		// RuntimeFunction rt_temp{ oc, "", "", Line{0}, 0, false};
+		// rt_temp.data = std::move(sf);
+		// {
+		// 	stacktrace.push_back(ExecutionFrame{ oc.first_line() });
+		// 	auto pop_stack = PopStack{ this };
+		// 	stacktrace.back().runtime_function = &rt_temp;
+		// 	val = oc.code_->root()->execute_expression(vm);
+		// }
+		// assert(val.kind() == OwcaValueKind::Functions);
+		// auto functions = val.as_functions(vm);
+		// auto pop_stack = prepare_exec(functions.internal_value(), 0, false);
+		// auto& s = stacktrace.back();
+		// s.runtime_function->visit(
+		// 	[&](RuntimeFunction::ScriptFunction& sf) -> void {
+		// 		std::unordered_map<std::string_view, unsigned int> value_index_map;
+		// 		for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
+		// 			value_index_map[sf.identifier_names[i]] = i;
+		// 		}
 				
-				for(auto &it : builtin_objects) {
-					auto it2 = value_index_map.find(it.first);
-					assert(it2 != value_index_map.end());
-					set_identifier(it2->second, it.second);
-				}
-				if (values.kind() != OwcaValueKind::Empty) {
-					for (auto it : values.as_map(vm)) {
-						auto key = it.first.as_string(vm).text();
-						auto it2 = value_index_map.find(key);
-						if (it2 != value_index_map.end()) {
-							set_identifier(it2->second, it.second);
-						}
-					}
-				}
-			},
-			[&](RuntimeFunction::NativeFunction&) -> void {
-				assert(false);
-			},
-			[&](RuntimeFunction::NativeGenerator&) -> void {
-				assert(false);
-			}
-		);
+		// 		for(auto &it : builtin_objects) {
+		// 			auto it2 = value_index_map.find(it.first);
+		// 			assert(it2 != value_index_map.end());
+		// 			set_identifier(it2->second, it.second);
+		// 		}
+		// 		if (values.kind() != OwcaValueKind::Empty) {
+		// 			for (auto it : values.as_map(vm)) {
+		// 				auto key = it.first.as_string(vm).text();
+		// 				auto it2 = value_index_map.find(key);
+		// 				if (it2 != value_index_map.end()) {
+		// 					set_identifier(it2->second, it.second);
+		// 				}
+		// 			}
+		// 		}
+		// 	},
+		// 	[&](RuntimeFunction::NativeFunction&) -> void {
+		// 		assert(false);
+		// 	},
+		// 	[&](RuntimeFunction::NativeGenerator&) -> void {
+		// 		assert(false);
+		// 	}
+		// );
 
-		struct CopyBack {
-			VM *self;
-			OwcaValue *dict_output;
+		// struct CopyBack {
+		// 	VM *self;
+		// 	OwcaValue *dict_output;
 
-			CopyBack(VM *self, OwcaValue *dict_output) : self(self), dict_output(dict_output) {}
-			~CopyBack() {
-				if (dict_output) {
-					auto &dout = *dict_output;
-					if (dout.kind() != OwcaValueKind::Map) {
-						dout = self->create_map();
-					}
-					auto owca_vm = OwcaVM{ self };
+		// 	CopyBack(VM *self, OwcaValue *dict_output) : self(self), dict_output(dict_output) {}
+		// 	~CopyBack() {
+		// 		if (dict_output) {
+		// 			auto &dout = *dict_output;
+		// 			if (dout.kind() != OwcaValueKind::Map) {
+		// 				dout = self->create_map();
+		// 			}
+		// 			auto owca_vm = OwcaVM{ self };
 
-					auto doout_obj = dout.as_map(owca_vm);
-					auto& s = self->stacktrace.back();
-					s.runtime_function->visit(
-						[&](RuntimeFunction::ScriptFunction& sf) -> void {
-							for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
-								auto key = self->create_string_from_view(sf.identifier_names[i]);
-								doout_obj[key] = self->get_identifier(i);
-							}
-						},
-						[&](RuntimeFunction::NativeFunction&) -> void {
-							assert(false);
-						},
-						[&](RuntimeFunction::NativeGenerator&) -> void {
-							assert(false);
-						}
-					);
-				}
-			}
-		};
-		auto copy_back = CopyBack{ this, dict_output };
+		// 			auto doout_obj = dout.as_map(owca_vm);
+		// 			auto& s = self->stacktrace.back();
+		// 			s.runtime_function->visit(
+		// 				[&](RuntimeFunction::ScriptFunction& sf) -> void {
+		// 					for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
+		// 						auto key = self->create_string_from_view(sf.identifier_names[i]);
+		// 						doout_obj[key] = self->get_identifier(i);
+		// 					}
+		// 				},
+		// 				[&](RuntimeFunction::NativeFunction&) -> void {
+		// 					assert(false);
+		// 				},
+		// 				[&](RuntimeFunction::NativeGenerator&) -> void {
+		// 					assert(false);
+		// 				}
+		// 			);
+		// 		}
+		// 	}
+		// };
+		// auto copy_back = CopyBack{ this, dict_output };
 
-		return execute();
+		// return execute();
 	}
 
 	OwcaValue VM::resume_generator(OwcaIterator oi)
 	{
-		if (!oi.internal_value()->generator)
-			return OwcaCompleted{};
-		auto pop_stack = PopStack{ this };
-		struct AllocatedObjectsRestorer {
-			VM *self;
-			OwcaIterator oi;
-			std::vector<AllocationBase*> orig_allocated_objects;
-
-			AllocatedObjectsRestorer(VM *self, OwcaIterator oi) : self(self), oi(oi) {
-				orig_allocated_objects = std::move(self->allocated_objects);
-				self->allocated_objects = std::move(oi.internal_value()->allocated_objects);
-			}
-			~AllocatedObjectsRestorer() {
-				oi.internal_value()->allocated_objects = std::move(self->allocated_objects);
-				self->allocated_objects = std::move(orig_allocated_objects);
-			}
-		};
-		auto allocated_object_restorer = AllocatedObjectsRestorer{ this, oi };
-		stacktrace.push_back(std::move(oi.internal_value()->frame));
-		std::optional<OwcaValue> value;
-		try {
-			value = oi.internal_value()->generator->next();
-			oi.internal_value()->frame = std::move(stacktrace.back());
-		}
-		catch (FlowControlReturn o) {
-			if (o.value.kind() != OwcaValueKind::Empty)
-				throw_cant_return_value_from_generator();
-			value.reset();
-			oi.internal_value()->generator.reset();
-		}
-		catch(...) {
-			oi.internal_value()->generator.reset();
-			throw;
-		}
-		if (!value || value->kind() == OwcaValueKind::Completed) {
-			oi.internal_value()->generator.reset();
+		if (oi.internal_value()->completed) {
 			return OwcaCompleted{};
 		}
-		return *value;
+		prepare_exec(oi);
+		auto res = run();
+		if (res.kind() == OwcaValueKind::Completed) {
+			oi.internal_value()->completed = true;
+		}
+		return res;
+		
+		// stacktrace.push_back(std::move(oi.internal_value()->frame));
+		// std::optional<OwcaValue> value;
+		// try {
+		// 	value = oi.internal_value()->generator->next();
+		// 	oi.internal_value()->frame = std::move(stacktrace.back());
+		// }
+		// catch (FlowControlReturn o) {
+		// 	if (o.value.kind() != OwcaValueKind::Empty)
+		// 		throw_cant_return_value_from_generator();
+		// 	value.reset();
+		// 	oi.internal_value()->generator.reset();
+		// }
+		// catch(...) {
+		// 	oi.internal_value()->generator.reset();
+		// 	throw;
+		// }
+		// if (!value || value->kind() == OwcaValueKind::Completed) {
+		// 	oi.internal_value()->generator.reset();
+		// 	return OwcaCompleted{};
+		// }
+		// return *value;
 	}
 
-	OwcaValue VM::create_user_class(Class *cls, std::span<OwcaValue> arguments) {
+	OwcaValue VM::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
 		OwcaValue obj;
 		
 		if (cls->allocator_override) {
@@ -1416,18 +1414,10 @@ function native time();
 		else {
 			visit_variant(it->second,
 				[&](RuntimeFunctions *rf) -> void {
-					auto of = OwcaFunctions{ rf };
-					auto it2 = of.internal_value()->functions.find((unsigned int)(1 + arguments.size()));
-					if (it2 == of.internal_value()->functions.end()) {
-						throw_cant_call(std::format("type {} has __init__ function, but not one with {} parameters", cls->full_name, 1 + arguments.size()));
-					}
-					else {
-						auto of2 = of.bind(obj);
-						auto val = execute_call(of2, arguments);
-						if (cls->reload_self)
-							obj = val;
-					}
-					
+					prepare_exec(rf, (unsigned int)arguments.size(), &obj, arguments);
+					auto val = run();
+					if (cls->reload_self)
+						obj = val;
 				},
 				[&](Class* var) -> void {
 					throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
@@ -1439,32 +1429,32 @@ function native time();
 
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
-		auto pp = AllocatedObjectsPointer{ *this };
 		return func.visit(
 			[&](OwcaIterator oi) -> OwcaValue {
 				if (!arguments.empty())
 					throw_not_callable_wrong_number_of_params("generator", (unsigned int)arguments.size());
-				return resume_generator(oi);
+				prepare_exec(oi);
+				return run();
 			},
 			[&](OwcaFunctions of) -> OwcaValue {
-				auto vm = OwcaVM{ this };
-				auto runtime_functions = func.as_functions(vm).internal_value();
-				auto pop_stack = prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.internal_self_object() != nullptr);
-				auto& s = stacktrace.back();
-				bool self = s.runtime_function->is_method;
-				if (self) {
-					if (of.internal_self_object()) {
-						s.values[0] = of.self();
-					}
-					else {
-						throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));
-					}
-				}
-				for (auto i = (self ? 1u : 0u); i < s.runtime_function->param_count; ++i) {
-					s.values[i] = arguments[i - (self ? 1u : 0u)];
-				}
+				auto runtime_functions = func.as_functions(this).internal_value();
+				prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self(), arguments);
+				return run();
+				// auto& s = stacktrace.back();
+				// bool self = s.runtime_function->is_method;
+				// if (self) {
+				// 	if (of.internal_self_object()) {
+				// 		s.values[0] = of.self();
+				// 	}
+				// 	else {
+				// 		throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));
+				// 	}
+				// }
+				// for (auto i = (self ? 1u : 0u); i < s.runtime_function->param_count; ++i) {
+				// 	s.values[i] = arguments[i - (self ? 1u : 0u)];
+				// }
 
-				return execute();
+				// return execute();
 			},
 			[&](OwcaClass oc) -> OwcaValue {
 				auto vm = OwcaVM{ this };
@@ -1476,64 +1466,64 @@ function native time();
 			}
 		);
 	}
-	OwcaValue VM::create_array(std::deque<OwcaValue> arguments)
+	OwcaArray VM::create_array(std::deque<OwcaValue> arguments)
 	{
 		auto t = allocate<Array>(0, std::move(arguments));
 		return OwcaArray{ t };
 	}
-	OwcaValue VM::create_tuple(std::pair<OwcaValue, OwcaValue> arguments)
+	OwcaTuple VM::create_tuple(std::pair<OwcaValue, OwcaValue> arguments)
 	{
 		auto t = allocate<Tuple>(0, std::vector<OwcaValue>{ arguments.first, arguments.second });
 		return OwcaTuple{ t };
 	}
-	OwcaValue VM::create_tuple(std::vector<OwcaValue> arguments)
+	OwcaTuple VM::create_tuple(std::vector<OwcaValue> arguments)
 	{
 		if (arguments.empty() && empty_tuple != nullptr) return OwcaTuple{ empty_tuple };
 		auto t = allocate<Tuple>(0, std::move(arguments));
 		return OwcaTuple{ t };
 	}
-	OwcaValue VM::create_range()
+	OwcaRange VM::create_range()
 	{
 		auto ds = allocate<Range>(0);
-		return OwcaValue{ OwcaRange{ ds } };
+		return OwcaRange{ ds };
 	}
-	OwcaValue VM::create_map(const std::span<OwcaValue> &arguments)
+	OwcaMap VM::create_map(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(arguments[i], arguments[i + 1]);
 		}
-		return OwcaValue{ OwcaMap{ ds } };
+		return OwcaMap{ ds };
 	}
-	OwcaValue VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
+	OwcaMap VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm);
 		for(auto q : arguments) {
 			ds->dict.write(q.first, q.second);
 		}
-		return OwcaValue{ OwcaMap{ ds } };
+		return OwcaMap{ ds };
 	}
-	OwcaValue VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
+	OwcaMap VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<DictionaryShared>(0, vm);
 		for(auto q : arguments) {
 			ds->dict.write(create_string_from_view(q.first), q.second);
 		}
-		return OwcaValue{ OwcaMap{ ds } };
+		return OwcaMap{ ds };
 	}
-	OwcaValue VM::create_set(const std::span<OwcaValue> &arguments)
+	OwcaSet VM::create_set(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
 		auto ds = allocate<SetShared>(0, vm);
 		for (auto i = 0u; i < arguments.size(); ++i) {
 			ds->dict.write(arguments[i], OwcaEmpty{});
 		}
-		return OwcaValue{ OwcaSet{ ds } };
+		return OwcaSet{ ds };
 	}
-	OwcaValue VM::create_string_from_view(std::string_view txt)
+	OwcaString VM::create_string_from_view(std::string_view txt)
 	{
 		if (txt.empty()) return OwcaString{ empty_string };
 		auto vm = OwcaVM{ this };
@@ -1542,9 +1532,9 @@ function native time();
 		}
 		auto str = allocate<String>(txt.size(), (std::uint32_t)txt.size());
 		std::memcpy(str->pointer(), txt.data(), txt.size());
-		return OwcaValue{ OwcaString{ str } };
+		return OwcaString{ str };
 	}
-	OwcaValue VM::create_string(OwcaValue str, size_t start, size_t end)
+	OwcaString VM::create_string(OwcaValue str, size_t start, size_t end)
 	{
 		if (start >= end) return OwcaString{ empty_string };
 		auto size = end - start;
@@ -1552,7 +1542,7 @@ function native time();
 		auto s = str.as_string(vm);
 		return create_string_from_view(s.text().substr(start, size));
 	}
-	OwcaValue VM::create_string(OwcaValue str, size_t count)
+	OwcaString VM::create_string(OwcaValue str, size_t count)
 	{
 		if (count == 0) return OwcaString{ empty_string };
 		auto vm = OwcaVM{ this };
@@ -1566,22 +1556,22 @@ function native time();
 		for(size_t i = 0; i < count; ++i) {
 			std::memcpy(new_s->pointer() + i * s.size(), s.text().data(), s.size());
 		}
-		return OwcaValue{ OwcaString{ new_s } };
+		return OwcaString{ new_s };
 	}
-	OwcaValue VM::create_string(OwcaValue left, OwcaValue right)
+	OwcaString VM::create_string(OwcaValue left, OwcaValue right)
 	{
 		auto vm = OwcaVM{ this };
 		auto l = left.as_string(vm);
 		auto r = right.as_string(vm);
-		if (l.size() == 0) return right;
-		if (r.size() == 0) return left;
+		if (l.size() == 0) return r;
+		if (r.size() == 0) return l;
 		if (l.size() + r.size() >= (size_t(1) << 32)) {
 			throw_string_too_large(l.size() + r.size());
 		}
 		auto new_s = allocate<String>(l.size() + r.size(), (std::uint32_t)(l.size() + r.size()));
 		std::memcpy(new_s->pointer(), l.text().data(), l.size());
 		std::memcpy(new_s->pointer() + l.size(), r.text().data(), r.size());
-		return OwcaValue{ OwcaString{ new_s } };
+		return OwcaString{ new_s };
 	}
 
 	OwcaValue VM::get_identifier(unsigned int index)
@@ -1728,7 +1718,6 @@ function native time();
 		gc_mark_value(this, ggc, empty_tuple);
 		gc_mark_value(this, ggc, empty_string);
 		gc_mark_value(this, ggc, stacktrace);
-		gc_mark_value(this, ggc, allocated_objects);
 		gc_mark_value(this, ggc, builtin_objects);
 
 		// sweep

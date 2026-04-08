@@ -2,6 +2,7 @@
 #include "owca_iterator.h"
 #include "owca_value.h"
 #include "iterator.h"
+#include "vm.h"
 
 namespace OwcaScript {
     bool OwcaIterator::completed() const
@@ -10,7 +11,7 @@ namespace OwcaScript {
     }
     OwcaValue OwcaIterator::next() const
     {
-        return object->execute_next();
+        return object->vm->resume_generator(*this);
     }
     OwcaIterator::Iterator& OwcaIterator::Iterator::operator++() {
         iter->next();
@@ -18,12 +19,12 @@ namespace OwcaScript {
     }
     OwcaIterator::Iterator::Iterator(OwcaIterator *iter) : iter(iter) {
         if (iter && iter->object->first_time) {
-            iter->object->execute_next();
+            iter->object->vm->resume_generator(*iter);
         }
     }
 
-    OwcaIterator::Iterator::reference OwcaIterator::Iterator::operator*() const { return iter->object->value; }
-    OwcaIterator::Iterator::pointer OwcaIterator::Iterator::operator->() const { return &iter->object->value; }
+    OwcaIterator::Iterator::reference OwcaIterator::Iterator::operator*() const { return iter->object->last_value; }
+    OwcaIterator::Iterator::pointer OwcaIterator::Iterator::operator->() const { return &iter->object->last_value; }
 
     void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &o) {
         gc_mark_value(vm, gc, o.object);

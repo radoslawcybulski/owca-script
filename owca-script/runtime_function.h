@@ -6,6 +6,7 @@
 #include "ast_function.h"
 #include "owca_vm.h"
 #include "owca_code.h"
+#include "owca_value.h"
 
 namespace OwcaScript {
 	namespace Internal {
@@ -16,10 +17,12 @@ namespace OwcaScript {
 				std::vector<OwcaValue> values_from_parents;
 				std::span<AstFunction::CopyFromParent> copy_from_parents;
 				std::span<std::string_view> identifier_names;
-				ImplStat *body = nullptr;
+				OwcaCode code;
+				std::uint32_t entry_point;
 				bool is_generator = false;
 
-				ScriptFunction();
+				ScriptFunction(OwcaCode code, std::uint32_t entry_point, bool is_generator);
+				~ScriptFunction();
 			};
 			struct NativeFunction {
 				std::span<std::string_view> parameter_names;
@@ -32,11 +35,10 @@ namespace OwcaScript {
 			OwcaCode code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
 			std::string_view name, full_name;
-			Line fileline;
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, Line fileline, unsigned int param_count, bool is_method);
+			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, unsigned int param_count, bool is_method, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data);
 
 			template <typename ... F> auto visit(F &&...fns) { return visit_variant(data, std::forward<F>(fns)...); }
 			template <typename ... F> auto visit(F &&...fns) const { return visit_variant(data, std::forward<F>(fns)...); }

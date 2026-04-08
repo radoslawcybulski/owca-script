@@ -17,16 +17,16 @@ namespace OwcaScript {
 		struct Iterator : public AllocationBase {
             static constexpr const Kind object_kind = Kind::Iterator;
 
-            ExecutionFrame frame;
-            ImplStat::State state;
-            std::optional<Generator> generator;
-			std::vector<AllocationBase*> allocated_objects;
-			OwcaValue value;
+			ExecutionFrame frame;
+			std::optional<Generator> generator;
+			OwcaValue last_value;
 			bool first_time = true;
+			bool completed = false;			
+			const bool native = false;
 
-            Iterator(size_t sz, Line line) : frame(line), state(sz) {}
+            Iterator(bool native) : native(native) {}
 
-            OwcaValue execute_next();
+            // OwcaValue execute_next();
 			std::string_view type() const override{
 				return "Iterator";
 			}

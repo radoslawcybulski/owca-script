@@ -36,6 +36,8 @@ namespace OwcaScript {
     class Function;
 	class OwcaVM;
 	class GenerationGC;
+	class OwcaEmpty {};
+	class OwcaCompleted {};
 
     namespace Internal {
 		template <typename T, typename ... F> auto visit_variant(T && t, F &&...fns) {
