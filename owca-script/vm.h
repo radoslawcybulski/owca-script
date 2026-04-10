@@ -27,10 +27,12 @@ namespace OwcaScript {
 
 		class VM {
 			friend class Executor;
+			friend class ExecutionFrame;
 			
 			AllocationEmpty root_allocated_memory;
 			std::vector<ExecutionFrame> stacktrace;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
+			size_t current_stack_trace_index = 0;
 			
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
@@ -58,9 +60,13 @@ namespace OwcaScript {
 			std::optional<OwcaException> exception_being_handled;
 			std::optional<OwcaValue> value_to_yield;
 			std::optional<ClassToken> currently_building_class;
-			std::unique_ptr<Executor> executor = std::make_unique<Executor>();
+			std::list<OwcaValue> temp_gc_protect_list;
 
 			void initialize_builtins();
+
+			ExecutionFrame &currently_executing_frame();
+			ExecutionFrame &just_executed_executing_frame();
+			ExecutionFrame &push_new_frame();
 
 			struct BuiltinProvider;
 		public:
@@ -69,6 +75,18 @@ namespace OwcaScript {
 			VM();
 			~VM();
 			
+			class TempGCProtect {
+				VM &vm;
+				std::list<OwcaValue>::iterator it;
+			public:
+				TempGCProtect(VM &vm, OwcaValue val) : vm(vm) {
+					it = vm.temp_gc_protect_list.insert(vm.temp_gc_protect_list.end(), val);
+				}
+				~TempGCProtect() {
+					vm.temp_gc_protect_list.erase(it);
+				}
+			};
+
 			void initialize_exception_object(Exception &);
 			[[noreturn]] void throw_exception(Class *exc, std::string_view msg);
 
@@ -123,12 +141,10 @@ namespace OwcaScript {
 			[[noreturn]] void throw_too_many_elements(size_t expected);
 			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 
-			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, std::optional<OwcaMap> values, OwcaMap *output_dict);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue resume_generator(OwcaIterator oi);
-			void set_yield_value(OwcaValue v);
 			OwcaArray create_array(std::deque<OwcaValue> arguments);
 			OwcaTuple create_tuple(std::vector<OwcaValue> arguments);
 			OwcaTuple create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
@@ -202,6 +218,11 @@ namespace OwcaScript {
 			}
 		}
 		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::deque<T> &vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q);
+			}
+		}
+		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::list<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}

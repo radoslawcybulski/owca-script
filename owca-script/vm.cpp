@@ -657,9 +657,9 @@ function native time();
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());
 		auto builtin_dictionary = create_map();
+		auto gc_project = TempGCProtect{ *this, builtin_dictionary };
 		Executor executor{ this };
-		executor.prepare_exec(code_compiled);
-		executor.run(&builtin_dictionary);
+		executor.execute_code_block(code_compiled, std::nullopt, &builtin_dictionary);
 
 		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class(vm).internal_value();
@@ -755,7 +755,7 @@ function native time();
 	{
 		for(auto &st : stacktrace) {
 			exc.frames.push_back({ .code = st.runtime_function->code });
-			exc.frames.back().line = st.line.line;
+			exc.frames.back().line = st.current_line();
 			exc.frames.back().function = st.runtime_function->full_name;
 		}
 	}
@@ -1140,17 +1140,12 @@ function native time();
 		);
 	}
 
-	void VM::update_execution_line(Line line)
-	{
-		stacktrace.back().line = line;
-	}
-
-	void VM::set_yield_value(OwcaValue v)
-	{
-		assert(!value_to_yield);
-		assert(stacktrace.back().runtime_function->is_generator());
-		value_to_yield = v;
-	}
+	// void VM::set_yield_value(OwcaValue v)
+	// {
+	// 	assert(!value_to_yield);
+	// 	assert(stacktrace.back().runtime_function->is_generator());
+	// 	value_to_yield = v;
+	// }
 
 	// VM::PopStack VM::prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value)
 	// {
@@ -1266,17 +1261,8 @@ function native time();
 
 	OwcaValue VM::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
 	{
-		prepare_exec(oc);
-		auto res = run();
-		auto fnc = res.as_functions(this);
-		auto &functions = fnc.internal_value()->functions;
-		assert(fnc.internal_self_object() == nullptr);
-		assert(fnc.internal_value()->name.find("main-block") != std::string::npos);
-		assert(functions.size() == 1);
-		auto &function = functions.begin()->second;
-		assert(function->is_method == false);
-		prepare_exec(fnc.internal_value(), function->param_count, values);
-		return run(dict_output);
+		Executor executor{ this };
+		return executor.execute_code_block(oc, values, dict_output);
 		
 		// OwcaValue val;
 		// RuntimeFunction::ScriptFunction sf;
@@ -1361,16 +1347,9 @@ function native time();
 
 	OwcaValue VM::resume_generator(OwcaIterator oi)
 	{
-		if (oi.internal_value()->completed) {
-			return OwcaCompleted{};
-		}
-		prepare_exec(oi);
-		auto res = run();
-		if (res.kind() == OwcaValueKind::Completed) {
-			oi.internal_value()->completed = true;
-		}
-		return res;
-		
+		Executor executor{ this };
+		return executor.resume_generator(oi);
+
 		// stacktrace.push_back(std::move(oi.internal_value()->frame));
 		// std::optional<OwcaValue> value;
 		// try {
@@ -1395,80 +1374,14 @@ function native time();
 	}
 
 	OwcaValue VM::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-		OwcaValue obj;
-		
-		if (cls->allocator_override) {
-			obj = cls->allocator_override();
-		}
-		else if (cls->reload_self) {
-			obj = {};
-		}
-		else {
-			obj = OwcaObject{ allocate<Object>(cls->native_storage_total, cls) };
-		}
-
-		auto it = cls->values.find(std::string_view{ "__init__" });
-		if (it == cls->values.end()) {
-			if (!arguments.empty()) {
-				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} values", cls->full_name, arguments.size()));
-			}
-		}
-		else {
-			visit_variant(it->second,
-				[&](RuntimeFunctions *rf) -> void {
-					prepare_exec(rf, (unsigned int)arguments.size(), obj, arguments);
-					auto val = run();
-					if (cls->reload_self)
-						obj = val;
-				},
-				[&](Class* var) -> void {
-					throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
-				}
-			);
-		}
-		return obj;
+		Executor executor{ this };
+		return executor.allocate_user_class(cls, arguments);
 	}
 
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
-		return func.visit(
-			[&](OwcaIterator oi) -> OwcaValue {
-				if (!arguments.empty())
-					throw_not_callable_wrong_number_of_params("generator", (unsigned int)arguments.size());
-				Executor executor{ this };
-				executor.prepare_exec(oi);
-				return executor.run();
-			},
-			[&](OwcaFunctions of) -> OwcaValue {
-				auto runtime_functions = func.as_functions(this).internal_value();
-				Executor executor{ this };
-				executor.prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self(), arguments);
-				return executor.run();
-				// auto& s = stacktrace.back();
-				// bool self = s.runtime_function->is_method;
-				// if (self) {
-				// 	if (of.internal_self_object()) {
-				// 		s.values[0] = of.self();
-				// 	}
-				// 	else {
-				// 		throw_cant_call(std::format("can't call {} - missing self value", func.to_string()));
-				// 	}
-				// }
-				// for (auto i = (self ? 1u : 0u); i < s.runtime_function->param_count; ++i) {
-				// 	s.values[i] = arguments[i - (self ? 1u : 0u)];
-				// }
-
-				// return execute();
-			},
-			[&](OwcaClass oc) -> OwcaValue {
-				auto vm = OwcaVM{ this };
-				auto cls = func.as_class(vm).internal_value();
-				return allocate_user_class(cls, arguments);
-			},
-			[&](const auto&) -> OwcaValue {
-				throw_not_callable(func.type());
-			}
-		);
+		Executor executor{ this };
+		executor.execute_call(func, arguments);
 	}
 	OwcaArray VM::create_array(std::deque<OwcaValue> arguments)
 	{
@@ -1723,6 +1636,7 @@ function native time();
 		gc_mark_value(this, ggc, empty_string);
 		gc_mark_value(this, ggc, stacktrace);
 		gc_mark_value(this, ggc, builtin_objects);
+		gc_mark_value(this, ggc, temp_gc_protect_list);
 
 		// sweep
 		AllocationBase *valid = &root_allocated_memory;

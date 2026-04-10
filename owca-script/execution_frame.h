@@ -9,6 +9,7 @@ namespace OwcaScript {
 	class OwcaVM;
     class OwcaValue;
 	class OwcaCode;
+	class OwcaMap;
     class GenerationGC;
     
 	namespace Internal {
@@ -32,20 +33,27 @@ namespace OwcaScript {
 			using States = std::variant<ForState, WhileState, TryCatchState>;
 			friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const States &e);
 			
-			RuntimeFunctions* runtime_functions;
-			RuntimeFunction* runtime_function;
-			Line line;
+			RuntimeFunctions* runtime_functions = nullptr;
+			RuntimeFunction* runtime_function = nullptr;
 			std::vector<OwcaValue> values;
 			std::vector<OwcaValue> temporaries;
 			std::vector<States> states;
-			OwcaCode *code = nullptr;
-			std::uint32_t code_position;
+			const OwcaCode *code = nullptr;
+			std::uint32_t code_position, prev_code_position;
+			OwcaValue *return_value = nullptr;
+			bool constructor_move_self_to_return_value = false;
+			bool iterator_update_completed = false;
 
 			ExecutionFrame();
 			~ExecutionFrame();
 
-			void initialize(RuntimeFunction* runtime_function, RuntimeFunctions* runtime_functions);
-			void initialize(OwcaCode &oc);
+			unsigned int current_line() const { return prev_code_position; }
+			void clear();
+			void initialize_code_block(OwcaValue &return_value, const OwcaCode &oc);
+			void initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
+			void initialize_execute_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, RuntimeFunction* runtime_function, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			// void set_arguments(OwcaMap arguments);
+			// void set_arguments(std::optional<OwcaValue> self, std::span<OwcaValue> arguments);
 
             friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const ExecutionFrame &);
 		};

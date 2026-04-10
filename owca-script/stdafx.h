@@ -28,6 +28,7 @@
 #include <cmath>
 #include <bit>
 #include <chrono>
+#include <list>
 
 namespace OwcaScript {
     using Number = double;

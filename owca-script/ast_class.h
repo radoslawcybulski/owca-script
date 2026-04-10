@@ -2,7 +2,7 @@
 #define RC_OWCA_SCRIPT_AST_CLASS_H
 
 #include "stdafx.h"
-#include "ast_base.h"
+#include "ast_function.h"
 #include "owca_class.h"
 
 namespace OwcaScript {
