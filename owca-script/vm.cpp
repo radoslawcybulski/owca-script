@@ -17,6 +17,7 @@
 #include "owca_exception.h"
 #include "iterator.h"
 #include "range.h"
+#include "executor.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -656,8 +657,9 @@ function native time();
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());
 		auto builtin_dictionary = create_map();
-		prepare_exec(code_compiled);
-		run(&builtin_dictionary);
+		Executor executor{ this };
+		executor.prepare_exec(code_compiled);
+		executor.run(&builtin_dictionary);
 
 		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class(vm).internal_value();
@@ -1433,13 +1435,15 @@ function native time();
 			[&](OwcaIterator oi) -> OwcaValue {
 				if (!arguments.empty())
 					throw_not_callable_wrong_number_of_params("generator", (unsigned int)arguments.size());
-				prepare_exec(oi);
-				return run();
+				Executor executor{ this };
+				executor.prepare_exec(oi);
+				return executor.run();
 			},
 			[&](OwcaFunctions of) -> OwcaValue {
 				auto runtime_functions = func.as_functions(this).internal_value();
-				prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self(), arguments);
-				return run();
+				Executor executor{ this };
+				executor.prepare_exec(runtime_functions, (unsigned int)arguments.size(), of.self(), arguments);
+				return executor.run();
 				// auto& s = stacktrace.back();
 				// bool self = s.runtime_function->is_method;
 				// if (self) {

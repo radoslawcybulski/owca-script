@@ -21,9 +21,13 @@ namespace OwcaScript {
 		struct Array;
 		struct RuntimeFunction;
 		struct Exception;
+		class Executor;
+
 		enum class CompareKind : std::uint8_t;
 
 		class VM {
+			friend class Executor;
+			
 			AllocationEmpty root_allocated_memory;
 			std::vector<ExecutionFrame> stacktrace;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
@@ -54,14 +58,8 @@ namespace OwcaScript {
 			std::optional<OwcaException> exception_being_handled;
 			std::optional<OwcaValue> value_to_yield;
 			std::optional<ClassToken> currently_building_class;
+			std::unique_ptr<Executor> executor = std::make_unique<Executor>();
 
-			void prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
-			// only used for executing main block func
-			void prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaMap> arguments);
-			void prepare_exec(OwcaIterator oi);
-			void prepare_exec(const OwcaCode &);
-
-			OwcaValue run(OwcaMap *dict_output = nullptr);
 			void initialize_builtins();
 
 			struct BuiltinProvider;
