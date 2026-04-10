@@ -655,14 +655,14 @@ function native time();
 )" };
 		auto vm = OwcaVM{ this };
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());
-		OwcaValue builtin_dictionary;
-		vm.execute(std::move(code_compiled), {}, &builtin_dictionary);
+		auto builtin_dictionary = create_map();
+		prepare_exec(code_compiled);
+		run(&builtin_dictionary);
 
 		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class(vm).internal_value();
 		};
-		auto dct = builtin_dictionary.as_map(vm);
-		for(auto value_pair : dct) {
+		for(auto value_pair : builtin_dictionary) {
 			if (value_pair.first.kind() == OwcaValueKind::String) {
 				auto key = value_pair.first.as_string(vm).text();
 				if (key == "Nul") {
@@ -1414,7 +1414,7 @@ function native time();
 		else {
 			visit_variant(it->second,
 				[&](RuntimeFunctions *rf) -> void {
-					prepare_exec(rf, (unsigned int)arguments.size(), &obj, arguments);
+					prepare_exec(rf, (unsigned int)arguments.size(), obj, arguments);
 					auto val = run();
 					if (cls->reload_self)
 						obj = val;
@@ -1459,7 +1459,7 @@ function native time();
 			[&](OwcaClass oc) -> OwcaValue {
 				auto vm = OwcaVM{ this };
 				auto cls = func.as_class(vm).internal_value();
-				return create_user_class(cls, arguments);
+				return allocate_user_class(cls, arguments);
 			},
 			[&](const auto&) -> OwcaValue {
 				throw_not_callable(func.type());
