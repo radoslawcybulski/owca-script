@@ -95,6 +95,7 @@ namespace OwcaScript::Internal {
 	// 	return ret;
 	// }
 	void AstExprOperX::emit(EmitInfo& ei) {
+		for(auto &a : args_) a->emit(ei);
 		switch (kind_) {
 		case Kind::Call: ei.code_writer.append(line, ExecuteOp::ExprOperXCall); break;
 		case Kind::CreateArray: ei.code_writer.append(line, ExecuteOp::ExprOperXCreateArray); break;
@@ -102,7 +103,7 @@ namespace OwcaScript::Internal {
 		case Kind::CreateSet: ei.code_writer.append(line, ExecuteOp::ExprOperXCreateSet); break;
 		case Kind::CreateMap: ei.code_writer.append(line, ExecuteOp::ExprOperXCreateMap); break;
 		}
-		for(auto &a : args_) a->emit(ei);
+		ei.code_writer.append(line, (std::uint32_t)args_.size());
 	}
 
 	void AstExprOperX::visit(AstVisitor& vis) { vis.apply(*this); }

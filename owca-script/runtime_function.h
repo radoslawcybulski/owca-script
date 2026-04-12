@@ -15,21 +15,18 @@ namespace OwcaScript {
 
 			struct ScriptFunction {
 				std::vector<OwcaValue> values_from_parents;
-				std::span<AstFunction::CopyFromParent> copy_from_parents;
-				std::span<std::string_view> identifier_names;
-				OwcaCode code;
-				std::uint32_t entry_point;
+				std::vector<AstFunction::CopyFromParent> copy_from_parents;
+				std::vector<std::string_view> identifier_names;
+				std::uint32_t entry_point = 0;
+				std::uint32_t max_stack_size = 0, max_storage_size = 0;
 				bool is_generator = false;
-
-				ScriptFunction(OwcaCode code, std::uint32_t entry_point, bool is_generator);
-				~ScriptFunction();
 			};
 			struct NativeFunction {
-				std::span<std::string_view> parameter_names;
+				std::vector<std::string_view> parameter_names;
 				NativeCodeProvider::Function function;
 			};
 			struct NativeGenerator {
-				std::span<std::string_view> parameter_names;
+				std::vector<std::string_view> parameter_names;
 				NativeCodeProvider::GeneratorFunction generator;
 			};
 			OwcaCode code;
@@ -38,7 +35,7 @@ namespace OwcaScript {
 			unsigned int param_count = 0;
 			bool is_method = false;
 
-			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, unsigned int param_count, bool is_method, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data);
+			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data);
 
 			template <typename ... F> auto visit(F &&...fns) { return visit_variant(data, std::forward<F>(fns)...); }
 			template <typename ... F> auto visit(F &&...fns) const { return visit_variant(data, std::forward<F>(fns)...); }

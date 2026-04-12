@@ -3,11 +3,8 @@
 #include "vm.h"
 
 namespace OwcaScript::Internal {
-	RuntimeFunction::ScriptFunction::ScriptFunction(OwcaCode code, std::uint32_t entry_point, bool is_generator) : code(std::move(code)), entry_point(entry_point), is_generator(is_generator) {}
-	RuntimeFunction::ScriptFunction::~ScriptFunction() = default;
-
-	RuntimeFunction::RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, unsigned int param_count, bool is_method, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data) :
-		code(std::move(code)), name(name), full_name(full_name), param_count(param_count), is_method(is_method), data(std::move(data)) {}
+	RuntimeFunction::RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data) :
+		code(std::move(code)), name(name), full_name(full_name), data(std::move(data)) {}
 
 
 	std::string_view RuntimeFunction::type() const {

@@ -89,7 +89,8 @@ namespace OwcaScript::Internal {
         ei.push_storage();
         ei.code_writer.append(line, ExecuteOp::TryInit);
         auto body_start = ei.code_writer.append_placeholder<std::uint32_t>(line);
-        ei.code_writer.append(line, (std::uint32_t)catches_.size());
+        auto body_end = ei.code_writer.append_placeholder<std::uint32_t>(line);
+        std::vector<ExecuteBufferWriter::Placeholder<std::uint32_t>> fallback_jumps;
         for(auto &c : catches_) {
             for(auto &q : std::get<2>(c)) {
                 q->emit(ei);
@@ -100,11 +101,17 @@ namespace OwcaScript::Internal {
             ei.code_writer.append(line, std::get<1>(c));
             auto skip = ei.code_writer.append_placeholder<std::uint32_t>(line);
             std::get<3>(c)->emit(ei);
+            ei.code_writer.append(line, ExecuteOp::TryBlockCompleted);
+            fallback_jumps.push_back(ei.code_writer.append_placeholder<std::uint32_t>(line));
             ei.code_writer.update_placeholder(skip, ei.code_writer.position());
         }
         ei.code_writer.append(line, ExecuteOp::TryCatchTypeCompleted);
         ei.code_writer.update_placeholder(body_start, ei.code_writer.position());
         body_->emit(ei);
+        ei.code_writer.update_placeholder(body_end, ei.code_writer.position());
+        for(auto &j : fallback_jumps) {
+            ei.code_writer.update_placeholder(j, ei.code_writer.position());
+        }
         ei.code_writer.append(line, ExecuteOp::TryCompleted);
         ei.pop_storage();
 	}

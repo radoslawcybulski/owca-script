@@ -84,16 +84,16 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstClass::emit(EmitInfo& ei) {
+		for(auto &q : members_)
+			q->emit(ei);
+		for(auto &q : base_classes_)
+			q->emit(ei);
 		ei.code_writer.append(line, ExecuteOp::Class);
 		ei.code_writer.append(line, native_);
 		ei.code_writer.append(line, name_);
 		ei.code_writer.append(line, full_name_);
 		ei.code_writer.append(line, (std::uint32_t)base_classes_.size());
-		for(auto &q : base_classes_)
-			q->emit(ei);
 		ei.code_writer.append(line, (std::uint32_t)members_.size());
-		for(auto &q : members_)
-			q->emit(ei);
 		ei.code_writer.append(line, all_variable_names_);
 		ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
 		for (auto &q : variable_names_)

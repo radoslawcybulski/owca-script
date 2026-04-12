@@ -35,7 +35,6 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> body_;
 			Native native_;
 			Generator generator_;
-			unsigned int max_stack_size_ = 0;
 		public:
 			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params_(std::move(params)), 
 				native_(native), generator_(generator) {}
@@ -43,8 +42,6 @@ namespace OwcaScript {
 			const auto &name() const { return name_; }
 			const auto &full_name() const { return full_name_; }
 			auto &body() { return *body_; }
-			auto max_stack_size() const { return max_stack_size_; }
-			void update_max_stack_size(unsigned int s) { max_stack_size_ = s; }
 			void update_body(std::unique_ptr<AstStat> body) {
 				this->body_ = std::move(body);
 			}

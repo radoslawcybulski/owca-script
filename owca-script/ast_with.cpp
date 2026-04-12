@@ -77,9 +77,7 @@ namespace OwcaScript::Internal {
         value_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::WithInit);
         ei.code_writer.append(line, ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
-        auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
         body_->emit(ei);
-        ei.code_writer.update_placeholder(pos, ei.code_writer.position());
         ei.code_writer.append(line, ExecuteOp::WithCompleted);
 		ei.pop_storage();
 	}

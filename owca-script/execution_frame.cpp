@@ -18,7 +18,6 @@ namespace OwcaScript::Internal {
         values.clear();
         temporaries.clear();
         states.clear();
-        code = nullptr;
         prev_code_position =code_position = 0;
         return_value = nullptr;
         constructor_move_self_to_return_value = false;
@@ -95,7 +94,6 @@ namespace OwcaScript::Internal {
 				for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
 					values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
 				}
-                code = &sf.code;
                 prev_code_position = code_position = sf.entry_point;
                 iterator_update_completed = sf.is_generator;
 			});
@@ -126,6 +124,7 @@ namespace OwcaScript::Internal {
         this->runtime_function = function;
 		runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
+                this->prev_code_position = this->code_position = sf.entry_point;
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
 				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
 					value_index_map[sf.identifier_names[i]] = i;
@@ -154,12 +153,14 @@ namespace OwcaScript::Internal {
 			}
 		);
     }
-    void ExecutionFrame::initialize_code_block(OwcaValue &return_value, const OwcaCode &oc)
+    void ExecutionFrame::initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc)
     {
         clear();
-        code = &oc;
         prev_code_position = code_position = 0;
         this->return_value = &return_value;
+        runtime_functions = vm->allocate<RuntimeFunctions>(0, std::string_view("main-code-block"), std::string_view("main-code-block"));
+        runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{});
+        initialize_execute_function(return_value, vm, runtime_functions, runtime_function, std::nullopt, std::span<OwcaValue>{});
     }
 		// assert(runtime_functions->name.find("main-block") != std::string::npos);
 		// assert(runtime_functions->functions.size() == 1);
@@ -210,6 +211,9 @@ namespace OwcaScript::Internal {
 
     }
     void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::TryCatchState &e) {
+
+    }
+    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::WithState &e) {
 
     }
     void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::States &e) {

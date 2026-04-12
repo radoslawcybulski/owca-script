@@ -1413,6 +1413,6 @@ namespace OwcaScript::Internal {
 		auto fname_sv = std::string_view{ fname.data(), fname.size() };
 
 		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds), lines = std::move(lines), fname = std::move(fname)]() {};
-		return OwcaCode{ fname_sv, buffer_span, data_kinds_span, lines_span, std::move(dstr) };
+		return OwcaCode{ fname_sv, buffer_span, data_kinds_span, lines_span, native_code_provider, std::move(dstr) };
 	}
 }

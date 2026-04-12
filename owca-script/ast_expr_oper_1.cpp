@@ -55,12 +55,12 @@ namespace OwcaScript::Internal {
 	// }
 
 	void AstExprOper1::emit(EmitInfo& ei) {
+		left_->emit(ei);
 		switch (kind_) {
 		case Kind::BinNeg: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
-		case Kind::LogNot: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
-		case Kind::Negate: ei.code_writer.append(line, ExecuteOp::ExprOper1BinNeg); break;
+		case Kind::LogNot: ei.code_writer.append(line, ExecuteOp::ExprOper1LogNot); break;
+		case Kind::Negate: ei.code_writer.append(line, ExecuteOp::ExprOper1Negate); break;
 		}
-		left_->emit(ei);
 	}
 
 	void AstExprOper1::visit(AstVisitor& vis) { vis.apply(*this); }

@@ -41,11 +41,11 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstExprMember::emit(EmitInfo& ei) {
-		ei.code_writer.append(line, value_to_write_ ? ExecuteOp::ExprMemberWrite : ExecuteOp::ExprMemberRead);
-		ei.code_writer.append(line, member_);
 		value_->emit(ei);
 		if (value_to_write_)
 			value_to_write_->emit(ei);
+		ei.code_writer.append(line, value_to_write_ ? ExecuteOp::ExprMemberWrite : ExecuteOp::ExprMemberRead);
+		ei.code_writer.append(line, member_);
 	}
 	void AstExprMember::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprMember::visit_children(AstVisitor& vis) {

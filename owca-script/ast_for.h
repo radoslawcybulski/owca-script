@@ -12,15 +12,16 @@ namespace OwcaScript {
 			std::vector<std::string_view> values_;
 			std::unique_ptr<AstExpr> iterator_;
             std::unique_ptr<AstStat> body_;
-            std::uint32_t flow_control_depth_;
             std::optional<std::uint32_t> loop_ident_index_;
 			std::vector<std::uint32_t> value_indexes;
+			std::uint8_t loop_control_depth_;
 
 		public:
-            AstFor(Line line, std::uint32_t flow_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), 
-				values_(std::move(values)), iterator_(std::move(iterator)), body_(std::move(body)), flow_control_depth_(flow_control_depth) {}
+            AstFor(Line line, std::uint8_t loop_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), 
+				values_(std::move(values)), iterator_(std::move(iterator)), body_(std::move(body)), loop_control_depth_(loop_control_depth) {}
 
 			const auto &values() const { return values_; }
+			auto loop_control_depth() const { return loop_control_depth_; }
 			auto &iterator() { return *iterator_; }
 			auto &body() { return *body_; }
             auto loop_identifier() const { return loop_identifier_; }

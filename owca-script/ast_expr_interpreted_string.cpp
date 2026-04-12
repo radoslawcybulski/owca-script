@@ -65,12 +65,14 @@ namespace OwcaScript::Internal {
 	void AstExprInterpretedString::emit(EmitInfo& ei) {
         assert(sizes.size() == evals.size() + 1);
 
+        for(auto j = 0u; j < evals.size(); ++j) {
+            evals[j]->emit(ei);
+            ei.code_writer.append(line, ExecuteOp::ExprToString);
+        }
         ei.code_writer.append(line, ExecuteOp::ExprConstantStringInterpolated);
         ei.code_writer.append(line, strings);
+        ei.code_writer.append(line, (std::uint32_t)strings.size());
         for(auto j = 0u; j < sizes.size(); ++j) {
-            if (j > 0) {
-                evals[j - 1]->emit(ei);
-            }
             ei.code_writer.append(line, sizes[j]);
         }
 	}

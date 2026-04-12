@@ -51,7 +51,7 @@ namespace OwcaScript::Internal {
 			self.internal_object()->to = upper;
 			self.internal_object()->step = step;
 			if (step == 0) {
-				VM::get(vm).range_step_is_zero();
+				VM::get(vm).throw_range_step_is_zero();
 			}
 			return self;
 		}
@@ -792,7 +792,7 @@ function native time();
 	{
 		throw_exception(c_invalid_operation_exception, msg);
 	}
-	void VM::range_step_is_zero()
+	void VM::throw_range_step_is_zero()
 	{
 		throw_exception(c_math_exception, "step of a range can't be zero");
 	}

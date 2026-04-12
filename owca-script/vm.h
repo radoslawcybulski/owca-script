@@ -64,10 +64,6 @@ namespace OwcaScript {
 
 			void initialize_builtins();
 
-			ExecutionFrame &currently_executing_frame();
-			ExecutionFrame &just_executed_executing_frame();
-			ExecutionFrame &push_new_frame();
-
 			struct BuiltinProvider;
 		public:
 			std::string_view current_class_in_progress;
@@ -112,7 +108,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
 			[[noreturn]] void throw_not_a_number(std::string_view type);
 			[[noreturn]] void throw_overflow(std::string_view msg);
-			[[noreturn]] void range_step_is_zero();
+			[[noreturn]] void throw_range_step_is_zero();
 
 			// invalid operation exception
 			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
@@ -158,6 +154,7 @@ namespace OwcaScript {
 			OwcaString create_string(OwcaValue str, size_t start, size_t end);
 			OwcaString create_string(OwcaValue str, size_t count);
 			OwcaString create_string(OwcaValue left, OwcaValue right);
+			std::pair<OwcaString, char *> precreate_string(size_t size);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
 			Generator iterate_value(OwcaValue val);

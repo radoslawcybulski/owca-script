@@ -8,6 +8,8 @@
 
 namespace OwcaScript {
 	class OwcaVM;
+	class OwcaClass;
+	class OwcaFunctions;
 	class NativeClassInterface;
 
 	namespace Internal {
@@ -40,8 +42,8 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 
-			void initialize_add_base_class(OwcaVM vm, OwcaValue b);
-			void initialize_add_function(OwcaVM vm, OwcaValue f);
+			void initialize_add_base_class(OwcaVM vm, OwcaClass b);
+			void initialize_add_function(OwcaVM vm, OwcaFunctions f);
 			void initialize_add_variable(std::string_view name);
 			void initialize_set_all_variables();
 			void finalize_initializing(OwcaVM vm);

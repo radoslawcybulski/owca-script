@@ -85,16 +85,14 @@ namespace OwcaScript::Internal {
         ei.code_writer.append(line, loop_ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
         ei.code_writer.append(line, flow_control_depth_);
         auto pos = ei.code_writer.position();
-        ei.code_writer.append(line, ExecuteOp::WhileNext);
-        value_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::WhileCondition);
-        auto jump_end = ei.code_writer.append_placeholder<std::uint32_t>(line);
+        value_->emit(ei);
+        ei.code_writer.append(line, ExecuteOp::WhileNext);
         body_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::Jump);
         ei.code_writer.append(line, pos);
         ei.pop_storage();
         ei.code_writer.update_placeholder(end, ei.code_writer.position());
-        ei.code_writer.update_placeholder(jump_end, ei.code_writer.position());
         ei.code_writer.append(line, ExecuteOp::WhileCompleted);
 
         ei.pop_storage();

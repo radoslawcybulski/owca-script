@@ -18,15 +18,15 @@ namespace OwcaScript {
     size_t OwcaException::count() const {
         return object->frames.size();
     }
-    // OwcaException::Frame OwcaException::frame(unsigned int index) const {
-    //     assert(index < object->frames.size());
+    OwcaException::Frame OwcaException::frame(unsigned int index) const {
+        assert(index < object->frames.size());
 
-    //     return {
-    //         object->frames[index].code->filename(),
-    //         object->frames[index].function,
-    //         object->frames[index].line
-    //     };
-    // }
+        return {
+            object->frames[index].code.filename(),
+            object->frames[index].function,
+            object->frames[index].line
+        };
+    }
 
     void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaException &e) {
         gc_mark_value(vm, gc, e.owner);

@@ -18,7 +18,7 @@ namespace OwcaScript::Internal {
     Generator Range::iter(OwcaVM vm) const {
         auto index = from;
         if (step == 0) {
-            VM::get(vm).range_step_is_zero();
+            VM::get(vm).throw_range_step_is_zero();
         }
         if (step > 0) {
             while(index < to) {

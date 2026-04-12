@@ -4,21 +4,33 @@
 #include "stdafx.h"
 #include "owca_value.h"
 #include "execution_frame.h"
+#include "runtime_function.h"
 
 namespace OwcaScript {
 	class OwcaCode;
 	class OwcaVariable;
 
 	namespace Internal {
+		enum class CompareKind : std::uint8_t;
         class RuntimeFunctions;
         class VM;
 
         class Executor {
             VM *vm;
 			const size_t stack_top_level_index = 0;
+			std::optional<OwcaException> exception_in_progress;
 
-			OwcaValue &push_value(OwcaValue value);
-			OwcaValue pop_value();
+			void push_value(OwcaValue value);
+			void pop_values(size_t count);
+			OwcaValue &peek_value(size_t offset) const;
+			OwcaValue &peek_value_and_make_top(size_t offset) const;
+			std::span<OwcaValue> peek_values(size_t offset, size_t count) const;
+			
+			ExecutionFrame &currently_executing_frame();
+			ExecutionFrame &just_executed_executing_frame();
+			ExecutionFrame &push_new_frame();
+			void pop_frame();
+			bool completed() const;
 
 			void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments);
 			void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
@@ -34,6 +46,27 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
 			void run(OwcaMap *dict_output = nullptr);
 			void run_impl();
+			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
+			void run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind);
+			void process_thrown_exception(OwcaException exception);
+			struct TagBinOr {};
+			struct TagBinAnd {};
+			struct TagBinXor {};
+			struct TagBinLShift {};
+			struct TagBinRShift {};
+			struct TagAdd {};
+			struct TagSub {};
+			struct TagMul {};
+			struct TagDiv {};
+			struct TagMod {};
+			struct TagIndexRead {};
+			struct TagIndexWrite {};
+			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader);
+			void expr_oper_2(TagAdd, Number left, Number right);
+			void expr_oper_2(TagSub, Number left, Number right);
+			void expr_oper_2(TagMul, Number left, Number right);
+			void expr_oper_2(TagDiv, Number left, Number right);
+			void expr_oper_2(TagMod, Number left, Number right);
         public:
             Executor(VM *vm);
 

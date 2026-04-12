@@ -445,31 +445,49 @@ namespace OwcaScript::Internal {
 
 
 	void AstExprOper2::emit(EmitInfo& ei) {
-		switch (kind_) {
-		case Kind::LogOr: ei.code_writer.append(line, ExecuteOp::ExprOper2LogOr); break;
-		case Kind::LogAnd: ei.code_writer.append(line, ExecuteOp::ExprOper2LogAnd); break;
-		case Kind::BinOr: ei.code_writer.append(line, ExecuteOp::ExprOper2BinOr); break;
-		case Kind::BinAnd: ei.code_writer.append(line, ExecuteOp::ExprOper2BinAnd); break;
-		case Kind::BinXor: ei.code_writer.append(line, ExecuteOp::ExprOper2BinXor); break;
-		case Kind::BinLShift: ei.code_writer.append(line, ExecuteOp::ExprOper2BinLShift); break;
-		case Kind::BinRShift: ei.code_writer.append(line, ExecuteOp::ExprOper2BinRShift); break;
-		case Kind::Add: ei.code_writer.append(line, ExecuteOp::ExprOper2Add); break;
-		case Kind::Sub: ei.code_writer.append(line, ExecuteOp::ExprOper2Sub); break;
-		case Kind::Mul: ei.code_writer.append(line, ExecuteOp::ExprOper2Mul); break;
-		case Kind::Div: ei.code_writer.append(line, ExecuteOp::ExprOper2Div); break;
-		case Kind::Mod: ei.code_writer.append(line, ExecuteOp::ExprOper2Mod); break;
-		case Kind::MakeRange:
-			assert(third_);
-			ei.code_writer.append(line, ExecuteOp::ExprOper2MakeRange); break;
-		case Kind::IndexRead: ei.code_writer.append(line, ExecuteOp::ExprOper2IndexRead); break;
-		case Kind::IndexWrite:
-			assert(third_);
-			ei.code_writer.append(line, ExecuteOp::ExprOper2IndexWrite);
-			break;
+		if (kind_ == Kind::LogOr) {
+			left_->emit(ei);
+			ei.code_writer.append(line, ExecuteOp::ExprRetTrueAndJumpIfTrue);
+			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			right_->emit(ei);
+			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
 		}
-		left_->emit(ei);
-		right_->emit(ei);
-		if (third_) third_->emit(ei);
+		else if (kind_ == Kind::LogAnd) {
+			left_->emit(ei);
+			ei.code_writer.append(line, ExecuteOp::ExprRetFalseAndJumpIfFalse);
+			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			right_->emit(ei);
+			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
+		}
+		else {
+			left_->emit(ei);
+			right_->emit(ei);
+			if (third_) third_->emit(ei);
+			switch (kind_) {
+			case Kind::LogOr:
+			case Kind::LogAnd:
+				assert(false);
+				break;
+			case Kind::BinOr: ei.code_writer.append(line, ExecuteOp::ExprOper2BinOr); break;
+			case Kind::BinAnd: ei.code_writer.append(line, ExecuteOp::ExprOper2BinAnd); break;
+			case Kind::BinXor: ei.code_writer.append(line, ExecuteOp::ExprOper2BinXor); break;
+			case Kind::BinLShift: ei.code_writer.append(line, ExecuteOp::ExprOper2BinLShift); break;
+			case Kind::BinRShift: ei.code_writer.append(line, ExecuteOp::ExprOper2BinRShift); break;
+			case Kind::Add: ei.code_writer.append(line, ExecuteOp::ExprOper2Add); break;
+			case Kind::Sub: ei.code_writer.append(line, ExecuteOp::ExprOper2Sub); break;
+			case Kind::Mul: ei.code_writer.append(line, ExecuteOp::ExprOper2Mul); break;
+			case Kind::Div: ei.code_writer.append(line, ExecuteOp::ExprOper2Div); break;
+			case Kind::Mod: ei.code_writer.append(line, ExecuteOp::ExprOper2Mod); break;
+			case Kind::MakeRange:
+				assert(third_);
+				ei.code_writer.append(line, ExecuteOp::ExprOper2MakeRange); break;
+			case Kind::IndexRead: ei.code_writer.append(line, ExecuteOp::ExprOper2IndexRead); break;
+			case Kind::IndexWrite:
+				assert(third_);
+				ei.code_writer.append(line, ExecuteOp::ExprOper2IndexWrite);
+				break;
+			}
+		}
 	}
 
 	void AstExprOper2::visit(AstVisitor& vis) { vis.apply(*this); }

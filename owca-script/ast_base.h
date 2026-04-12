@@ -17,7 +17,40 @@ namespace OwcaScript {
 				ExecuteBufferWriter code_writer;
 				std::uint32_t max_storage_counter = 0;
 				std::uint32_t current_storage_counter = 0;
+				std::uint32_t max_stack_size = 0;
+				std::uint32_t current_stack_size = 0;
 
+				struct Info {
+					std::uint32_t max_storage_counter = 0;
+					std::uint32_t current_storage_counter = 0;
+					std::uint32_t max_stack_size = 0;
+					std::uint32_t current_stack_size = 0;
+				};
+
+				Info take_and_reset() {
+					Info info{ max_storage_counter, current_storage_counter, max_stack_size, current_stack_size };
+					max_storage_counter = 0;
+					current_storage_counter = 0;
+					max_stack_size = 0;
+					current_stack_size = 0;
+					return info;
+				}
+				void restore_info(Info info) {
+					max_storage_counter = info.max_storage_counter;
+					current_storage_counter = info.current_storage_counter;
+					max_stack_size = info.max_stack_size;
+					current_stack_size = info.current_stack_size;
+				}
+				void push_stack() {
+					current_stack_size++;
+					if (current_stack_size > max_stack_size) {
+						max_stack_size = current_stack_size;
+					}
+				}
+				void pop_stack() {
+					assert(current_stack_size > 0);
+					current_stack_size--;
+				}
 				void push_storage() {
 					current_storage_counter++;
 					if (current_storage_counter > max_storage_counter) {
