@@ -33,6 +33,27 @@ namespace OwcaScript::Internal {
         ++vm->current_stack_trace_index;
         return currently_executing_frame();
     }
+    void Executor::pop_frame() {
+        auto &frame = currently_executing_frame();
+        if (frame.constructor_move_self_to_return_value) {
+            assert(frame.return_value);
+            *frame.return_value = std::move(frame.values[0]);
+        }
+        if (frame.is_iterator) {
+            assert(frame.return_value);
+            assert(frame.iterator_object);
+            auto iter = frame.iterator_object->internal_value();
+
+            if (frame.return_value->kind() == OwcaValueKind::Completed) {
+                iter->generator = {};
+                iter->completed = true;
+            }
+            else {
+                std::swap(iter->frame, frame);
+            }
+        }
+        --vm->current_stack_trace_index;
+    }
 
     bool Executor::completed() const {
         return vm->current_stack_trace_index <= stack_top_level_index;

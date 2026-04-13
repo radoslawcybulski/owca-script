@@ -22,7 +22,7 @@ namespace OwcaScript::Internal {
         prev_code_position =code_position = 0;
         return_value = nullptr;
         constructor_move_self_to_return_value = false;
-        iterator_update_completed = false;
+        is_iterator = false;
     }
 
     // void ExecutionFrame::set_arguments(OwcaMap arguments) {
@@ -96,7 +96,7 @@ namespace OwcaScript::Internal {
 					values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
 				}
                 prev_code_position = code_position = sf.entry_point;
-                iterator_update_completed = sf.is_generator;
+                is_iterator = sf.is_generator;
 			});
 
         bool self = runtime_function->is_method;

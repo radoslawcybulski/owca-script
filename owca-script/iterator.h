@@ -21,7 +21,7 @@ namespace OwcaScript {
 			std::optional<Generator> generator;
 			OwcaValue last_value;
 			bool first_time = true;
-			bool completed = false;			
+			bool completed = false;
 			const bool native = false;
 
             Iterator(bool native) : native(native) {}

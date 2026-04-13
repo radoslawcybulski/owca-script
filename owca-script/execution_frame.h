@@ -24,7 +24,7 @@ namespace OwcaScript {
 			struct ClassState {
 				std::string_view name, full_name;
 				Class *cls;
-				
+
 				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ClassState &e);
 			};
 			struct ForState {
@@ -71,7 +71,7 @@ namespace OwcaScript {
 			std::uint32_t code_position, prev_code_position;
 			OwcaValue *return_value = nullptr;
 			bool constructor_move_self_to_return_value = false;
-			bool iterator_update_completed = false;
+			bool is_iterator = false;
 
 			ExecutionFrame();
 			~ExecutionFrame();
