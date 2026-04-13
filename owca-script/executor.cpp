@@ -897,6 +897,26 @@ namespace OwcaScript::Internal {
     Number Executor::expr_oper_2(Executor::TagAdd, Number left, Number right) {
         return left + right;
     }
+    OwcaArray Executor::expr_oper_2(TagAdd, OwcaArray left, OwcaArray right) {
+        auto ret = vm->allocate<Array>(0);
+        ret->values = left.internal_value()->values;
+        for(auto &q : right.internal_value()->values) {
+            ret->values.push_back(q);
+        }
+        return OwcaArray{ ret };
+    }
+    OwcaTuple Executor::expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right) {
+        auto ret = vm->allocate<Tuple>(0);
+        ret->values.reserve(left.internal_value()->values.size() + right.internal_value()->values.size());
+        for(auto &q : left.internal_value()->values) {
+            ret->values.push_back(q);
+        }
+        for(auto &q : right.internal_value()->values) {
+            ret->values.push_back(q);
+        }
+        return OwcaTuple{ ret };
+    }
+
     OwcaString Executor::expr_oper_2(Executor::TagAdd, OwcaString left, OwcaString right) {
         return vm->create_string(left, right);
     }
@@ -923,6 +943,36 @@ namespace OwcaScript::Internal {
     }
     OwcaString Executor::expr_oper_2(Executor::TagMul, Number left, OwcaString right) {
         return vm->create_string(right, left);
+    }
+    OwcaArray Executor::expr_oper_2(TagMul, OwcaArray left, Number right) {
+        auto ret = vm->allocate<Array>(0);
+        for(auto i = 0u; i < right; ++i) {
+            ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+        }
+        return OwcaArray{ ret };
+    }
+    OwcaArray Executor::expr_oper_2(TagMul, Number left, OwcaArray right) {
+            auto ret = vm->allocate<Array>(0);
+            for(auto i = 0u; i < left; ++i) {
+                ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+            }
+            return OwcaArray{ ret };
+    }
+    OwcaTuple Executor::expr_oper_2(TagMul, OwcaTuple left, Number right) {
+            auto ret = vm->allocate<Tuple>(0);
+            ret->values.reserve((size_t)(right * left.internal_value()->values.size()));
+            for(auto i = 0u; i < right; ++i) {
+                ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+            }
+            return OwcaTuple{ ret };
+    }
+    OwcaTuple Executor::expr_oper_2(TagMul, Number left, OwcaTuple right) {
+            auto ret = vm->allocate<Tuple>(0);
+            ret->values.reserve((size_t)(left * right.internal_value()->values.size()));
+            for(auto i = 0u; i < left; ++i) {
+                ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+            }
+            return OwcaTuple{ ret };
     }
 
     template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
