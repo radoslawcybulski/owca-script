@@ -5,8 +5,7 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	Class::Class(Line line, std::string_view name, std::string_view full_name, OwcaCode code, size_t base_class_count) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
-		base_classes.reserve(base_class_count);
+	Class::Class(Line line, std::string_view name, std::string_view full_name, OwcaCode code) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
 	}
 	Object::Object(Class* type) : type_(type) {
 		for (auto it : type_->native_storage_pointers) {

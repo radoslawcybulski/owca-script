@@ -50,7 +50,7 @@ namespace OwcaScript {
 			char* native_storage_ptr(Object *) const;
 			const char* native_storage_ptr(const Object *) const;
 
-			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code, size_t base_class_count);
+			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code);
 		};
 
 		struct Object : public AllocationBase {

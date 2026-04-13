@@ -40,7 +40,8 @@ namespace OwcaScript {
         };
 
         enum class ExecuteOp : std::uint8_t {
-            Class,
+            ClassInit,
+            ClassCreate,
             ExprPopAndIgnore,
             ExprCompareEq,
             ExprCompareNotEq,
@@ -64,7 +65,6 @@ namespace OwcaScript {
             ExprOper1Negate,
             ExprRetTrueAndJumpIfTrue,
             ExprRetFalseAndJumpIfFalse,
-            ExprOper2LogAnd,
             ExprOper2BinOr,
             ExprOper2BinAnd,
             ExprOper2BinXor,

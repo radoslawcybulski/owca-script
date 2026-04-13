@@ -1381,7 +1381,7 @@ function native time();
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
 		Executor executor{ this };
-		executor.execute_call(func, arguments);
+		return executor.execute_call(func, arguments);
 	}
 	OwcaArray VM::create_array(std::deque<OwcaValue> arguments)
 	{
@@ -1442,50 +1442,48 @@ function native time();
 	}
 	OwcaString VM::create_string_from_view(std::string_view txt)
 	{
-		if (txt.empty()) return OwcaString{ empty_string };
-		auto vm = OwcaVM{ this };
-		if (txt.size() >= (size_t(1) << 32)) {
-			throw_string_too_large(txt.size());
-		}
-		auto str = allocate<String>(txt.size(), (std::uint32_t)txt.size());
+		auto str = precreate_string(txt.size());
 		std::memcpy(str->pointer(), txt.data(), txt.size());
 		return OwcaString{ str };
 	}
-	OwcaString VM::create_string(OwcaValue str, size_t start, size_t end)
+	String *VM::precreate_string(size_t size) {
+		if (size == 0) return empty_string;
+		auto vm = OwcaVM{ this };
+		if (size >= (size_t(1) << 32)) {
+			throw_string_too_large(size);
+		}
+		auto str = allocate<String>(size, (std::uint32_t)size);
+		return str;
+	}
+
+	OwcaString VM::create_string(OwcaString s, size_t start, size_t end)
 	{
 		if (start >= end) return OwcaString{ empty_string };
 		auto size = end - start;
-		auto vm = OwcaVM{ this };
-		auto s = str.as_string(vm);
 		return create_string_from_view(s.text().substr(start, size));
 	}
-	OwcaString VM::create_string(OwcaValue str, size_t count)
+	OwcaString VM::create_string(OwcaString str, size_t count)
 	{
 		if (count == 0) return OwcaString{ empty_string };
-		auto vm = OwcaVM{ this };
-		auto s = str.as_string(vm);
-		if (s.size() == 0) return OwcaString{ empty_string };
-		if (s.size() * count >= (size_t(1) << 32)) {
-			throw_string_too_large(s.size() * count);
+		if (str.size() == 0) return OwcaString{ empty_string };
+		if (str.size() * count >= (size_t(1) << 32)) {
+			throw_string_too_large(str.size() * count);
 		}
 
-		auto new_s = allocate<String>(s.size() * count, (std::uint32_t)(s.size() * count));
+		auto new_s = precreate_string(str.size() * count);
 		for(size_t i = 0; i < count; ++i) {
-			std::memcpy(new_s->pointer() + i * s.size(), s.text().data(), s.size());
+			std::memcpy(new_s->pointer() + i * str.size(), str.text().data(), str.size());
 		}
 		return OwcaString{ new_s };
 	}
-	OwcaString VM::create_string(OwcaValue left, OwcaValue right)
+	OwcaString VM::create_string(OwcaString l, OwcaString r)
 	{
-		auto vm = OwcaVM{ this };
-		auto l = left.as_string(vm);
-		auto r = right.as_string(vm);
 		if (l.size() == 0) return r;
 		if (r.size() == 0) return l;
 		if (l.size() + r.size() >= (size_t(1) << 32)) {
 			throw_string_too_large(l.size() + r.size());
 		}
-		auto new_s = allocate<String>(l.size() + r.size(), (std::uint32_t)(l.size() + r.size()));
+		auto new_s = precreate_string(l.size() + r.size());
 		std::memcpy(new_s->pointer(), l.text().data(), l.size());
 		std::memcpy(new_s->pointer() + l.size(), r.text().data(), r.size());
 		return OwcaString{ new_s };

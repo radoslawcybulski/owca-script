@@ -151,10 +151,10 @@ namespace OwcaScript {
 			OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
 			OwcaSet create_set(const std::span<OwcaValue> &arguments);
 			OwcaString create_string_from_view(std::string_view txt);
-			OwcaString create_string(OwcaValue str, size_t start, size_t end);
-			OwcaString create_string(OwcaValue str, size_t count);
-			OwcaString create_string(OwcaValue left, OwcaValue right);
-			std::pair<OwcaString, char *> precreate_string(size_t size);
+			OwcaString create_string(OwcaString str, size_t start, size_t end);
+			OwcaString create_string(OwcaString str, size_t count);
+			OwcaString create_string(OwcaString left, OwcaString right);
+			String *precreate_string(size_t size);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
 			Generator iterate_value(OwcaValue val);

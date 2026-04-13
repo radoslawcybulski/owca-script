@@ -21,6 +21,12 @@ namespace OwcaScript {
         struct Iterator;
 
 		struct ExecutionFrame {
+			struct ClassState {
+				std::string_view name, full_name;
+				Class *cls;
+				
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ClassState &e);
+			};
 			struct ForState {
 				std::uint64_t index = (std::uint64_t)-1;
 				OwcaIterator iterator;
@@ -53,7 +59,7 @@ namespace OwcaScript {
 
 				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WithState &e);
 			};
-			using States = std::variant<ForState, WhileState, TryCatchState, WithState>;
+			using States = std::variant<ForState, WhileState, TryCatchState, WithState, ClassState>;
 			friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const States &e);
 			
 			std::vector<OwcaValue> values;

@@ -11,6 +11,7 @@
 #include "array.h"
 #include "tuple.h"
 #include "dictionary.h"
+#include "ast_function.h"
 
 namespace OwcaScript::Internal {
     Executor::Executor(VM *vm) : vm(vm), stack_top_level_index(vm->current_stack_trace_index) {
@@ -35,6 +36,31 @@ namespace OwcaScript::Internal {
 
     bool Executor::completed() const {
         return vm->current_stack_trace_index <= stack_top_level_index;
+    }
+
+    void Executor::push_value(OwcaValue value) {
+        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.push_back(std::move(value));
+    }
+    void Executor::pop_values(size_t count) {
+        assert(count <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
+        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.resize(vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - count);
+    }
+    OwcaValue &Executor::peek_value(size_t offset) const {
+        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
+        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
+        return vm->stacktrace[vm->current_stack_trace_index - 1].temporaries[index];
+    }
+    OwcaValue &Executor::peek_value_and_make_top(size_t offset) const {
+        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
+        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
+        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.resize(index + 1);
+        return vm->stacktrace[vm->current_stack_trace_index - 1].temporaries[index];
+    }
+    std::span<OwcaValue> Executor::peek_values(size_t offset, size_t count) const {
+        assert(offset >= count);
+        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
+        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
+        return { vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.data() + index, count };
     }
     
 	static std::tuple<Number, Number, Number> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size) {
@@ -130,19 +156,27 @@ namespace OwcaScript::Internal {
             frame.code_position = reader.position();
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
             switch(opcode) {
-            case ExecuteBufferReader::Op::Class: {
+            case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line();
-
-                auto native = reader.decode<bool>();
                 auto name = reader.decode<std::string_view>();
                 auto full_name = reader.decode<std::string_view>();
+                auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code);
+                frame.states.push_back(ExecutionFrame::ClassState{ name, full_name, cls });
+                break; }
+            case ExecuteBufferReader::Op::ClassCreate: {
+                assert(!frame.states.empty());
+                assert(std::holds_alternative<ExecutionFrame::ClassState>(frame.states.back()));
+                auto &state = std::get<ExecutionFrame::ClassState>(frame.states.back());
+
+                auto cls = state.cls;
+                frame.states.pop_back();
+
+                auto native = reader.decode<bool>();
                 auto base_class_count = reader.decode<std::uint32_t>();
                 auto member_count = reader.decode<std::uint32_t>();
                 auto all_variable_names = reader.decode<bool>();
                 auto variable_name_count = reader.decode<std::uint32_t>();
 
-                auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code, base_class_count);
-                //vm->set_currently_building_class(ClassToken{ cls });
                 auto base_classes = peek_values(base_class_count, base_class_count);
                 auto members = peek_values(member_count + base_class_count, member_count);
                 for(auto b : base_classes) {
@@ -166,7 +200,7 @@ namespace OwcaScript::Internal {
                 if (native) {
                     auto &native_provider = cls->code.native_code_provider();
                     if (native_provider) {
-                        if (auto impl = native_provider->native_class(full_name, ClassToken{ cls })) {
+                        if (auto impl = native_provider->native_class(cls->full_name, ClassToken{ cls })) {
                             auto size = impl->native_storage_size();
                             cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
                             cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;
@@ -174,9 +208,11 @@ namespace OwcaScript::Internal {
                         }
                     }
                     if (!cls->native) {
-                        vm->throw_missing_native(std::format("missing native class {}", full_name));
+                        vm->throw_missing_native(std::format("missing native class {}", cls->full_name));
                     }
                 }
+                pop_values(base_class_count + member_count);
+                push_value(OwcaClass{ cls });
                 break; }
             case ExecuteBufferReader::Op::ExprPopAndIgnore: {
                 pop_values(1);
@@ -228,7 +264,8 @@ namespace OwcaScript::Internal {
                 for(auto i = 0u; i < expr_count; ++i) {
                     size += values[i].as_string(vm).size();
                 }
-                auto [ new_str, new_str_pt ] = vm->precreate_string(size);
+                auto new_str = vm->precreate_string(size);
+                auto new_str_pt = new_str->pointer();
                 const char *strings_ptr = strings.data();
                 for(auto i = 0u; i <= expr_count; ++i) {
                     if (i > 0) {
@@ -241,9 +278,9 @@ namespace OwcaScript::Internal {
                     new_str_pt += sz;
                     strings_ptr += sz;
                 }
-                assert(new_str.text().data() + size == new_str_pt);
+                assert(new_str_pt == new_str->pointer() + new_str->size());
                 pop_values(expr_count);
-                push_value(new_str);
+                push_value(OwcaString{ new_str });
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierRead: {
                 auto index = reader.decode<std::uint32_t>();
@@ -295,6 +332,13 @@ namespace OwcaScript::Internal {
                 else {
                     pop_values(1);
                 }
+                break; }
+            case ExecuteBufferReader::Op::ExprToString: {
+                auto v = peek_value(1);
+                if (v.kind() == OwcaValueKind::String) {
+                    break;
+                }
+                peek_value(1) = vm->create_string_from_view(v.to_string());
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinOr: {
                 run_impl_opcodes_execute_expr_oper2<TagBinOr>(reader);
@@ -587,38 +631,45 @@ namespace OwcaScript::Internal {
                 RuntimeFunction *fnc = nullptr;
                 if (is_native) {
                     auto &native_provider = code.native_code_provider();
+                    std::optional<ClassToken> class_;
+                    if (!frame.states.empty()) {
+                        if (std::holds_alternative<ExecutionFrame::ClassState>(frame.states.back())) {
+                            auto &state = std::get<ExecutionFrame::ClassState>(frame.states.back());
+                            class_ = ClassToken{ state.cls };
+                        }
+                    }
                     if (is_generator) {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeGenerator{});
                         auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
+                        ng.parameter_names.reserve(param_count);
+                        for(auto i = 0u; i < param_count; ++i) {
+                            auto var_name = reader.decode<std::string_view>();
+                            ng.parameter_names.push_back(var_name);
+                        }
                         if (native_provider) {
-                            if (auto impl = native_provider->native_generator(full_name)) {
+                            if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, ng.parameter_names)) {
                                 ng.generator = std::move(*impl);
                             }
                         }
                         if (!ng.generator) {
                             vm->throw_missing_native(std::format("missing native generator {}", full_name));
                         }
-                        ng.parameter_names.reserve(param_count);
-                        for(auto i = 0u; i < param_count; ++i) {
-                            auto var_name = reader.decode<std::string_view>();
-                            ng.parameter_names.push_back(var_name);
-                        }
                     }
                     else {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeFunction{});
                         auto &nf = std::get<RuntimeFunction::NativeFunction>(fnc->data);
+                        nf.parameter_names.reserve(param_count);
+                        for(auto i = 0u; i < param_count; ++i) {
+                            auto var_name = reader.decode<std::string_view>();
+                            nf.parameter_names.push_back(var_name);
+                        }
                         if (native_provider) {
-                            if (auto impl = native_provider->native_function(full_name)) {
+                            if (auto impl = native_provider->native_function(full_name, class_, FunctionToken{ fnc }, nf.parameter_names)) {
                                 nf.function = std::move(*impl);
                             }
                         }
                         if (!nf.function) {
                             vm->throw_missing_native(std::format("missing native function {}", full_name));
-                        }
-                        nf.parameter_names.reserve(param_count);
-                        for(auto i = 0u; i < param_count; ++i) {
-                            auto var_name = reader.decode<std::string_view>();
-                            nf.parameter_names.push_back(var_name);
                         }
                     }
                 }
@@ -629,8 +680,8 @@ namespace OwcaScript::Internal {
                     fnc->is_method = is_method;
                     reader.decode_span_helper<AstFunction::CopyFromParent>(
                         [&](size_t index, size_t size, AstFunction::CopyFromParent value) {
-                            if (index == 0) sf.copy_from_parents.resize(size);
-                            sf.copy_from_parents[index] = value;
+                            if (index == 0) sf.copy_from_parents.reserve(size);
+                            sf.copy_from_parents.push_back(value);
                         }
                     );
                     reader.decode_span_helper<std::string_view>(
@@ -836,6 +887,58 @@ namespace OwcaScript::Internal {
         } while(!exit);
     }
 
+    template <typename Tag> std::string_view tag_name = "unknown";
+    template <> std::string_view tag_name<Executor::TagAdd> = "addition";
+    template <> std::string_view tag_name<Executor::TagSub> = "subtraction";
+    template <> std::string_view tag_name<Executor::TagMul> = "multiplication";
+    template <> std::string_view tag_name<Executor::TagDiv> = "division";
+    template <> std::string_view tag_name<Executor::TagMod> = "modulus";
+
+    Number Executor::expr_oper_2(Executor::TagAdd, Number left, Number right) {
+        return left + right;
+    }
+    OwcaString Executor::expr_oper_2(Executor::TagAdd, OwcaString left, OwcaString right) {
+        return vm->create_string(left, right);
+    }
+    Number Executor::expr_oper_2(Executor::TagSub, Number left, Number right) {
+        return left - right;
+    }
+    Number Executor::expr_oper_2(Executor::TagMul, Number left, Number right) {
+        return left * right;
+    }
+    Number Executor::expr_oper_2(Executor::TagDiv, Number left, Number right) {
+        if (right == 0) {
+            vm->throw_division_by_zero();
+        }
+        return left / right;
+    }
+    Number Executor::expr_oper_2(Executor::TagMod, Number left, Number right) {
+        if (right == 0) {
+            vm->throw_division_by_zero();
+        }
+        return (std::int64_t)left % (std::int64_t)right;
+    }
+    OwcaString Executor::expr_oper_2(Executor::TagMul, OwcaString left, Number right) {
+        return vm->create_string(left, right);
+    }
+    OwcaString Executor::expr_oper_2(Executor::TagMul, Number left, OwcaString right) {
+        return vm->create_string(right, left);
+    }
+
+    template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
+        vm->throw_unsupported_operation_2(tag_name<A>, OwcaValue{ b }.type(), OwcaValue{ c }.type());
+        return {};
+    }
+    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader) {
+        auto right = peek_value(1);
+        auto left = peek_value(2);
+        auto val = left.visit([&](auto left_val) -> OwcaValue {
+            return right.visit([&](auto right_val) -> OwcaValue {
+                return expr_oper_2(Tag{}, left_val, right_val);
+            });
+        });
+        peek_value_and_make_top(2) = val;
+    }
     void Executor::run_impl() {
         while(!completed()) {
             auto &frame = currently_executing_frame();

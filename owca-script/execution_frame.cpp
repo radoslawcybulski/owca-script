@@ -3,6 +3,7 @@
 #include "owca_value.h"
 #include "vm.h"
 #include "runtime_function.h"
+#include "object.h"
 
 namespace OwcaScript::Internal {
     ExecutionFrame::ExecutionFrame() {
@@ -205,7 +206,9 @@ namespace OwcaScript::Internal {
 		// 	}
 		// );
     void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::WhileState &e) {
-
+    }
+    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::ClassState &e) {
+        gc_mark_value(vm, generation_gc, e.cls);
     }
     void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ExecutionFrame::ForState &e) {
 

@@ -62,11 +62,15 @@ namespace OwcaScript {
 			struct TagIndexRead {};
 			struct TagIndexWrite {};
 			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader);
-			void expr_oper_2(TagAdd, Number left, Number right);
-			void expr_oper_2(TagSub, Number left, Number right);
-			void expr_oper_2(TagMul, Number left, Number right);
-			void expr_oper_2(TagDiv, Number left, Number right);
-			void expr_oper_2(TagMod, Number left, Number right);
+			Number expr_oper_2(TagAdd, Number left, Number right);
+			OwcaString expr_oper_2(TagAdd, OwcaString left, OwcaString right);
+			Number expr_oper_2(TagSub, Number left, Number right);
+			Number expr_oper_2(TagMul, Number left, Number right);
+			OwcaString expr_oper_2(TagMul, OwcaString left, Number right);
+			OwcaString expr_oper_2(TagMul, Number left, OwcaString right);
+			Number expr_oper_2(TagDiv, Number left, Number right);
+			Number expr_oper_2(TagMod, Number left, Number right);
+			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
         public:
             Executor(VM *vm);
 
