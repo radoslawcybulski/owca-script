@@ -19,6 +19,7 @@ namespace OwcaScript {
             VM *vm;
 			const size_t stack_top_level_index = 0;
 			std::optional<OwcaException> exception_in_progress;
+	        bool exit = false;
 
 			void push_value(OwcaValue value);
 			void pop_values(size_t count);
@@ -35,7 +36,7 @@ namespace OwcaScript {
 			void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
 			void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
 			void prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments);
-			ExecutionFrame &prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			ExecutionFrame *prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
 			void prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
 			void prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc);
 
@@ -45,7 +46,6 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
 			void run(OwcaMap *dict_output = nullptr);
-			void run_and_throw();
 			void run_impl();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
 			bool run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind);
@@ -78,42 +78,45 @@ namespace OwcaScript {
 			Number expr_oper_2(TagDiv, Number left, Number right);
 			Number expr_oper_2(TagMod, Number left, Number right);
 			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
-			void construct_exception_and_throw(Class *cls, std::string_view arg);
 
-			void prepare_throw_division_by_zero(OwcaValue &return_value);
-			void prepare_throw_mod_division_by_zero(OwcaValue &return_value);
-			void prepare_throw_cant_convert_to_float(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_cant_convert_to_float_message(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_cant_convert_to_integer(OwcaValue &return_value, Number val);
-			void prepare_throw_cant_convert_to_integer(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_not_a_number(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_overflow(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_range_step_is_zero(OwcaValue &return_value);
-			void prepare_throw_cant_compare(OwcaValue &return_value, CompareKind kind, std::string_view left, std::string_view right);
-			void prepare_throw_range_step_must_be_one_in_left_side_of_write_assign(OwcaValue &return_value);
-			void prepare_throw_index_out_of_range(OwcaValue &return_value, std::string msg);
-			void prepare_throw_string_too_large(OwcaValue &return_value, size_t size);
-			void prepare_throw_value_not_indexable(OwcaValue &return_value, std::string_view type, std::string_view key_type="");
-			void prepare_throw_missing_member(OwcaValue &return_value, std::string_view type, std::string_view ident);
-			void prepare_throw_cant_call(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_not_callable(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_not_callable_wrong_number_of_params(OwcaValue &return_value, std::string_view type, unsigned int);
-			void prepare_throw_wrong_type(OwcaValue &return_value, std::string_view type, std::string_view expected);
-			void prepare_throw_wrong_type(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_unsupported_operation_2(OwcaValue &return_value, std::string_view oper, std::string_view left, std::string_view right);
-			void prepare_throw_invalid_operand_for_mul_string(OwcaValue &return_value, std::string_view val);
-			void prepare_throw_missing_key(OwcaValue &return_value, std::string_view key);
-			void prepare_throw_not_hashable(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_value_cant_have_fields(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_missing_native(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_not_iterable(OwcaValue &return_value, std::string_view type);
-			void prepare_throw_readonly(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_cant_return_value_from_generator(OwcaValue &return_value);
-			void prepare_throw_container_is_empty(OwcaValue &return_value);
-			void prepare_throw_not_implemented(OwcaValue &return_value, std::string_view msg);
-			void prepare_throw_dictionary_changed(OwcaValue &return_value, bool is_dict);
-			void prepare_throw_too_many_elements(OwcaValue &return_value, size_t expected);
-			void prepare_throw_not_enough_elements(OwcaValue &return_value, size_t expected, size_t got);			
+			void prepare_throw_division_by_zero();
+			void prepare_throw_mod_division_by_zero();
+			void prepare_throw_cant_convert_to_float(std::string_view type);
+			void prepare_throw_cant_convert_to_float_message(std::string_view msg);
+			void prepare_throw_cant_convert_to_integer(Number val);
+			void prepare_throw_cant_convert_to_integer(std::string_view type);
+			void prepare_throw_not_a_number(std::string_view type);
+			void prepare_throw_overflow(std::string_view msg);
+			void prepare_throw_range_step_is_zero();
+			void prepare_throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
+			void prepare_throw_range_step_must_be_one_in_left_side_of_write_assign();
+			void prepare_throw_index_out_of_range(std::string msg);
+			void prepare_throw_string_too_large(size_t size);
+			void prepare_throw_value_not_indexable(std::string_view type, std::string_view key_type="");
+			void prepare_throw_missing_member(std::string_view type, std::string_view ident);
+			void prepare_throw_cant_call(std::string_view msg);
+			void prepare_throw_not_callable(std::string_view type);
+			void prepare_throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);
+			void prepare_throw_wrong_type(std::string_view type, std::string_view expected);
+			void prepare_throw_wrong_type(std::string_view msg);
+			void prepare_throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
+			void prepare_throw_invalid_operand_for_mul_string(std::string_view val);
+			void prepare_throw_missing_key(std::string_view key);
+			void prepare_throw_not_hashable(std::string_view type);
+			void prepare_throw_value_cant_have_fields(std::string_view type);
+			void prepare_throw_missing_native(std::string_view msg);
+			void prepare_throw_not_iterable(std::string_view type);
+			void prepare_throw_readonly(std::string_view msg);
+			void prepare_throw_cant_return_value_from_generator();
+			void prepare_throw_container_is_empty();
+			void prepare_throw_not_implemented(std::string_view msg);
+			void prepare_throw_dictionary_changed(bool is_dict);
+			void prepare_throw_too_many_elements(size_t expected);
+			void prepare_throw_not_enough_elements(size_t expected, size_t got);
+
+			std::optional<std::tuple<Number, Number, Number>> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
+			std::optional<size_t> verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
+			std::optional<std::pair<size_t, size_t>> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
         public:
             Executor(VM *vm);
 
