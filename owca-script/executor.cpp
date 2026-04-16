@@ -57,6 +57,7 @@ namespace OwcaScript::Internal {
             }
         }
         --vm->current_stack_trace_index;
+        exit = true;
     }
     void Executor::process_thrown_exception()
     {
@@ -210,7 +211,9 @@ namespace OwcaScript::Internal {
         auto reader = ExecuteBufferReader{ frame.runtime_function->code, frame.code_position };
         exit = false;
         do {
+            std::cout << "Running opcode at position " << reader.position() << std::endl;
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
+            std::cout << "Running opcode at position " << reader.position() << " opcode " << to_string(opcode) << std::endl;
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line();

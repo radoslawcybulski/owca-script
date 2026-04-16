@@ -25,6 +25,7 @@ namespace OwcaScript {
         template <typename T> concept Vector = IsVector<T>::value;
 
         enum class DataKind : std::uint8_t{
+            Unfilled,
             Other,
             Op,
             Enum,
@@ -38,7 +39,24 @@ namespace OwcaScript {
             Float64,
             Blob,
         };
-
+        inline std::string_view to_string(DataKind kind) {
+            switch(kind) {
+            case DataKind::Unfilled: return "Unfilled";
+            case DataKind::Other: return "Other";
+            case DataKind::Op: return "Op";
+            case DataKind::Enum: return "Enum";
+            case DataKind::Bool: return "Bool";
+            case DataKind::Int8: return "Int8";
+            case DataKind::Int16: return "Int16";
+            case DataKind::Int32: return "Int32";
+            case DataKind::Int64: return "Int64";
+            case DataKind::Size: return "Size";
+            case DataKind::Float32: return "Float32";
+            case DataKind::Float64: return "Float64";
+            case DataKind::Blob: return "Blob";
+            default: return "Unknown";
+            }
+        }
         enum class ExecuteOp : std::uint8_t {
             ClassInit,
             ClassCreate,
@@ -110,6 +128,80 @@ namespace OwcaScript {
             Yield,
             Jump,
         };
+        inline std::string_view to_string(ExecuteOp op) {
+            switch(op) {
+            case ExecuteOp::ClassInit: return "ClassInit";
+            case ExecuteOp::ClassCreate: return "ClassCreate";
+            case ExecuteOp::ExprPopAndIgnore: return "ExprPopAndIgnore";
+            case ExecuteOp::ExprCompareEq: return "ExprCompareEq";
+            case ExecuteOp::ExprCompareNotEq: return "ExprCompareNotEq";
+            case ExecuteOp::ExprCompareLessEq: return "ExprCompareLessEq";
+            case ExecuteOp::ExprCompareMoreEq: return "ExprCompareMoreEq";
+            case ExecuteOp::ExprCompareLess: return "ExprCompareLess";
+            case ExecuteOp::ExprCompareMore: return "ExprCompareMore";
+            case ExecuteOp::ExprCompareIs: return "ExprCompareIs";
+            case ExecuteOp::ExprCompareCompleted: return "ExprCompareCompleted";
+            case ExecuteOp::ExprConstantEmpty: return "ExprConstantEmpty";
+            case ExecuteOp::ExprConstantBool: return "ExprConstantBool";
+            case ExecuteOp::ExprConstantFloat: return "ExprConstantFloat";
+            case ExecuteOp::ExprConstantString: return "ExprConstantString";
+            case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
+            case ExecuteOp::ExprIdentifierRead: return "ExprIdentifierRead";
+            case ExecuteOp::ExprIdentifierWrite: return "ExprIdentifierWrite";
+            case ExecuteOp::ExprMemberRead: return "ExprMemberRead";
+            case ExecuteOp::ExprMemberWrite: return "ExprMemberWrite";
+            case ExecuteOp::ExprOper1BinNeg: return "ExprOper1BinNeg";
+            case ExecuteOp::ExprOper1LogNot: return "ExprOper1LogNot";
+            case ExecuteOp::ExprOper1Negate: return "ExprOper1Negate";
+            case ExecuteOp::ExprRetTrueAndJumpIfTrue: return "ExprRetTrueAndJumpIfTrue";
+            case ExecuteOp::ExprRetFalseAndJumpIfFalse: return "ExprRetFalseAndJumpIfFalse";
+            case ExecuteOp::ExprOper2BinOr: return "ExprOper2BinOr";
+            case ExecuteOp::ExprOper2BinAnd: return "ExprOper2BinAnd";
+            case ExecuteOp::ExprOper2BinXor: return "ExprOper2BinXor";
+            case ExecuteOp::ExprOper2BinLShift: return "ExprOper2BinLShift";
+            case ExecuteOp::ExprOper2BinRShift: return "ExprOper2BinRShift";
+            case ExecuteOp::ExprOper2Add: return "ExprOper2Add";
+            case ExecuteOp::ExprOper2Sub: return "ExprOper2Sub";
+            case ExecuteOp::ExprOper2Mul: return "ExprOper2Mul";
+            case ExecuteOp::ExprOper2Div: return "ExprOper2Div";
+            case ExecuteOp::ExprOper2Mod: return "ExprOper2Mod";
+            case ExecuteOp::ExprOper2MakeRange: return "ExprOper2MakeRange";
+            case ExecuteOp::ExprOper2IndexRead: return "ExprOper2IndexRead";
+            case ExecuteOp::ExprOper2IndexWrite: return "ExprOper2IndexWrite";
+            case ExecuteOp::ExprOperXCall: return "ExprOperXCall";
+            case ExecuteOp::ExprOperXCreateArray: return "ExprOperXCreateArray";
+            case ExecuteOp::ExprOperXCreateTuple: return "ExprOperXCreateTuple";
+            case ExecuteOp::ExprOperXCreateSet: return "ExprOperXCreateSet";
+            case ExecuteOp::ExprOperXCreateMap: return "ExprOperXCreateMap";
+            case ExecuteOp::ExprToString: return "ExprToString";
+            case ExecuteOp::ForInit: return "ForInit";
+            case ExecuteOp::ForNext: return "ForNext";
+            case ExecuteOp::ForCondition: return "ForCondition";
+            case ExecuteOp::ForCompleted: return "ForCompleted";
+            case ExecuteOp::Function: return "Function";
+            case ExecuteOp::If: return "If";
+            case ExecuteOp::LoopControlBreak: return "LoopControlBreak";
+            case ExecuteOp::LoopControlContinue: return "LoopControlContinue";
+            case ExecuteOp::Return: return "Return";
+            case ExecuteOp::ReturnValue: return "ReturnValue";
+            case ExecuteOp::Throw: return "Throw";
+            case ExecuteOp::TryInit: return "TryInit";
+            case ExecuteOp::TryCompleted: return "TryCompleted";
+            case ExecuteOp::TryBlockCompleted: return "TryBlockCompleted";
+            case ExecuteOp::TryCatchType: return "TryCatchType";
+            case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
+            case ExecuteOp::WhileInit: return "WhileInit";
+            case ExecuteOp::WhileCondition: return "WhileCondition";
+            case ExecuteOp::WhileNext: return "WhileNext";
+            case ExecuteOp::WhileCompleted: return "WhileCompleted";
+            case ExecuteOp::WithInit: return "WithInit";
+            case ExecuteOp::WithInitPrepare: return "WithInitPrepare";
+            case ExecuteOp::WithCompleted: return "WithCompleted";
+            case ExecuteOp::Yield: return "Yield";
+            case ExecuteOp::Jump: return "Jump";
+            default: return "Unknown";
+            }
+        }
         struct LineEntry {
             std::uint32_t code_pos;
             std::uint32_t line;
@@ -175,7 +267,7 @@ namespace OwcaScript {
                 return static_cast<T>(t);
             }
             template <typename T> void decode_span_helper(const auto &cb) {
-                auto sz = decode<std::uint32_t>();
+                auto sz = decode_size();
                 for(auto i = 0u; i < sz; ++i) {
                     auto v = decode<T>();
                     cb(i, sz, v);
@@ -194,7 +286,9 @@ namespace OwcaScript {
             }
             void ensure_data_kind(DataKind expected, size_t p) {
                 if (!data_kinds.empty() && data_kinds[p] != expected) {
-                    throw std::runtime_error(std::format("Expected data kind {} at position {}, but got {}", static_cast<int>(expected), p, static_cast<int>(data_kinds[p])));
+                    auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p, to_string(expected), to_string(data_kinds[p]));
+                    std::cout << msg << std::endl;
+                    throw std::runtime_error(msg);
                 }
             }
             size_t align_pos(size_t align, size_t size) {
@@ -221,7 +315,7 @@ namespace OwcaScript {
                 auto current_size = buffer.size();
                 auto padding = (align - (current_size % align)) % align;
                 buffer.resize(current_size + padding + size);
-                data_kinds.resize(buffer.size(), DataKind::Other);
+                data_kinds.resize(buffer.size(), DataKind::Unfilled);
                 data_kinds[current_size + padding] = kind;
                 return current_size + padding;
             }
@@ -232,11 +326,21 @@ namespace OwcaScript {
             template <typename T> void append_impl(T value, DataKind kind) {
                 auto pos = prepare(&value, 1, kind);
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
+                if (kind == DataKind::Op) {
+                    std::cout << "Writing data of kind " << to_string(kind) << " at position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
+                }
+                else {
+                    std::cout << "Writing data of kind " << to_string(kind) << " at position " << (pos) << std::endl;
+                }
             }
             void handle_line(Line line) {
                 if (lines.empty() || lines.back().line != line.line) {
                     lines.emplace_back(LineEntry{static_cast<std::uint32_t>(buffer.size()), line.line});
                 }
+            }
+            void append_size(Line line, size_t size) {
+                handle_line(line);
+                append_impl((std::uint32_t)size, DataKind::Size);
             }
         public:
             ExecuteBufferWriter() = default;
@@ -277,22 +381,22 @@ namespace OwcaScript {
             }
             void append(Line line, const char *str) {
                 auto sz = strlen(str);
-                append(line, (std::uint32_t)sz);
+                append_size(line, sz);
                 append_impl_vec(str, sz);
             }
             void append(Line line, std::string_view str) {
-                append(line, (std::uint32_t)str.size());
+                append_size(line, str.size());
                 append_impl_vec(str.data(), str.size());
             }
             void append(Line line, const std::string &str) {
-                append(line, (std::uint32_t)str.size());
+                append_size(line, str.size());
                 append_impl_vec(str.data(), str.size());
             }
             template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
                 serialize_object(*this, line, t);
             }
             template <typename T> void append_span_helper(Line line, std::span<T> vec) {
-                append(line, (std::uint32_t)vec.size());
+                append_size(line, vec.size());
                 for (const auto &item : vec) {
                     append(line, item);
                 }

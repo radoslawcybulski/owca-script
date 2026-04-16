@@ -1402,7 +1402,7 @@ namespace OwcaScript::Internal {
 
 		auto ei = AstBase::EmitInfo{};
 		root->emit(ei);
-		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
+		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::ReturnValue);
 		assert(error_messages_.empty());
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();

@@ -28,9 +28,9 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstExprIdentifier::emit(EmitInfo& ei) {
+		if (value_to_write_) value_to_write_->emit(ei);
 		ei.code_writer.append(line, value_to_write_ ?  ExecuteOp::ExprIdentifierWrite : ExecuteOp::ExprIdentifierRead);
 		ei.code_writer.append(line, value_to_write_index_);
-		if (value_to_write_) value_to_write_->emit(ei);
 	}
 	void AstExprIdentifier::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {

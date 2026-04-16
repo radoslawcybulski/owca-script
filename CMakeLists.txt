@@ -15,6 +15,8 @@ endif()
 
 set(CLANG_DEFAULT_CXX_STDLIB libc++)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -gdwarf-5")
+
 if(WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")
 	#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")

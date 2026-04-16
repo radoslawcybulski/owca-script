@@ -116,7 +116,7 @@ namespace OwcaScript::Internal {
     }
     void ExecutionFrame::initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
         clear();
-        assert(runtime_function);
+        assert(runtime_functions);
         this->runtime_functions = runtime_functions;
 		assert(runtime_functions->name.find("main-block") != std::string::npos);
 		assert(runtime_functions->functions.size() == 1);
