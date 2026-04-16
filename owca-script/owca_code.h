@@ -46,6 +46,7 @@ namespace OwcaScript {
         const auto lines() const { return code_->lines; }
         const auto &native_code_provider() const { return code_->native_code_provider; }
 		Internal::Line first_line() const;
+        Internal::Line get_line_by_position(size_t pos) const;
 	};
 }
 

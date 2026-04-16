@@ -68,15 +68,15 @@ namespace OwcaScript {
 			std::optional<OwcaIterator> iterator_object;
 			RuntimeFunctions* runtime_functions = nullptr;
 			RuntimeFunction* runtime_function = nullptr;
-			std::uint32_t code_position, prev_code_position;
+			std::uint32_t code_position;
 			OwcaValue *return_value = nullptr;
 			bool constructor_move_self_to_return_value = false;
 			bool is_iterator = false;
+			bool throw_return_value = false;
 
 			ExecutionFrame();
 			~ExecutionFrame();
 
-			unsigned int current_line() const { return prev_code_position; }
 			void clear();
 			void initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc);
 			void initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);

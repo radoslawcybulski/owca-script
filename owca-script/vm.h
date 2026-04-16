@@ -112,7 +112,7 @@ namespace OwcaScript {
 
 			// invalid operation exception
 			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
-			[[noreturn]] void range_step_must_be_one_in_left_side_of_write_assign();
+			[[noreturn]] void throw_range_step_must_be_one_in_left_side_of_write_assign();
 			[[noreturn]] void throw_index_out_of_range(std::string msg);
 			[[noreturn]] void throw_string_too_large(size_t size);
 			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
@@ -134,8 +134,8 @@ namespace OwcaScript {
 			[[noreturn]] void throw_container_is_empty();
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
-			[[noreturn]] void throw_too_many_elements(size_t expected);
-			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
+			// [[noreturn]] void throw_too_many_elements(size_t expected);
+			// [[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, std::optional<OwcaMap> values, OwcaMap *output_dict);

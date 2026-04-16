@@ -11,7 +11,10 @@ namespace OwcaScript {
 	namespace Internal {
         enum class CompareKind : std::uint8_t;
 
-        bool execute_compare(VM *vm, CompareKind kind, OwcaValue left, OwcaValue right);
+		enum class CompareResult {
+			False, True, NotExecuted
+		};
+        CompareResult execute_compare(VM *vm, CompareKind kind, OwcaValue left, OwcaValue right);
 	}
 }
 

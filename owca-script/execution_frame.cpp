@@ -4,6 +4,7 @@
 #include "vm.h"
 #include "runtime_function.h"
 #include "object.h"
+#include "executor.h"
 
 namespace OwcaScript::Internal {
     ExecutionFrame::ExecutionFrame() {
@@ -19,7 +20,7 @@ namespace OwcaScript::Internal {
         values.clear();
         temporaries.clear();
         states.clear();
-        prev_code_position =code_position = 0;
+        code_position = 0;
         return_value = nullptr;
         constructor_move_self_to_return_value = false;
         is_iterator = false;
@@ -95,7 +96,7 @@ namespace OwcaScript::Internal {
 				for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
 					values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
 				}
-                prev_code_position = code_position = sf.entry_point;
+                code_position = sf.entry_point;
                 is_iterator = sf.is_generator;
 			});
 
@@ -105,7 +106,8 @@ namespace OwcaScript::Internal {
                 values[0] = *self_value;
             }
             else {
-                vm->throw_cant_call(std::format("can't call {} - missing self value", runtime_function->to_string()));
+                Executor executor{ vm };
+                executor.throw_cant_call(std::format("can't call {} - missing self value", runtime_function->to_string()));
             }
         }
         for (auto i = (self ? 1u : 0u); i < runtime_function->param_count; ++i) {
@@ -125,7 +127,7 @@ namespace OwcaScript::Internal {
         this->runtime_function = function;
 		runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
-                this->prev_code_position = this->code_position = sf.entry_point;
+                this->code_position = sf.entry_point;
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
 				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
 					value_index_map[sf.identifier_names[i]] = i;
@@ -157,7 +159,7 @@ namespace OwcaScript::Internal {
     void ExecutionFrame::initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc)
     {
         clear();
-        prev_code_position = code_position = 0;
+        code_position = 0;
         this->return_value = &return_value;
         runtime_functions = vm->allocate<RuntimeFunctions>(0, std::string_view("main-code-block"), std::string_view("main-code-block"));
         runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{});

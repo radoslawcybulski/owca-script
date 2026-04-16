@@ -12,8 +12,12 @@
 #include "tuple.h"
 #include "dictionary.h"
 #include "ast_function.h"
+#include "exception.h"
+#include <utility>
 
 namespace OwcaScript::Internal {
+    static thread_local OwcaValue temporary_exception_return_value;
+
     Executor::Executor(VM *vm) : vm(vm), stack_top_level_index(vm->current_stack_trace_index) {
     }
 
@@ -54,7 +58,23 @@ namespace OwcaScript::Internal {
         }
         --vm->current_stack_trace_index;
     }
-
+    void Executor::process_thrown_exception()
+    {
+        assert(exception_in_progress);
+        while(!completed()) {
+            auto &frame = currently_executing_frame();
+            while(!frame.states.empty()) {
+                if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
+                    frame.code_position = state->catches_pos;
+                    return;
+                }
+                frame.states.pop_back();
+            }
+        }
+        auto z = *exception_in_progress;
+        exception_in_progress.reset();
+        throw ;
+    }
     bool Executor::completed() const {
         return vm->current_stack_trace_index <= stack_top_level_index;
     }
@@ -154,19 +174,27 @@ namespace OwcaScript::Internal {
 		return { v3, v4 };
 	}
 
-    void Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind) {
+    bool Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind) {
         auto jump_dest = reader.decode<std::uint32_t>();
         auto left = peek_value(2);
         auto right = peek_value(1);
-        if (execute_compare(vm, kind, left, right)) {
+        auto res = execute_compare(vm, kind, left, right);
+        switch(res) {
+        case CompareResult::True:
             left = right;
             pop_values(1);
-        }
-        else {
+            return false;
+        case CompareResult::False:
             left = false;
             pop_values(1);
             reader.jump(jump_dest);
+            return false;
+        case CompareResult::NotExecuted:
+            vm->throw_cant_compare(kind, left.type(), right.type());
+            return true;
         }
+        assert(false);
+        return true;
     }
     void Executor::run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction &sf)
     {
@@ -174,7 +202,6 @@ namespace OwcaScript::Internal {
         auto reader = ExecuteBufferReader{ frame.runtime_function->code, frame.code_position };
         bool exit = false;
         do {
-            frame.code_position = reader.position();
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
@@ -239,25 +266,25 @@ namespace OwcaScript::Internal {
                 pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareEq: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::Eq);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Eq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareNotEq: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::NotEq);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::NotEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLessEq: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::LessEq);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::LessEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMoreEq: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::MoreEq);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::MoreEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLess: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::Less);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Less);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMore: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::More);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::More);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareIs: {
-                run_impl_opcodes_execute_compare(reader, CompareKind::Is);
+                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Is);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareCompleted: {
                 peek_value(1) = true;
@@ -500,7 +527,7 @@ namespace OwcaScript::Internal {
                             return value;
                         }
                         if (step != 1) {
-                            vm->range_step_must_be_one_in_left_side_of_write_assign();
+                            vm->throw_range_step_must_be_one_in_left_side_of_write_assign();
                         }
 
                         auto iter = vm->create_iterator(value);
@@ -622,14 +649,17 @@ namespace OwcaScript::Internal {
 
                         while(auto vv = iter.next()) {
                             if (index >= state.value_indexes.size()) {
-                                vm->throw_too_many_elements(state.value_indexes.size());
+                                prepare_throw_too_many_elements(state.value_indexes.size());
+                                exit = true;
                             }
                             vm->set_identifier(state.value_indexes[index], *vv);
                             ++index;
                         }
                         if (index < state.value_indexes.size()) {
-                            vm->throw_not_enough_elements(state.value_indexes.size(), index);
+                            prepare_throw_not_enough_elements(state.value_indexes.size(), index);
+                            exit = true;
                         }
+                        if (exit) break;
                     }
                 }
                 break; }
@@ -784,7 +814,8 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::Throw: {
                 auto exception = peek_value(1);
                 pop_values(1);
-                process_thrown_exception(exception.as_exception(vm));
+                exception_in_progress = exception.as_exception(vm);
+                process_thrown_exception();
                 exit = true;
                 break; }
             case ExecuteBufferReader::Op::TryInit: {
@@ -829,7 +860,7 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::TryCatchTypeCompleted: {
-                process_thrown_exception(*exception_in_progress);
+                process_thrown_exception();
                 exit = true;
                 break; }
             case ExecuteBufferReader::Op::TryBlockCompleted: {
@@ -905,6 +936,7 @@ namespace OwcaScript::Internal {
                 reader.jump(dest);
                 break; }
             }
+            frame.code_position = reader.position();
         } while(!exit);
     }
 
@@ -1032,6 +1064,10 @@ namespace OwcaScript::Internal {
             );
         }
     }
+    void Executor::run_and_throw() {
+        run();
+        throw temporary_exception_return_value.as_exception(vm);
+    }
     void Executor::run(OwcaMap *dict_output) {
         run_impl();
         if (dict_output) {
@@ -1096,7 +1132,7 @@ namespace OwcaScript::Internal {
 		return value;
     }
 
-	void Executor::prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments) {
+	void Executor::prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction) {
 		OwcaValue obj;
 		
 		if (cls->allocator_override) {
@@ -1108,11 +1144,15 @@ namespace OwcaScript::Internal {
 		else {
 			obj = OwcaObject{ vm->allocate<Object>(cls->native_storage_total, cls) };
 		}
-
+        if (exception_for_throwing_construction) {
+            auto oe = OwcaValue{ obj }.as_exception(vm);
+            oe.internal_value()->parent_exception = exception_in_progress;
+            exception_in_progress.reset();
+        }
 		auto it = cls->values.find(std::string_view{ "__init__" });
 		if (it == cls->values.end()) {
 			if (!arguments.empty()) {
-				vm->throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} values", cls->full_name, arguments.size()));
+				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} values", cls->full_name, arguments.size()));
 			}
             return_value = obj;
 		}
@@ -1124,7 +1164,7 @@ namespace OwcaScript::Internal {
                         frame.constructor_move_self_to_return_value = true;
 				},
 				[&](Class* var) -> void {
-					vm->throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
+					throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
 				}
 			);
 		}
@@ -1182,4 +1222,456 @@ namespace OwcaScript::Internal {
         run();
         return return_value;
     }
+    void Executor::construct_exception_and_throw(Class *cls, std::string_view arg) {
+        OwcaValue ret;
+        OwcaValue temp_arg = vm->create_string_from_view(arg);
+        prepare_allocate_user_class(ret, cls, std::span{ &temp_arg, 1 }, true);
+        run();
+        throw ret.as_exception(vm);
+    }
+
+
+
+
+	void Executor::prepare_throw_too_many_elements(OwcaValue &return_value, size_t expected)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("too many values to unpack (expected {})", expected));
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_not_enough_elements(OwcaValue &return_value, size_t expected, size_t got)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("not enough values to unpack (expected {}, got {})", expected, got));
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_dictionary_changed(OwcaValue &return_value, bool is_dict)
+	{
+        OwcaValue temp_arg = is_dict ? vm->create_string_from_view("dictionary changed during iteration") : vm->create_string_from_view("set changed during iteration");
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_not_implemented(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_range_step_is_zero(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("range step is zero");
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_division_by_zero(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("division by zero");
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_mod_division_by_zero(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("modulo by zero");
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_convert_to_float_message(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_convert_to_float(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert value of type `{}` to floating point", type));
+		prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_convert_to_integer(OwcaValue &return_value, Number val)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert {} to integer", val));
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_convert_to_integer(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert {} to integer", type));
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_not_a_number(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not a number", type));
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_overflow(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+        prepare_allocate_user_class(return_value, vm->c_math_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_range_step_must_be_one_in_left_side_of_write_assign(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("step of a range must be 1 in left side of write assignment");
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_compare(OwcaValue &return_value, CompareKind kind, std::string_view left, std::string_view right)
+	{
+		const char *oper;
+		switch(kind) {
+		case CompareKind::Is: oper = "is"; break;
+		case CompareKind::Eq: oper = "=="; break;
+		case CompareKind::NotEq: oper = "!="; break;
+		case CompareKind::LessEq: oper = "<=>"; break;
+		case CompareKind::MoreEq: oper = ">="; break;
+		case CompareKind::Less: oper = "<"; break;
+		case CompareKind::More: oper = ">"; break;
+		}
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
+        prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_string_too_large(OwcaValue &return_value, size_t size)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("string is too large ({} bytes)", size));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	void Executor::prepare_throw_index_out_of_range(OwcaValue &return_value, std::string msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_value_not_indexable(OwcaValue &return_value, std::string_view type, std::string_view key_type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not indexable with key {}", type, key_type));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_missing_member(OwcaValue &return_value, std::string_view type, std::string_view ident)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} doesn't have a member {}", type, ident));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_call(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_not_callable(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not callable", type));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+	
+	void Executor::prepare_throw_not_callable_wrong_number_of_params(OwcaValue &return_value, std::string_view type, unsigned int params)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not callable - wrong number of parameters ({})", type, params));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_wrong_type(OwcaValue &return_value, std::string_view type, std::string_view expected)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("wrong type {} - expected {}", type, expected));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_wrong_type(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_unsupported_operation_2(OwcaValue &return_value, std::string_view oper, std::string_view left, std::string_view right)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_invalid_operand_for_mul_string(OwcaValue &return_value, std::string_view val)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't multiply string by {}", val));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_missing_key(OwcaValue &return_value, std::string_view key)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("missing key {}", key));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_not_hashable(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not hashable", type));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_value_cant_have_fields(OwcaValue &return_value, std::string_view type)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} can't have fields", type));
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_missing_native(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_not_iterable(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_readonly(OwcaValue &return_value, std::string_view msg)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_cant_return_value_from_generator(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("can't return value from generator");
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+	void Executor::prepare_throw_container_is_empty(OwcaValue &return_value)
+	{
+        OwcaValue temp_arg = vm->create_string_from_view("container is empty");
+		prepare_allocate_user_class(return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+	}
+
+
+
+
+
+	void Executor::throw_too_many_elements(size_t expected)
+	{
+        prepare_throw_too_many_elements(temporary_exception_return_value, expected);
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_not_enough_elements(size_t expected, size_t got)
+	{
+        prepare_throw_not_enough_elements(expected, got);
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_dictionary_changed(bool is_dict)
+	{
+        prepare_throw_dictionary_changed(is_dict);
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_not_implemented(std::string_view msg)
+	{
+        prepare_throw_not_implemented(msg);
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_range_step_is_zero()
+	{
+        prepare_throw_range_step_is_zero();
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_division_by_zero()
+	{
+        prepare_throw_division_by_zero();
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_mod_division_by_zero()
+	{
+        prepare_throw_mod_division_by_zero();
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_convert_to_float_message(std::string_view msg)
+	{
+        prepare_throw_cant_convert_to_float_message(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_convert_to_float(std::string_view type)
+	{
+        prepare_throw_cant_convert_to_float(type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_convert_to_integer(Number val)
+	{
+        prepare_throw_cant_convert_to_integer(val);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_convert_to_integer(std::string_view type)
+	{
+        prepare_throw_cant_convert_to_integer(type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_not_a_number(std::string_view type)
+	{
+        prepare_throw_not_a_number(type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_overflow(std::string_view msg)
+	{
+        prepare_throw_overflow(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_range_step_must_be_one_in_left_side_of_write_assign()
+	{
+        prepare_throw_range_step_must_be_one_in_left_side_of_write_assign();
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
+	{
+        prepare_throw_cant_compare(kind, left, right);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_string_too_large(size_t size)
+	{
+        prepare_throw_string_too_large(size);
+        run();
+        std::unreachable();
+	}
+	void Executor::throw_index_out_of_range(std::string msg)
+	{
+        prepare_throw_index_out_of_range(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_value_not_indexable(std::string_view type, std::string_view key_type)
+	{
+        prepare_throw_value_not_indexable(type, key_type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_missing_member(std::string_view type, std::string_view ident)
+	{
+        prepare_throw_missing_member(type, ident);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_call(std::string_view msg)
+	{
+        prepare_throw_cant_call(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_not_callable(std::string_view type)
+	{
+        prepare_throw_not_callable(type);
+        run();
+        std::unreachable();
+	}
+	
+	void Executor::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
+	{
+        prepare_throw_not_callable_wrong_number_of_params(type, params);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_wrong_type(std::string_view type, std::string_view expected)
+	{
+        prepare_throw_wrong_type(type, expected);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_wrong_type(std::string_view msg)
+	{
+        prepare_throw_wrong_type(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
+	{
+        prepare_throw_unsupported_operation_2(oper, left, right);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_invalid_operand_for_mul_string(std::string_view val)
+	{
+        prepare_throw_invalid_operand_for_mul_string(val);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_missing_key(std::string_view key)
+	{
+        prepare_throw_missing_key(key);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_not_hashable(std::string_view type)
+	{
+        prepare_throw_not_hashable(type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_value_cant_have_fields(std::string_view type)
+	{
+        prepare_throw_value_cant_have_fields(type);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_missing_native(std::string_view msg)
+	{
+        prepare_throw_missing_native(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_not_iterable(std::string_view msg)
+	{
+        prepare_throw_not_iterable(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_readonly(std::string_view msg)
+	{
+        prepare_throw_readonly(msg);
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_cant_return_value_from_generator()
+	{
+        prepare_throw_cant_return_value_from_generator();
+        run();
+        std::unreachable();
+	}
+
+	void Executor::throw_container_is_empty()
+	{
+        prepare_throw_container_is_empty();
+        run();
+        std::unreachable();
+	}
 }

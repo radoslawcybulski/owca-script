@@ -755,7 +755,7 @@ function native time();
 	{
 		for(auto &st : stacktrace) {
 			exc.frames.push_back({ .code = st.runtime_function->code });
-			exc.frames.back().line = st.current_line();
+			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position).line;
 			exc.frames.back().function = st.runtime_function->full_name;
 		}
 	}
@@ -776,178 +776,202 @@ function native time();
 		throw res.as_exception(this);
 	}
 
-	void VM::throw_too_many_elements(size_t expected)
-	{
-		throw_exception(c_invalid_operation_exception, std::format("expected at most {} elements", expected));
-	}
-	void VM::throw_not_enough_elements(size_t expected, size_t got)
-	{
-		throw_exception(c_invalid_operation_exception, std::format("expected at least {} elements, got {}", expected, got));
-	}
+	// void VM::throw_too_many_elements(size_t expected)
+	// {
+	// 	Executor executor{ this };
+	// 	executor.throw_too_many_elements(expected);
+	// }
+	// void VM::throw_not_enough_elements(size_t expected, size_t got)
+	// {
+	// 	Executor executor{ this };
+	// 	executor.throw_not_enough_elements(expected, got);
+	// }
 	void VM::throw_dictionary_changed(bool is_dict)
 	{
-		throw_exception(c_invalid_operation_exception, is_dict ? "dictionary was changed during iteration" : "set was changed during iteration");
+		Executor executor{ this };
+		executor.throw_dictionary_changed(is_dict);
 	}
 	void VM::throw_not_implemented(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_not_implemented(msg);
 	}
 	void VM::throw_range_step_is_zero()
 	{
-		throw_exception(c_math_exception, "step of a range can't be zero");
+		Executor executor{ this };
+		executor.throw_range_step_is_zero();
 	}
 	void VM::throw_division_by_zero()
 	{
-		throw_exception(c_math_exception, "division by zero");
+		Executor executor{ this };
+		executor.throw_division_by_zero();
 	}
 
 	void VM::throw_mod_division_by_zero()
 	{
-		throw_exception(c_math_exception, "modulo by zero");
+		Executor executor{ this };
+		executor.throw_mod_division_by_zero();
 	}
 
 	void VM::throw_cant_convert_to_float_message(std::string_view msg)
 	{
-		throw_exception(c_math_exception, msg);
+		Executor executor{ this };
+		executor.throw_cant_convert_to_float_message(msg);
 	}
 
 	void VM::throw_cant_convert_to_float(std::string_view type)
 	{
-		throw_cant_convert_to_float_message(std::format("can't convert value of type `{}` to floating point", type));
+		Executor executor{ this };
+		executor.throw_cant_convert_to_float_message(std::format("can't convert value of type `{}` to floating point", type));
 	}
 
 	void VM::throw_cant_convert_to_integer(Number val)
 	{
-		throw_exception(c_math_exception, std::format("can't convert {} to integer", val));
+		Executor executor{ this };
+		executor.throw_cant_convert_to_integer(val);
 	}
 
 	void VM::throw_cant_convert_to_integer(std::string_view type)
 	{
-		throw_exception(c_math_exception, std::format("can't convert {} to integer", type));
+		Executor executor{ this };
+		executor.throw_cant_convert_to_integer(type);
 	}
 
 	void VM::throw_not_a_number(std::string_view type)
 	{
-		throw_exception(c_math_exception, std::format("can't convert {} to a number", type));
+		Executor executor{ this };
+		executor.throw_not_a_number(type);
 	}
 
 	void VM::throw_overflow(std::string_view msg)
 	{
-		throw_exception(c_math_exception, msg);
+		Executor executor{ this };
+		executor.throw_overflow(msg);
 	}
 
-	void VM::range_step_must_be_one_in_left_side_of_write_assign()
+	void VM::throw_range_step_must_be_one_in_left_side_of_write_assign()
 	{
-		throw_exception(c_invalid_operation_exception, "step of a range must be 1 in left side of write assignment");
+		Executor executor{ this };
+		executor.throw_range_step_must_be_one_in_left_side_of_write_assign();
 	}
 
 	void VM::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
 	{
-		const char *oper;
-		switch(kind) {
-		case CompareKind::Is: oper = "is"; break;
-		case CompareKind::Eq: oper = "=="; break;
-		case CompareKind::NotEq: oper = "!="; break;
-		case CompareKind::LessEq: oper = "<=>"; break;
-		case CompareKind::MoreEq: oper = ">="; break;
-		case CompareKind::Less: oper = "<"; break;
-		case CompareKind::More: oper = ">"; break;
-		}
-		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
+		Executor executor{ this };
+		executor.throw_cant_compare(kind, left, right);
 	}
 
 	void VM::throw_string_too_large(size_t size)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("string is too large ({} bytes)", size));
+		Executor executor{ this };
+		executor.throw_string_too_large(size);
 	}
 	void VM::throw_index_out_of_range(std::string msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_index_out_of_range(msg);
 	}
 
 	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} is not indexable with key {}", type, key_type));
+		Executor executor{ this };
+		executor.throw_value_not_indexable(type, key_type);
 	}
 
 	void VM::throw_missing_member(std::string_view type, std::string_view ident)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} doesn't have a member {}", type, ident));
+		Executor executor{ this };
+		executor.throw_missing_member(type, ident);
 	}
 
 	void VM::throw_cant_call(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_cant_call(msg);
 	}
 
 	void VM::throw_not_callable(std::string_view type)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} is not callable", type));
+		Executor executor{ this };
+		executor.throw_not_callable(type);
 	}
 	
 	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} is not callable - wrong number of parameters ({})", type, params));
+		Executor executor{ this };
+		executor.throw_not_callable_wrong_number_of_params(type, params);
 	}
 
 	void VM::throw_wrong_type(std::string_view type, std::string_view expected)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("wrong type {} - expected {}", type, expected));
+		Executor executor{ this };
+		executor.throw_wrong_type(type, expected);
 	}
 
 	void VM::throw_wrong_type(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_wrong_type(msg);
 	}
 
 	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("can't execute {} {} {}", left, oper, right));
+		Executor executor{ this };
+		executor.throw_unsupported_operation_2(oper, left, right);
 	}
 
 	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("can't multiply string by {}", val));
+		Executor executor{ this };
+		executor.throw_invalid_operand_for_mul_string(val)	;
 	}
 
 	void VM::throw_missing_key(std::string_view key)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("missing key {}", key));
+		Executor executor{ this };
+		executor.throw_missing_key(key);
 	}
 
 	void VM::throw_not_hashable(std::string_view type)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} is not hashable", type));
+		Executor executor{ this };
+		executor.throw_not_hashable(type);
 	}
 
 	void VM::throw_value_cant_have_fields(std::string_view type)
 	{
-		throw_exception(c_invalid_operation_exception, std::format("{} can't have fields", type));
+		Executor executor{ this };
+		executor.throw_value_cant_have_fields(type);
 	}
 
 	void VM::throw_missing_native(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_missing_native(msg);
 	}
 
 	void VM::throw_not_iterable(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_not_iterable(msg);
 	}
 
 	void VM::throw_readonly(std::string_view msg)
 	{
-		throw_exception(c_invalid_operation_exception, msg);
+		Executor executor{ this };
+		executor.throw_readonly(msg);
 	}
 
 	void VM::throw_cant_return_value_from_generator()
 	{
-		throw_exception(c_invalid_operation_exception, "can't return value from generator");
+		Executor executor{ this };
+		executor.throw_cant_return_value_from_generator();
 	}
 
 	void VM::throw_container_is_empty()
 	{
-		throw_exception(c_invalid_operation_exception, "container is empty");
+		Executor executor{ this };
+		executor.throw_container_is_empty();
 	}
 	Generator VM::iterate_value(OwcaValue val)
 	{
