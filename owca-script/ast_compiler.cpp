@@ -24,6 +24,7 @@
 #include "ast_with.h"
 #include "owca_code.h"
 #include "exec_buffer.h"
+#include <string_view>
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
@@ -853,7 +854,7 @@ namespace OwcaScript::Internal {
 		if (!is_identifier(func_name)) {
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier for function name, got `{}`", func_name));
 		}
-		std::vector<std::string> param_names;
+		std::vector<std::string_view> param_names;
 
 		consume("(");
 		if (preview().second != ")") {
@@ -867,7 +868,7 @@ namespace OwcaScript::Internal {
 				if (!is_identifier(p_name)) {
 					add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line3, std::format("expected identifier for function's parameter name, got `{}`", p_name));
 				}
-				param_names.push_back(std::string{ p_name });
+				param_names.push_back(p_name);
 				if (!idents.insert(std::string{ p_name }).second) {
 					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line3, std::format("reused function's parameter name `{}`", p_name));
 				}
@@ -881,7 +882,8 @@ namespace OwcaScript::Internal {
 		}
 		consume(")");
 		auto full_name_updater = FullNameUpdater{ full_name, func_name };
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), use_native ? AstFunction::Native::Yes : AstFunction::Native::No, is_generator ? AstFunction::Generator::Yes : AstFunction::Generator::No);
+		auto param_count = param_names.size();
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), param_count, use_native ? AstFunction::Native::Yes : AstFunction::Native::No, is_generator ? AstFunction::Generator::Yes : AstFunction::Generator::No);
 		if (use_native) {
 			auto [txt_line, txt] = preview();
 			if (txt == "{") {
@@ -1158,11 +1160,11 @@ namespace OwcaScript::Internal {
 		return compile_expression_as_stat();
 	}
 
-	std::unique_ptr<AstFunction> AstCompiler::compile_main_block(std::vector<std::string> variables)
+	std::unique_ptr<AstFunction> AstCompiler::compile_main_block(std::vector<std::string_view> variables)
 	{
 		functions_stack.clear();
 		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::move(variables), AstFunction::Native::No, AstFunction::Generator::No);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::move(variables), 0, AstFunction::Native::No, AstFunction::Generator::No);
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -1361,7 +1363,7 @@ namespace OwcaScript::Internal {
 						current_stack->define_identifier(it.first);
 					}
 				}
-				for (auto& p : o.parameters()) {
+				for (auto& p : o.identifier_names()) {
 					current_stack->define_identifier(p);
 				}
 			}
@@ -1369,6 +1371,10 @@ namespace OwcaScript::Internal {
 			apply(static_cast<AstExpr&>(o));
 			
 			if (!first_run) {
+				for(auto i = 0u; i < o.param_count(); ++i) {
+					assert(i < st.identifier_names.size());
+					assert(st.identifier_names[i] == o.identifier_names()[i]);
+				}
 				o.update_copy_from_parents(std::move(st.copy_from_parents));
 				o.update_identifier_names(std::move(st.identifier_names));
 			}
@@ -1388,7 +1394,7 @@ namespace OwcaScript::Internal {
 
 	std::optional<OwcaCode> AstCompiler::compile(std::vector<std::string> additional_variables)
 	{
-		auto root = compile_main_block(std::move(additional_variables));
+		auto root = compile_main_block(std::vector<std::string_view>{ additional_variables.begin(), additional_variables.end() });
 		if (!error_messages_.empty()) {
 			assert(!error_messages_.empty());
 			return std::nullopt;

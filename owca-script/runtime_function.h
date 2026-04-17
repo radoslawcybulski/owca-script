@@ -18,7 +18,6 @@ namespace OwcaScript {
 				std::vector<AstFunction::CopyFromParent> copy_from_parents;
 				std::vector<std::string_view> identifier_names;
 				std::uint32_t entry_point = 0;
-				std::uint32_t max_stack_size = 0, max_storage_size = 0;
 				bool is_generator = false;
 			};
 			struct NativeFunction {

@@ -143,7 +143,7 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_break_or_continue();
 			std::unique_ptr<AstStat> compile_stat();
-			std::unique_ptr<AstFunction> compile_main_block(std::vector<std::string> variables);
+			std::unique_ptr<AstFunction> compile_main_block(std::vector<std::string_view> variables);
 
 			struct Phase2;
 			struct RewriteAsWrite;

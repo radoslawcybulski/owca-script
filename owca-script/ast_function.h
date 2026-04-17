@@ -29,15 +29,15 @@ namespace OwcaScript {
 		
 		private:
 			std::string name_, full_name_;
-			std::vector<std::string> params_;
 			std::vector<CopyFromParent> copy_from_parents_;
 			std::vector<std::string_view> identifier_names_;
+			size_t param_count_;
 			std::unique_ptr<AstStat> body_;
 			Native native_;
 			Generator generator_;
 		public:
-			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string> params, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), params_(std::move(params)), 
-				native_(native), generator_(generator) {}
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string_view> identifier_names, size_t param_count, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), 
+				identifier_names_(std::move(identifier_names)), param_count_(param_count), native_(native), generator_(generator) {}
 
 			const auto &name() const { return name_; }
 			const auto &full_name() const { return full_name_; }
@@ -48,11 +48,13 @@ namespace OwcaScript {
 			void update_copy_from_parents(std::vector<CopyFromParent> copy_from_parents) {
 				this->copy_from_parents_ = std::move(copy_from_parents);
 			}
+
 			void update_identifier_names(std::vector<std::string_view> identifier_names) {
 				this->identifier_names_ = std::move(identifier_names);
 			}
 			bool is_generator() const { return generator_ == Generator::Yes; }
-			const auto& parameters() const { return params_; }
+			auto param_count() const { return param_count_; }
+			const auto &identifier_names() const { return identifier_names_; }
 			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;

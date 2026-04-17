@@ -79,7 +79,6 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstWhile::emit(EmitInfo& ei) {
-        ei.push_storage();
         ei.code_writer.append(line, ExecuteOp::WhileInit);
         auto end = ei.code_writer.append_placeholder<std::uint32_t>(line);
         ei.code_writer.append(line, loop_ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
@@ -91,11 +90,8 @@ namespace OwcaScript::Internal {
         body_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::Jump);
         ei.code_writer.append(line, pos);
-        ei.pop_storage();
         ei.code_writer.update_placeholder(end, ei.code_writer.position());
         ei.code_writer.append(line, ExecuteOp::WhileCompleted);
-
-        ei.pop_storage();
 	}
 
 	void AstWhile::visit(AstVisitor& vis) { vis.apply(*this); }

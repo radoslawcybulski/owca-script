@@ -118,6 +118,7 @@ namespace OwcaScript::Internal {
         clear();
         assert(runtime_functions);
         this->runtime_functions = runtime_functions;
+        this->return_value = &return_value;
 		assert(runtime_functions->name.find("main-block") != std::string::npos);
 		assert(runtime_functions->functions.size() == 1);
         assert(runtime_functions->functions.begin()->first == 0);
@@ -128,6 +129,7 @@ namespace OwcaScript::Internal {
 		runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
                 this->code_position = sf.entry_point;
+                this->values.resize(sf.identifier_names.size());
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
 				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
 					value_index_map[sf.identifier_names[i]] = i;

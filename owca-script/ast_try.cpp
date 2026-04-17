@@ -86,7 +86,6 @@ namespace OwcaScript::Internal {
 
 	void AstTry::emit(EmitInfo& ei) {
         auto start = ei.code_writer.position();
-        ei.push_storage();
         ei.code_writer.append(line, ExecuteOp::TryInit);
         auto body_start = ei.code_writer.append_placeholder<std::uint32_t>(line);
         auto body_end = ei.code_writer.append_placeholder<std::uint32_t>(line);
@@ -113,7 +112,6 @@ namespace OwcaScript::Internal {
             ei.code_writer.update_placeholder(j, ei.code_writer.position());
         }
         ei.code_writer.append(line, ExecuteOp::TryCompleted);
-        ei.pop_storage();
 	}
 
 	void AstTry::visit(AstVisitor& vis) { vis.apply(*this); }

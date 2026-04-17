@@ -127,26 +127,18 @@ namespace OwcaScript::Internal {
 		ei.code_writer.append(line, full_name_);
 		ei.code_writer.append(line, native_ == Native::Yes);
 		ei.code_writer.append(line, generator_ == Generator::Yes);
-		ei.code_writer.append(line, !params_.empty() && params_[0] == "self");
-		ei.code_writer.append(line, (std::uint32_t)params_.size());
+		ei.code_writer.append(line, param_count_ > 0 && identifier_names_[0] == "self");
+		ei.code_writer.append(line, (std::uint32_t)param_count_);
+		ei.code_writer.append_span_helper(line, identifier_names_);
 		if (native_ == Native::Yes) {
-			for(auto &p : params_) {
-				ei.code_writer.append(line, p);
-			}
 		}
 		else {
 			ei.code_writer.append_span_helper(line, copy_from_parents_);
-			ei.code_writer.append_span_helper(line, identifier_names_);
 			auto next = ei.code_writer.append_placeholder<std::uint32_t>(line);
-			auto max_stack_size = ei.code_writer.append_placeholder<std::uint32_t>(line);
-			auto max_storage_counter = ei.code_writer.append_placeholder<std::uint32_t>(line);
 
 			assert(body_);
-			auto info = ei.take_and_reset();
 			body_->emit(ei);
-			ei.code_writer.update_placeholder(max_stack_size, info.max_stack_size);
-			ei.code_writer.update_placeholder(max_storage_counter, info.max_storage_counter);
-			ei.restore_info(info);
+			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 			ei.code_writer.update_placeholder(next, ei.code_writer.position());
 		}
 	}

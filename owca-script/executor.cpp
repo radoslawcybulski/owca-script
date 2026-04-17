@@ -722,6 +722,13 @@ namespace OwcaScript::Internal {
                 auto is_generator = reader.decode<bool>();
                 auto is_method = reader.decode<bool>();
                 auto param_count = reader.decode<std::uint32_t>();
+                std::vector<std::string_view> identifier_names;
+                reader.decode_span_helper<std::string_view>(
+                    [&](size_t index, size_t size, std::string_view value) {
+                        if (index == 0) identifier_names.resize(size);
+                        identifier_names[index] = value;
+                    }
+                );
 
                 auto code = reader.code();
                 RuntimeFunction *fnc = nullptr;
@@ -737,11 +744,7 @@ namespace OwcaScript::Internal {
                     if (is_generator) {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeGenerator{});
                         auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
-                        ng.parameter_names.reserve(param_count);
-                        for(auto i = 0u; i < param_count; ++i) {
-                            auto var_name = reader.decode<std::string_view>();
-                            ng.parameter_names.push_back(var_name);
-                        }
+                        ng.parameter_names = std::move(identifier_names);
                         if (native_provider) {
                             if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, ng.parameter_names)) {
                                 ng.generator = std::move(*impl);
@@ -756,11 +759,7 @@ namespace OwcaScript::Internal {
                     else {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeFunction{});
                         auto &nf = std::get<RuntimeFunction::NativeFunction>(fnc->data);
-                        nf.parameter_names.reserve(param_count);
-                        for(auto i = 0u; i < param_count; ++i) {
-                            auto var_name = reader.decode<std::string_view>();
-                            nf.parameter_names.push_back(var_name);
-                        }
+                        nf.parameter_names = std::move(identifier_names);
                         if (native_provider) {
                             if (auto impl = native_provider->native_function(full_name, class_, FunctionToken{ fnc }, nf.parameter_names)) {
                                 nf.function = std::move(*impl);
@@ -776,6 +775,7 @@ namespace OwcaScript::Internal {
                 else {
                     fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::ScriptFunction{});
                     auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
+                    sf.identifier_names = std::move(identifier_names);
                     fnc->param_count = param_count;
                     fnc->is_method = is_method;
                     reader.decode_span_helper<AstFunction::CopyFromParent>(
@@ -784,15 +784,7 @@ namespace OwcaScript::Internal {
                             sf.copy_from_parents.push_back(value);
                         }
                     );
-                    reader.decode_span_helper<std::string_view>(
-                        [&](size_t index, size_t size, std::string_view value) {
-                            if (index == 0) sf.identifier_names.resize(size);
-                            sf.identifier_names[index] = value;
-                        }
-                    );
                     auto next = reader.decode<std::uint32_t>();
-                    sf.max_stack_size = reader.decode<std::uint32_t>();
-                    sf.max_storage_size = reader.decode<std::uint32_t>();
                     sf.entry_point = reader.position();
                     reader.jump(next);
 
