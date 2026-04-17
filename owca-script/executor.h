@@ -46,6 +46,7 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
 			void run(OwcaMap *dict_output = nullptr);
+			[[noreturn]] void run_and_throw();
 			void run_impl();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
 			bool run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind);

@@ -638,7 +638,6 @@ namespace OwcaScript::Internal {
                 auto args = peek_values(size - 1, size - 1);
                 auto &fnc = peek_value_and_make_top(size);
                 prepare_execute_call(fnc, fnc, args);
-                assert(exit);
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateArray: {\
                 auto size = reader.decode<std::uint32_t>();
@@ -1136,6 +1135,12 @@ namespace OwcaScript::Internal {
             throw z;
         }
     }
+    void Executor::run_and_throw() {
+        auto return_value = currently_executing_frame().return_value;
+        run();
+        auto exc = return_value->as_exception(vm);
+        throw exc;
+    }
     void Executor::run(OwcaMap *dict_output) {
         run_impl();
         if (dict_output) {
@@ -1517,231 +1522,197 @@ namespace OwcaScript::Internal {
 	void Executor::throw_too_many_elements(size_t expected)
 	{
         prepare_throw_too_many_elements(expected);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_not_enough_elements(size_t expected, size_t got)
 	{
         prepare_throw_not_enough_elements(expected, got);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_dictionary_changed(bool is_dict)
 	{
         prepare_throw_dictionary_changed(is_dict);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_not_implemented(std::string_view msg)
 	{
         prepare_throw_not_implemented(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_range_step_is_zero()
 	{
         prepare_throw_range_step_is_zero();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_division_by_zero()
 	{
         prepare_throw_division_by_zero();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_mod_division_by_zero()
 	{
         prepare_throw_mod_division_by_zero();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_convert_to_float_message(std::string_view msg)
 	{
         prepare_throw_cant_convert_to_float_message(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_convert_to_float(std::string_view type)
 	{
         prepare_throw_cant_convert_to_float(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_convert_to_integer(Number val)
 	{
         prepare_throw_cant_convert_to_integer(val);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_convert_to_integer(std::string_view type)
 	{
         prepare_throw_cant_convert_to_integer(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_not_a_number(std::string_view type)
 	{
         prepare_throw_not_a_number(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_overflow(std::string_view msg)
 	{
         prepare_throw_overflow(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_range_step_must_be_one_in_left_side_of_write_assign()
 	{
         prepare_throw_range_step_must_be_one_in_left_side_of_write_assign();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
 	{
         prepare_throw_cant_compare(kind, left, right);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_string_too_large(size_t size)
 	{
         prepare_throw_string_too_large(size);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	void Executor::throw_index_out_of_range(std::string msg)
 	{
         prepare_throw_index_out_of_range(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
         prepare_throw_value_not_indexable(type, key_type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_missing_member(std::string_view type, std::string_view ident)
 	{
         prepare_throw_missing_member(type, ident);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_call(std::string_view msg)
 	{
         prepare_throw_cant_call(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_not_callable(std::string_view type)
 	{
         prepare_throw_not_callable(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 	
 	void Executor::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
         prepare_throw_not_callable_wrong_number_of_params(type, params);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_wrong_type(std::string_view type, std::string_view expected)
 	{
         prepare_throw_wrong_type(type, expected);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_wrong_type(std::string_view msg)
 	{
         prepare_throw_wrong_type(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
 	{
         prepare_throw_unsupported_operation_2(oper, left, right);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_invalid_operand_for_mul_string(std::string_view val)
 	{
         prepare_throw_invalid_operand_for_mul_string(val);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_missing_key(std::string_view key)
 	{
         prepare_throw_missing_key(key);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_not_hashable(std::string_view type)
 	{
         prepare_throw_not_hashable(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_value_cant_have_fields(std::string_view type)
 	{
         prepare_throw_value_cant_have_fields(type);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_missing_native(std::string_view msg)
 	{
         prepare_throw_missing_native(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_not_iterable(std::string_view msg)
 	{
         prepare_throw_not_iterable(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_readonly(std::string_view msg)
 	{
         prepare_throw_readonly(msg);
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_cant_return_value_from_generator()
 	{
         prepare_throw_cant_return_value_from_generator();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 
 	void Executor::throw_container_is_empty()
 	{
         prepare_throw_container_is_empty();
-        run();
-        std::unreachable();
+        run_and_throw();
 	}
 }
