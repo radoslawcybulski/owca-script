@@ -117,6 +117,7 @@ namespace OwcaScript {
 			std::optional<std::tuple<Number, Number, Number>> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
 			std::optional<size_t> verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
 			std::optional<std::pair<size_t, size_t>> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
+
         public:
             Executor(VM *vm);
 

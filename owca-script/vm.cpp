@@ -26,6 +26,7 @@ namespace OwcaScript::Internal {
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
 		empty_string = allocate<String>(0, 0u);
+		stacktrace.reserve(64);
 	}
 	VM::~VM() {
 		stacktrace.clear();
@@ -1513,32 +1514,6 @@ function native time();
 		return OwcaString{ new_s };
 	}
 
-	OwcaValue VM::get_identifier(unsigned int index)
-	{
-		auto& s = stacktrace.back();
-		assert(index < s.values.size());
-		return s.values[index];
-	}
-	void VM::set_identifier(unsigned int index, OwcaValue value, bool function_write)
-	{
-		auto& s = stacktrace.back();
-		assert(index < s.values.size());
-		if (function_write) {
-			assert(value.kind() == OwcaValueKind::Functions);
-			auto vm = OwcaVM{ this };
-			auto fnc = value.as_functions(vm);
-			assert(fnc.internal_value()->functions.size() == 1);
-			auto &dst = s.values[index];
-			if (dst.kind() == OwcaValueKind::Functions) {
-				auto dst_fnc = dst.as_functions(vm);
-				for(auto it : fnc.internal_value()->functions) {
-					dst_fnc.internal_value()->functions[it.first] = it.second;
-				}
-				return;
-			}
-		}
-		s.values[index] = std::move(value);
-	}
 	OwcaCode VM::currently_running_code() const
 	{
 		auto& s = stacktrace.back();

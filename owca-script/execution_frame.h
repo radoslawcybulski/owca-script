@@ -81,6 +81,9 @@ namespace OwcaScript {
 			void initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc);
 			void initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
 			void initialize_execute_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, RuntimeFunction* runtime_function, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			OwcaValue get_identifier(unsigned int index);
+			void set_identifier(VM *vm, unsigned int index, OwcaValue value, bool function_write);
+
 			// void set_arguments(OwcaMap arguments);
 			// void set_arguments(std::optional<OwcaValue> self, std::span<OwcaValue> arguments);
 

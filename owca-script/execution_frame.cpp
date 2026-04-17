@@ -97,6 +97,7 @@ namespace OwcaScript::Internal {
 					values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
 				}
                 code_position = sf.entry_point;
+                std::cout << "setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
                 is_iterator = sf.is_generator;
 			});
 
@@ -114,6 +115,29 @@ namespace OwcaScript::Internal {
             values[i] = arguments[i - (self ? 1u : 0u)];
         }
     }
+	OwcaValue ExecutionFrame::get_identifier(unsigned int index)
+	{
+		assert(index < values.size());
+		return values[index];
+	}
+	void ExecutionFrame::set_identifier(VM *vm, unsigned int index, OwcaValue value, bool function_write)
+	{
+		assert(index < values.size());
+		if (function_write) {
+			assert(value.kind() == OwcaValueKind::Functions);
+			auto fnc = value.as_functions(vm);
+			assert(fnc.internal_value()->functions.size() == 1);
+			auto &dst = values[index];
+			if (dst.kind() == OwcaValueKind::Functions) {
+				auto dst_fnc = dst.as_functions(vm);
+				for(auto it : fnc.internal_value()->functions) {
+					dst_fnc.internal_value()->functions[it.first] = it.second;
+				}
+				return;
+			}
+		}
+		values[index] = std::move(value);
+	}
     void ExecutionFrame::initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
         clear();
         assert(runtime_functions);
@@ -129,6 +153,7 @@ namespace OwcaScript::Internal {
 		runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
                 this->code_position = sf.entry_point;
+                std::cout << "setting code position (" << (void*)&this->code_position << ") to " << this->code_position << std::endl;
                 this->values.resize(sf.identifier_names.size());
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
 				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
@@ -138,14 +163,14 @@ namespace OwcaScript::Internal {
 				for(auto &it : vm->builtin_objects) {
 					auto it2 = value_index_map.find(it.first);
 					assert(it2 != value_index_map.end());
-					vm->set_identifier(it2->second, it.second);
+					set_identifier(vm, it2->second, it.second, false);
 				}
                 if (arguments) {
                     for (auto it : *arguments) {
                         auto key = it.first.as_string(vm).text();
                         auto it2 = value_index_map.find(key);
                         if (it2 != value_index_map.end()) {
-                            vm->set_identifier(it2->second, it.second);
+                            set_identifier(vm, it2->second, it.second, false);
                         }
                     }
                 }
@@ -162,6 +187,8 @@ namespace OwcaScript::Internal {
     {
         clear();
         code_position = 0;
+        std::cout << "setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
+
         this->return_value = &return_value;
         runtime_functions = vm->allocate<RuntimeFunctions>(0, std::string_view("main-code-block"), std::string_view("main-code-block"));
         runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{});

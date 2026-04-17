@@ -67,6 +67,7 @@ namespace OwcaScript::Internal {
             while(!frame.states.empty()) {
                 if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
                     frame.code_position = state->catches_pos;
+                    std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
                     return;
                 }
                 frame.states.pop_back();
@@ -634,8 +635,8 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCall: {
                 auto size = reader.decode<std::uint32_t>();
-                auto &fnc = peek_value(size);
                 auto args = peek_values(size - 1, size - 1);
+                auto &fnc = peek_value_and_make_top(size);
                 prepare_execute_call(fnc, fnc, args);
                 assert(exit);
                 break; }
@@ -683,7 +684,7 @@ namespace OwcaScript::Internal {
                 auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
                 state.index++;
                 if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                    vm->set_identifier(state.loop_index, state.index);
+                    frame.set_identifier(vm, state.loop_index, state.index, false);
                 }
                 break; }
             case ExecuteBufferReader::Op::ForNext: {
@@ -697,7 +698,7 @@ namespace OwcaScript::Internal {
                 }
                 else {
                     if (state.value_indexes.size() == 1) {
-                        vm->set_identifier(state.value_indexes[0], val);
+                        frame.set_identifier(vm, state.value_indexes[0], val, false);
                     }
                     else {
                         auto iter = vm->iterate_value(val);
@@ -708,7 +709,7 @@ namespace OwcaScript::Internal {
                                 prepare_throw_too_many_elements(state.value_indexes.size());
                                 assert(exit);
                             }
-                            vm->set_identifier(state.value_indexes[index], *vv);
+                            frame.set_identifier(vm, state.value_indexes[index], *vv, false);
                             ++index;
                         }
                         if (index < state.value_indexes.size()) {
@@ -754,7 +755,7 @@ namespace OwcaScript::Internal {
                     }
                     if (is_generator) {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeGenerator{});
-                        auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
+                    auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
                         ng.parameter_names = std::move(identifier_names);
                         if (native_provider) {
                             if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, ng.parameter_names)) {
@@ -787,8 +788,6 @@ namespace OwcaScript::Internal {
                     fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::ScriptFunction{});
                     auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
                     sf.identifier_names = std::move(identifier_names);
-                    fnc->param_count = param_count;
-                    fnc->is_method = is_method;
                     reader.decode_span_helper<AstFunction::CopyFromParent>(
                         [&](size_t index, size_t size, AstFunction::CopyFromParent value) {
                             if (index == 0) sf.copy_from_parents.reserve(size);
@@ -801,9 +800,11 @@ namespace OwcaScript::Internal {
 
                     sf.values_from_parents.reserve(sf.copy_from_parents.size());
                     for(auto c : sf.copy_from_parents) {
-             			sf.values_from_parents.push_back(vm->get_identifier(c.index_in_parent));                        
+             			sf.values_from_parents.push_back(frame.get_identifier(c.index_in_parent));                        
                     }
                 }
+                fnc->param_count = param_count;
+                fnc->is_method = is_method;
                 auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
                 rfs->functions[fnc->param_count] = fnc;
                 push_value(OwcaFunctions{ rfs });
@@ -903,7 +904,7 @@ namespace OwcaScript::Internal {
                 }
                 if (found) {
                     if (ident != std::numeric_limits<std::uint32_t>::max()) {
-                        vm->set_identifier(ident, *exception_in_progress);
+                        frame.set_identifier(vm, ident, *exception_in_progress, false);
                     }
                 }
                 else {
@@ -931,7 +932,7 @@ namespace OwcaScript::Internal {
                 auto &state = std::get<ExecutionFrame::WhileState>(frame.states.back());
                 state.index++;
                 if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                    vm->set_identifier(state.loop_index, state.index);
+                    frame.set_identifier(vm, state.loop_index, state.index, false);
                 }
                 break; }
             case ExecuteBufferReader::Op::WhileNext: {
@@ -962,7 +963,7 @@ namespace OwcaScript::Internal {
                 auto index = reader.decode<std::uint32_t>();
                 state.context = peek_value(1);
                 if (index != std::numeric_limits<std::uint32_t>::max()) {
-                    vm->set_identifier(index, state.context);
+                    frame.set_identifier(vm, index, state.context, false);
                 }
                 pop_values(1);
                 break; }
@@ -987,6 +988,7 @@ namespace OwcaScript::Internal {
                 break; }
             }
             frame.code_position = reader.position();
+            std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
         } while(!exit);
     }
 
@@ -1099,11 +1101,21 @@ namespace OwcaScript::Internal {
     }
     void Executor::run_impl() {
         while(!completed()) {
+            if (vm->stacktrace.size() + 2 >= vm->stacktrace.capacity()) {
+                vm->stacktrace.reserve(vm->stacktrace.capacity() * 2);
+            }
             auto &frame = currently_executing_frame();
+            std::cout << "Executing frame at depth " << vm->current_stack_trace_index << " function " << frame.runtime_function->full_name;
+            if (auto q = std::get_if<RuntimeFunction::ScriptFunction>(&frame.runtime_function->data)) {
+                std::cout << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")";
+            }
+            std::cout << std::endl;
             visit_variant(
                 frame.runtime_function->data,
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
+                    auto frame_index = vm->current_stack_trace_index;
                     run_impl_opcodes(frame, sf);
+                    std::cout << "Suspended frame at depth " << frame_index << " function " << frame.runtime_function->full_name << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")" << std::endl;
                 },
                 [&](RuntimeFunction::NativeFunction& nf) -> void {
                     *frame.return_value = nf.function(vm, frame.values);

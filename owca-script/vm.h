@@ -156,7 +156,6 @@ namespace OwcaScript {
 			OwcaString create_string(OwcaString left, OwcaString right);
 			String *precreate_string(size_t size);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
-			OwcaValue get_identifier(unsigned int index);
 			Generator iterate_value(OwcaValue val);
 			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
 			OwcaValue member(OwcaValue val, std::string_view key);
@@ -184,7 +183,6 @@ namespace OwcaScript {
 			CurrentlyBuildingClassGuard set_currently_building_class(std::optional<ClassToken> token) { return CurrentlyBuildingClassGuard{ *this, token }; }
 			auto get_currently_building_class() const { return currently_building_class; }
 
-			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
 			OwcaCode currently_running_code() const;
 			void run_gc();
 
