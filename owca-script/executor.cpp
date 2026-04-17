@@ -431,26 +431,37 @@ namespace OwcaScript::Internal {
                 run_impl_opcodes_execute_expr_oper2<TagMod>(reader);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2MakeRange: {
-                auto third = peek_value(1);
-                auto second = peek_value(2);
-                auto first = peek_value(3);
-                if (first.kind() == OwcaValueKind::Empty) {
-                    first = 0;
+                auto mode = reader.decode<std::uint8_t>();
+                Number first, second, third;
+                if (mode & 4) {
+                    third = peek_value(1).as_float(vm);
+                    pop_values(1);
                 }
-                if (second.kind() == OwcaValueKind::Empty) {
-                    second = std::numeric_limits<Number>::max();
-                }
-                if (third.kind() == OwcaValueKind::Empty) {
+                else {
                     third = 1;
                 }
-                if (third.as_float(vm) == 0) {
+                if (mode & 2) {
+                    second = peek_value(1).as_float(vm);
+                    pop_values(1);
+                }
+                else {
+                    second = std::numeric_limits<Number>::max();
+                }
+                if (mode & 1) {   
+                    first = peek_value(1).as_float(vm);
+                    pop_values(1);
+                }
+                else {
+                    first = 0;
+                }
+                if (third == 0) {
                     prepare_throw_range_step_is_zero();
                     break;
                 }
                 auto ret = vm->allocate<Range>(0);
-                ret->from = first.as_float(vm);
-                ret->to = second.as_float(vm);
-                ret->step = third.as_float(vm);
+                ret->from = first;
+                ret->to = second;
+                ret->step = third;
                 push_value(OwcaRange{ ret });
                 break; }
             case ExecuteBufferReader::Op::ExprOper2IndexRead: {

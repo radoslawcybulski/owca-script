@@ -459,6 +459,13 @@ namespace OwcaScript::Internal {
 			right_->emit(ei);
 			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
 		}
+		else if (kind_ == Kind::MakeRange) {
+			if (left_) left_->emit(ei);
+			if (right_) right_->emit(ei);
+			if (third_) third_->emit(ei);
+			ei.code_writer.append(line, ExecuteOp::ExprOper2MakeRange);
+			ei.code_writer.append(line, (std::uint8_t)((third_ ? 4 : 0) | (right_ ? 2 : 0) | (left_ ? 1 : 0)));
+		}
 		else {
 			left_->emit(ei);
 			right_->emit(ei);
@@ -466,6 +473,7 @@ namespace OwcaScript::Internal {
 			switch (kind_) {
 			case Kind::LogOr:
 			case Kind::LogAnd:
+			case Kind::MakeRange:
 				assert(false);
 				break;
 			case Kind::BinOr: ei.code_writer.append(line, ExecuteOp::ExprOper2BinOr); break;
@@ -478,9 +486,6 @@ namespace OwcaScript::Internal {
 			case Kind::Mul: ei.code_writer.append(line, ExecuteOp::ExprOper2Mul); break;
 			case Kind::Div: ei.code_writer.append(line, ExecuteOp::ExprOper2Div); break;
 			case Kind::Mod: ei.code_writer.append(line, ExecuteOp::ExprOper2Mod); break;
-			case Kind::MakeRange:
-				assert(third_);
-				ei.code_writer.append(line, ExecuteOp::ExprOper2MakeRange); break;
 			case Kind::IndexRead: ei.code_writer.append(line, ExecuteOp::ExprOper2IndexRead); break;
 			case Kind::IndexWrite:
 				assert(third_);
