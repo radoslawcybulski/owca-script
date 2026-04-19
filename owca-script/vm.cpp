@@ -1625,14 +1625,14 @@ function native time();
 	}
 
 	void VM::run_gc() {
-		assert(stacktrace.empty());
-
 		auto ggc = GenerationGC{ ++generation_gc };
 
 		// mark
 		gc_mark_value(this, ggc, empty_tuple);
 		gc_mark_value(this, ggc, empty_string);
-		gc_mark_value(this, ggc, stacktrace);
+		for(auto i = 0u; i < current_stack_trace_index; ++i) {
+			gc_mark_value(this, ggc, stacktrace[i]);
+		}
 		gc_mark_value(this, ggc, builtin_objects);
 		gc_mark_value(this, ggc, temp_gc_protect_list);
 
