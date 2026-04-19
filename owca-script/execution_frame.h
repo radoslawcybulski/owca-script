@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_EXECUTION_FRAME_H
 #define RC_OWCA_SCRIPT_EXECUTION_FRAME_H
 
+#include "owca_exception.h"
 #include "stdafx.h"
 #include "line.h"
 #include "owca_iterator.h"
@@ -50,6 +51,7 @@ namespace OwcaScript {
 				std::uint32_t begin_pos = 0, end_pos = 0;
 				std::uint32_t catches_pos = 0;
 				size_t temporaries_size = 0;
+				std::optional<OwcaException> parent_exception;
 
 				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const TryCatchState &e);
 			};
@@ -65,6 +67,7 @@ namespace OwcaScript {
 			std::vector<OwcaValue> temporaries;
 			std::vector<States> states;
 			std::optional<OwcaIterator> iterator_object;
+			std::optional<OwcaException> exception_in_progress;
 			RuntimeFunctions* runtime_functions = nullptr;
 			RuntimeFunction* runtime_function = nullptr;
 			std::uint32_t code_position;

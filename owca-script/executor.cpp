@@ -62,24 +62,26 @@ namespace OwcaScript::Internal {
         --vm->current_stack_trace_index;
         exit = true;
     }
-    void Executor::process_thrown_exception()
+    void Executor::process_thrown_exception(ExecuteBufferReader *reader)
     {
-        assert(exception_in_progress);
+        assert(currently_executing_frame().exception_in_progress);
+        OwcaException exception = *currently_executing_frame().exception_in_progress;
         while(!completed()) {
             auto &frame = currently_executing_frame();
+            frame.exception_in_progress = exception;
             while(!frame.states.empty()) {
                 if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
                     frame.code_position = state->catches_pos;
-                    std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
+                    if (reader) reader->jump(state->catches_pos);
+                    std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
                     return;
                 }
                 frame.states.pop_back();
+                reader = nullptr;
                 exit = true;
             }
         }
-        auto z = *exception_in_progress;
-        exception_in_progress.reset();
-        throw z;
+        throw exception;
     }
     bool Executor::completed() const {
         return vm->current_stack_trace_index <= stack_top_level_index;
@@ -217,8 +219,11 @@ namespace OwcaScript::Internal {
         exit = false;
         do {
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
+            auto line = reader.line();
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
-            std::cout << "Running opcode at position " << reader.position() << " temporaries " << frame.temporaries.size() << " opcode " << to_string(opcode) << std::endl;
+            std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << reader.position() << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
+            if (frame.exception_in_progress) std::cout << " (exception in progress)";
+            std::cout << std::endl;
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line();
@@ -409,12 +414,14 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprToIterator: {
                 auto &val = peek_value(1);
-                auto func = vm->try_member(val, "__iter__");
-                if (!func) {
-                    prepare_throw_not_iterable(val.type());
-                    break;
+                if (val.kind() != OwcaValueKind::Iterator) {
+                    auto func = vm->try_member(val, "__iter__");
+                    if (!func) {
+                        prepare_throw_not_iterable(val.type());
+                        break;
+                    }
+                    prepare_execute_call(val, *func, {});
                 }
-                prepare_execute_call(val, *func, {});
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinOr: {
                 run_impl_opcodes_execute_expr_oper2<TagBinOr>(reader);
@@ -860,13 +867,14 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::Throw: {
                 auto exception = peek_value(1);
                 pop_values(1);
-                exception_in_progress = exception.as_exception(vm);
-                process_thrown_exception();
+                frame.exception_in_progress = exception.as_exception(vm);
+                process_thrown_exception(&reader);
                 break; }
             case ExecuteBufferReader::Op::TryInit: {
-                assert(!exception_in_progress);
                 frame.states.push_back(ExecutionFrame::TryCatchState{});
                 auto &state = std::get<ExecutionFrame::TryCatchState>(frame.states.back());
+                state.parent_exception = frame.exception_in_progress;
+                frame.exception_in_progress.reset();
                 state.begin_pos = reader.decode<std::uint32_t>();
                 state.end_pos = reader.decode<std::uint32_t>();
                 state.catches_pos = reader.position();
@@ -875,8 +883,10 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::TryCompleted: {
                 assert(!frame.states.empty());
-                assert(!exception_in_progress);
+                assert(!frame.exception_in_progress);
                 assert(std::holds_alternative<ExecutionFrame::TryCatchState>(frame.states.back()));
+                auto &state = std::get<ExecutionFrame::TryCatchState>(frame.states.back());
+                frame.exception_in_progress = state.parent_exception;
                 frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::TryCatchType: {
@@ -885,19 +895,19 @@ namespace OwcaScript::Internal {
                 auto skip_jump = reader.decode<std::uint32_t>();
 
                 auto exc_types = peek_values(values, values);
-                assert(exception_in_progress);
+                assert(frame.exception_in_progress);
 
                 bool found = false;
                 for(auto e : exc_types) {
                     auto exc_type = e.as_class(vm);
-                    if (exception_in_progress->type().has_base_class(exc_type)) {
+                    if (frame.exception_in_progress->type().has_base_class(exc_type)) {
                         found = true;
                         break;
                     }
                 }
                 if (found) {
                     if (ident != std::numeric_limits<std::uint32_t>::max()) {
-                        frame.set_identifier(vm, ident, *exception_in_progress, false);
+                        frame.set_identifier(vm, ident, *frame.exception_in_progress, false);
                     }
                 }
                 else {
@@ -905,11 +915,11 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::TryCatchTypeCompleted: {
-                process_thrown_exception();
+                process_thrown_exception(&reader);
                 break; }
             case ExecuteBufferReader::Op::TryBlockCompleted: {
-                assert(exception_in_progress);
-                exception_in_progress = std::nullopt;
+                assert(frame.exception_in_progress);
+                frame.exception_in_progress = std::nullopt;
                 break; }
             case ExecuteBufferReader::Op::WhileInit: {
                 frame.states.push_back(ExecutionFrame::WhileState{});
@@ -1167,8 +1177,8 @@ namespace OwcaScript::Internal {
                         return;
                     }
                     catch(OwcaException e) {
-                        exception_in_progress = e;
-                        process_thrown_exception();
+                        frame.exception_in_progress = e;
+                        process_thrown_exception(nullptr);
                     }
                     catch(const std::exception &e) {
                         prepare_throw_cpp_exception(std::format("C++ exception during execution of native generator: {}", e.what()));
@@ -1176,14 +1186,9 @@ namespace OwcaScript::Internal {
                     catch(...) {
                         prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
                     }
-                    assert(exception_in_progress);
+                    assert(!frame.exception_in_progress);
                 }
             );
-        }
-        if (exception_in_progress) {
-            auto z = exception_in_progress;
-            exception_in_progress.reset();
-            throw z;
         }
     }
     void Executor::run_and_throw() {
@@ -1271,8 +1276,9 @@ namespace OwcaScript::Internal {
 		}
         if (exception_for_throwing_construction) {
             auto oe = OwcaValue{ obj }.as_exception(vm);
-            oe.internal_value()->parent_exception = exception_in_progress;
-            exception_in_progress.reset();
+            assert(vm->current_stack_trace_index > 1);
+            oe.internal_value()->parent_exception = vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress;
+            vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress.reset();
         }
 		auto it = cls->values.find(std::string_view{ "__init__" });
 		if (it == cls->values.end()) {

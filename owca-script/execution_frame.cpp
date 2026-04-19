@@ -99,7 +99,7 @@ namespace OwcaScript::Internal {
 					values[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
 				}
                 code_position = sf.entry_point;
-                std::cout << "setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
                 is_iterator = sf.is_generator;
 			});
 
@@ -155,7 +155,7 @@ namespace OwcaScript::Internal {
 		runtime_function->visit(
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
                 this->code_position = sf.entry_point;
-                std::cout << "setting code position (" << (void*)&this->code_position << ") to " << this->code_position << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&this->code_position << ") to " << this->code_position << std::endl;
                 this->values.resize(sf.identifier_names.size());
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
 				for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
@@ -189,7 +189,7 @@ namespace OwcaScript::Internal {
     {
         clear();
         code_position = 0;
-        std::cout << "setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
+        std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
 
         this->return_value = &return_value;
         runtime_functions = vm->allocate<RuntimeFunctions>(0, std::string_view("main-code-block"), std::string_view("main-code-block"));

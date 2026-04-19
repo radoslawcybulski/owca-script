@@ -18,7 +18,6 @@ namespace OwcaScript {
         class Executor {
             VM *vm;
 			const size_t stack_top_level_index = 0;
-			std::optional<OwcaException> exception_in_progress;
 	        bool exit = false;
 
 			void push_value(OwcaValue value);
@@ -50,7 +49,7 @@ namespace OwcaScript {
 			void run_impl();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
 			bool run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind);
-			void process_thrown_exception();
+			void process_thrown_exception(ExecuteBufferReader *reader);
 			struct TagBinOr {};
 			struct TagBinAnd {};
 			struct TagBinXor {};
