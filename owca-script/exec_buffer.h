@@ -75,6 +75,7 @@ namespace OwcaScript {
             ExprConstantStringInterpolated,
             ExprIdentifierRead,
             ExprIdentifierWrite,
+            ExprIdentifierFunctionWrite,
             ExprMemberRead,
             ExprMemberWrite,
             ExprOper1BinNeg,
@@ -146,6 +147,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
             case ExecuteOp::ExprIdentifierRead: return "ExprIdentifierRead";
             case ExecuteOp::ExprIdentifierWrite: return "ExprIdentifierWrite";
+            case ExecuteOp::ExprIdentifierFunctionWrite: return "ExprIdentifierFunctionWrite";
             case ExecuteOp::ExprMemberRead: return "ExprMemberRead";
             case ExecuteOp::ExprMemberWrite: return "ExprMemberWrite";
             case ExecuteOp::ExprOper1BinNeg: return "ExprOper1BinNeg";

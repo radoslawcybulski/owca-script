@@ -346,12 +346,17 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierRead: {
                 auto index = reader.decode<std::uint32_t>();
-                push_value(frame.values[index]);
+                push_value(frame.get_identifier(index));
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierWrite: {
                 auto index = reader.decode<std::uint32_t>();
                 auto &val = peek_value(1);
-                frame.values[index] = val;
+                frame.set_identifier(vm, index, val, false);
+                break; }
+            case ExecuteBufferReader::Op::ExprIdentifierFunctionWrite: {
+                auto index = reader.decode<std::uint32_t>();
+                auto &val = peek_value(1);
+                frame.set_identifier(vm, index, val, true);
                 break; }
             case ExecuteBufferReader::Op::ExprMemberRead: {
                 auto self = peek_value(1);
