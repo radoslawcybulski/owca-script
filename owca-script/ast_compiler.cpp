@@ -389,8 +389,8 @@ namespace OwcaScript::Internal {
 				str_part = str_part.substr(0, str_part.size() - 1);
 			}
 			strings += str_part;
-			sizes.push_back(str_part.size());
 			if (end) break;
+			sizes.push_back(str_part.size());
 		}
 		return std::make_unique<AstExprInterpretedString>(start_line, std::move(parts), std::move(sizes), std::move(strings));
 	}

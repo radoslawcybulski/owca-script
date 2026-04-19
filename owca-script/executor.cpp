@@ -334,17 +334,18 @@ namespace OwcaScript::Internal {
                 auto new_str = vm->precreate_string(size);
                 auto new_str_pt = new_str->pointer();
                 const char *strings_ptr = strings.data();
-                for(auto i = 0u; i <= expr_count; ++i) {
-                    if (i > 0) {
-                        auto str = values[expr_count - i].as_string(vm);
-                        std::memcpy(new_str_pt, str.text().data(), str.size());
-                        new_str_pt += str.size();
-                    }
+                for(auto i = 0u; i < expr_count; ++i) {
                     auto sz = reader.decode<std::uint32_t>();
                     std::memcpy(new_str_pt, strings_ptr, sz);
                     new_str_pt += sz;
                     strings_ptr += sz;
+                    auto str = values[i].as_string(vm);
+                    std::memcpy(new_str_pt, str.text().data(), str.size());
+                    new_str_pt += str.size();
                 }
+                auto remaining = strings.data() + strings.size() - strings_ptr;
+                std::memcpy(new_str_pt, strings_ptr, remaining);
+                new_str_pt += remaining;
                 assert(new_str_pt == new_str->pointer() + new_str->size());
                 pop_values(expr_count);
                 push_value(OwcaString{ new_str });
@@ -823,6 +824,13 @@ namespace OwcaScript::Internal {
                             }
                             return false;
                         },
+                        [&](const ExecutionFrame::WhileState& s) {
+                            if (s.loop_control_depth == depth) {
+                                reader.jump(s.end_position);
+                                return true;
+                            }
+                            return false;
+                        },
                         [&](const auto& s) { return false; }
                     );
                     if (found) break;
@@ -841,6 +849,13 @@ namespace OwcaScript::Internal {
                             }
                             return false;
                         },
+                        [&](const ExecutionFrame::WhileState& s) {
+                            if (s.loop_control_depth == depth) {
+                                reader.jump(s.continue_position);
+                                return true;
+                            }
+                            return false;
+                        },
                         [&](const auto& s) { return false; }
                     );
                     if (found) break;
@@ -848,9 +863,12 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::Return: {
-                *frame.return_value = OwcaEmpty{};
                 if (frame.is_iterator) {
+                    *frame.return_value = OwcaCompleted{};
                     frame.iterator_object->internal_value()->completed = true;
+                }
+                else {
+                    *frame.return_value = OwcaEmpty{};
                 }
                 pop_frame();
                 assert(exit);
@@ -1276,9 +1294,10 @@ namespace OwcaScript::Internal {
 		}
         if (exception_for_throwing_construction) {
             auto oe = OwcaValue{ obj }.as_exception(vm);
-            assert(vm->current_stack_trace_index > 1);
-            oe.internal_value()->parent_exception = vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress;
-            vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress.reset();
+            if (vm->current_stack_trace_index > 1) {
+                oe.internal_value()->parent_exception = vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress;
+                vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress.reset();
+            }
         }
 		auto it = cls->values.find(std::string_view{ "__init__" });
 		if (it == cls->values.end()) {

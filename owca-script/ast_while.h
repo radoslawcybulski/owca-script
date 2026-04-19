@@ -11,11 +11,11 @@ namespace OwcaScript {
             std::string_view loop_identifier_;
 			std::unique_ptr<AstExpr> value_;
             std::unique_ptr<AstStat> body_;
-            unsigned int flow_control_depth_;
+            std::uint8_t flow_control_depth_;
             std::optional<unsigned int> loop_ident_index_;
 
 		public:
-			AstWhile(Line line, unsigned int flow_control_depth, std::string_view loop_identifier, std::unique_ptr<AstExpr> value, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), value_(std::move(value)), body_(std::move(body)), flow_control_depth_(flow_control_depth) {}
+			AstWhile(Line line, std::uint8_t flow_control_depth, std::string_view loop_identifier, std::unique_ptr<AstExpr> value, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), value_(std::move(value)), body_(std::move(body)), flow_control_depth_(flow_control_depth) {}
 
 			auto &value() { return *value_; }
 			auto &body() { return *body_; }

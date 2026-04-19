@@ -14,7 +14,7 @@ namespace OwcaScript {
             std::string strings;
 		public:
 			AstExprInterpretedString(Line line, std::vector<std::unique_ptr<AstExpr>> evals, std::vector<std::uint32_t> sizes, std::string strings) : AstExpr (line), evals(std::move(evals)), sizes(std::move(sizes)), strings(std::move(strings)) {
-				assert(sizes.size() == evals.size() + 1);
+				assert(this->sizes.size() == this->evals.size());
 			}
 
 			void emit(EmitInfo& ei) override;
