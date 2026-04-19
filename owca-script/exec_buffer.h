@@ -102,6 +102,7 @@ namespace OwcaScript {
             ExprOperXCreateSet,
             ExprOperXCreateMap,
             ExprToString,
+            ExprToIterator,
             ForInit,
             ForNext,
             ForCondition,
@@ -174,6 +175,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprOperXCreateSet: return "ExprOperXCreateSet";
             case ExecuteOp::ExprOperXCreateMap: return "ExprOperXCreateMap";
             case ExecuteOp::ExprToString: return "ExprToString";
+            case ExecuteOp::ExprToIterator: return "ExprToIterator";
             case ExecuteOp::ForInit: return "ForInit";
             case ExecuteOp::ForNext: return "ForNext";
             case ExecuteOp::ForCondition: return "ForCondition";

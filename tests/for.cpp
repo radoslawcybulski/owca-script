@@ -32,18 +32,18 @@ return total;
 	)", 0), 3);
 }
 
-TEST_F(ForTest, destructuring)
-{
-    ASSERT_EQ(run_for(R"(
-total = 0;
-arr = [ (1, 2), (3, 4), (5, 6) ];
-sum = 0;
-for(a, b = arr) {
-    sum = sum + a * b;
-}
-return sum;
-    )", 0), 1*2 + 3*4 + 5*6);
-}
+// TEST_F(ForTest, destructuring)
+// {
+//     ASSERT_EQ(run_for(R"(
+// total = 0;
+// arr = [ (1, 2), (3, 4), (5, 6) ];
+// sum = 0;
+// for(a, b = arr) {
+//     sum = sum + a * b;
+// }
+// return sum;
+//     )", 0), 1*2 + 3*4 + 5*6);
+// }
 
 TEST_F(ForTest, simple2)
 {

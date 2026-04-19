@@ -31,7 +31,6 @@ namespace OwcaScript {
 				std::uint64_t index = (std::uint64_t)-1;
 				OwcaIterator iterator;
 				std::uint32_t continue_position = 0, end_position = 0;
-				std::vector<std::uint32_t> value_indexes;
 				std::uint32_t loop_index = 0;
 				std::uint8_t loop_control_depth = 0;
 

@@ -407,6 +407,15 @@ namespace OwcaScript::Internal {
                 }
                 peek_value(1) = vm->create_string_from_view(v.to_string());
                 break; }
+            case ExecuteBufferReader::Op::ExprToIterator: {
+                auto &val = peek_value(1);
+                auto func = vm->try_member(val, "__iter__");
+                if (!func) {
+                    prepare_throw_not_iterable(val.type());
+                    break;
+                }
+                prepare_execute_call(val, *func, {});
+                break; }
             case ExecuteBufferReader::Op::ExprOper2BinOr: {
                 run_impl_opcodes_execute_expr_oper2<TagBinOr>(reader);
                 break; }
@@ -674,12 +683,6 @@ namespace OwcaScript::Internal {
                 auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
                 state.end_position = reader.decode<std::uint32_t>();
                 state.loop_index = reader.decode<std::uint32_t>();
-                reader.decode_span_helper<std::uint32_t>(
-                    [&](size_t index, size_t size, std::uint32_t value) {
-                        if (index == 0) state.value_indexes.resize(size);
-                        state.value_indexes[index] = value;
-                    }
-                );
                 state.loop_control_depth = reader.decode<std::uint8_t>();
                 state.continue_position = reader.position();
                 break; }
@@ -691,45 +694,23 @@ namespace OwcaScript::Internal {
                 if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
                     frame.set_identifier(vm, state.loop_index, state.index, false);
                 }
+                push_value({});
+                prepare_resume_generator(peek_value(1), state.iterator);
                 break; }
             case ExecuteBufferReader::Op::ForNext: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
-
-                auto val = state.iterator.next();
+                auto val = peek_value(1);
                 if (val.kind() == OwcaValueKind::Completed) {
+                    assert(!frame.states.empty());
+                    assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
+                    auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
                     reader.jump(state.end_position);
-                }
-                else {
-                    if (state.value_indexes.size() == 1) {
-                        frame.set_identifier(vm, state.value_indexes[0], val, false);
-                    }
-                    else {
-                        auto iter = vm->iterate_value(val);
-                        size_t index = 0;
-
-                        while(auto vv = iter.next()) {
-                            if (index >= state.value_indexes.size()) {
-                                prepare_throw_too_many_elements(state.value_indexes.size());
-                                assert(exit);
-                            }
-                            frame.set_identifier(vm, state.value_indexes[index], *vv, false);
-                            ++index;
-                        }
-                        if (index < state.value_indexes.size()) {
-                            prepare_throw_not_enough_elements(state.value_indexes.size(), index);
-                            assert(exit);
-                        }
-                        if (exit) break;
-                    }
+                    pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ForCompleted: {
                 assert(!frame.states.empty());
                 assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
                 auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
-                reader.jump(state.continue_position);
                 frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::Function: {
@@ -1160,6 +1141,9 @@ namespace OwcaScript::Internal {
                     if (!frame.iterator_object) {
                         frame.iterator_object = vm->allocate<Iterator>(0, true);
                         frame.iterator_object->internal_value()->generator = ngf.generator(vm, frame.values);
+                        *frame.return_value = *frame.iterator_object;
+                        pop_frame();
+                        return;
                     }
                     if (frame.iterator_object->internal_value()->completed) {
                         *frame.return_value = OwcaCompleted{};
@@ -1260,6 +1244,7 @@ namespace OwcaScript::Internal {
         std::swap(frame, oi.internal_value()->frame);
         frame.return_value = &return_value;
         oi.internal_value()->first_time = false;
+        exit = true;
     }
 
     OwcaValue Executor::resume_generator(OwcaIterator oi)
