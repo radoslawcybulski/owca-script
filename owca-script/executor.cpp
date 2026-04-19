@@ -77,9 +77,10 @@ namespace OwcaScript::Internal {
                     return;
                 }
                 frame.states.pop_back();
-                reader = nullptr;
-                exit = true;
             }
+            pop_frame();
+            reader = nullptr;
+            exit = true;
         }
         throw exception;
     }
@@ -938,6 +939,8 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::TryBlockCompleted: {
                 assert(frame.exception_in_progress);
                 frame.exception_in_progress = std::nullopt;
+                auto pos = reader.decode<std::uint32_t>();
+                reader.jump(pos);
                 break; }
             case ExecuteBufferReader::Op::WhileInit: {
                 frame.states.push_back(ExecutionFrame::WhileState{});
@@ -1204,7 +1207,6 @@ namespace OwcaScript::Internal {
                     catch(...) {
                         prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
                     }
-                    assert(!frame.exception_in_progress);
                 }
             );
         }
