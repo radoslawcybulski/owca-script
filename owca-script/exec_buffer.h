@@ -221,7 +221,7 @@ namespace OwcaScript {
 
             std::uint32_t position() const { return pos; }
             void jump(std::uint32_t new_pos) { pos = new_pos; }
-            Line line() const;
+            Line line_from_code_pos(std::uint32_t pos) const;
             const auto &code() const { return code_object_; }
 
             template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
@@ -325,14 +325,15 @@ namespace OwcaScript {
                 auto pos = prepare(data, sz, DataKind::Blob);
                 std::memcpy(buffer.data() + pos, data, sizeof(T) * sz);
             }
-            template <typename T> void append_impl(T value, DataKind kind) {
+            template <typename T> void append_impl(Line line, T value, DataKind kind) {
+                handle_line(line);
                 auto pos = prepare(&value, 1, kind);
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
                 if (kind == DataKind::Op) {
-                    std::cout << "Writing data of kind " << to_string(kind) << " at position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
+                    std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
                 }
                 else {
-                    std::cout << "Writing data of kind " << to_string(kind) << " at position " << (pos) << std::endl;
+                    std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << std::endl;
                 }
             }
             void handle_line(Line line) {
@@ -341,8 +342,7 @@ namespace OwcaScript {
                 }
             }
             void append_size(Line line, size_t size) {
-                handle_line(line);
-                append_impl((std::uint32_t)size, DataKind::Size);
+                append_impl(line, (std::uint32_t)size, DataKind::Size);
             }
         public:
             ExecuteBufferWriter() = default;
@@ -355,11 +355,9 @@ namespace OwcaScript {
                 return std::make_tuple(std::move(buffer), std::move(data_kinds), std::move(lines));
             }
             template <typename T> void append(Line line, T value) requires(std::is_enum_v<T>) {
-                handle_line(line);
-                append_impl(value, std::is_same_v<T, ExecuteBufferReader::Op> ? DataKind::Op : DataKind::Enum);
+                append_impl(line, value, std::is_same_v<T, ExecuteBufferReader::Op> ? DataKind::Op : DataKind::Enum);
             }
             template <typename T> void append(Line line, T value) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
-                handle_line(line);
                 DataKind kind;
                 if constexpr (std::is_same_v<T, bool>) kind = DataKind::Bool;
                 else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>) kind = DataKind::Int8;
@@ -369,17 +367,16 @@ namespace OwcaScript {
                 else {
                     static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
-                append_impl(value, kind);
+                append_impl(line, value, kind);
             }
             template <typename T> void append(Line line, T value) requires(std::is_floating_point_v<T>) {
-                handle_line(line);
                 DataKind kind;
                 if constexpr (std::is_same_v<T, float>) kind = DataKind::Float32;
                 else if constexpr (std::is_same_v<T, double>) kind = DataKind::Float64;
                 else {
                     static_assert(sizeof(T) == 0, "Unsupported floating point type");
                 }
-                append_impl(value, kind);
+                append_impl(line, value, kind);
             }
             void append(Line line, const char *str) {
                 auto sz = strlen(str);

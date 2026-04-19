@@ -220,14 +220,14 @@ namespace OwcaScript::Internal {
         exit = false;
         do {
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
-            auto line = reader.line();
+            auto line = reader.line_from_code_pos(reader.position());
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
             std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << reader.position() << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
             if (frame.exception_in_progress) std::cout << " (exception in progress)";
             std::cout << std::endl;
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
-                auto line = reader.line();
+                auto line = reader.line_from_code_pos(reader.position() - 1);
                 auto name = reader.decode<std::string_view>();
                 auto full_name = reader.decode<std::string_view>();
                 auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code);
@@ -1165,8 +1165,20 @@ namespace OwcaScript::Internal {
                     std::cout << "Suspended frame at depth " << frame_index << std::endl;
                 },
                 [&](RuntimeFunction::NativeFunction& nf) -> void {
-                    *frame.return_value = nf.function(vm, frame.values);
-                    pop_frame();
+                    try {
+                        *frame.return_value = nf.function(vm, frame.values);
+                        pop_frame();
+                    }
+                    catch(OwcaException e) {
+                        frame.exception_in_progress = e;
+                        process_thrown_exception(nullptr);
+                    }
+                    catch(const std::exception &e) {
+                        prepare_throw_cpp_exception(std::format("C++ exception during execution of native generator: {}", e.what()));
+                    }
+                    catch(...) {
+                        prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
+                    }
                 },
                 [&](RuntimeFunction::NativeGenerator& ngf) -> void {
                     if (!frame.iterator_object) {
