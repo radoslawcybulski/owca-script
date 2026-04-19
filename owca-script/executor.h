@@ -61,8 +61,6 @@ namespace OwcaScript {
 			struct TagMul {};
 			struct TagDiv {};
 			struct TagMod {};
-			struct TagIndexRead {};
-			struct TagIndexWrite {};
 			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader);
 			Number expr_oper_2(TagAdd, Number left, Number right);
 			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
@@ -78,6 +76,11 @@ namespace OwcaScript {
 			OwcaTuple expr_oper_2(TagMul, Number left, OwcaTuple right);
 			Number expr_oper_2(TagDiv, Number left, Number right);
 			Number expr_oper_2(TagMod, Number left, Number right);
+			Number expr_oper_2(TagBinOr, Number left, Number right);
+			Number expr_oper_2(TagBinAnd, Number left, Number right);
+			Number expr_oper_2(TagBinXor, Number left, Number right);
+			Number expr_oper_2(TagBinLShift, Number left, Number right);
+			Number expr_oper_2(TagBinRShift, Number left, Number right);
 			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
 
 			void prepare_throw_division_by_zero();
@@ -114,6 +117,7 @@ namespace OwcaScript {
 			void prepare_throw_dictionary_changed(bool is_dict);
 			void prepare_throw_too_many_elements(size_t expected);
 			void prepare_throw_not_enough_elements(size_t expected, size_t got);
+			void prepare_throw_cpp_exception(std::string_view msg);
 
 			std::optional<std::tuple<Number, Number, Number>> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
 			std::optional<size_t> verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);

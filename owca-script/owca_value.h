@@ -47,7 +47,7 @@ namespace OwcaScript {
 			};
 			static_assert(sizeof(PtrsValue) > sizeof(Number));
 			struct NumberValue {
-				std::uint8_t kind;
+				OwcaValueKind kind;
 				Number value;
 			};
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
@@ -62,7 +62,7 @@ namespace OwcaScript {
 			struct NumberValue {
 				Number value;
 				std::byte padding[sizeof(PtrsValue) - sizeof(Number) - 1];
-				std::uint8_t kind;
+				OwcaValueKind kind;
 			};
 
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));

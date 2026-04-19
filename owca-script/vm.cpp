@@ -754,7 +754,8 @@ function native time();
 	}
 	void VM::initialize_exception_object(Exception &exc)
 	{
-		for(auto &st : stacktrace) {
+		for(auto i = 0u; i < current_stack_trace_index; ++i) {
+			auto &st = stacktrace[i];
 			exc.frames.push_back({ .code = st.runtime_function->code });
 			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position).line;
 			exc.frames.back().function = st.runtime_function->full_name;

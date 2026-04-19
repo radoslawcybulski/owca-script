@@ -68,7 +68,6 @@ namespace OwcaScript {
             ExprCompareLess,
             ExprCompareMore,
             ExprCompareIs,
-            ExprCompareCompleted,
             ExprConstantEmpty,
             ExprConstantBool,
             ExprConstantFloat,
@@ -140,7 +139,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprCompareLess: return "ExprCompareLess";
             case ExecuteOp::ExprCompareMore: return "ExprCompareMore";
             case ExecuteOp::ExprCompareIs: return "ExprCompareIs";
-            case ExecuteOp::ExprCompareCompleted: return "ExprCompareCompleted";
             case ExecuteOp::ExprConstantEmpty: return "ExprConstantEmpty";
             case ExecuteOp::ExprConstantBool: return "ExprConstantBool";
             case ExecuteOp::ExprConstantFloat: return "ExprConstantFloat";

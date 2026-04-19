@@ -72,7 +72,6 @@ namespace OwcaScript {
 			OwcaValue *return_value = nullptr;
 			bool constructor_move_self_to_return_value = false;
 			bool is_iterator = false;
-			bool throw_return_value = false;
 
 			ExecutionFrame();
 			~ExecutionFrame();

@@ -1,3 +1,5 @@
+#include "owca_exception.h"
+#include "owca_iterator.h"
 #include "stdafx.h"
 #include "executor.h"
 #include "vm.h"
@@ -13,6 +15,7 @@
 #include "dictionary.h"
 #include "ast_function.h"
 #include "exception.h"
+#include <exception>
 #include <utility>
 
 namespace OwcaScript::Internal {
@@ -186,12 +189,13 @@ namespace OwcaScript::Internal {
 
     bool Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind) {
         auto jump_dest = reader.decode<std::uint32_t>();
-        auto left = peek_value(2);
+        const auto last = reader.decode<bool>();
+        auto &left = peek_value(2);
         auto right = peek_value(1);
         auto res = execute_compare(vm, kind, left, right);
         switch(res) {
         case CompareResult::True:
-            left = right;
+            left = last ? OwcaValue{ true } : right;
             pop_values(1);
             return false;
         case CompareResult::False:
@@ -212,9 +216,9 @@ namespace OwcaScript::Internal {
         auto reader = ExecuteBufferReader{ frame.runtime_function->code, frame.code_position };
         exit = false;
         do {
-            std::cout << "Running opcode at position " << reader.position() << std::endl;
+            //std::cout << "Running opcode at position " << reader.position() << std::endl;
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
-            std::cout << "Running opcode at position " << reader.position() << " opcode " << to_string(opcode) << std::endl;
+            std::cout << "Running opcode at position " << reader.position() << " temporaries " << frame.temporaries.size() << " opcode " << to_string(opcode) << std::endl;
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line();
@@ -298,9 +302,6 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprCompareIs: {
                 exit = run_impl_opcodes_execute_compare(reader, CompareKind::Is);
-                break; }
-            case ExecuteBufferReader::Op::ExprCompareCompleted: {
-                peek_value(1) = true;
                 break; }
             case ExecuteBufferReader::Op::ExprConstantEmpty: {
                 push_value(OwcaEmpty{});
@@ -754,7 +755,7 @@ namespace OwcaScript::Internal {
                     }
                     if (is_generator) {
                         fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeGenerator{});
-                    auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
+                        auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
                         ng.parameter_names = std::move(identifier_names);
                         if (native_provider) {
                             if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, ng.parameter_names)) {
@@ -786,6 +787,7 @@ namespace OwcaScript::Internal {
                 else {
                     fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::ScriptFunction{});
                     auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
+                    sf.is_generator = is_generator;
                     sf.identifier_names = std::move(identifier_names);
                     reader.decode_span_helper<AstFunction::CopyFromParent>(
                         [&](size_t index, size_t size, AstFunction::CopyFromParent value) {
@@ -809,7 +811,7 @@ namespace OwcaScript::Internal {
                 push_value(OwcaFunctions{ rfs });
                 break; }
             case ExecuteBufferReader::Op::If: {
-                auto val = peek_value(1).as_bool(vm);
+                auto val = peek_value(1).is_true();
                 auto else_position = reader.decode<std::uint32_t>();
                 if (!val) {
                     reader.jump(else_position);
@@ -854,12 +856,18 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::Return: {
                 *frame.return_value = OwcaEmpty{};
+                if (frame.is_iterator) {
+                    frame.iterator_object->internal_value()->completed = true;
+                }
                 pop_frame();
                 assert(exit);
                 break; }
             case ExecuteBufferReader::Op::ReturnValue: {
                 *frame.return_value = peek_value(1);
                 pop_values(1);
+                if (frame.is_iterator) {
+                    frame.iterator_object->internal_value()->completed = true;
+                }
                 pop_frame();
                 assert(exit);
                 break; }
@@ -977,6 +985,7 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::Yield: {
                 assert(frame.runtime_function->is_generator());
                 *frame.return_value = peek_value(1);
+                frame.code_position = reader.position();
                 pop_values(1);
                 pop_frame();
                 assert(exit);
@@ -987,7 +996,7 @@ namespace OwcaScript::Internal {
                 break; }
             }
             frame.code_position = reader.position();
-            std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
+            //std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
         } while(!exit);
     }
 
@@ -1082,6 +1091,21 @@ namespace OwcaScript::Internal {
             }
             return OwcaTuple{ ret };
     }
+    Number Executor::expr_oper_2(TagBinOr, Number left, Number right) {
+        return (std::int64_t)left | (std::int64_t)right;
+    }
+    Number Executor::expr_oper_2(TagBinAnd, Number left, Number right) {
+        return (std::int64_t)left & (std::int64_t)right;
+    }
+    Number Executor::expr_oper_2(TagBinXor, Number left, Number right) {
+        return (std::int64_t)left ^ (std::int64_t)right;
+    }
+    Number Executor::expr_oper_2(TagBinLShift, Number left, Number right) {
+        return (std::int64_t)left << (std::int64_t)right;
+    }
+    Number Executor::expr_oper_2(TagBinRShift, Number left, Number right) {
+        return (std::int64_t)left >> (std::int64_t)right;
+    }
 
     template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
         prepare_throw_unsupported_operation_2(tag_name<A>, OwcaValue{ b }.type(), OwcaValue{ c }.type());
@@ -1091,12 +1115,12 @@ namespace OwcaScript::Internal {
     template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader) {
         auto right = peek_value(1);
         auto left = peek_value(2);
-        auto val = left.visit([&](auto left_val) -> OwcaValue {
+        auto &ret = peek_value_and_make_top(2);
+        ret = left.visit([&](auto left_val) -> OwcaValue {
             return right.visit([&](auto right_val) -> OwcaValue {
                 return expr_oper_2(Tag{}, left_val, right_val);
             });
         });
-        peek_value_and_make_top(2) = val;
     }
     void Executor::run_impl() {
         while(!completed()) {
@@ -1112,20 +1136,58 @@ namespace OwcaScript::Internal {
             visit_variant(
                 frame.runtime_function->data,
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
+                    if (frame.is_iterator && !frame.iterator_object) {
+                        auto obj = vm->allocate<Iterator>(0, false);
+                        frame.iterator_object = obj;
+                        *frame.return_value = OwcaIterator{ obj };
+                        pop_frame();
+                        return;
+                    }
                     auto frame_index = vm->current_stack_trace_index;
                     run_impl_opcodes(frame, sf);
-                    std::cout << "Suspended frame at depth " << frame_index << " function " << frame.runtime_function->full_name << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")" << std::endl;
+                    std::cout << "Suspended frame at depth " << frame_index << std::endl;
                 },
                 [&](RuntimeFunction::NativeFunction& nf) -> void {
                     *frame.return_value = nf.function(vm, frame.values);
                     pop_frame();
                 },
                 [&](RuntimeFunction::NativeGenerator& ngf) -> void {
-                    auto generator = ngf.generator(vm, frame.values);
-                    auto obj = vm->allocate<Iterator>(0, false);
-                    obj->generator = std::move(generator);
-                    *frame.return_value = OwcaIterator{ obj };
-                    pop_frame();
+                    if (!frame.iterator_object) {
+                        frame.iterator_object = vm->allocate<Iterator>(0, true);
+                        frame.iterator_object->internal_value()->generator = ngf.generator(vm, frame.values);
+                    }
+                    if (frame.iterator_object->internal_value()->completed) {
+                        *frame.return_value = OwcaCompleted{};
+                        pop_frame();
+                        return;
+                    }
+                    try {
+                        frame.iterator_object->internal_value()->first_time = false;
+                        auto val = frame.iterator_object->internal_value()->generator->next();
+                        if (!val) {
+                            frame.iterator_object->internal_value()->completed = true;
+                            *frame.return_value = frame.iterator_object->internal_value()->last_value = OwcaCompleted{};
+                            pop_frame();
+                            return;
+                        }
+                        *frame.return_value = frame.iterator_object->internal_value()->last_value = *val;
+                        if (frame.return_value->kind() == OwcaValueKind::Completed) {
+                            frame.iterator_object->internal_value()->completed = true;
+                        }
+                        pop_frame();
+                        return;
+                    }
+                    catch(OwcaException e) {
+                        exception_in_progress = e;
+                        process_thrown_exception();
+                    }
+                    catch(const std::exception &e) {
+                        prepare_throw_cpp_exception(std::format("C++ exception during execution of native generator: {}", e.what()));
+                    }
+                    catch(...) {
+                        prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
+                    }
+                    assert(exception_in_progress);
                 }
             );
         }
@@ -1190,8 +1252,9 @@ namespace OwcaScript::Internal {
 			return;
 		}
         auto &frame = push_new_frame();
-        frame = std::move(oi.internal_value()->frame);
+        std::swap(frame, oi.internal_value()->frame);
         frame.return_value = &return_value;
+        oi.internal_value()->first_time = false;
     }
 
     OwcaValue Executor::resume_generator(OwcaIterator oi)
@@ -1199,10 +1262,9 @@ namespace OwcaScript::Internal {
 		if (oi.internal_value()->completed) {
 			return OwcaCompleted{};
 		}
-		OwcaValue value;
-		prepare_resume_generator(value, oi);
+		prepare_resume_generator(oi.internal_value()->last_value, oi);
 		run();
-		return value;
+		return oi.internal_value()->last_value;
     }
 
 	void Executor::prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction) {
@@ -1308,6 +1370,11 @@ namespace OwcaScript::Internal {
 
 
 
+    void Executor::prepare_throw_cpp_exception(std::string_view msg)
+    {
+        OwcaValue temp_arg = vm->create_string_from_view(msg);
+        prepare_allocate_user_class(temporary_exception_return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
+    }
 	void Executor::prepare_throw_too_many_elements(size_t expected)
 	{
         OwcaValue temp_arg = vm->create_string_from_view(std::format("too many values to unpack (expected {})", expected));

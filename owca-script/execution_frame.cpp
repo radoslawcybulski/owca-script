@@ -5,6 +5,7 @@
 #include "runtime_function.h"
 #include "object.h"
 #include "executor.h"
+#include "iterator.h"
 
 namespace OwcaScript::Internal {
     ExecutionFrame::ExecutionFrame() {
@@ -88,6 +89,7 @@ namespace OwcaScript::Internal {
 			},
 			[&](const RuntimeFunction::NativeGenerator& nf) {
 				values.resize(nf.parameter_names.size());
+                is_iterator = true;
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) {
 				values.resize(sf.identifier_names.size());

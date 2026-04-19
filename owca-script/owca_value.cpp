@@ -53,14 +53,14 @@ namespace OwcaScript {
 	OwcaValue::OwcaValue(OwcaValueKind kind, Number num) {
 		assert((int)kind < 16 && (int)kind >= 0);
 		value_encoded_.number.value = num;
-		value_encoded_.number.kind = (std::uint8_t)kind;
+		value_encoded_.number.kind = kind;
 		assert(this->kind() == kind);
 	}
 	OwcaValueKind OwcaValue::kind() const {
 		static_assert((int)OwcaValueKind::_Count <= 15, "OwcaValueKind must fit in 4 bits");
 		NumberValue tmp;
 		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
-		auto k = tmp.kind & 15;
+		auto k = (std::uint8_t)tmp.kind & 15;
 		assert(k < (int)OwcaValueKind::_Count);
 		return (OwcaValueKind)k;
 	}

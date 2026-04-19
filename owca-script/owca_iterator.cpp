@@ -7,7 +7,7 @@
 namespace OwcaScript {
     bool OwcaIterator::completed() const
     {
-        return !bool(object->generator);
+        return object->completed;
     }
     OwcaValue OwcaIterator::next() const
     {

@@ -275,8 +275,8 @@ namespace OwcaScript::Internal {
 			case CompareKind::Is: ei.code_writer.append(line, ExecuteOp::ExprCompareIs); break;
 			}
 			jump_placeholders.emplace_back(ei.code_writer.append_placeholder<std::uint32_t>(line));
+			ei.code_writer.append(line, &q == &nexts_.back());
 		}
-		ei.code_writer.append(line, ExecuteOp::ExprCompareCompleted);
 		auto pos = ei.code_writer.position();
 		for (auto& ph : jump_placeholders) {
 			ei.code_writer.update_placeholder(ph, (std::uint32_t)pos);
