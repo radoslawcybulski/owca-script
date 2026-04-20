@@ -57,6 +57,7 @@ namespace OwcaScript {
 			};
 			struct WithState {
 				OwcaValue context;
+				bool entered = false;
 
 				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WithState &e);
 			};

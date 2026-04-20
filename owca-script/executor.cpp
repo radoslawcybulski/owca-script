@@ -73,7 +73,9 @@ namespace OwcaScript::Internal {
                 if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
                     frame.code_position = state->catches_pos;
                     if (reader) reader->jump(state->catches_pos);
+#ifdef OWCA_SCRIPT_EXEC_LOG                    
                     std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
+#endif
                     return;
                 }
                 frame.states.pop_back();
@@ -220,11 +222,15 @@ namespace OwcaScript::Internal {
         exit = false;
         do {
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
+#ifdef OWCA_SCRIPT_EXEC_LOG
             auto line = reader.line_from_code_pos(reader.position());
+#endif
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
+#ifdef OWCA_SCRIPT_EXEC_LOG
             std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << reader.position() << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
             if (frame.exception_in_progress) std::cout << " (exception in progress)";
             std::cout << std::endl;
+#endif
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line_from_code_pos(reader.position() - 1);
@@ -976,18 +982,22 @@ namespace OwcaScript::Internal {
                 frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::WithInitPrepare: {
+                frame.states.push_back(ExecutionFrame::WithState{});
+                auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
                 auto &obj = peek_value(1);
+                state.context = obj;
                 auto mbm = vm->member(obj, "__enter__");
                 prepare_execute_call(obj, mbm, {});
                 assert(exit);
                 break; }
             case ExecuteBufferReader::Op::WithInit: {
-                frame.states.push_back(ExecutionFrame::WithState{});
+                assert(!frame.states.empty());
+                assert(std::holds_alternative<ExecutionFrame::WithState>(frame.states.back()));
                 auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
+                state.entered = true;
                 auto index = reader.decode<std::uint32_t>();
-                state.context = peek_value(1);
                 if (index != std::numeric_limits<std::uint32_t>::max()) {
-                    frame.set_identifier(vm, index, state.context, false);
+                    frame.set_identifier(vm, index, peek_value(1), false);
                 }
                 pop_values(1);
                 break; }
@@ -995,9 +1005,12 @@ namespace OwcaScript::Internal {
                 assert(!frame.states.empty());
                 assert(std::holds_alternative<ExecutionFrame::WithState>(frame.states.back()));
                 auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
-                auto mbm = vm->member(state.context, "__exit__");
-                prepare_execute_call(ignore_value, mbm, {});
-                assert(exit);
+                if (state.entered) {
+                    auto mbm = vm->member(state.context, "__exit__");
+                    prepare_execute_call(ignore_value, mbm, {});
+                    assert(exit);
+                }
+                frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::Yield: {
                 assert(frame.runtime_function->is_generator());
@@ -1145,11 +1158,13 @@ namespace OwcaScript::Internal {
                 vm->stacktrace.reserve(vm->stacktrace.capacity() * 2);
             }
             auto &frame = currently_executing_frame();
+#ifdef OWCA_SCRIPT_EXEC_LOG
             std::cout << "Executing frame at depth " << vm->current_stack_trace_index << " function " << frame.runtime_function->full_name;
             if (auto q = std::get_if<RuntimeFunction::ScriptFunction>(&frame.runtime_function->data)) {
                 std::cout << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")";
             }
             std::cout << std::endl;
+#endif
             visit_variant(
                 frame.runtime_function->data,
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
@@ -1162,7 +1177,9 @@ namespace OwcaScript::Internal {
                     }
                     auto frame_index = vm->current_stack_trace_index;
                     run_impl_opcodes(frame, sf);
+#ifdef OWCA_SCRIPT_EXEC_LOG
                     std::cout << "Suspended frame at depth " << frame_index << std::endl;
+#endif
                 },
                 [&](RuntimeFunction::NativeFunction& nf) -> void {
                     try {

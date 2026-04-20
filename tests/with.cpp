@@ -17,7 +17,7 @@ static auto run_with(std::string code_text, OwcaValue add_val)
 }
 TEST_F(WithTest, simple)
 {
-    ASSERT_EQ(run_with(R"(
+    auto val = run_with(R"(
 
 queue = [];
 class W {
@@ -58,12 +58,13 @@ for(q = queue) {
     s = s + String(q);
 }
 return s;
-	)", 0), std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
+	)", 0);
+    ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
 }
 
 TEST_F(WithTest, with_exc)
 {
-    ASSERT_EQ(run_with(R"(
+    auto val = run_with(R"(
 
 queue = [];
 class W {
@@ -109,5 +110,6 @@ for(q = queue) {
     s = s + String(q);
 }
 return s;
-	)", 0), std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
+	)", 0);
+    ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
 }

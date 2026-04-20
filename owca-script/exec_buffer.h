@@ -5,6 +5,8 @@
 #include "line.h"
 #include "owca_code.h"
 
+//#define OWCA_SCRIPT_EXEC_LOG
+
 namespace OwcaScript {
 	namespace Internal {
         template <typename T> struct IsSpan {
@@ -226,7 +228,7 @@ namespace OwcaScript {
 
             template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
                 auto size = decode_size();
-                ensure_data_kind(DataKind::Blob, pos);
+                if (size > 0) ensure_data_kind(DataKind::Blob, pos);
                 auto p = align_pos(alignof(char), sizeof(char) * size);
                 return std::string_view((const char*)(code_.data() + p), size);
             }
@@ -322,6 +324,7 @@ namespace OwcaScript {
                 return current_size + padding;
             }
             template <typename T> void append_impl_vec(const T *data, size_t sz) {
+                if (sz == 0) return;
                 auto pos = prepare(data, sz, DataKind::Blob);
                 std::memcpy(buffer.data() + pos, data, sizeof(T) * sz);
             }
@@ -329,12 +332,14 @@ namespace OwcaScript {
                 handle_line(line);
                 auto pos = prepare(&value, 1, kind);
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
+#ifdef OWCA_SCRIPT_EXEC_LOG                
                 if (kind == DataKind::Op) {
                     std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
                 }
                 else {
                     std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << std::endl;
                 }
+#endif
             }
             void handle_line(Line line) {
                 if (lines.empty() || lines.back().line != line.line) {

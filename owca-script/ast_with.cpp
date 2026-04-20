@@ -74,6 +74,7 @@ namespace OwcaScript::Internal {
 
 	void AstWith::emit(EmitInfo& ei) {
         value_->emit(ei);
+        ei.code_writer.append(line, ExecuteOp::WithInitPrepare);
         ei.code_writer.append(line, ExecuteOp::WithInit);
         ei.code_writer.append(line, ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
         body_->emit(ei);
