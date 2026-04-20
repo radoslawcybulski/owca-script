@@ -104,7 +104,7 @@ namespace OwcaScript {
 			std::pair<Line, std::string_view> consume();
 			void skip_string_fstring_part();
 			std::string_view consume_as_follow_fstring_part();
-			Line consume(std::string_view);
+			Line consume(std::string_view, bool dont_skip_ws = false);
 			bool is_keyword(std::string_view) const;
 			bool is_identifier(std::string_view) const;
 			bool is_operator(std::string_view) const;

@@ -199,14 +199,15 @@ namespace OwcaScript::Internal {
 		skip_ws();
 		return { line, tok };
 	}
-	Line AstCompiler::consume(std::string_view txt)
+	Line AstCompiler::consume(std::string_view txt, bool dont_skip_ws)
 	{
 		auto [line, tok] = preview();
 		if (tok != txt) {
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected `{}`", tok, txt));
 		}
 		content_offset += tok.size();
-		skip_ws();
+		if (!dont_skip_ws)
+			skip_ws();
 		return line;
 	}
 	bool AstCompiler::is_keyword(std::string_view txt) const
@@ -378,7 +379,7 @@ namespace OwcaScript::Internal {
 			if (content[content_offset] != '}') {
 				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, "missing `}` in f-string expression");
 			}
-			consume("}");
+			consume("}", true);
 			parts.push_back(std::move(val));
 			if (content_line.line != start_line.line) {
 				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, start_line, "unexpected end of line in unfinished f-string expression");

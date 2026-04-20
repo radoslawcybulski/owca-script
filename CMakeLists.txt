@@ -15,7 +15,7 @@ endif()
 
 set(CLANG_DEFAULT_CXX_STDLIB libc++)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -gdwarf-5")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -gdwarf-5 -O3")
 
 if(WIN32)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs")

@@ -289,11 +289,13 @@ namespace OwcaScript {
                 return size;
             }
             void ensure_data_kind(DataKind expected, size_t p) {
+#ifdef DEBUG
                 if (!data_kinds.empty() && data_kinds[p] != expected) {
                     auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p, to_string(expected), to_string(data_kinds[p]));
                     std::cout << msg << std::endl;
                     throw std::runtime_error(msg);
                 }
+#endif
             }
             size_t align_pos(size_t align, size_t size) {
                 pos += (align - (pos % align)) % align;

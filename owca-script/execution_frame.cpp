@@ -85,13 +85,22 @@ namespace OwcaScript::Internal {
         this->return_value = &return_value;
 		runtime_function->visit(
 			[&](const RuntimeFunction::NativeFunction& nf) {
+                if (nf.parameter_names.size() > values.capacity()) {
+                    std::cout << "value-resize\n";
+                }
 				values.resize(nf.parameter_names.size());
 			},
 			[&](const RuntimeFunction::NativeGenerator& nf) {
+                if (nf.parameter_names.size() > values.capacity()) {
+                    std::cout << "value-resize\n";
+                }
 				values.resize(nf.parameter_names.size());
                 is_iterator = true;
 			},
 			[&](const RuntimeFunction::ScriptFunction& sf) {
+                if (sf.identifier_names.size() > values.capacity()) {
+                    std::cout << "value-resize\n";
+                }
 				values.resize(sf.identifier_names.size());
 				assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
 

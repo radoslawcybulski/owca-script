@@ -15,7 +15,9 @@
 #include "dictionary.h"
 #include "ast_function.h"
 #include "exception.h"
+#include <chrono>
 #include <exception>
+#include <iomanip>
 #include <utility>
 
 namespace OwcaScript::Internal {
@@ -226,11 +228,17 @@ namespace OwcaScript::Internal {
             auto line = reader.line_from_code_pos(reader.position());
 #endif
             auto opcode = reader.decode<ExecuteBufferReader::Op>();
+            // static std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
+            // auto now = std::chrono::high_resolution_clock::now();
+            // auto df = now - last_time;
+            // last_time = now;
+            // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
             std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << reader.position() << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
             if (frame.exception_in_progress) std::cout << " (exception in progress)";
             std::cout << std::endl;
 #endif
+            //last_time = std::chrono::high_resolution_clock::now();
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line_from_code_pos(reader.position() - 1);
@@ -1122,19 +1130,19 @@ namespace OwcaScript::Internal {
             return OwcaTuple{ ret };
     }
     Number Executor::expr_oper_2(TagBinOr, Number left, Number right) {
-        return (std::int64_t)left | (std::int64_t)right;
+        return (std::uint64_t)left | (std::uint64_t)right;
     }
     Number Executor::expr_oper_2(TagBinAnd, Number left, Number right) {
-        return (std::int64_t)left & (std::int64_t)right;
+        return (std::uint64_t)left & (std::uint64_t)right;
     }
     Number Executor::expr_oper_2(TagBinXor, Number left, Number right) {
-        return (std::int64_t)left ^ (std::int64_t)right;
+        return (std::uint64_t)left ^ (std::uint64_t)right;
     }
     Number Executor::expr_oper_2(TagBinLShift, Number left, Number right) {
-        return (std::int64_t)left << (std::int64_t)right;
+        return (std::uint64_t)left << (std::uint64_t)right;
     }
     Number Executor::expr_oper_2(TagBinRShift, Number left, Number right) {
-        return (std::int64_t)left >> (std::int64_t)right;
+        return (std::uint64_t)left >> (std::uint64_t)right;
     }
 
     template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
