@@ -1415,7 +1415,7 @@ namespace OwcaScript::Internal {
 		}
 
         auto &frame = push_new_frame();
-        frame.initialize_execute_function(return_value, vm, runtime_functions, it->second, self_value, arguments);
+        frame.initialize_execute_function(return_value, vm, it->second, self_value, arguments);
         exit = true;
         return &frame;
     }

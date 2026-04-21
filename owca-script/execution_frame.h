@@ -69,7 +69,6 @@ namespace OwcaScript {
 			std::vector<States> states;
 			std::optional<OwcaIterator> iterator_object;
 			std::optional<OwcaException> exception_in_progress;
-			RuntimeFunctions* runtime_functions = nullptr;
 			RuntimeFunction* runtime_function = nullptr;
 			std::uint32_t code_position;
 			OwcaValue *return_value = nullptr;
@@ -82,7 +81,7 @@ namespace OwcaScript {
 			void clear();
 			void initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc);
 			void initialize_main_block_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
-			void initialize_execute_function(OwcaValue &return_value, VM *vm, RuntimeFunctions* runtime_functions, RuntimeFunction* runtime_function, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			void initialize_execute_function(OwcaValue &return_value, VM *vm, RuntimeFunction* runtime_function, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
 			OwcaValue get_identifier(unsigned int index);
 			void set_identifier(VM *vm, unsigned int index, OwcaValue value, bool function_write);
 
