@@ -265,6 +265,7 @@ namespace OwcaScript::Internal {
 		first_->emit(ei);
 		for (auto& q : nexts_) {
 			std::get<2>(q)->emit(ei);
+			ei.stack.pop();
 			switch(std::get<0>(q)) {
 			case CompareKind::Eq: ei.code_writer.append(line, ExecuteOp::ExprCompareEq); break;
 			case CompareKind::NotEq: ei.code_writer.append(line, ExecuteOp::ExprCompareNotEq); break;

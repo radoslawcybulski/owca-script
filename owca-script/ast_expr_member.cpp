@@ -42,8 +42,10 @@ namespace OwcaScript::Internal {
 
 	void AstExprMember::emit(EmitInfo& ei) {
 		value_->emit(ei);
-		if (value_to_write_)
+		if (value_to_write_) {
 			value_to_write_->emit(ei);
+			ei.stack.pop();
+		}
 		ei.code_writer.append(line, value_to_write_ ? ExecuteOp::ExprMemberWrite : ExecuteOp::ExprMemberRead);
 		ei.code_writer.append(line, member_);
 	}

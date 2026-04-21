@@ -104,6 +104,8 @@ namespace OwcaScript::Internal {
 		case Kind::CreateMap: ei.code_writer.append(line, ExecuteOp::ExprOperXCreateMap); break;
 		}
 		ei.code_writer.append(line, (std::uint32_t)args_.size());
+		ei.stack.pop(args_.size());
+		ei.stack.push();
 	}
 
 	void AstExprOperX::visit(AstVisitor& vis) { vis.apply(*this); }

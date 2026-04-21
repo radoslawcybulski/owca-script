@@ -450,6 +450,7 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(line, ExecuteOp::ExprRetTrueAndJumpIfTrue);
 			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
 			right_->emit(ei);
+			ei.stack.pop();
 			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::LogAnd) {
@@ -457,6 +458,7 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(line, ExecuteOp::ExprRetFalseAndJumpIfFalse);
 			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
 			right_->emit(ei);
+			ei.stack.pop();
 			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::MakeRange) {
@@ -465,11 +467,18 @@ namespace OwcaScript::Internal {
 			if (third_) third_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::ExprOper2MakeRange);
 			ei.code_writer.append(line, (std::uint8_t)((third_ ? 4 : 0) | (right_ ? 2 : 0) | (left_ ? 1 : 0)));
+			unsigned int cnt = 0;
+			if (left_) ++cnt;
+			if (right_) ++cnt;
+			if (third_) ++cnt;
+			if (cnt > 1)
+				ei.stack.pop(cnt - 1);
 		}
 		else {
 			left_->emit(ei);
 			right_->emit(ei);
 			if (third_) third_->emit(ei);
+			ei.stack.pop(third_ ? 2 : 1);
 			switch (kind_) {
 			case Kind::LogOr:
 			case Kind::LogAnd:

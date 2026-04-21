@@ -33,6 +33,7 @@ namespace OwcaScript::Internal {
 
 	void AstThrow::emit(EmitInfo& ei) {
 		value_->emit(ei);
+		ei.stack.pop();
 		ei.code_writer.append(line, ExecuteOp::Throw);
 	}
 

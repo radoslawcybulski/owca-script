@@ -75,6 +75,7 @@ namespace OwcaScript::Internal {
 				ei.code_writer.append(line, v);
 			}
 		);
+		ei.stack.push();
 	}
 	void AstExprConstant::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprConstant::visit_children(AstVisitor& vis) {

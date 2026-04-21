@@ -84,13 +84,16 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstClass::emit(EmitInfo& ei) {
+		ei.states.push();
 		ei.code_writer.append(line, ExecuteOp::ClassInit);
 		ei.code_writer.append(line, name_);
 		ei.code_writer.append(line, full_name_);
-		for(auto &q : members_)
+		for(auto &q : members_) {
 			q->emit(ei);
-		for(auto &q : base_classes_)
+		}
+		for(auto &q : base_classes_) {
 			q->emit(ei);
+		}
 		ei.code_writer.append(line, ExecuteOp::ClassCreate);
 		ei.code_writer.append(line, native_);
 		ei.code_writer.append(line, (std::uint32_t)base_classes_.size());
@@ -99,6 +102,10 @@ namespace OwcaScript::Internal {
 		ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
 		for (auto &q : variable_names_)
 			ei.code_writer.append(line, q);
+
+		ei.stack.pop(members_.size() + base_classes_.size());
+		ei.stack.push();
+		ei.states.pop();
 	}
 
 	void AstClass::visit(AstVisitor& vis) { vis.apply(*this); }

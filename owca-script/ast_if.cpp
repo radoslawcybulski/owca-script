@@ -48,6 +48,8 @@ namespace OwcaScript::Internal {
 
 	void AstIf::emit(EmitInfo& ei) {
 		value_->emit(ei);
+		ei.stack.pop();
+		assert(ei.stack.empty());
 		ei.code_writer.append(line, ExecuteOp::If);
 		if (if_false_) {
 			auto else_pos = ei.code_writer.append_placeholder<std::uint32_t>(line);

@@ -49,6 +49,7 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstLoopControl::emit(EmitInfo& ei) {
+		assert(ei.stack.empty());
         switch(mode_) {
         case Mode::Break:
 			ei.code_writer.append(line, ExecuteOp::LoopControlBreak);

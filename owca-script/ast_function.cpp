@@ -139,11 +139,19 @@ namespace OwcaScript::Internal {
 			}
 			auto next = ei.code_writer.append_placeholder<std::uint32_t>(line);
 
+			EmitInfo::MaxCounter us_stack, us_states;
+			std::swap(us_stack, ei.stack);
+			std::swap(us_states, ei.states);
 			assert(body_);
 			body_->emit(ei);
+			assert(ei.stack.empty());
+			assert(ei.states.empty());
+			std::swap(us_stack, ei.stack);
+			std::swap(us_states, ei.states);
 			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 			ei.code_writer.update_placeholder(next, ei.code_writer.position());
 		}
+		ei.stack.push();
 	}
 
 	void AstFunction::visit(AstVisitor& vis) { vis.apply(*this); }

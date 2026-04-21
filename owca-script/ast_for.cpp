@@ -127,6 +127,8 @@ namespace OwcaScript::Internal {
 	// };
 
 	void AstFor::emit(EmitInfo& ei) {
+        assert(ei.stack.empty());
+        ei.states.push();
         iterator_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::ExprToIterator);
         ei.code_writer.append(line, ExecuteOp::ForInit);
@@ -140,11 +142,14 @@ namespace OwcaScript::Internal {
         ei.code_writer.append(line, ExecuteOp::ExprIdentifierWrite);
         ei.code_writer.append(line, value_indexes[0]);
         ei.code_writer.append(line, ExecuteOp::ExprPopAndIgnore);
+        assert(ei.stack.empty());
         body_->emit(ei);
+        assert(ei.stack.empty());
         ei.code_writer.append(line, ExecuteOp::Jump);
         ei.code_writer.append(line, pos);
         ei.code_writer.update_placeholder(end, ei.code_writer.position());
         ei.code_writer.append(line, ExecuteOp::ForCompleted);
+        ei.states.pop();
 	}
 
 	void AstFor::visit(AstVisitor& vis) { vis.apply(*this); }

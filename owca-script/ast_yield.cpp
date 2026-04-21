@@ -31,6 +31,7 @@ namespace OwcaScript::Internal {
 
 	void AstYield::emit(EmitInfo& ei) {
 		value_->emit(ei);
+		ei.stack.pop();
 		ei.code_writer.append(line, ExecuteOp::Yield);
 	}
 

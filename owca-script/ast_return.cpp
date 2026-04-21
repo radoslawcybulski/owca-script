@@ -36,6 +36,8 @@ namespace OwcaScript::Internal {
 	void AstReturn::emit(EmitInfo& ei) {
 		if (value_) {
 			value_->emit(ei);
+			ei.stack.pop();
+			assert(ei.stack.empty());
 			ei.code_writer.append(line, ExecuteOp::ReturnValue);
 		}
 		else {

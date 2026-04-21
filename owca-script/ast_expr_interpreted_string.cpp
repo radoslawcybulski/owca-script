@@ -68,12 +68,15 @@ namespace OwcaScript::Internal {
         if (sizes.empty()) {
             ei.code_writer.append(line, ExecuteOp::ExprConstantString);
             ei.code_writer.append(line, strings);
+            ei.stack.push();
         }
         else {
             for(auto j = 0u; j < evals.size(); ++j) {
                 evals[j]->emit(ei);
                 ei.code_writer.append(line, ExecuteOp::ExprToString);
             }
+            ei.stack.pop(evals.size());
+            ei.stack.push();
             ei.code_writer.append(line, ExecuteOp::ExprConstantStringInterpolated);
             ei.code_writer.append(line, strings);
             ei.code_writer.append(line, (std::uint32_t)sizes.size());
