@@ -64,7 +64,7 @@ namespace OwcaScript::Internal {
         --vm->current_stack_trace_index;
         exit = true;
     }
-    void Executor::process_thrown_exception(ExecuteBufferReader *reader)
+    void Executor::process_thrown_exception(ExecuteBufferReader::Position *pos)
     {
         assert(currently_executing_frame().exception_in_progress);
         OwcaException exception = *currently_executing_frame().exception_in_progress;
@@ -74,7 +74,7 @@ namespace OwcaScript::Internal {
             while(!frame.states.empty()) {
                 if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
                     frame.code_position = state->catches_pos;
-                    if (reader) reader->jump(state->catches_pos);
+                    if (pos) *pos = ExecuteBufferReader::Position{ state->catches_pos };
 #ifdef OWCA_SCRIPT_EXEC_LOG                    
                     std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
 #endif
@@ -83,7 +83,7 @@ namespace OwcaScript::Internal {
                 frame.states.pop_back();
             }
             pop_frame();
-            reader = nullptr;
+            pos = nullptr;
             exit = true;
         }
         throw exception;
@@ -194,9 +194,9 @@ namespace OwcaScript::Internal {
 		return std::pair<size_t, size_t>{ v3, v4 };
 	}
 
-    bool Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind) {
-        auto jump_dest = reader.decode<std::uint32_t>();
-        const auto last = reader.decode<bool>();
+    bool Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
+        auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, pos, {});
+        const auto last = ExecuteBufferReader::decode<bool>(start_code, pos, {});
         auto &left = peek_value(2);
         auto right = peek_value(1);
         auto res = execute_compare(vm, kind, left, right);
@@ -208,7 +208,7 @@ namespace OwcaScript::Internal {
         case CompareResult::False:
             left = false;
             pop_values(1);
-            reader.jump(jump_dest);
+            pos = ExecuteBufferReader::Position{ jump_dest };
             return false;
         case CompareResult::NotExecuted:
             prepare_throw_cant_compare(kind, left.type(), right.type());
@@ -221,39 +221,47 @@ namespace OwcaScript::Internal {
     void Executor::run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction &sf)
     {
         static thread_local OwcaValue ignore_value;
-        auto reader = ExecuteBufferReader{ frame.runtime_function->code, frame.code_position };
+        auto &code_object = frame.runtime_function->code;
+        auto code_pos = ExecuteBufferReader::Position{ frame.code_position };
+        auto start_code = ExecuteBufferReader::StartOfCode{ frame.runtime_function->code.code() };
+        auto data_kinds = code_object.data_kinds();
+#ifdef MEASURE        
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;
 
         for(auto &t : times) t = 0;
         for(auto &c : counts) c = 0;
+#endif
+
         exit = false;
         do {
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
 #ifdef OWCA_SCRIPT_EXEC_LOG
-            auto line = reader.line_from_code_pos(reader.position());
+            auto line = code_object.get_line_by_position(code_pos.pos);
 #endif
-            auto opcode = reader.decode<ExecuteBufferReader::Op>();
+            auto opcode = ExecuteBufferReader::decode<ExecuteBufferReader::Op>(start_code, code_pos, data_kinds);
             // static std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
             // auto now = std::chrono::high_resolution_clock::now();
             // auto df = now - last_time;
             // last_time = now;
             // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-            std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << reader.position() << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
+            std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << code_pos.pos << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
             if (frame.exception_in_progress) std::cout << " (exception in progress)";
             std::cout << std::endl;
 #endif
             //last_time = std::chrono::high_resolution_clock::now();
+#ifdef MEASURE            
             auto start = std::chrono::high_resolution_clock::now();
+#endif
             switch(opcode) {
             case ExecuteBufferReader::Op::_Count:
                 assert(false);
                 break;
             case ExecuteBufferReader::Op::ClassInit: {
-                auto line = reader.line_from_code_pos(reader.position() - 1);
-                auto name = reader.decode<std::string_view>();
-                auto full_name = reader.decode<std::string_view>();
+                auto line = code_object.get_line_by_position(code_pos.pos - 1);
+                auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code);
                 frame.states.push_back(ExecutionFrame::ClassState{ name, full_name, cls });
                 break; }
@@ -265,11 +273,11 @@ namespace OwcaScript::Internal {
                 auto cls = state.cls;
                 frame.states.pop_back();
 
-                auto native = reader.decode<bool>();
-                auto base_class_count = reader.decode<std::uint32_t>();
-                auto member_count = reader.decode<std::uint32_t>();
-                auto all_variable_names = reader.decode<bool>();
-                auto variable_name_count = reader.decode<std::uint32_t>();
+                auto native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                auto base_class_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto member_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto all_variable_names = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                auto variable_name_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
 
                 auto base_classes = peek_values(base_class_count, base_class_count);
                 auto members = peek_values(member_count + base_class_count, member_count);
@@ -284,7 +292,7 @@ namespace OwcaScript::Internal {
                 }
                 else {
                     for(auto i = 0u; i < variable_name_count; ++i) {
-                        auto var_name = reader.decode<std::string_view>();
+                        auto var_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                         cls->initialize_add_variable(var_name);
                     }
                 }
@@ -313,44 +321,44 @@ namespace OwcaScript::Internal {
                 pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareEq: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Eq);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Eq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareNotEq: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::NotEq);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::NotEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLessEq: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::LessEq);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::LessEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMoreEq: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::MoreEq);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::MoreEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLess: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Less);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Less);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMore: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::More);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::More);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareIs: {
-                exit = run_impl_opcodes_execute_compare(reader, CompareKind::Is);
+                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Is);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantEmpty: {
                 push_value(OwcaEmpty{});
                 break; }
             case ExecuteBufferReader::Op::ExprConstantBool: {
-                auto value = reader.decode<bool>();
+                auto value = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                 push_value(value);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantFloat: {
-                auto value = reader.decode<Number>();
+                auto value = ExecuteBufferReader::decode<Number>(start_code, code_pos, data_kinds);
                 push_value(value);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantString: {
-                auto value = reader.decode<std::string_view>();
+                auto value = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 push_value(vm->create_string_from_view(value));
                 break; }
             case ExecuteBufferReader::Op::ExprConstantStringInterpolated: {
-                auto strings = reader.decode<std::string_view>();
-                auto expr_count = reader.decode<std::uint32_t>();
+                auto strings = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                auto expr_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 size_t size = strings.size();
                 auto values = peek_values(expr_count, expr_count);
                 for(auto i = 0u; i < expr_count; ++i) {
@@ -360,7 +368,7 @@ namespace OwcaScript::Internal {
                 auto new_str_pt = new_str->pointer();
                 const char *strings_ptr = strings.data();
                 for(auto i = 0u; i < expr_count; ++i) {
-                    auto sz = reader.decode<std::uint32_t>();
+                    auto sz = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     std::memcpy(new_str_pt, strings_ptr, sz);
                     new_str_pt += sz;
                     strings_ptr += sz;
@@ -376,30 +384,30 @@ namespace OwcaScript::Internal {
                 push_value(OwcaString{ new_str });
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierRead: {
-                auto index = reader.decode<std::uint32_t>();
+                auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 assert(index < frame.values.size());
                 push_value(frame.values[index]);
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierWrite: {
-                auto index = reader.decode<std::uint32_t>();
+                auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto &val = peek_value(1);
                 assert(index < frame.values.size());
                 frame.values[index] = val;
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierFunctionWrite: {
-                auto index = reader.decode<std::uint32_t>();
+                auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto &val = peek_value(1);
                 frame.set_identifier(vm, index, val, true);
                 break; }
             case ExecuteBufferReader::Op::ExprMemberRead: {
                 auto self = peek_value(1);
-                auto member = reader.decode<std::string_view>();
+                auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 peek_value(1) = vm->member(self, member);
                 break; }
             case ExecuteBufferReader::Op::ExprMemberWrite: {
                 auto val_to_write = peek_value(1);
                 auto self = peek_value(2);
-                auto member = reader.decode<std::string_view>();
+                auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 vm->member(self, member, val_to_write);
                 peek_value_and_make_top(2) = val_to_write;
                 break; }
@@ -416,18 +424,18 @@ namespace OwcaScript::Internal {
                 left = -left.as_float(vm);
                 break; }
             case ExecuteBufferReader::Op::ExprRetTrueAndJumpIfTrue: {
-                auto jump_dest = reader.decode<std::uint32_t>();
+                auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (peek_value(1).is_true()) {
-                    reader.jump(jump_dest);
+                    code_pos.pos = jump_dest;
                 }
                 else {
                     pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprRetFalseAndJumpIfFalse: {
-                auto jump_dest = reader.decode<std::uint32_t>();
+                auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (!peek_value(1).is_true()) {
-                    reader.jump(jump_dest);
+                    code_pos.pos = jump_dest;
                 }
                 else {
                     pop_values(1);
@@ -452,37 +460,37 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinOr: {
-                run_impl_opcodes_execute_expr_oper2<TagBinOr>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagBinOr>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinAnd: {
-                run_impl_opcodes_execute_expr_oper2<TagBinAnd>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagBinAnd>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinXor: {
-                run_impl_opcodes_execute_expr_oper2<TagBinXor>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagBinXor>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinLShift: {
-                run_impl_opcodes_execute_expr_oper2<TagBinLShift>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagBinLShift>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinRShift: {
-                run_impl_opcodes_execute_expr_oper2<TagBinRShift>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagBinRShift>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Add: {
-                run_impl_opcodes_execute_expr_oper2<TagAdd>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagAdd>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Sub: {
-                run_impl_opcodes_execute_expr_oper2<TagSub>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagSub>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Mul: {
-                run_impl_opcodes_execute_expr_oper2<TagMul>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagMul>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Div: {
-                run_impl_opcodes_execute_expr_oper2<TagDiv>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagDiv>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Mod: {
-                run_impl_opcodes_execute_expr_oper2<TagMod>(reader);
+                run_impl_opcodes_execute_expr_oper2<TagMod>();
                 break; }
             case ExecuteBufferReader::Op::ExprOper2MakeRange: {
-                auto mode = reader.decode<std::uint8_t>();
+                auto mode = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 Number first, second, third;
                 if (mode & 4) {
                     third = peek_value(1).as_float(vm);
@@ -684,30 +692,30 @@ namespace OwcaScript::Internal {
                 );
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCall: {
-                auto size = reader.decode<std::uint32_t>();
+                auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto args = peek_values(size - 1, size - 1);
                 auto &fnc = peek_value_and_make_top(size);
                 prepare_execute_call(fnc, fnc, args);
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateArray: {\
-                auto size = reader.decode<std::uint32_t>();
+                auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto args = peek_values(size, size);
                 auto arguments = std::deque<OwcaValue>{ args.begin(), args.end() };
                 peek_value_and_make_top(size) = vm->create_array(std::move(arguments));
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateTuple: {
-                auto size = reader.decode<std::uint32_t>();
+                auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto args = peek_values(size, size);
                 auto arguments = std::vector<OwcaValue>{ args.begin(), args.end() };
                 peek_value_and_make_top(size) = vm->create_tuple(std::move(arguments));
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateSet: {
-                auto size = reader.decode<std::uint32_t>();
+                auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto args = peek_values(size, size);
                 peek_value_and_make_top(size) = vm->create_set(args);
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateMap: {
-                auto size = reader.decode<std::uint32_t>();
+                auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto args = peek_values(size, size);
                 peek_value_and_make_top(size) = vm->create_map(args);
                 break; }
@@ -716,10 +724,10 @@ namespace OwcaScript::Internal {
                 pop_values(1);
                 frame.states.push_back(ExecutionFrame::ForState{ iterator });
                 auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
-                state.end_position = reader.decode<std::uint32_t>();
-                state.loop_index = reader.decode<std::uint32_t>();
-                state.loop_control_depth = reader.decode<std::uint8_t>();
-                state.continue_position = reader.position();
+                state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                state.continue_position = code_pos.pos;
                 break; }
             case ExecuteBufferReader::Op::ForCondition: {
                 assert(!frame.states.empty());
@@ -738,7 +746,7 @@ namespace OwcaScript::Internal {
                     assert(!frame.states.empty());
                     assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
                     auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
-                    reader.jump(state.end_position);
+                    code_pos = ExecuteBufferReader::Position{ state.end_position };
                     pop_values(1);
                 }
                 break; }
@@ -749,24 +757,19 @@ namespace OwcaScript::Internal {
                 frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::Function: {
-                auto name = reader.decode<std::string_view>();
-                auto full_name = reader.decode<std::string_view>();
-                auto is_native = reader.decode<bool>();
-                auto is_generator = reader.decode<bool>();
-                auto is_method = reader.decode<bool>();
-                auto param_count = reader.decode<std::uint32_t>();
+                auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                auto is_native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                auto is_generator = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                auto is_method = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                auto param_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 std::vector<std::string_view> identifier_names;
-                reader.decode_span_helper<std::string_view>(
-                    [&](size_t index, size_t size, std::string_view value) {
-                        if (index == 0) identifier_names.resize(size);
-                        identifier_names[index] = value;
-                    }
-                );
+                identifier_names.resize(ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds));
+                for(auto &n : identifier_names) n = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
 
-                auto code = reader.code();
                 RuntimeFunction *fnc = nullptr;
                 if (is_native) {
-                    auto &native_provider = code.native_code_provider();
+                    auto &native_provider = code_object.native_code_provider();
                     std::optional<ClassToken> class_;
                     if (!frame.states.empty()) {
                         if (std::holds_alternative<ExecutionFrame::ClassState>(frame.states.back())) {
@@ -775,7 +778,7 @@ namespace OwcaScript::Internal {
                         }
                     }
                     if (is_generator) {
-                        fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeGenerator{});
+                        fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeGenerator{});
                         auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
                         ng.parameter_names = std::move(identifier_names);
                         if (native_provider) {
@@ -790,7 +793,7 @@ namespace OwcaScript::Internal {
                         }
                     }
                     else {
-                        fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::NativeFunction{});
+                        fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeFunction{});
                         auto &nf = std::get<RuntimeFunction::NativeFunction>(fnc->data);
                         nf.parameter_names = std::move(identifier_names);
                         if (native_provider) {
@@ -806,20 +809,20 @@ namespace OwcaScript::Internal {
                     }
                 }
                 else {
-                    fnc = vm->allocate<RuntimeFunction>(0, std::move(code), name, full_name, RuntimeFunction::ScriptFunction{});
+                    fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::ScriptFunction{});
                     auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
                     sf.is_generator = is_generator;
                     sf.identifier_names = std::move(identifier_names);
-                    auto copy_from_parent_count = reader.decode<std::uint32_t>();
+                    auto copy_from_parent_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     sf.copy_from_parents.reserve(copy_from_parent_count);
                     for(auto i = 0u; i < copy_from_parent_count; ++i) {
-                        auto index_in_parent = reader.decode<std::uint32_t>();
-                        auto identifier_index = reader.decode<std::uint32_t>();
+                        auto index_in_parent = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                        auto identifier_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                         sf.copy_from_parents.push_back({ index_in_parent, identifier_index });
                     }
-                    auto next = reader.decode<std::uint32_t>();
-                    sf.entry_point = reader.position();
-                    reader.jump(next);
+                    auto next = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    sf.entry_point = code_pos.pos;
+                    code_pos = ExecuteBufferReader::Position{ next };
 
                     sf.values_from_parents.reserve(sf.copy_from_parents.size());
                     for(auto c : sf.copy_from_parents) {
@@ -834,27 +837,27 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::If: {
                 auto val = peek_value(1).is_true();
-                auto else_position = reader.decode<std::uint32_t>();
+                auto else_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (!val) {
-                    reader.jump(else_position);
+                    code_pos = ExecuteBufferReader::Position{ else_position };
                 }
                 pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::LoopControlBreak: {
-                auto depth = reader.decode<std::uint8_t>();
+                auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 while(true) {
                     assert(!frame.states.empty());
                     auto found = visit_variant(frame.states.back(),
                         [&](const ExecutionFrame::ForState& s) {
                             if (s.loop_control_depth == depth) {
-                                reader.jump(s.end_position);
+                                code_pos = ExecuteBufferReader::Position{ s.end_position };
                                 return true;
                             }
                             return false;
                         },
                         [&](const ExecutionFrame::WhileState& s) {
                             if (s.loop_control_depth == depth) {
-                                reader.jump(s.end_position);
+                                code_pos = ExecuteBufferReader::Position{ s.end_position };
                                 return true;
                             }
                             return false;
@@ -866,20 +869,20 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::LoopControlContinue: {
-                auto depth = reader.decode<std::uint8_t>();
+                auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 while(true) {
                     assert(!frame.states.empty());
                     auto found = visit_variant(frame.states.back(),
                         [&](const ExecutionFrame::ForState& s) {
                             if (s.loop_control_depth == depth) {
-                                reader.jump(s.continue_position);
+                                code_pos = ExecuteBufferReader::Position{ s.continue_position };
                                 return true;
                             }
                             return false;
                         },
                         [&](const ExecutionFrame::WhileState& s) {
                             if (s.loop_control_depth == depth) {
-                                reader.jump(s.continue_position);
+                                code_pos = ExecuteBufferReader::Position{ s.continue_position };
                                 return true;
                             }
                             return false;
@@ -914,17 +917,17 @@ namespace OwcaScript::Internal {
                 auto exception = peek_value(1);
                 pop_values(1);
                 frame.exception_in_progress = exception.as_exception(vm);
-                process_thrown_exception(&reader);
+                process_thrown_exception(&code_pos);
                 break; }
             case ExecuteBufferReader::Op::TryInit: {
                 frame.states.push_back(ExecutionFrame::TryCatchState{});
                 auto &state = std::get<ExecutionFrame::TryCatchState>(frame.states.back());
                 state.parent_exception = frame.exception_in_progress;
                 frame.exception_in_progress.reset();
-                state.begin_pos = reader.decode<std::uint32_t>();
-                state.end_pos = reader.decode<std::uint32_t>();
-                state.catches_pos = reader.position();
-                reader.jump(state.begin_pos);
+                state.begin_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.end_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.catches_pos = code_pos.pos;
+                code_pos = ExecuteBufferReader::Position{ state.begin_pos };
                 state.temporaries_size = frame.temporaries.size();
                 break; }
             case ExecuteBufferReader::Op::TryCompleted: {
@@ -936,9 +939,9 @@ namespace OwcaScript::Internal {
                 frame.states.pop_back();
                 break; }
             case ExecuteBufferReader::Op::TryCatchType: {
-                auto values = reader.decode<std::uint32_t>();
-                auto ident = reader.decode<std::uint32_t>();
-                auto skip_jump = reader.decode<std::uint32_t>();
+                auto values = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto ident = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto skip_jump = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
 
                 auto exc_types = peek_values(values, values);
                 assert(frame.exception_in_progress);
@@ -957,25 +960,25 @@ namespace OwcaScript::Internal {
                     }
                 }
                 else {
-                    reader.jump(skip_jump);
+                    code_pos = ExecuteBufferReader::Position{ skip_jump };
                 }
                 break; }
             case ExecuteBufferReader::Op::TryCatchTypeCompleted: {
-                process_thrown_exception(&reader);
+                process_thrown_exception(&code_pos);
                 break; }
             case ExecuteBufferReader::Op::TryBlockCompleted: {
                 assert(frame.exception_in_progress);
                 frame.exception_in_progress = std::nullopt;
-                auto pos = reader.decode<std::uint32_t>();
-                reader.jump(pos);
+                auto pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                code_pos = ExecuteBufferReader::Position{ pos };
                 break; }
             case ExecuteBufferReader::Op::WhileInit: {
                 frame.states.push_back(ExecutionFrame::WhileState{});
                 auto &state = std::get<ExecutionFrame::WhileState>(frame.states.back());
-                state.end_position = reader.decode<std::uint32_t>();
-                state.loop_index = reader.decode<std::uint32_t>();
-                state.loop_control_depth = reader.decode<std::uint8_t>();
-                state.continue_position = reader.position();
+                state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                state.continue_position = code_pos.pos;
                 break; }
             case ExecuteBufferReader::Op::WhileCondition: {
                 assert(!frame.states.empty());
@@ -994,7 +997,7 @@ namespace OwcaScript::Internal {
                 auto value = peek_value(1).as_bool(vm);
                 pop_values(1);
                 if (!value) {
-                    reader.jump(state.end_position);
+                    code_pos = ExecuteBufferReader::Position{ state.end_position };
                 }
                 break; }
             case ExecuteBufferReader::Op::WhileCompleted: {
@@ -1016,7 +1019,7 @@ namespace OwcaScript::Internal {
                 assert(std::holds_alternative<ExecutionFrame::WithState>(frame.states.back()));
                 auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
                 state.entered = true;
-                auto index = reader.decode<std::uint32_t>();
+                auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (index != std::numeric_limits<std::uint32_t>::max()) {
                     frame.set_identifier(vm, index, peek_value(1), false);
                 }
@@ -1036,31 +1039,35 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::Yield: {
                 assert(frame.runtime_function->is_generator());
                 *frame.return_value = peek_value(1);
-                frame.code_position = reader.position();
+                frame.code_position = code_pos.pos;
                 pop_values(1);
                 pop_frame();
                 assert(exit);
                 break; }
             case ExecuteBufferReader::Op::Jump: {
-                auto dest = reader.decode<std::uint32_t>();
-                reader.jump(dest);
+                auto dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                code_pos = ExecuteBufferReader::Position{ dest };
                 break; }
             }
-            frame.code_position = reader.position();
+            frame.code_position = code_pos.pos;
+#ifdef MEASURE
             auto end = std::chrono::high_resolution_clock::now();
             times[(size_t)opcode] += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
             counts[(size_t)opcode]++;
+#endif
             //std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
         } while(!exit);
 
+#ifdef MEASURE
         std::cout << "\n\n";
         for(auto i = 0u; i < (size_t)ExecuteBufferReader::Op::_Count; ++i) {
             auto t = times[i];
             auto c = counts[i];
             if (t > 0) {
-                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << "\n";
+                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << " (count " << c << ")\n";
             }
         }
+#endif
     }
 
     template <typename Tag> std::string_view tag_name = "unknown";
@@ -1175,7 +1182,7 @@ namespace OwcaScript::Internal {
         assert(exit);
         return {};
     }
-    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader) {
+    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2() {
         auto right = peek_value(1);
         auto left = peek_value(2);
         auto &ret = peek_value_and_make_top(2);

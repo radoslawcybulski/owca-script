@@ -5,6 +5,7 @@
 #include "owca_value.h"
 #include "execution_frame.h"
 #include "runtime_function.h"
+#include "exec_buffer.h"
 
 namespace OwcaScript {
 	class OwcaCode;
@@ -48,8 +49,8 @@ namespace OwcaScript {
 			[[noreturn]] void run_and_throw();
 			void run_impl();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
-			bool run_impl_opcodes_execute_compare(ExecuteBufferReader &reader, CompareKind kind);
-			void process_thrown_exception(ExecuteBufferReader *reader);
+			bool run_impl_opcodes_execute_compare(ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
+			void process_thrown_exception(ExecuteBufferReader::Position *pos);
 			struct TagBinOr {};
 			struct TagBinAnd {};
 			struct TagBinXor {};
@@ -60,7 +61,7 @@ namespace OwcaScript {
 			struct TagMul {};
 			struct TagDiv {};
 			struct TagMod {};
-			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecuteBufferReader &reader);
+			template <typename Tag> void run_impl_opcodes_execute_expr_oper2();
 			Number expr_oper_2(TagAdd, Number left, Number right);
 			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
 			OwcaTuple expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right);

@@ -24,18 +24,19 @@ TEST_F(BufferTest, ints)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
 
-    ASSERT_EQ(reader.decode<std::int8_t>(), 1);
-    ASSERT_EQ(reader.decode<std::int16_t>(), 2);
-    ASSERT_EQ(reader.decode<std::int32_t>(), 3);
-    ASSERT_EQ(reader.decode<std::int64_t>(), 4);
-    ASSERT_EQ(reader.decode<bool>(), true);
-    ASSERT_EQ(reader.decode<bool>(), false);
-    ASSERT_EQ(reader.decode<std::uint8_t>(), 5);
-    ASSERT_EQ(reader.decode<std::uint16_t>(), 6);
-    ASSERT_EQ(reader.decode<std::uint32_t>(), 7);
-    ASSERT_EQ(reader.decode<std::uint64_t>(), 8);
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::int8_t>(code_start, code_pos, {}), 1);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::int16_t>(code_start, code_pos, {}), 2);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::int32_t>(code_start, code_pos, {}), 3);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::int64_t>(code_start, code_pos, {}), 4);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<bool>(code_start, code_pos, {}), true);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<bool>(code_start, code_pos, {}), false);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, {}), 5);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::uint16_t>(code_start, code_pos, {}), 6);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, {}), 7);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::uint64_t>(code_start, code_pos, {}), 8);
 }
 
 TEST_F(BufferTest, floats)
@@ -47,10 +48,10 @@ TEST_F(BufferTest, floats)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
-
-    ASSERT_EQ(reader.decode<float>(), 1.1f);
-    ASSERT_EQ(reader.decode<double>(), 2.2);
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<float>(code_start, code_pos, {}), 1.1f);
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<double>(code_start, code_pos, {}), 2.2);
 }
 
 TEST_F(BufferTest, string)
@@ -61,28 +62,13 @@ TEST_F(BufferTest, string)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_EQ(reader.decode<std::string_view>(), "qwerty");
+    ASSERT_EQ(Internal::ExecuteBufferReader::decode<std::string_view>(code_start, code_pos, {}), "qwerty");
 }
 
-TEST_F(BufferTest, vector)
-{
-    Internal::ExecuteBufferWriter tmp;
-    std::vector<int> tmp_vec = {1, 2, 3, 4, 5};
-    tmp.append_span_helper({}, tmp_vec);
-
-    auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
-
-    std::vector<int> res;
-    reader.decode_span_helper<int>([&](size_t, size_t, int v) {
-        res.push_back(v);
-    });
-    ASSERT_EQ(res, tmp_vec);
-}
-
+#ifdef DEBUG
 TEST_F(BufferTest, invalid_opcode1)
 {
     Internal::ExecuteBufferWriter tmp;
@@ -91,9 +77,10 @@ TEST_F(BufferTest, invalid_opcode1)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(reader.decode<Internal::ExecuteBufferReader::Op>(), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode2)
@@ -104,9 +91,10 @@ TEST_F(BufferTest, invalid_opcode2)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(reader.decode<std::uint8_t>(), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, {}), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode3)
@@ -117,9 +105,10 @@ TEST_F(BufferTest, invalid_opcode3)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(reader.decode<Internal::ExecuteBufferReader::Op>(), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode4)
@@ -130,9 +119,10 @@ TEST_F(BufferTest, invalid_opcode4)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(reader.decode<std::uint32_t>(), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, {}), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode5)
@@ -143,8 +133,9 @@ TEST_F(BufferTest, invalid_opcode5)
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
     OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto reader = Internal::ExecuteBufferReader{ code, 0 };
+    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
+    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(reader.decode<Internal::ExecuteBufferReader::Op>(), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
 }
-
+#endif

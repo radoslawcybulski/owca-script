@@ -218,96 +218,97 @@ namespace OwcaScript {
 
         class ExecuteBufferReader {
         public:
+            struct Position {
+                std::uint32_t pos = 0;
+
+                Position() = default;
+                explicit Position(std::uint32_t p) : pos(p) {}
+            };
+            struct StartOfCode {
+                const unsigned char *start;
+                explicit StartOfCode(std::span<const unsigned char> code) : start(code.data()) {}
+            };
+
             using Op = ExecuteOp;
 
-            ExecuteBufferReader(OwcaCode code, size_t pos);
-
-            std::uint32_t position() const { return pos; }
-            void jump(std::uint32_t new_pos) { pos = new_pos; }
-            Line line_from_code_pos(std::uint32_t pos) const;
-            const auto &code() const { return code_object_; }
-
-            template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
-                auto size = decode_size();
-                if (size > 0) ensure_data_kind(DataKind::Blob, pos);
-                auto p = align_pos(alignof(char), sizeof(char) * size);
-                return std::string_view((const char*)(code_.data() + p), size);
+            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_same_v<T, std::string_view>) {
+                auto size = decode_size(code, pos, data_kinds);
+#ifdef DEBUG                
+                if (size > 0) ensure_data_kind(*data_kinds, DataKind::Blob, pos);
+#endif
+                auto p = align_pos(pos, alignof(char), sizeof(char) * size);
+                return std::string_view((const char*)(code.start + p), size);
             }
-            template <typename T> T decode() requires(std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
-                auto p = align_pos(alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
-                ensure_data_kind(std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
+                auto p = align_pos(pos, alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
+#ifdef DEBUG                
+                ensure_data_kind(*data_kinds, std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
+#endif
                 T t;
-                std::memcpy(&t, code_.data() + p, sizeof(T));
+                std::memcpy(&t, code.start + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            template <typename T> T decode() requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
-                auto p = align_pos(alignof(T), sizeof(T));
+                auto p = align_pos(pos, alignof(T), sizeof(T));
+#ifdef DEBUG
                 if (std::is_same_v<T, bool>) {
-                    ensure_data_kind(DataKind::Bool, p);
+                    ensure_data_kind(*data_kinds, DataKind::Bool, p);
                 } else if (sizeof(T) == 1) {
-                    ensure_data_kind(DataKind::Int8, p);
+                    ensure_data_kind(*data_kinds, DataKind::Int8, p);
                 } else if (sizeof(T) == 2) {
-                    ensure_data_kind(DataKind::Int16, p);
+                    ensure_data_kind(*data_kinds, DataKind::Int16, p);
                 } else if (sizeof(T) == 4) {
-                    ensure_data_kind(DataKind::Int32, p);
+                    ensure_data_kind(*data_kinds, DataKind::Int32, p);
                 } else if (sizeof(T) == 8) {
-                    ensure_data_kind(DataKind::Int64, p);
+                    ensure_data_kind(*data_kinds, DataKind::Int64, p);
+                } else {
+                    static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
+#endif
                 T t;
-                std::memcpy(&t, code_.data() + p, sizeof(T));
+                std::memcpy(&t, code.start + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            template <typename T> T decode() requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
-                auto p = align_pos(alignof(T), sizeof(T));
+                auto p = align_pos(pos, alignof(T), sizeof(T));
+#ifdef DEBUG
                 if (sizeof(T) == 4) {
-                    ensure_data_kind(DataKind::Float32, p);
+                    ensure_data_kind(*data_kinds, DataKind::Float32, p);
                 } else if (sizeof(T) == 8) {
-                    ensure_data_kind(DataKind::Float64, p);
+                    ensure_data_kind(*data_kinds, DataKind::Float64, p);
                 }
+#endif
                 T t;
-                std::memcpy(&t, code_.data() + p, sizeof(T));
+                std::memcpy(&t, code.start + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            template <typename T> void decode_span_helper(const auto &cb) {
-                auto sz = decode_size();
-                for(auto i = 0u; i < sz; ++i) {
-                    auto v = decode<T>();
-                    cb(i, sz, v);
-                }
-            }
-            // template <typename T> T decode() {
-            //     return T{ *this };
-            // }
         private:
-            size_t decode_size() {
-                auto p = align_pos(alignof(std::uint32_t), sizeof(std::uint32_t));
-                ensure_data_kind(DataKind::Size, p);
+            static size_t decode_size(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
+                auto p = align_pos(pos, alignof(std::uint32_t), sizeof(std::uint32_t));
+#ifdef DEBUG
+                ensure_data_kind(data_kinds, DataKind::Size, p);
+#endif
                 std::uint32_t size;
-                std::memcpy(&size, code_.data() + p, sizeof(size));
+                std::memcpy(&size, code.start + p, sizeof(size));
                 return size;
             }
-            void ensure_data_kind(DataKind expected, size_t p) {
 #ifdef DEBUG
+            static void ensure_data_kind(constd::span<const DataKind> data_kinds, DataKind expected, size_t p) {
                 if (!data_kinds.empty() && data_kinds[p] != expected) {
                     auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p, to_string(expected), to_string(data_kinds[p]));
                     std::cout << msg << std::endl;
                     throw std::runtime_error(msg);
                 }
-#endif
             }
-            size_t align_pos(size_t align, size_t size) {
-                auto p = pos;
-                pos += size;
+#endif
+            static size_t align_pos(Position &pos, size_t align, size_t size) {
+                auto p = pos.pos;
+                pos.pos += size;
                 return p;
             }
-            OwcaCode code_object_;
-            std::span<const unsigned char> code_;
-            std::span<const DataKind> data_kinds;
-            std::span<const LineEntry> lines;
-            size_t pos;
         };
 
         class ExecuteBufferWriter {
@@ -400,15 +401,6 @@ namespace OwcaScript {
             }
             template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
                 serialize_object(*this, line, t);
-            }
-            template <typename T> void append_span_helper(Line line, std::span<T> vec) {
-                append_size(line, vec.size());
-                for (const auto &item : vec) {
-                    append(line, item);
-                }
-            }
-            template <typename T> void append_span_helper(Line line, const std::vector<T> &vec) {
-                append_span_helper(line, std::span<const T>(vec.data(), vec.size()));
             }
             std::uint32_t position() const { return buffer.size(); }
 

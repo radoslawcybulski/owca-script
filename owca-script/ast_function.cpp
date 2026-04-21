@@ -112,10 +112,6 @@ namespace OwcaScript::Internal {
 	// 	}
 	// };
 
-	AstFunction::CopyFromParent::CopyFromParent(ExecuteBufferReader &reader) {
-		index_in_parent = reader.decode<std::uint32_t>();
-		index_in_child = reader.decode<std::uint32_t>();
-	}
 	void serialize_object(ExecuteBufferWriter &writer, Line line, const AstFunction::CopyFromParent &o) {
 		writer.append(line, o.index_in_parent);
 		writer.append(line, o.index_in_child);
@@ -129,7 +125,10 @@ namespace OwcaScript::Internal {
 		ei.code_writer.append(line, generator_ == Generator::Yes);
 		ei.code_writer.append(line, param_count_ > 0 && identifier_names_[0] == "self");
 		ei.code_writer.append(line, (std::uint32_t)param_count_);
-		ei.code_writer.append_span_helper(line, identifier_names_);
+		ei.code_writer.append(line, (std::uint32_t)identifier_names_.size());
+		for(auto &id : identifier_names_) {
+			ei.code_writer.append(line, id);
+		}
 		if (native_ == Native::Yes) {
 		}
 		else {

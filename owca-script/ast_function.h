@@ -19,9 +19,7 @@ namespace OwcaScript {
 				std::uint32_t index_in_child;
 
 				CopyFromParent(std::uint32_t index_in_parent, std::uint32_t index_in_child) : index_in_parent(index_in_parent), index_in_child(index_in_child) {}
-				explicit CopyFromParent(ExecuteBufferReader &);
 
-				friend void serialize_object(ExecuteBufferWriter &writer, Line line, const CopyFromParent &o);
 				bool compare(const CopyFromParent &o) const {
 					return index_in_child == o.index_in_child && index_in_parent == o.index_in_parent;
 				}
