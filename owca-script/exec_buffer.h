@@ -130,6 +130,7 @@ namespace OwcaScript {
             WithCompleted,
             Yield,
             Jump,
+            _Count
         };
         inline std::string_view to_string(ExecuteOp op) {
             switch(op) {
@@ -298,7 +299,6 @@ namespace OwcaScript {
 #endif
             }
             size_t align_pos(size_t align, size_t size) {
-                pos += (align - (pos % align)) % align;
                 auto p = pos;
                 pos += size;
                 return p;
@@ -319,7 +319,7 @@ namespace OwcaScript {
                 auto align = alignof(T);
                 auto size = sizeof(T) * sz;
                 auto current_size = buffer.size();
-                auto padding = (align - (current_size % align)) % align;
+                auto padding = 0u;
                 buffer.resize(current_size + padding + size);
                 data_kinds.resize(buffer.size(), DataKind::Unfilled);
                 data_kinds[current_size + padding] = kind;

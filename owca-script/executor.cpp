@@ -217,10 +217,16 @@ namespace OwcaScript::Internal {
         assert(false);
         return true;
     }
+
     void Executor::run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction &sf)
     {
         static thread_local OwcaValue ignore_value;
         auto reader = ExecuteBufferReader{ frame.runtime_function->code, frame.code_position };
+        std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
+        std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;
+
+        for(auto &t : times) t = 0;
+        for(auto &c : counts) c = 0;
         exit = false;
         do {
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
@@ -239,6 +245,7 @@ namespace OwcaScript::Internal {
             std::cout << std::endl;
 #endif
             //last_time = std::chrono::high_resolution_clock::now();
+            auto start = std::chrono::high_resolution_clock::now();
             switch(opcode) {
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line_from_code_pos(reader.position() - 1);
@@ -367,12 +374,14 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierRead: {
                 auto index = reader.decode<std::uint32_t>();
-                push_value(frame.get_identifier(index));
+                assert(index < frame.values.size());
+                push_value(frame.values[index]);
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierWrite: {
                 auto index = reader.decode<std::uint32_t>();
                 auto &val = peek_value(1);
-                frame.set_identifier(vm, index, val, false);
+                assert(index < frame.values.size());
+                frame.values[index] = val;
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierFunctionWrite: {
                 auto index = reader.decode<std::uint32_t>();
@@ -1034,8 +1043,20 @@ namespace OwcaScript::Internal {
                 break; }
             }
             frame.code_position = reader.position();
+            auto end = std::chrono::high_resolution_clock::now();
+            times[(size_t)opcode] += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+            counts[(size_t)opcode]++;
             //std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
         } while(!exit);
+
+        std::cout << "\n\n";
+        for(auto i = 0u; i < (size_t)ExecuteBufferReader::Op::_Count; ++i) {
+            auto t = times[i];
+            auto c = counts[i];
+            if (t > 0) {
+                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << "\n";
+            }
+        }
     }
 
     template <typename Tag> std::string_view tag_name = "unknown";
