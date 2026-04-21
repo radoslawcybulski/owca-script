@@ -278,9 +278,9 @@ namespace OwcaScript {
                     cb(i, sz, v);
                 }
             }
-            template <typename T> T decode() {
-                return T{ *this };
-            }
+            // template <typename T> T decode() {
+            //     return T{ *this };
+            // }
         private:
             size_t decode_size() {
                 auto p = align_pos(alignof(std::uint32_t), sizeof(std::uint32_t));

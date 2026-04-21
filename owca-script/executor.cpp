@@ -247,6 +247,9 @@ namespace OwcaScript::Internal {
             //last_time = std::chrono::high_resolution_clock::now();
             auto start = std::chrono::high_resolution_clock::now();
             switch(opcode) {
+            case ExecuteBufferReader::Op::_Count:
+                assert(false);
+                break;
             case ExecuteBufferReader::Op::ClassInit: {
                 auto line = reader.line_from_code_pos(reader.position() - 1);
                 auto name = reader.decode<std::string_view>();
@@ -807,12 +810,13 @@ namespace OwcaScript::Internal {
                     auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
                     sf.is_generator = is_generator;
                     sf.identifier_names = std::move(identifier_names);
-                    reader.decode_span_helper<AstFunction::CopyFromParent>(
-                        [&](size_t index, size_t size, AstFunction::CopyFromParent value) {
-                            if (index == 0) sf.copy_from_parents.reserve(size);
-                            sf.copy_from_parents.push_back(value);
-                        }
-                    );
+                    auto copy_from_parent_count = reader.decode<std::uint32_t>();
+                    sf.copy_from_parents.reserve(copy_from_parent_count);
+                    for(auto i = 0u; i < copy_from_parent_count; ++i) {
+                        auto index_in_parent = reader.decode<std::uint32_t>();
+                        auto identifier_index = reader.decode<std::uint32_t>();
+                        sf.copy_from_parents.push_back({ index_in_parent, identifier_index });
+                    }
                     auto next = reader.decode<std::uint32_t>();
                     sf.entry_point = reader.position();
                     reader.jump(next);

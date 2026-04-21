@@ -133,7 +133,11 @@ namespace OwcaScript::Internal {
 		if (native_ == Native::Yes) {
 		}
 		else {
-			ei.code_writer.append_span_helper(line, copy_from_parents_);
+			ei.code_writer.append(line, (std::uint32_t)copy_from_parents_.size());
+			for(auto i = 0u; i < copy_from_parents_.size(); ++i) {
+				ei.code_writer.append(line, copy_from_parents_[i].index_in_parent);
+				ei.code_writer.append(line, copy_from_parents_[i].index_in_child);
+			}
 			auto next = ei.code_writer.append_placeholder<std::uint32_t>(line);
 
 			assert(body_);
