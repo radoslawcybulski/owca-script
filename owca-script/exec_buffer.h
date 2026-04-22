@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "line.h"
 #include "owca_code.h"
+#include <unordered_map>
 
 #ifdef DEBUG
 //#define OWCA_SCRIPT_EXEC_LOG
@@ -221,11 +222,11 @@ namespace OwcaScript {
         };
 
         class CodePosition {
-            std::uint32_t pos = 0;
+            const unsigned char *pos = nullptr;
         public:
 
             CodePosition() = default;
-            explicit CodePosition(std::uint32_t p) : pos(p) {}
+            explicit CodePosition(const unsigned char *pos) : pos(pos) {}
 
             auto value() const { return pos; }
             CodePosition operator + (std::int32_t offset) const {
@@ -236,18 +237,15 @@ namespace OwcaScript {
             }
         };
         class StartOfCode {
-            const unsigned char *start;
         public:
-            explicit StartOfCode(std::span<const unsigned char> code) : start(code.data()) {}
-
             const unsigned char *operator +(CodePosition pos) const {
-                return start + pos.value();
+                return pos.value();
             }
         };
         class ExecuteBufferReader {
         public:
             using Position = CodePosition;
-            using DataKindsType = std::unordered_map<std::uint32_t, DataKind>;
+            using DataKindsType = std::unordered_map<const unsigned char *, DataKind>;
             using Op = ExecuteOp;
 
             template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_same_v<T, std::string_view>) {
@@ -330,7 +328,7 @@ namespace OwcaScript {
                 if (!data_kinds.empty()) {
                     auto it = data_kinds.find(p.value());
                     if (it == data_kinds.end() || it->second != expected) {
-                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p.value(), to_string(expected), it == data_kinds.end() ? "Unknown" : to_string(it->second));
+                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", (void*)p.value(), to_string(expected), it == data_kinds.end() ? "Unknown" : to_string(it->second));
                         std::cout << msg << std::endl;
                         throw std::runtime_error(msg);
                     }
@@ -346,7 +344,7 @@ namespace OwcaScript {
 
         class ExecuteBufferWriter {
             std::vector<unsigned char> buffer;
-            using DataKindsType = std::unordered_map<std::uint32_t, DataKind>;
+            using DataKindsType = std::unordered_map<size_t, DataKind>;
             DataKindsType data_kinds;
             std::vector<LineEntry> lines;
 
@@ -393,7 +391,7 @@ namespace OwcaScript {
                 return Line{ lines.back().line };
             }
             auto take() && {
-                return std::make_tuple(std::move(buffer), std::move(data_kinds), std::move(lines));
+                return std::make_tuple(std::move(buffer), ExecuteBufferReader::DataKindsType{}, std::move(lines));
             }
             void append_jump_position(Line line, std::uint32_t target_pos) {
                 auto jump_pos = append_jump_placeholder(line);

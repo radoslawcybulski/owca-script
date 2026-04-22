@@ -816,7 +816,7 @@ function native time();
 		for(auto s : iterate_frames()) {
 			auto &st = *s;
 			exc.frames.push_back({ .code = st.runtime_function->code });
-			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position.value() > 0 ? st.code_position - 1 : CodePosition{0}).line;
+			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position - 1).line;
 			exc.frames.back().function = st.runtime_function->full_name;
 		}
 	}

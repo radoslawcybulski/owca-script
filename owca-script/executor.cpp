@@ -225,8 +225,8 @@ namespace OwcaScript::Internal {
     {
         static thread_local OwcaValue ignore_value;
         auto &code_object = frame.runtime_function->code;
-        auto code_pos = ExecuteBufferReader::Position{ frame.code_position };
-        auto start_code = StartOfCode{ frame.runtime_function->code.code() };
+        auto code_pos = frame.code_position;
+        auto start_code = StartOfCode{ };
         const auto &data_kinds = code_object.data_kinds();
 #ifdef MEASURE        
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;

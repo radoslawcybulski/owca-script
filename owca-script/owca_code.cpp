@@ -5,7 +5,8 @@
 namespace OwcaScript {
     Internal::Line OwcaCode::get_line_by_position(Internal::CodePosition pos) const
     {
-        auto it = std::lower_bound(code_->lines.begin(), code_->lines.end(), pos.value(), [](const Internal::LineEntry &entry, size_t pos) {
+        auto offset = pos.value() - code().data();
+        auto it = std::lower_bound(code_->lines.begin(), code_->lines.end(), offset, [](const Internal::LineEntry &entry, size_t pos) {
             return entry.code_pos < pos;
         });
         if (it == code_->lines.end()) {
@@ -13,7 +14,7 @@ namespace OwcaScript {
                 return Internal::Line{ 0 };
             return Internal::Line{ code_->lines.back().line };
         }
-        if (it == code_->lines.begin() || it->code_pos == pos.value()) {
+        if (it == code_->lines.begin() || it->code_pos == offset) {
             return Internal::Line{ it->line };
         }
         --it;

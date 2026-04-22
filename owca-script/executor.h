@@ -53,7 +53,7 @@ namespace OwcaScript {
 			struct TagMul {};
 			struct TagDiv {};
 			struct TagMod {};
-			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecutionFrame &frame);
+			template <typename Tag> __attribute__((always_inline)) void run_impl_opcodes_execute_expr_oper2(ExecutionFrame &frame);
 			Number expr_oper_2(TagAdd, Number left, Number right);
 			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
 			OwcaTuple expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right);

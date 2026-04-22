@@ -14,7 +14,7 @@ namespace OwcaScript {
 
 	class OwcaCode {
         struct Impl {
-            using DataKindsType = std::unordered_map<std::uint32_t, Internal::DataKind>;
+            using DataKindsType = std::unordered_map<const unsigned char *, Internal::DataKind>;
             std::span<const unsigned char> code;
             const DataKindsType *data_kinds;
             std::span<const Internal::LineEntry> lines;

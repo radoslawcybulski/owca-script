@@ -177,7 +177,9 @@ namespace OwcaScript::Internal {
         std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position.pos << std::endl;
 #endif
 
-        runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{});
+        runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{
+            .entry_point = CodePosition{ oc.code().data()}
+        });
         initialize_execute_function(return_value, vm, runtime_function, std::nullopt, std::span<OwcaValue>{});
     }
 		// assert(runtime_functions->name.find("main-block") != std::string::npos);
