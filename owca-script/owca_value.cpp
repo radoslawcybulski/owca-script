@@ -14,48 +14,7 @@
 #include "exception.h"
 
 namespace OwcaScript {
-	OwcaValue::OwcaValue(OwcaEmpty value): OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
-	OwcaValue::OwcaValue(OwcaCompleted value): OwcaValue(OwcaValueKind::Completed, nullptr, nullptr) {}
-	OwcaValue::OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_object(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), value.internal_self_object()) {}
-	OwcaValue::OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaArray value): OwcaValue(OwcaValueKind::Array, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
-	OwcaValue::OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
-	OwcaValue::OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
 
-	void *OwcaValue::internal_ptr1() const {
-		PtrsValue tmp;
-		std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
-		return (void*)(tmp.ptr1 & ~(std::uintptr_t)15);
-	}
-	void *OwcaValue::internal_ptr2() const {
-		PtrsValue tmp;
-		std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
-		return tmp.ptr2;
-	}
-
-	OwcaValue::OwcaValue(OwcaValueKind kind, void *ptr1, void *ptr2) {
-		std::uintptr_t k = (std::uintptr_t)ptr1;
-		assert((k & 15) == 0);
-		assert((int)kind < 16 && (int)kind >= 0);
-		k |= (std::uintptr_t)kind;
-		value_encoded_.ptrs.ptr1 = k;
-		value_encoded_.ptrs.ptr2 = ptr2;
-		assert(this->kind() == kind);
-		assert(internal_ptr1() == ptr1);
-		assert(internal_ptr2() == ptr2);
-	}
-	OwcaValue::OwcaValue(OwcaValueKind kind, Number num) {
-		assert((int)kind < 16 && (int)kind >= 0);
-		value_encoded_.number.value = num;
-		value_encoded_.number.kind = kind;
-		assert(this->kind() == kind);
-	}
 	OwcaValueKind OwcaValue::kind() const {
 		static_assert((int)OwcaValueKind::_Count <= 15, "OwcaValueKind must fit in 4 bits");
 		NumberValue tmp;
