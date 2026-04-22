@@ -75,12 +75,13 @@ namespace OwcaScript::Internal {
         assert(index < max_values);
         assert(value.kind() == OwcaValueKind::Functions);
         auto fnc = value.as_functions(vm);
-        assert(fnc.internal_value()->functions.size() == 1);
         auto &dst = values_[index];
         if (dst.kind() == OwcaValueKind::Functions) {
             auto dst_fnc = dst.as_functions(vm);
-            for(auto it : fnc.internal_value()->functions) {
-                dst_fnc.internal_value()->functions[it.first] = it.second;
+            for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
+                if (fnc.internal_value()->functions[i]) {
+                    dst_fnc.internal_value()->functions[i] = fnc.internal_value()->functions[i];
+                }
             }
             return;
         }
@@ -130,9 +131,8 @@ namespace OwcaScript::Internal {
         assert(runtime_functions);
         this->return_value = &return_value;
 		assert(runtime_functions->name.find("main-block") != std::string::npos);
-		assert(runtime_functions->functions.size() == 1);
-        assert(runtime_functions->functions.begin()->first == 0);
-		auto &function = runtime_functions->functions.begin()->second;
+		auto function = runtime_functions->functions[0];
+        assert(function != nullptr);
 		assert(function->is_method == false);
 
         this->runtime_function = function;

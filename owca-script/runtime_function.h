@@ -52,10 +52,12 @@ namespace OwcaScript {
 		struct RuntimeFunctions : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::RuntimeFunctions;
 
-			std::unordered_map<unsigned int, RuntimeFunction*> functions;
+			std::array<RuntimeFunction*, 16> functions;
 			std::string_view name, full_name;
 
-			RuntimeFunctions(std::string_view name, std::string_view full_name) : name(name), full_name(full_name) {}
+			RuntimeFunctions(std::string_view name, std::string_view full_name) : name(name), full_name(full_name) {
+				for(auto &f : functions) f = nullptr;
+			}
 
 			std::string_view type() const override;
 			std::string to_string() const override;

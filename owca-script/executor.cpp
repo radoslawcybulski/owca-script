@@ -1266,10 +1266,9 @@ namespace OwcaScript::Internal {
         vm->push_frame(frame);
     }
     void Executor::prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
-        assert(runtime_functions->functions.size() == 1);
-        auto it = runtime_functions->functions.find(0u);
-        assert(it != runtime_functions->functions.end());
-        auto frame = ExecutionFrame::create(it->second);
+        auto it = runtime_functions->functions[0];
+        assert(it != nullptr);
+        auto frame = ExecutionFrame::create(it);
         frame->initialize_main_block_function(return_value, vm, runtime_functions, arguments);
         vm->push_frame(frame);
     }
@@ -1367,10 +1366,10 @@ namespace OwcaScript::Internal {
 
     bool Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
     {
-		auto it = runtime_functions->functions.find(arguments.size() + (self_value ? 1 : 0));
-		if (it == runtime_functions->functions.end()) {
-			it = runtime_functions->functions.find(arguments.size());
-			if (it == runtime_functions->functions.end() || it->second->is_method) {
+		auto it = runtime_functions->functions[arguments.size() + (self_value ? 1 : 0)];
+		if (it == nullptr) {
+			it = runtime_functions->functions[arguments.size()];
+			if (it == nullptr || it->is_method) {
 				auto tmp = std::string{ "function " };
 				tmp += runtime_functions->name;
 				prepare_throw_not_callable_wrong_number_of_params(std::move(tmp), arguments.size());
@@ -1378,8 +1377,8 @@ namespace OwcaScript::Internal {
 			}
 		}
 
-        auto frame = ExecutionFrame::create(it->second);
-        frame->initialize_execute_function(return_value, vm, it->second, self_value, arguments);
+        auto frame = ExecutionFrame::create(it);
+        frame->initialize_execute_function(return_value, vm, it, self_value, arguments);
         vm->push_frame(frame);
         exit = true;
         return true;

@@ -40,7 +40,8 @@ namespace OwcaScript::Internal {
 	}
 	void RuntimeFunctions::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
 		for (auto& it : functions) {
-			gc_mark_value(vm, generation_gc, it.second);
+			if (it)
+				gc_mark_value(vm, generation_gc, it);
 		}
 	}
 

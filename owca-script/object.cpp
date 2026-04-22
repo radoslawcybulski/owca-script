@@ -71,9 +71,10 @@ namespace OwcaScript::Internal {
 	}
 	void Class::initialize_add_function(OwcaVM vm, OwcaFunctions fnc)
 	{
-		assert(fnc.internal_value()->functions.size() == 1);
-		for (auto it2 : fnc.internal_value()->functions) {
-			runtime_functions.push_back(it2.second);
+		for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
+			if (fnc.internal_value()->functions[i]) {
+				runtime_functions.push_back(fnc.internal_value()->functions[i]);
+			}
 		}
 	}
 	void Class::finalize_initializing(OwcaVM vm)
