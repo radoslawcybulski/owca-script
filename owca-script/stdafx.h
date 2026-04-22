@@ -29,6 +29,7 @@
 #include <bit>
 #include <chrono>
 #include <list>
+#include <generator>
 
 namespace OwcaScript {
     using Number = double;

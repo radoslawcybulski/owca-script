@@ -279,37 +279,68 @@ namespace OwcaScript::Internal {
         auto temporaries = std::span<OwcaValue>{ reinterpret_cast<OwcaValue*>(ptr), max_temporaries };
         return { state_kinds, states, values, temporaries };
     }
-    std::unique_ptr<ExecutionFrame> ExecutionFrame::create(RuntimeFunction *runtime_function) {
-        auto f = create(runtime_function->max_values, runtime_function->max_temporaries, runtime_function->max_states);
+    ExecutionFrame *ExecutionFrame::create(RuntimeFunction *runtime_function) {
+        auto f = create(runtime_function->vm, runtime_function->max_values, runtime_function->max_temporaries, runtime_function->max_states);
         f->runtime_function = runtime_function;
         return f;
     }
-    std::unique_ptr<ExecutionFrame> ExecutionFrame::create(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states) {
-        auto additional_size = (sizeof(OwcaValue) * values) + (sizeof(OwcaValue) * temporaries) + (sizeof(StatesType) * states) + ((states + 7) & ~7u);
-        auto frame = std::unique_ptr<ExecutionFrame>(new (new char[sizeof(ExecutionFrame) + additional_size]) ExecutionFrame());
-        frame->max_values = values;
-        frame->max_temporaries = temporaries;
-        frame->max_states = states;
+    std::unique_ptr<ExecutionFrame> ExecutionFrame::clone_for_iterator() {
+        assert(runtime_function->is_generator());
+
+        auto additional_size = calculate_additional_size(runtime_function->max_values, runtime_function->max_temporaries, runtime_function->max_states);
+        auto ptr = new char[sizeof(ExecutionFrame) + additional_size];
+        auto frame = new (ptr) ExecutionFrame();
+        std::unique_ptr<ExecutionFrame> result{ frame };
+        result->initialize(runtime_function->max_values, runtime_function->max_temporaries, runtime_function->max_states);
+        frame->iterator_object = iterator_object;
+
         auto [ b_state_kinds, b_states, b_values, b_temporaries ] = frame->calculate_blocks();
-        assert(b_state_kinds.data() >= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame));
-        assert(b_state_kinds.data() + b_state_kinds.size() <= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame) + additional_size);
-        assert((std::uint8_t*)b_states.data() >= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame));
-        assert((std::uint8_t*)(b_states.data() + b_states.size()) <= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame) + additional_size);
-        assert((std::uint8_t*)b_values.data() >= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame));
-        assert((std::uint8_t*)(b_values.data() + b_values.size()) <= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame) + additional_size);
-        assert((std::uint8_t*)b_temporaries.data() >= reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame));
-        assert((std::uint8_t*)(b_temporaries.data() + b_temporaries.size()) == reinterpret_cast<std::uint8_t*>(frame.get()) + sizeof(ExecutionFrame) + additional_size);
+        auto [ ob_state_kinds, ob_states, ob_values, ob_temporaries ] = calculate_blocks();
+        std::copy(ob_state_kinds.data(), ob_state_kinds.data() + ob_state_kinds.size(), b_state_kinds.data());
+        std::copy(ob_states.data(), ob_states.data() + ob_states.size(), b_states.data());
+        std::copy(ob_values.data(), ob_values.data() + ob_values.size(), b_values.data());
+        std::copy(ob_temporaries.data(), ob_temporaries.data() + ob_temporaries.size(), b_temporaries.data());
+        result->runtime_function = runtime_function;
+        result->is_iterator = true;
+        result->current_state = current_state;
+        result->code_position = code_position;
+        result->temporary_ += temporary_ - ob_temporaries.data();
+
+        return result;
+    }
+    ExecutionFrame *ExecutionFrame::create(VM *vm, std::uint16_t values, std::uint16_t temporaries, std::uint16_t states) {
+        auto additional_size = calculate_additional_size(values, temporaries, states);
+        auto frame = vm->allocate_stack_frame(additional_size);
+        frame->initialize(values, temporaries, states);
+        return frame;
+    }
+    size_t ExecutionFrame::calculate_additional_size(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states) {
+        return (sizeof(OwcaValue) * values) + (sizeof(OwcaValue) * temporaries) + (sizeof(StatesType) * states) + ((states + 7) & ~7u);
+    }
+    void ExecutionFrame::initialize(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states) {
+        auto additional_size = calculate_additional_size(values, temporaries, states);
+        max_values = values;
+        max_temporaries = temporaries;
+        max_states = states;
+        auto [ b_state_kinds, b_states, b_values, b_temporaries ] = calculate_blocks();
+        assert(b_state_kinds.data() >= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame));
+        assert(b_state_kinds.data() + b_state_kinds.size() <= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame) + additional_size);
+        assert((std::uint8_t*)b_states.data() >= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame));
+        assert((std::uint8_t*)(b_states.data() + b_states.size()) <= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame) + additional_size);
+        assert((std::uint8_t*)b_values.data() >= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame));
+        assert((std::uint8_t*)(b_values.data() + b_values.size()) <= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame) + additional_size);
+        assert((std::uint8_t*)b_temporaries.data() >= reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame));
+        assert((std::uint8_t*)(b_temporaries.data() + b_temporaries.size()) == reinterpret_cast<std::uint8_t*>(this) + sizeof(ExecutionFrame) + additional_size);
         
-        frame->state_kinds_ = b_state_kinds.data();
-        frame->state_ = b_states.data();
-        frame->values_ = b_values.data();
-        frame->temporary_ = b_temporaries.data();
+        state_kinds_ = b_state_kinds.data();
+        state_ = b_states.data();
+        values_ = b_values.data();
+        temporary_ = b_temporaries.data();
         for(auto &v : b_values) v = OwcaEmpty{};
 #ifdef DEBUG
-        frame->temporaries_begin_ = b_temporaries.data();
-        frame->temporaries_end_ = b_temporaries.data() + b_temporaries.size();
+        temporaries_begin_ = b_temporaries.data();
+        temporaries_end_ = b_temporaries.data() + b_temporaries.size();
 #endif
-        return frame;
     }
     
 }

@@ -81,6 +81,7 @@ namespace OwcaScript {
 			OwcaValue *temporary_ = nullptr;
 			std::uint8_t *state_kinds_ = nullptr;
 			StatesType *state_ = nullptr;
+			ExecutionFrame *previous_frame = nullptr, *next_frame = nullptr;
 
 #ifdef DEBUG
 			OwcaValue *temporaries_begin_, *temporaries_end_;
@@ -196,18 +197,20 @@ namespace OwcaScript {
 
             friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const ExecutionFrame &);
 
-			static std::unique_ptr<ExecutionFrame> create(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states);
-			static std::unique_ptr<ExecutionFrame> create(RuntimeFunction *runtime_function);
+			static ExecutionFrame *create(VM *vm, std::uint16_t values, std::uint16_t temporaries, std::uint16_t states);
+			static ExecutionFrame *create(RuntimeFunction *runtime_function);
+			std::unique_ptr<ExecutionFrame> clone_for_iterator();
 			
+			ExecutionFrame();
 			~ExecutionFrame();
 
 			void operator delete(void *ptr) {
 				delete [] reinterpret_cast<char*>(ptr);
 			}
-		private:
-			ExecutionFrame();
 
 			std::tuple<std::span<std::uint8_t>, std::span<StatesType>, std::span<OwcaValue>, std::span<OwcaValue>> calculate_blocks() const;
+			void initialize(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states);
+			static size_t calculate_additional_size(std::uint16_t values, std::uint16_t temporaries, std::uint16_t states);
 		};
 	}
 }

@@ -23,7 +23,6 @@ namespace OwcaScript {
 
 			size_t currently_executing_frame_index() const;
 			ExecutionFrame &currently_executing_frame();
-			void push_new_frame(std::unique_ptr<ExecutionFrame> frame);
 			void pop_frame();
 			bool completed() const;
 

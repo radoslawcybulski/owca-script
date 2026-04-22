@@ -32,18 +32,19 @@ namespace OwcaScript::Internal {
     }
 
     ExecutionFrame &Executor::currently_executing_frame() {
-        return *vm->stacktrace.back();
+        return *vm->current_frame();
     }
-    void Executor::push_new_frame(std::unique_ptr<ExecutionFrame> frame) {
-#ifdef OWCA_SCRIPT_EXEC_LOG
-        std::cout << "Pushing frame " << (void*)frame.get() << "\n";
-#endif
-        vm->stacktrace.push_back(std::move(frame));
-    }
+//     void Executor::push_new_frame(std::unique_ptr<ExecutionFrame> frame) {
+// #ifdef OWCA_SCRIPT_EXEC_LOG
+//         std::cout << "Pushing frame " << (void*)frame.get() << "\n";
+// #endif
+//         vm->stacktrace.push_back(std::move(frame));
+//     }
     void Executor::pop_frame() {
         exit = true;
-        auto frame = std::move(vm->stacktrace.back());
-        vm->stacktrace.pop_back();
+        auto frame = vm->current_frame();
+        assert(frame);
+        vm->pop_frame(frame);
 #ifdef OWCA_SCRIPT_EXEC_LOG
         std::cout << "Popping frame " << (void*)frame.get() << std::endl;
 #endif
@@ -59,11 +60,10 @@ namespace OwcaScript::Internal {
             if (frame->return_value->kind() == OwcaValueKind::Completed) {
                 iter->generator = {};
                 iter->completed = true;
+                iter->frame.reset();
             }
-            else {
-                iter->frame = std::move(frame);
-                return;
-            }
+            exit = true;
+            return;
         }
         if (frame->dict_output) {
             frame->runtime_function->visit(
@@ -84,6 +84,7 @@ namespace OwcaScript::Internal {
 #ifdef OWCA_SCRIPT_EXEC_LOG
         std::cout << "Deleting frame " << (void*)frame.get() << std::endl;
 #endif
+        vm->deallocate_stack_frame(frame);
     }
     void Executor::process_thrown_exception(ExecuteBufferReader::Position *pos)
     {
@@ -110,7 +111,7 @@ namespace OwcaScript::Internal {
         throw exception;
     }
     size_t Executor::currently_executing_frame_index() const {
-        return vm->stacktrace.size();
+        return vm->frame_count;
     }
     bool Executor::completed() const {
         return currently_executing_frame_index() <= stack_top_level_index;
@@ -1172,12 +1173,16 @@ namespace OwcaScript::Internal {
             visit_variant(
                 frame.runtime_function->data,
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
-                    if (frame.is_iterator && !frame.iterator_object) {
-                        auto obj = vm->allocate<Iterator>(0, false);
-                        frame.iterator_object = obj;
-                        *frame.return_value = OwcaIterator{ obj };
-                        pop_frame();
-                        return;
+                    if (frame.is_iterator) {
+                        if (!frame.iterator_object) {
+                            auto obj = vm->allocate<Iterator>(0, false);
+                            frame.iterator_object = obj;
+                            auto iter_frame = frame.clone_for_iterator();
+                            obj->frame = std::move(iter_frame);
+                            *frame.return_value = OwcaIterator{ obj };
+                            pop_frame();
+                            return;
+                        }
                     }
                     auto frame_index = currently_executing_frame_index();
                     run_impl_opcodes(frame, sf);
@@ -1206,6 +1211,8 @@ namespace OwcaScript::Internal {
                         frame.iterator_object = vm->allocate<Iterator>(0, true);
                         frame.iterator_object->internal_value()->generator = ngf.generator(vm, std::span{ frame.values_, frame.max_values });
                         *frame.return_value = *frame.iterator_object;
+                        auto iter_frame = frame.clone_for_iterator();
+                        frame.iterator_object->internal_value()->frame = std::move(iter_frame);
                         pop_frame();
                         return;
                     }
@@ -1251,9 +1258,9 @@ namespace OwcaScript::Internal {
         throw exc;
     }
     void Executor::prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc) {
-        auto frame = ExecutionFrame::create(0, 1, 0);
+        auto frame = ExecutionFrame::create(vm, 0, 1, 0);
         frame->initialize_code_block(return_value, vm, oc);
-        push_new_frame(std::move(frame));
+        vm->push_frame(frame);
     }
     void Executor::prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
         assert(runtime_functions->functions.size() == 1);
@@ -1261,7 +1268,7 @@ namespace OwcaScript::Internal {
         assert(it != runtime_functions->functions.end());
         auto frame = ExecutionFrame::create(it->second);
         frame->initialize_main_block_function(return_value, vm, runtime_functions, arguments);
-        push_new_frame(std::move(frame));
+        vm->push_frame(frame);
     }
 
 	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
@@ -1284,7 +1291,7 @@ namespace OwcaScript::Internal {
             return_value = OwcaCompleted{};
 			return;
 		}
-        push_new_frame(std::move(oi.internal_value()->frame));
+        vm->push_frame(oi.internal_value()->frame.get());
         currently_executing_frame().return_value = &return_value;
         oi.internal_value()->first_time = false;
         exit = true;
@@ -1315,8 +1322,11 @@ namespace OwcaScript::Internal {
         if (exception_for_throwing_construction) {
             auto oe = OwcaValue{ obj }.as_exception(vm);
             if (currently_executing_frame_index() > 1) {
-                oe.internal_value()->parent_exception = vm->stacktrace[currently_executing_frame_index() - 2]->exception_in_progress;
-                vm->stacktrace[currently_executing_frame_index() - 2]->exception_in_progress.reset();
+                auto current = vm->current_frame();
+                auto previous = current->previous_frame;
+                assert(previous != nullptr);
+                oe.internal_value()->parent_exception = previous->exception_in_progress;
+                previous->exception_in_progress.reset();
             }
         }
 		auto it = cls->values.find(std::string_view{ "__init__" });
@@ -1367,7 +1377,7 @@ namespace OwcaScript::Internal {
 
         auto frame = ExecutionFrame::create(it->second);
         frame->initialize_execute_function(return_value, vm, it->second, self_value, arguments);
-        push_new_frame(std::move(frame));
+        vm->push_frame(frame);
         exit = true;
         return true;
     }

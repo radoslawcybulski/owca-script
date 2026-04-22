@@ -18,6 +18,7 @@
 #include "iterator.h"
 #include "range.h"
 #include "executor.h"
+#include "execution_frame.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -26,10 +27,8 @@ namespace OwcaScript::Internal {
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
 		empty_string = allocate<String>(0, 0u);
-		stacktrace.reserve(64);
 	}
 	VM::~VM() {
-		stacktrace.clear();
 		builtin_objects.clear();
 		empty_tuple = nullptr;
 		empty_string = nullptr;
@@ -41,6 +40,51 @@ namespace OwcaScript::Internal {
 			obj->~AllocationBase();
 			std::free(obj);
 		}
+	}
+
+	std::generator<ExecutionFrame*> VM::iterate_frames() const {
+		auto frame = first_frame;
+		while (frame) {
+			co_yield frame;
+			frame = frame->next_frame;
+		}
+	}
+	void VM::deallocate_stack_frame(ExecutionFrame *frame) {
+		frame->~ExecutionFrame();
+		delete [](char*)frame;
+	}
+	ExecutionFrame *VM::allocate_stack_frame(size_t oversize) {
+		auto ptr = new char[sizeof(ExecutionFrame) + oversize];
+		auto frame = new (ptr) ExecutionFrame();
+		return frame;
+	}
+	void VM::push_frame(ExecutionFrame *frame) {
+		frame->previous_frame = last_frame;
+		frame->next_frame = nullptr;
+		if (last_frame) {
+			last_frame->next_frame = frame;
+		}
+		else {
+			first_frame = frame;
+		}
+		last_frame = frame;
+		++frame_count;
+	}
+	void VM::pop_frame(ExecutionFrame *frame) {
+		assert(frame == last_frame);
+		assert(first_frame);
+		last_frame = frame->previous_frame;
+		if (last_frame) {
+			last_frame->next_frame = nullptr;
+		}
+		else {
+			first_frame = nullptr;
+		}
+		--frame_count;
+	}
+
+	ExecutionFrame *VM::current_frame() {
+		return last_frame;
 	}
 
 	struct VM::BuiltinProvider : public NativeCodeProvider {
@@ -763,7 +807,7 @@ function native time();
 	}
 	void VM::initialize_exception_object(Exception &exc)
 	{
-		for(auto &s : stacktrace) {
+		for(auto s : iterate_frames()) {
 			auto &st = *s;
 			exc.frames.push_back({ .code = st.runtime_function->code });
 			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position > 0 ? st.code_position - 1 : 0).line;
@@ -1526,7 +1570,7 @@ function native time();
 
 	OwcaCode VM::currently_running_code() const
 	{
-		auto& s = *stacktrace.back();
+		auto& s = *last_frame;
 		return s.runtime_function->code;
 	}
 
@@ -1639,7 +1683,7 @@ function native time();
 		// mark
 		gc_mark_value(this, ggc, empty_tuple);
 		gc_mark_value(this, ggc, empty_string);
-		for(auto &s : stacktrace) {
+		for(auto s : iterate_frames()) {
 			gc_mark_value(this, ggc, *s);
 		}
 		gc_mark_value(this, ggc, builtin_objects);
