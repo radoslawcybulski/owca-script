@@ -22,7 +22,7 @@
 #include <iomanip>
 #include <utility>
 
-#define OWCA_SCRIPT_EXEC_LOG
+//#define OWCA_SCRIPT_EXEC_LOG
 //#define MEASURE
 
 namespace OwcaScript::Internal {
