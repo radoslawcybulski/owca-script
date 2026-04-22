@@ -14,8 +14,9 @@ namespace OwcaScript {
 
 	class OwcaCode {
         struct Impl {
+            using DataKindsType = std::unordered_map<std::uint32_t, Internal::DataKind>;
             std::span<const unsigned char> code;
-            std::span<const Internal::DataKind> data_kinds;
+            const DataKindsType *data_kinds;
             std::span<const Internal::LineEntry> lines;
 			std::string_view filename;
             std::shared_ptr<NativeCodeProvider> native_code_provider;
@@ -32,10 +33,10 @@ namespace OwcaScript {
         };
         std::shared_ptr<Impl> code_;
     public:
-        OwcaCode(std::string_view filename, std::span<const unsigned char> code, std::span<const Internal::DataKind> data_kinds, std::span<const Internal::LineEntry> lines, std::shared_ptr<NativeCodeProvider> native_code_provider, std::function<void()> on_destroy) : code_(std::make_shared<Impl>()) {
+        OwcaCode(std::string_view filename, std::span<const unsigned char> code, const Impl::DataKindsType &data_kinds, std::span<const Internal::LineEntry> lines, std::shared_ptr<NativeCodeProvider> native_code_provider, std::function<void()> on_destroy) : code_(std::make_shared<Impl>()) {
             code_->filename = filename;
             code_->code = code;
-            code_->data_kinds = data_kinds;
+            code_->data_kinds = &data_kinds;
             code_->lines = lines;
             code_->native_code_provider = std::move(native_code_provider);
             code_->on_destroy = std::move(on_destroy);
@@ -43,7 +44,7 @@ namespace OwcaScript {
 
 		const auto filename() const { return code_->filename; }
         const auto code() const { return code_->code; }
-        const auto data_kinds() const { return code_->data_kinds; }
+        const auto &data_kinds() const { return *code_->data_kinds; }
         const auto lines() const { return code_->lines; }
         const auto &native_code_provider() const { return code_->native_code_provider; }
 		Internal::Line first_line() const;

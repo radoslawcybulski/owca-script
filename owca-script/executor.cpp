@@ -227,7 +227,7 @@ namespace OwcaScript::Internal {
         auto &code_object = frame.runtime_function->code;
         auto code_pos = ExecuteBufferReader::Position{ frame.code_position };
         auto start_code = StartOfCode{ frame.runtime_function->code.code() };
-        auto data_kinds = code_object.data_kinds();
+        const auto &data_kinds = code_object.data_kinds();
 #ifdef MEASURE        
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;

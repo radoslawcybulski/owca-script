@@ -247,10 +247,10 @@ namespace OwcaScript {
         class ExecuteBufferReader {
         public:
             using Position = CodePosition;
-            
+            using DataKindsType = std::unordered_map<std::uint32_t, DataKind>;
             using Op = ExecuteOp;
 
-            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_same_v<T, std::string_view>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_same_v<T, std::string_view>) {
                 auto size = decode_size(code, pos, data_kinds);
                 auto p = align_pos(pos, alignof(char), sizeof(char) * size);
 #ifdef DEBUG                
@@ -258,7 +258,7 @@ namespace OwcaScript {
 #endif
                 return std::string_view((const char*)(code + p), size);
             }
-            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
                 auto p = align_pos(pos, alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
 #ifdef DEBUG                
@@ -268,7 +268,7 @@ namespace OwcaScript {
                 std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
                 auto p = align_pos(pos, alignof(T), sizeof(T));
 #ifdef DEBUG
@@ -290,7 +290,7 @@ namespace OwcaScript {
                 std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
+            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
                 auto p = align_pos(pos, alignof(T), sizeof(T));
 #ifdef DEBUG
@@ -306,17 +306,17 @@ namespace OwcaScript {
                 std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
-            static Position decode_jump(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
+            static Position decode_jump(StartOfCode code, Position &pos, const DataKindsType & data_kinds) {
                 auto p = align_pos(pos, alignof(std::int32_t), sizeof(std::int32_t));
 #ifdef DEBUG
                 ensure_data_kind(data_kinds, DataKind::JumpOffset, p);
 #endif
                 std::int32_t offset;
                 std::memcpy(&offset, code + p, sizeof(offset));
-                return Position{ (std::uint32_t)(pos.value() + offset) };
+                return pos + offset;
             }
         private:
-            static size_t decode_size(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
+            static size_t decode_size(StartOfCode code, Position &pos, const DataKindsType & data_kinds) {
                 auto p = align_pos(pos, alignof(std::uint32_t), sizeof(std::uint32_t));
 #ifdef DEBUG
                 ensure_data_kind(data_kinds, DataKind::Size, p);
@@ -326,24 +326,28 @@ namespace OwcaScript {
                 return size;
             }
 #ifdef DEBUG
-            static void ensure_data_kind(std::span<const DataKind> data_kinds, DataKind expected, Position p) {
-                if (!data_kinds.empty() && data_kinds[p.value()] != expected) {
-                    auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p.value(), to_string(expected), to_string(data_kinds[p.value()]));
-                    std::cout << msg << std::endl;
-                    throw std::runtime_error(msg);
+            static void ensure_data_kind(const DataKindsType & data_kinds, DataKind expected, Position p) {
+                if (!data_kinds.empty()) {
+                    auto it = data_kinds.find(p.value());
+                    if (it == data_kinds.end() || it->second != expected) {
+                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p.value(), to_string(expected), it == data_kinds.end() ? "Unknown" : to_string(it->second));
+                        std::cout << msg << std::endl;
+                        throw std::runtime_error(msg);
+                    }
                 }
             }
 #endif
             static Position align_pos(Position &pos, size_t align, size_t size) {
                 auto p = pos;
-                pos = Position{ (std::uint32_t)(p.value() + size) };
+                pos = pos + size;
                 return p;
             }
         };
 
         class ExecuteBufferWriter {
             std::vector<unsigned char> buffer;
-            std::vector<DataKind> data_kinds;
+            using DataKindsType = std::unordered_map<std::uint32_t, DataKind>;
+            DataKindsType data_kinds;
             std::vector<LineEntry> lines;
 
             template <typename T> std::uint32_t prepare(const T *data, size_t sz, DataKind kind) {
@@ -352,7 +356,6 @@ namespace OwcaScript {
                 auto current_size = buffer.size();
                 auto padding = 0u;
                 buffer.resize(current_size + padding + size);
-                data_kinds.resize(buffer.size(), DataKind::Unfilled);
                 data_kinds[current_size + padding] = kind;
                 return current_size + padding;
             }

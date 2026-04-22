@@ -1416,12 +1416,13 @@ namespace OwcaScript::Internal {
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
 		auto buffer_span = std::span{ buffer.data(), buffer.size() };
-		auto data_kinds_span = std::span{ data_kinds.data(), data_kinds.size() };
+		std::shared_ptr<ExecuteBufferReader::DataKindsType> data_kinds_ = std::make_shared<ExecuteBufferReader::DataKindsType>(std::move(data_kinds));
+		auto data_kinds_span_ptr = data_kinds_.get();
 		auto lines_span = std::span{ lines.data(), lines.size() };
 		auto fname = std::vector<char>(filename_.begin(), filename_.end());
 		auto fname_sv = std::string_view{ fname.data(), fname.size() };
 
-		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds), lines = std::move(lines), fname = std::move(fname)]() {};
-		return OwcaCode{ fname_sv, buffer_span, data_kinds_span, lines_span, native_code_provider, std::move(dstr) };
+		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds_), lines = std::move(lines), fname = std::move(fname)]() {};
+		return OwcaCode{ fname_sv, buffer_span, *data_kinds_span_ptr, lines_span, native_code_provider, std::move(dstr) };
 	}
 }
