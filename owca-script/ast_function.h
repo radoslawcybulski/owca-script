@@ -29,12 +29,12 @@ namespace OwcaScript {
 			std::string name_, full_name_;
 			std::vector<CopyFromParent> copy_from_parents_;
 			std::vector<std::string_view> identifier_names_;
-			size_t param_count_;
+			std::uint16_t param_count_;
 			std::unique_ptr<AstStat> body_;
 			Native native_;
 			Generator generator_;
 		public:
-			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string_view> identifier_names, size_t param_count, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), 
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string_view> identifier_names, std::uint16_t param_count, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), 
 				identifier_names_(std::move(identifier_names)), param_count_(param_count), native_(native), generator_(generator) {}
 
 			const auto &name() const { return name_; }

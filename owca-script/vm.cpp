@@ -31,7 +31,16 @@ namespace OwcaScript::Internal {
 	VM::~VM() {
 		stacktrace.clear();
 		builtin_objects.clear();
-		run_gc();
+		empty_tuple = nullptr;
+		empty_string = nullptr;
+		AllocationBase *valid = &root_allocated_memory;
+		while (valid->next != &root_allocated_memory) {
+			auto obj = valid->next;
+			valid->next = obj->next;
+			obj->next->prev = valid;
+			obj->~AllocationBase();
+			std::free(obj);
+		}
 	}
 
 	struct VM::BuiltinProvider : public NativeCodeProvider {
@@ -754,8 +763,8 @@ function native time();
 	}
 	void VM::initialize_exception_object(Exception &exc)
 	{
-		for(auto i = 0u; i < current_stack_trace_index; ++i) {
-			auto &st = stacktrace[i];
+		for(auto &s : stacktrace) {
+			auto &st = *s;
 			exc.frames.push_back({ .code = st.runtime_function->code });
 			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position > 0 ? st.code_position - 1 : 0).line;
 			exc.frames.back().function = st.runtime_function->full_name;
@@ -1517,7 +1526,7 @@ function native time();
 
 	OwcaCode VM::currently_running_code() const
 	{
-		auto& s = stacktrace.back();
+		auto& s = *stacktrace.back();
 		return s.runtime_function->code;
 	}
 
@@ -1630,8 +1639,8 @@ function native time();
 		// mark
 		gc_mark_value(this, ggc, empty_tuple);
 		gc_mark_value(this, ggc, empty_string);
-		for(auto i = 0u; i < current_stack_trace_index; ++i) {
-			gc_mark_value(this, ggc, stacktrace[i]);
+		for(auto &s : stacktrace) {
+			gc_mark_value(this, ggc, *s);
 		}
 		gc_mark_value(this, ggc, builtin_objects);
 		gc_mark_value(this, ggc, temp_gc_protect_list);

@@ -233,17 +233,17 @@ namespace OwcaScript {
 
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_same_v<T, std::string_view>) {
                 auto size = decode_size(code, pos, data_kinds);
-#ifdef DEBUG                
-                if (size > 0) ensure_data_kind(*data_kinds, DataKind::Blob, pos);
-#endif
                 auto p = align_pos(pos, alignof(char), sizeof(char) * size);
+#ifdef DEBUG                
+                if (size > 0) ensure_data_kind(data_kinds, DataKind::Blob, p);
+#endif
                 return std::string_view((const char*)(code.start + p), size);
             }
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
                 auto p = align_pos(pos, alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
 #ifdef DEBUG                
-                ensure_data_kind(*data_kinds, std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
+                ensure_data_kind(data_kinds, std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
 #endif
                 T t;
                 std::memcpy(&t, code.start + p, sizeof(T));
@@ -253,16 +253,16 @@ namespace OwcaScript {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
                 auto p = align_pos(pos, alignof(T), sizeof(T));
 #ifdef DEBUG
-                if (std::is_same_v<T, bool>) {
-                    ensure_data_kind(*data_kinds, DataKind::Bool, p);
-                } else if (sizeof(T) == 1) {
-                    ensure_data_kind(*data_kinds, DataKind::Int8, p);
-                } else if (sizeof(T) == 2) {
-                    ensure_data_kind(*data_kinds, DataKind::Int16, p);
-                } else if (sizeof(T) == 4) {
-                    ensure_data_kind(*data_kinds, DataKind::Int32, p);
-                } else if (sizeof(T) == 8) {
-                    ensure_data_kind(*data_kinds, DataKind::Int64, p);
+                if constexpr (std::is_same_v<T, bool>) {
+                    ensure_data_kind(data_kinds, DataKind::Bool, p);
+                } else if constexpr (sizeof(T) == 1) {
+                    ensure_data_kind(data_kinds, DataKind::Int8, p);
+                } else if constexpr (sizeof(T) == 2) {
+                    ensure_data_kind(data_kinds, DataKind::Int16, p);
+                } else if constexpr (sizeof(T) == 4) {
+                    ensure_data_kind(data_kinds, DataKind::Int32, p);
+                } else if constexpr (sizeof(T) == 8) {
+                    ensure_data_kind(data_kinds, DataKind::Int64, p);
                 } else {
                     static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
@@ -275,10 +275,12 @@ namespace OwcaScript {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
                 auto p = align_pos(pos, alignof(T), sizeof(T));
 #ifdef DEBUG
-                if (sizeof(T) == 4) {
-                    ensure_data_kind(*data_kinds, DataKind::Float32, p);
-                } else if (sizeof(T) == 8) {
-                    ensure_data_kind(*data_kinds, DataKind::Float64, p);
+                if constexpr (sizeof(T) == 4) {
+                    ensure_data_kind(data_kinds, DataKind::Float32, p);
+                } else if constexpr (sizeof(T) == 8) {
+                    ensure_data_kind(data_kinds, DataKind::Float64, p);
+                } else {
+                    static_assert(sizeof(T) == 0, "Unsupported floating point type");
                 }
 #endif
                 T t;
@@ -296,7 +298,7 @@ namespace OwcaScript {
                 return size;
             }
 #ifdef DEBUG
-            static void ensure_data_kind(constd::span<const DataKind> data_kinds, DataKind expected, size_t p) {
+            static void ensure_data_kind(std::span<const DataKind> data_kinds, DataKind expected, size_t p) {
                 if (!data_kinds.empty() && data_kinds[p] != expected) {
                     auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p, to_string(expected), to_string(data_kinds[p]));
                     std::cout << msg << std::endl;

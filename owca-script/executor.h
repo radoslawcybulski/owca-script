@@ -21,22 +21,16 @@ namespace OwcaScript {
 			const size_t stack_top_level_index = 0;
 	        bool exit = false;
 
-			void push_value(OwcaValue value);
-			void pop_values(size_t count);
-			OwcaValue &peek_value(size_t offset) const;
-			OwcaValue &peek_value_and_make_top(size_t offset) const;
-			std::span<OwcaValue> peek_values(size_t offset, size_t count) const;
-			
+			size_t currently_executing_frame_index() const;
 			ExecutionFrame &currently_executing_frame();
-			ExecutionFrame &just_executed_executing_frame();
-			ExecutionFrame &push_new_frame();
+			void push_new_frame(std::unique_ptr<ExecutionFrame> frame);
 			void pop_frame();
 			bool completed() const;
 
 			void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
 			void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
 			void prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments);
-			ExecutionFrame *prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			bool prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
 			void prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
 			void prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc);
 
@@ -45,11 +39,10 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaMap> arguments);
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
-			void run(OwcaMap *dict_output = nullptr);
+			void run();
 			[[noreturn]] void run_and_throw();
-			void run_impl();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
-			bool run_impl_opcodes_execute_compare(ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
+			bool run_impl_opcodes_execute_compare(ExecutionFrame &frame, ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
 			void process_thrown_exception(ExecuteBufferReader::Position *pos);
 			struct TagBinOr {};
 			struct TagBinAnd {};
@@ -61,7 +54,7 @@ namespace OwcaScript {
 			struct TagMul {};
 			struct TagDiv {};
 			struct TagMod {};
-			template <typename Tag> void run_impl_opcodes_execute_expr_oper2();
+			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(ExecutionFrame &frame);
 			Number expr_oper_2(TagAdd, Number left, Number right);
 			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
 			OwcaTuple expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right);

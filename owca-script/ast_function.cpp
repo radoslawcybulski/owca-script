@@ -6,6 +6,7 @@
 #include "runtime_function.h"
 #include "owca_functions.h"
 #include "exec_buffer.h"
+#include "ast_compiler.h"
 
 namespace OwcaScript::Internal {
 	// void AstFunction::CopyFromParent::serialize_object(Serializer &ser) const {
@@ -124,12 +125,17 @@ namespace OwcaScript::Internal {
 		ei.code_writer.append(line, native_ == Native::Yes);
 		ei.code_writer.append(line, generator_ == Generator::Yes);
 		ei.code_writer.append(line, param_count_ > 0 && identifier_names_[0] == "self");
-		ei.code_writer.append(line, (std::uint32_t)param_count_);
-		ei.code_writer.append(line, (std::uint32_t)identifier_names_.size());
+		ei.code_writer.append(line, (std::uint16_t)param_count_);
+		ei.code_writer.append(line, (std::uint16_t)identifier_names_.size());
+		auto temporaries_count = ei.code_writer.append_placeholder<std::uint16_t>(line);
+		auto states_count = ei.code_writer.append_placeholder<std::uint16_t>(line);
+
 		for(auto &id : identifier_names_) {
 			ei.code_writer.append(line, id);
 		}
 		if (native_ == Native::Yes) {
+			ei.code_writer.update_placeholder(temporaries_count, (std::uint16_t)0);
+			ei.code_writer.update_placeholder(states_count, (std::uint16_t)0);
 		}
 		else {
 			ei.code_writer.append(line, (std::uint32_t)copy_from_parents_.size());
@@ -146,6 +152,14 @@ namespace OwcaScript::Internal {
 			body_->emit(ei);
 			assert(ei.stack.empty());
 			assert(ei.states.empty());
+			if (ei.stack.maximum() > std::numeric_limits<std::uint16_t>::max()) {
+				ei.compiler.add_error(OwcaErrorKind::TooManyValues, ei.compiler.filename(), line, "too many values - maximum is 65535");
+			}
+			if (ei.states.maximum() > std::numeric_limits<std::uint16_t>::max()) {
+				ei.compiler.add_error(OwcaErrorKind::TooManyStates, ei.compiler.filename(), line, "too many states - maximum is 65535");
+			}
+			ei.code_writer.update_placeholder(temporaries_count, (std::uint16_t)ei.stack.maximum());
+			ei.code_writer.update_placeholder(states_count, (std::uint16_t)ei.states.maximum());
 			std::swap(us_stack, ei.stack);
 			std::swap(us_states, ei.states);
 			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);

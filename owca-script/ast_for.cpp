@@ -142,6 +142,7 @@ namespace OwcaScript::Internal {
         ei.code_writer.append(line, ExecuteOp::ExprIdentifierWrite);
         ei.code_writer.append(line, value_indexes[0]);
         ei.code_writer.append(line, ExecuteOp::ExprPopAndIgnore);
+        ei.stack.pop();
         assert(ei.stack.empty());
         body_->emit(ei);
         assert(ei.stack.empty());

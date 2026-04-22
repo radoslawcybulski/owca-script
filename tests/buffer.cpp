@@ -80,7 +80,7 @@ TEST_F(BufferTest, invalid_opcode1)
     auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
     auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode2)
@@ -94,7 +94,7 @@ TEST_F(BufferTest, invalid_opcode2)
     auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
     auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, {}), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode3)
@@ -108,7 +108,7 @@ TEST_F(BufferTest, invalid_opcode3)
     auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
     auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
 }
 
 TEST_F(BufferTest, invalid_opcode4)
@@ -122,20 +122,6 @@ TEST_F(BufferTest, invalid_opcode4)
     auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
     auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
 
-    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, {}), std::runtime_error);    
-}
-
-TEST_F(BufferTest, invalid_opcode5)
-{
-    Internal::ExecuteBufferWriter tmp;
-    std::vector<int> tmp_vec = {1, 2, 3, 4, 5};
-    tmp.append_span_helper({}, tmp_vec);
-
-    auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto code_start = Internal::ExecuteBufferReader::StartOfCode{ code.code() };
-    auto code_pos = Internal::ExecuteBufferReader::Position{ 0 };
-
-    ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, {}), std::runtime_error);    
+    ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
 }
 #endif

@@ -9,6 +9,8 @@
 
 namespace OwcaScript {
 	namespace Internal {
+		class AstCompiler;
+
 		class AstBase {
 		public:
 			const Line line;
@@ -17,41 +19,22 @@ namespace OwcaScript {
 				class MaxCounter {
 					unsigned int max = 0, current = 0;
 				public:
-					struct Popper {
-						MaxCounter *self;
-						Popper(MaxCounter &self) : self(&self) {}
-						Popper(const Popper&) = delete;
-						Popper(Popper &&o) : self(o.self) { o.self = nullptr; }
-						Popper& operator=(const Popper&) = delete;
-						Popper& operator=(Popper&& o) {
-							if (this != &o) {
-								if (self) {
-									self->pop();
-								}
-								self = o.self;
-								o.self = nullptr;
-							}
-							return *this;
-						}
-						~Popper() {
-							if (self) self->pop();
-						}
-					};
-					Popper push() {
+					void push() {
 						++current;
 						if (current > max) {
 							max = current;
 						}
-						return Popper(*this);
 					}
 					void pop(size_t s = 1) {
 						assert(current >= s);
 						current -= s;
 					}
+					auto maximum() const { return max; }
 					bool empty() const { return current == 0; }
 				};
 				ExecuteBufferWriter code_writer;
 				MaxCounter stack, states;
+				AstCompiler &compiler;
 			};
 
 			AstBase(Line line) : line(line) {}

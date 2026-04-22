@@ -1407,7 +1407,9 @@ namespace OwcaScript::Internal {
 			return std::nullopt;
 		}
 
-		auto ei = AstBase::EmitInfo{};
+		auto ei = AstBase::EmitInfo{
+			.compiler = *this
+		};
 		root->emit(ei);
 		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::ReturnValue);
 		assert(error_messages_.empty());

@@ -1,5 +1,7 @@
+#include "execution_frame.h"
 #include "owca_exception.h"
 #include "owca_iterator.h"
+#include "owca_map.h"
 #include "stdafx.h"
 #include "executor.h"
 #include "vm.h"
@@ -20,49 +22,68 @@
 #include <iomanip>
 #include <utility>
 
+#define OWCA_SCRIPT_EXEC_LOG
+//#define MEASURE
+
 namespace OwcaScript::Internal {
     static thread_local OwcaValue temporary_exception_return_value;
 
-    Executor::Executor(VM *vm) : vm(vm), stack_top_level_index(vm->current_stack_trace_index) {
+    Executor::Executor(VM *vm) : vm(vm), stack_top_level_index(currently_executing_frame_index()) {
     }
 
     ExecutionFrame &Executor::currently_executing_frame() {
-        return vm->stacktrace[vm->current_stack_trace_index - 1];
+        return *vm->stacktrace.back();
     }
-    ExecutionFrame &Executor::just_executed_executing_frame() {
-        return vm->stacktrace[vm->current_stack_trace_index];
-    }
-    ExecutionFrame &Executor::push_new_frame() {
-        if (vm->stacktrace.size() == vm->current_stack_trace_index) {
-            vm->stacktrace.emplace_back();
-        }
-        else {
-            vm->stacktrace[vm->current_stack_trace_index].clear();
-        }
-        ++vm->current_stack_trace_index;
-        return currently_executing_frame();
+    void Executor::push_new_frame(std::unique_ptr<ExecutionFrame> frame) {
+#ifdef OWCA_SCRIPT_EXEC_LOG
+        std::cout << "Pushing frame " << (void*)frame.get() << "\n";
+#endif
+        vm->stacktrace.push_back(std::move(frame));
     }
     void Executor::pop_frame() {
-        auto &frame = currently_executing_frame();
-        if (frame.constructor_move_self_to_return_value) {
-            assert(frame.return_value);
-            *frame.return_value = std::move(frame.values[0]);
+        exit = true;
+        auto frame = std::move(vm->stacktrace.back());
+        vm->stacktrace.pop_back();
+#ifdef OWCA_SCRIPT_EXEC_LOG
+        std::cout << "Popping frame " << (void*)frame.get() << std::endl;
+#endif
+        if (frame->constructor_move_self_to_return_value) {
+            assert(frame->return_value);
+            *frame->return_value = std::move(frame->values_[0]);
         }
-        if (frame.is_iterator) {
-            assert(frame.return_value);
-            assert(frame.iterator_object);
-            auto iter = frame.iterator_object->internal_value();
+        if (frame->is_iterator) {
+            assert(frame->return_value);
+            assert(frame->iterator_object);
+            auto iter = frame->iterator_object->internal_value();
 
-            if (frame.return_value->kind() == OwcaValueKind::Completed) {
+            if (frame->return_value->kind() == OwcaValueKind::Completed) {
                 iter->generator = {};
                 iter->completed = true;
             }
             else {
-                std::swap(iter->frame, frame);
+                iter->frame = std::move(frame);
+                return;
             }
         }
-        --vm->current_stack_trace_index;
-        exit = true;
+        if (frame->dict_output) {
+            frame->runtime_function->visit(
+                [&](RuntimeFunction::ScriptFunction& sf) -> void {
+                    for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
+                        auto key = vm->create_string_from_view(sf.identifier_names[i]);
+                        (*frame->dict_output)[key] = frame->get_identifier(i);
+                    }
+                },
+                [&](RuntimeFunction::NativeFunction&) -> void {
+                    assert(false);
+                },
+                [&](RuntimeFunction::NativeGenerator&) -> void {
+                    assert(false);
+                }
+            );
+        }
+#ifdef OWCA_SCRIPT_EXEC_LOG
+        std::cout << "Deleting frame " << (void*)frame.get() << std::endl;
+#endif
     }
     void Executor::process_thrown_exception(ExecuteBufferReader::Position *pos)
     {
@@ -71,16 +92,16 @@ namespace OwcaScript::Internal {
         while(!completed()) {
             auto &frame = currently_executing_frame();
             frame.exception_in_progress = exception;
-            while(!frame.states.empty()) {
-                if (auto state = std::get_if<ExecutionFrame::TryCatchState>(&frame.states.back())) {
+            while(frame.has_state()) {
+                if (auto state = frame.try_state<ExecutionFrame::TryCatchState>()) {
                     frame.code_position = state->catches_pos;
                     if (pos) *pos = ExecuteBufferReader::Position{ state->catches_pos };
-#ifdef OWCA_SCRIPT_EXEC_LOG                    
+#ifdef OWCA_SCRIPT_EXEC_LOG
                     std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
 #endif
                     return;
                 }
-                frame.states.pop_back();
+                frame.pop_state();
             }
             pop_frame();
             pos = nullptr;
@@ -88,33 +109,11 @@ namespace OwcaScript::Internal {
         }
         throw exception;
     }
+    size_t Executor::currently_executing_frame_index() const {
+        return vm->stacktrace.size();
+    }
     bool Executor::completed() const {
-        return vm->current_stack_trace_index <= stack_top_level_index;
-    }
-
-    void Executor::push_value(OwcaValue value) {
-        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.push_back(std::move(value));
-    }
-    void Executor::pop_values(size_t count) {
-        assert(count <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
-        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.resize(vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - count);
-    }
-    OwcaValue &Executor::peek_value(size_t offset) const {
-        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
-        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
-        return vm->stacktrace[vm->current_stack_trace_index - 1].temporaries[index];
-    }
-    OwcaValue &Executor::peek_value_and_make_top(size_t offset) const {
-        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
-        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
-        vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.resize(index + 1);
-        return vm->stacktrace[vm->current_stack_trace_index - 1].temporaries[index];
-    }
-    std::span<OwcaValue> Executor::peek_values(size_t offset, size_t count) const {
-        assert(offset >= count);
-        assert(offset <= vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size());
-        auto index = vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.size() - offset;
-        return { vm->stacktrace[vm->current_stack_trace_index - 1].temporaries.data() + index, count };
+        return currently_executing_frame_index() <= stack_top_level_index;
     }
     
 	std::optional<std::tuple<Number, Number, Number>> Executor::parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size) {
@@ -194,20 +193,20 @@ namespace OwcaScript::Internal {
 		return std::pair<size_t, size_t>{ v3, v4 };
 	}
 
-    bool Executor::run_impl_opcodes_execute_compare(ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
+    bool Executor::run_impl_opcodes_execute_compare(ExecutionFrame &frame, ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
         auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, pos, {});
         const auto last = ExecuteBufferReader::decode<bool>(start_code, pos, {});
-        auto &left = peek_value(2);
-        auto right = peek_value(1);
+        auto &left = frame.peek_value(2);
+        auto right = frame.peek_value(1);
         auto res = execute_compare(vm, kind, left, right);
         switch(res) {
         case CompareResult::True:
             left = last ? OwcaValue{ true } : right;
-            pop_values(1);
+            frame.pop_values(1);
             return false;
         case CompareResult::False:
             left = false;
-            pop_values(1);
+            frame.pop_values(1);
             pos = ExecuteBufferReader::Position{ jump_dest };
             return false;
         case CompareResult::NotExecuted:
@@ -246,7 +245,8 @@ namespace OwcaScript::Internal {
             // last_time = now;
             // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-            std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << code_pos.pos << " temporaries " << std::setw(2) << frame.temporaries.size() << " opcode " << std::setw(25) << to_string(opcode);
+            std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << code_pos.pos << " temporaries " << std::setw(2) << frame.temporary_count() << 
+                " states `" << frame.state_debug() << "` opcode " << std::setw(25) << to_string(opcode);
             if (frame.exception_in_progress) std::cout << " (exception in progress)";
             std::cout << std::endl;
 #endif
@@ -263,15 +263,13 @@ namespace OwcaScript::Internal {
                 auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code);
-                frame.states.push_back(ExecutionFrame::ClassState{ name, full_name, cls });
+                frame.push_state<ExecutionFrame::ClassState>(name, full_name, cls);
                 break; }
             case ExecuteBufferReader::Op::ClassCreate: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::ClassState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::ClassState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::ClassState>();
 
                 auto cls = state.cls;
-                frame.states.pop_back();
+                frame.pop_state();
 
                 auto native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                 auto base_class_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
@@ -279,8 +277,8 @@ namespace OwcaScript::Internal {
                 auto all_variable_names = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                 auto variable_name_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
 
-                auto base_classes = peek_values(base_class_count, base_class_count);
-                auto members = peek_values(member_count + base_class_count, member_count);
+                auto base_classes = frame.peek_values(base_class_count, base_class_count);
+                auto members = frame.peek_values(member_count + base_class_count, member_count);
                 for(auto b : base_classes) {
                     cls->initialize_add_base_class(vm, b.as_class(vm));
                 }
@@ -314,53 +312,53 @@ namespace OwcaScript::Internal {
                         break;
                     }
                 }
-                pop_values(base_class_count + member_count);
-                push_value(OwcaClass{ cls });
+                frame.pop_values(base_class_count + member_count);
+                frame.push_value(OwcaClass{ cls });
                 break; }
             case ExecuteBufferReader::Op::ExprPopAndIgnore: {
-                pop_values(1);
+                frame.pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareEq: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Eq);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::Eq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareNotEq: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::NotEq);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::NotEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLessEq: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::LessEq);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::LessEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMoreEq: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::MoreEq);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::MoreEq);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareLess: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Less);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::Less);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareMore: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::More);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::More);
                 break; }
             case ExecuteBufferReader::Op::ExprCompareIs: {
-                exit = run_impl_opcodes_execute_compare(start_code, code_pos, CompareKind::Is);
+                exit = run_impl_opcodes_execute_compare(frame, start_code, code_pos, CompareKind::Is);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantEmpty: {
-                push_value(OwcaEmpty{});
+                frame.push_value(OwcaEmpty{});
                 break; }
             case ExecuteBufferReader::Op::ExprConstantBool: {
                 auto value = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-                push_value(value);
+                frame.push_value(value);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantFloat: {
                 auto value = ExecuteBufferReader::decode<Number>(start_code, code_pos, data_kinds);
-                push_value(value);
+                frame.push_value(value);
                 break; }
             case ExecuteBufferReader::Op::ExprConstantString: {
                 auto value = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                push_value(vm->create_string_from_view(value));
+                frame.push_value(vm->create_string_from_view(value));
                 break; }
             case ExecuteBufferReader::Op::ExprConstantStringInterpolated: {
                 auto strings = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto expr_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 size_t size = strings.size();
-                auto values = peek_values(expr_count, expr_count);
+                auto values = frame.peek_values(expr_count, expr_count);
                 for(auto i = 0u; i < expr_count; ++i) {
                     size += values[i].as_string(vm).size();
                 }
@@ -380,76 +378,74 @@ namespace OwcaScript::Internal {
                 std::memcpy(new_str_pt, strings_ptr, remaining);
                 new_str_pt += remaining;
                 assert(new_str_pt == new_str->pointer() + new_str->size());
-                pop_values(expr_count);
-                push_value(OwcaString{ new_str });
+                frame.pop_values(expr_count);
+                frame.push_value(OwcaString{ new_str });
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierRead: {
                 auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                assert(index < frame.values.size());
-                push_value(frame.values[index]);
+                frame.push_value(frame.get_identifier(index));
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierWrite: {
                 auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto &val = peek_value(1);
-                assert(index < frame.values.size());
-                frame.values[index] = val;
+                auto &val = frame.peek_value(1);
+                frame.set_identifier(index, val);
                 break; }
             case ExecuteBufferReader::Op::ExprIdentifierFunctionWrite: {
                 auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto &val = peek_value(1);
-                frame.set_identifier(vm, index, val, true);
+                auto &val = frame.peek_value(1);
+                frame.set_identifier_function(vm, index, val);
                 break; }
             case ExecuteBufferReader::Op::ExprMemberRead: {
-                auto self = peek_value(1);
+                auto self = frame.peek_value(1);
                 auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                peek_value(1) = vm->member(self, member);
+                frame.peek_value(1) = vm->member(self, member);
                 break; }
             case ExecuteBufferReader::Op::ExprMemberWrite: {
-                auto val_to_write = peek_value(1);
-                auto self = peek_value(2);
+                auto val_to_write = frame.peek_value(1);
+                auto self = frame.peek_value(2);
                 auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 vm->member(self, member, val_to_write);
-                peek_value_and_make_top(2) = val_to_write;
+                frame.peek_value_and_make_top(2) = val_to_write;
                 break; }
             case ExecuteBufferReader::Op::ExprOper1BinNeg: {
-                auto &left = peek_value(1);
+                auto &left = frame.peek_value(1);
                 left = -(std::int64_t)left.as_float(vm);
                 break; }
             case ExecuteBufferReader::Op::ExprOper1LogNot: {
-                auto &left = peek_value(1);
+                auto &left = frame.peek_value(1);
                 left = !left.is_true();
                 break; }
             case ExecuteBufferReader::Op::ExprOper1Negate: {
-                auto &left = peek_value(1);
+                auto &left = frame.peek_value(1);
                 left = -left.as_float(vm);
                 break; }
             case ExecuteBufferReader::Op::ExprRetTrueAndJumpIfTrue: {
                 auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                if (peek_value(1).is_true()) {
+                if (frame.peek_value(1).is_true()) {
                     code_pos.pos = jump_dest;
                 }
                 else {
-                    pop_values(1);
+                    frame.pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprRetFalseAndJumpIfFalse: {
                 auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                if (!peek_value(1).is_true()) {
+                if (!frame.peek_value(1).is_true()) {
                     code_pos.pos = jump_dest;
                 }
                 else {
-                    pop_values(1);
+                    frame.pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprToString: {
-                auto v = peek_value(1);
+                auto v = frame.peek_value(1);
                 if (v.kind() == OwcaValueKind::String) {
                     break;
                 }
-                peek_value(1) = vm->create_string_from_view(v.to_string());
+                frame.peek_value(1) = vm->create_string_from_view(v.to_string());
                 break; }
             case ExecuteBufferReader::Op::ExprToIterator: {
-                auto &val = peek_value(1);
+                auto &val = frame.peek_value(1);
                 if (val.kind() != OwcaValueKind::Iterator) {
                     auto func = vm->try_member(val, "__iter__");
                     if (!func) {
@@ -460,55 +456,55 @@ namespace OwcaScript::Internal {
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinOr: {
-                run_impl_opcodes_execute_expr_oper2<TagBinOr>();
+                run_impl_opcodes_execute_expr_oper2<TagBinOr>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinAnd: {
-                run_impl_opcodes_execute_expr_oper2<TagBinAnd>();
+                run_impl_opcodes_execute_expr_oper2<TagBinAnd>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinXor: {
-                run_impl_opcodes_execute_expr_oper2<TagBinXor>();
+                run_impl_opcodes_execute_expr_oper2<TagBinXor>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinLShift: {
-                run_impl_opcodes_execute_expr_oper2<TagBinLShift>();
+                run_impl_opcodes_execute_expr_oper2<TagBinLShift>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2BinRShift: {
-                run_impl_opcodes_execute_expr_oper2<TagBinRShift>();
+                run_impl_opcodes_execute_expr_oper2<TagBinRShift>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Add: {
-                run_impl_opcodes_execute_expr_oper2<TagAdd>();
+                run_impl_opcodes_execute_expr_oper2<TagAdd>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Sub: {
-                run_impl_opcodes_execute_expr_oper2<TagSub>();
+                run_impl_opcodes_execute_expr_oper2<TagSub>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Mul: {
-                run_impl_opcodes_execute_expr_oper2<TagMul>();
+                run_impl_opcodes_execute_expr_oper2<TagMul>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Div: {
-                run_impl_opcodes_execute_expr_oper2<TagDiv>();
+                run_impl_opcodes_execute_expr_oper2<TagDiv>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2Mod: {
-                run_impl_opcodes_execute_expr_oper2<TagMod>();
+                run_impl_opcodes_execute_expr_oper2<TagMod>(frame);
                 break; }
             case ExecuteBufferReader::Op::ExprOper2MakeRange: {
                 auto mode = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 Number first, second, third;
                 if (mode & 4) {
-                    third = peek_value(1).as_float(vm);
-                    pop_values(1);
+                    third = frame.peek_value(1).as_float(vm);
+                    frame.pop_values(1);
                 }
                 else {
                     third = 1;
                 }
                 if (mode & 2) {
-                    second = peek_value(1).as_float(vm);
-                    pop_values(1);
+                    second = frame.peek_value(1).as_float(vm);
+                    frame.pop_values(1);
                 }
                 else {
                     second = std::numeric_limits<Number>::max();
                 }
                 if (mode & 1) {   
-                    first = peek_value(1).as_float(vm);
-                    pop_values(1);
+                    first = frame.peek_value(1).as_float(vm);
+                    frame.pop_values(1);
                 }
                 else {
                     first = 0;
@@ -521,15 +517,15 @@ namespace OwcaScript::Internal {
                 ret->from = first;
                 ret->to = second;
                 ret->step = third;
-                push_value(OwcaRange{ ret });
+                frame.push_value(OwcaRange{ ret });
                 break; }
             case ExecuteBufferReader::Op::ExprOper2IndexRead: {
-                auto key = peek_value(1);
-                auto v = peek_value(2);
+                auto key = frame.peek_value(1);
+                auto v = frame.peek_value(2);
 
                 auto orig_key = key;
 
-                peek_value_and_make_top(2) = v.visit(
+                frame.peek_value_and_make_top(2) = v.visit(
                     [&](const OwcaString& o) -> OwcaValue {
                         const auto size = (Number)o.internal_value()->size();
                         if (size != o.internal_value()->size()) {
@@ -607,13 +603,13 @@ namespace OwcaScript::Internal {
                 );
                 break; }
             case ExecuteBufferReader::Op::ExprOper2IndexWrite: {
-                auto value = peek_value(1);
-                auto key = peek_value(2);
-                auto v = peek_value(3);
+                auto value = frame.peek_value(1);
+                auto key = frame.peek_value(2);
+                auto v = frame.peek_value(3);
 
                 auto orig_key = key;
 
-                peek_value_and_make_top(3) = v.visit(
+                frame.peek_value_and_make_top(3) = v.visit(
                     [&](const OwcaMap& o) -> OwcaValue {
                         o.internal_value()->dict.write(key, value);
                         return value;
@@ -693,68 +689,61 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCall: {
                 auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto args = peek_values(size - 1, size - 1);
-                auto &fnc = peek_value_and_make_top(size);
+                auto args = frame.peek_values(size - 1, size - 1);
+                auto &fnc = frame.peek_value_and_make_top(size);
                 prepare_execute_call(fnc, fnc, args);
                 break; }
-            case ExecuteBufferReader::Op::ExprOperXCreateArray: {\
+            case ExecuteBufferReader::Op::ExprOperXCreateArray: {
                 auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto args = peek_values(size, size);
+                auto args = frame.peek_values(size, size);
                 auto arguments = std::deque<OwcaValue>{ args.begin(), args.end() };
-                peek_value_and_make_top(size) = vm->create_array(std::move(arguments));
+                frame.peek_value_and_make_top(size) = vm->create_array(std::move(arguments));
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateTuple: {
                 auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto args = peek_values(size, size);
+                auto args = frame.peek_values(size, size);
                 auto arguments = std::vector<OwcaValue>{ args.begin(), args.end() };
-                peek_value_and_make_top(size) = vm->create_tuple(std::move(arguments));
+                frame.peek_value_and_make_top(size) = vm->create_tuple(std::move(arguments));
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateSet: {
                 auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto args = peek_values(size, size);
-                peek_value_and_make_top(size) = vm->create_set(args);
+                auto args = frame.peek_values(size, size);
+                frame.peek_value_and_make_top(size) = vm->create_set(args);
                 break; }
             case ExecuteBufferReader::Op::ExprOperXCreateMap: {
                 auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto args = peek_values(size, size);
-                peek_value_and_make_top(size) = vm->create_map(args);
+                auto args = frame.peek_values(size, size);
+                frame.peek_value_and_make_top(size) = vm->create_map(args);
                 break; }
             case ExecuteBufferReader::Op::ForInit: {
-                auto iterator = peek_value(1).as_iterator(vm);
-                pop_values(1);
-                frame.states.push_back(ExecutionFrame::ForState{ iterator });
-                auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
+                auto iterator = frame.peek_value(1).as_iterator(vm);
+                frame.pop_values(1);
+                auto &state = frame.push_state<ExecutionFrame::ForState>(iterator);
                 state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 state.continue_position = code_pos.pos;
                 break; }
             case ExecuteBufferReader::Op::ForCondition: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::ForState>();
                 state.index++;
                 if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                    frame.set_identifier(vm, state.loop_index, state.index, false);
+                    frame.set_identifier(state.loop_index, state.index);
                 }
-                push_value({});
-                prepare_resume_generator(peek_value(1), state.iterator);
+                frame.push_value({});
+                prepare_resume_generator(frame.peek_value(1), state.iterator);
                 break; }
             case ExecuteBufferReader::Op::ForNext: {
-                auto val = peek_value(1);
+                auto val = frame.peek_value(1);
                 if (val.kind() == OwcaValueKind::Completed) {
-                    assert(!frame.states.empty());
-                    assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
-                    auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
+                    auto &state = frame.state<ExecutionFrame::ForState>();
                     code_pos = ExecuteBufferReader::Position{ state.end_position };
-                    pop_values(1);
+                    frame.pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ForCompleted: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::ForState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::ForState>(frame.states.back());
-                frame.states.pop_back();
+                auto &state = frame.state<ExecutionFrame::ForState>();
+                frame.pop_state();
                 break; }
             case ExecuteBufferReader::Op::Function: {
                 auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
@@ -762,19 +751,21 @@ namespace OwcaScript::Internal {
                 auto is_native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                 auto is_generator = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                 auto is_method = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-                auto param_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto param_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
+                auto value_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
+                auto temporaries_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
+                auto state_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
                 std::vector<std::string_view> identifier_names;
-                identifier_names.resize(ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds));
+                identifier_names.resize(value_count);
                 for(auto &n : identifier_names) n = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
 
                 RuntimeFunction *fnc = nullptr;
                 if (is_native) {
                     auto &native_provider = code_object.native_code_provider();
                     std::optional<ClassToken> class_;
-                    if (!frame.states.empty()) {
-                        if (std::holds_alternative<ExecutionFrame::ClassState>(frame.states.back())) {
-                            auto &state = std::get<ExecutionFrame::ClassState>(frame.states.back());
-                            class_ = ClassToken{ state.cls };
+                    if (frame.has_state()) {
+                        if (auto state = frame.try_state<ExecutionFrame::ClassState>()) {
+                            class_ = ClassToken{ state->cls };
                         }
                     }
                     if (is_generator) {
@@ -830,67 +821,58 @@ namespace OwcaScript::Internal {
                     }
                 }
                 fnc->param_count = param_count;
+                fnc->max_temporaries = temporaries_count;
+                fnc->max_states = state_count;
+                fnc->max_values = value_count;
                 fnc->is_method = is_method;
                 auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
                 rfs->functions[fnc->param_count] = fnc;
-                push_value(OwcaFunctions{ rfs });
+                frame.push_value(OwcaFunctions{ rfs });
                 break; }
             case ExecuteBufferReader::Op::If: {
-                auto val = peek_value(1).is_true();
+                auto val = frame.peek_value(1).is_true();
                 auto else_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (!val) {
                     code_pos = ExecuteBufferReader::Position{ else_position };
                 }
-                pop_values(1);
+                frame.pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::LoopControlBreak: {
                 auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 while(true) {
-                    assert(!frame.states.empty());
-                    auto found = visit_variant(frame.states.back(),
-                        [&](const ExecutionFrame::ForState& s) {
-                            if (s.loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s.end_position };
-                                return true;
-                            }
-                            return false;
-                        },
-                        [&](const ExecutionFrame::WhileState& s) {
-                            if (s.loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s.end_position };
-                                return true;
-                            }
-                            return false;
-                        },
-                        [&](const auto& s) { return false; }
-                    );
-                    if (found) break;
-                    frame.states.pop_back();
+                    assert(frame.has_state());
+                    if (auto s = frame.try_state<ExecutionFrame::ForState>()) {
+                        if (s->loop_control_depth == depth) {
+                            code_pos = ExecuteBufferReader::Position{ s->end_position };
+                            break;
+                        }
+                    }
+                    else if (auto s = frame.try_state<ExecutionFrame::WhileState>()) {
+                        if (s->loop_control_depth == depth) {
+                            code_pos = ExecuteBufferReader::Position{ s->end_position };
+                            break;
+                        }
+                    }
+                    frame.pop_state();
                 }
                 break; }
             case ExecuteBufferReader::Op::LoopControlContinue: {
                 auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 while(true) {
-                    assert(!frame.states.empty());
-                    auto found = visit_variant(frame.states.back(),
-                        [&](const ExecutionFrame::ForState& s) {
-                            if (s.loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s.continue_position };
-                                return true;
-                            }
-                            return false;
-                        },
-                        [&](const ExecutionFrame::WhileState& s) {
-                            if (s.loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s.continue_position };
-                                return true;
-                            }
-                            return false;
-                        },
-                        [&](const auto& s) { return false; }
-                    );
-                    if (found) break;
-                    frame.states.pop_back();
+                    assert(frame.has_state());
+                    if (auto s = frame.try_state<ExecutionFrame::ForState>()) {
+                        if (s->loop_control_depth == depth) {
+                            code_pos = ExecuteBufferReader::Position{ s->continue_position };
+                            break;
+                        }
+                    }
+                    else if (auto s = frame.try_state<ExecutionFrame::WhileState>()) {
+                    if (s->loop_control_depth == depth) {
+                            code_pos = ExecuteBufferReader::Position{ s->continue_position };
+                            break;
+                        }
+                    }
+                    frame.pop_state();
                 }
                 break; }
             case ExecuteBufferReader::Op::Return: {
@@ -903,47 +885,44 @@ namespace OwcaScript::Internal {
                 }
                 pop_frame();
                 assert(exit);
-                break; }
+                return; }
             case ExecuteBufferReader::Op::ReturnValue: {
-                *frame.return_value = peek_value(1);
-                pop_values(1);
+                *frame.return_value = frame.peek_value(1);
+                frame.pop_values(1);
                 if (frame.is_iterator) {
                     frame.iterator_object->internal_value()->completed = true;
                 }
                 pop_frame();
                 assert(exit);
-                break; }
+                return; }
             case ExecuteBufferReader::Op::Throw: {
-                auto exception = peek_value(1);
-                pop_values(1);
+                auto exception = frame.peek_value(1);
+                frame.pop_values(1);
                 frame.exception_in_progress = exception.as_exception(vm);
                 process_thrown_exception(&code_pos);
                 break; }
             case ExecuteBufferReader::Op::TryInit: {
-                frame.states.push_back(ExecutionFrame::TryCatchState{});
-                auto &state = std::get<ExecutionFrame::TryCatchState>(frame.states.back());
+                auto &state = frame.push_state<ExecutionFrame::TryCatchState>();
                 state.parent_exception = frame.exception_in_progress;
                 frame.exception_in_progress.reset();
                 state.begin_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.end_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.catches_pos = code_pos.pos;
                 code_pos = ExecuteBufferReader::Position{ state.begin_pos };
-                state.temporaries_size = frame.temporaries.size();
+                state.temporary_ptr = frame.temporary_;
                 break; }
             case ExecuteBufferReader::Op::TryCompleted: {
-                assert(!frame.states.empty());
-                assert(!frame.exception_in_progress);
-                assert(std::holds_alternative<ExecutionFrame::TryCatchState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::TryCatchState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::TryCatchState>();
                 frame.exception_in_progress = state.parent_exception;
-                frame.states.pop_back();
+                frame.pop_state();
                 break; }
             case ExecuteBufferReader::Op::TryCatchType: {
                 auto values = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto ident = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto skip_jump = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
 
-                auto exc_types = peek_values(values, values);
+                auto exc_types = frame.peek_values(values, values);
+                frame.pop_values(values);
                 assert(frame.exception_in_progress);
 
                 bool found = false;
@@ -956,7 +935,7 @@ namespace OwcaScript::Internal {
                 }
                 if (found) {
                     if (ident != std::numeric_limits<std::uint32_t>::max()) {
-                        frame.set_identifier(vm, ident, *frame.exception_in_progress, false);
+                        frame.set_identifier(ident, *frame.exception_in_progress);
                     }
                 }
                 else {
@@ -973,77 +952,65 @@ namespace OwcaScript::Internal {
                 code_pos = ExecuteBufferReader::Position{ pos };
                 break; }
             case ExecuteBufferReader::Op::WhileInit: {
-                frame.states.push_back(ExecutionFrame::WhileState{});
-                auto &state = std::get<ExecutionFrame::WhileState>(frame.states.back());
+                auto &state = frame.push_state<ExecutionFrame::WhileState>();
                 state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                 state.continue_position = code_pos.pos;
                 break; }
             case ExecuteBufferReader::Op::WhileCondition: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::WhileState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::WhileState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::WhileState>();
                 state.index++;
                 if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                    frame.set_identifier(vm, state.loop_index, state.index, false);
+                    frame.set_identifier(state.loop_index, state.index);
                 }
                 break; }
             case ExecuteBufferReader::Op::WhileNext: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::WhileState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::WhileState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::WhileState>();
 
-                auto value = peek_value(1).as_bool(vm);
-                pop_values(1);
+                auto value = frame.peek_value(1).as_bool(vm);
+                frame.pop_values(1);
                 if (!value) {
                     code_pos = ExecuteBufferReader::Position{ state.end_position };
                 }
                 break; }
             case ExecuteBufferReader::Op::WhileCompleted: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::WhileState>(frame.states.back()));
-                frame.states.pop_back();
+                frame.pop_state();
                 break; }
             case ExecuteBufferReader::Op::WithInitPrepare: {
-                frame.states.push_back(ExecutionFrame::WithState{});
-                auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
-                auto &obj = peek_value(1);
+                auto &state = frame.push_state<ExecutionFrame::WithState>();
+                auto &obj = frame.peek_value(1);
                 state.context = obj;
                 auto mbm = vm->member(obj, "__enter__");
                 prepare_execute_call(obj, mbm, {});
                 assert(exit);
                 break; }
             case ExecuteBufferReader::Op::WithInit: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::WithState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::WithState>();
                 state.entered = true;
                 auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 if (index != std::numeric_limits<std::uint32_t>::max()) {
-                    frame.set_identifier(vm, index, peek_value(1), false);
+                    frame.set_identifier(index, frame.peek_value(1));
                 }
-                pop_values(1);
+                frame.pop_values(1);
                 break; }
             case ExecuteBufferReader::Op::WithCompleted: {
-                assert(!frame.states.empty());
-                assert(std::holds_alternative<ExecutionFrame::WithState>(frame.states.back()));
-                auto &state = std::get<ExecutionFrame::WithState>(frame.states.back());
+                auto &state = frame.state<ExecutionFrame::WithState>();
                 if (state.entered) {
                     auto mbm = vm->member(state.context, "__exit__");
                     prepare_execute_call(ignore_value, mbm, {});
                     assert(exit);
                 }
-                frame.states.pop_back();
+                frame.pop_state();
                 break; }
             case ExecuteBufferReader::Op::Yield: {
                 assert(frame.runtime_function->is_generator());
-                *frame.return_value = peek_value(1);
+                *frame.return_value = frame.peek_value(1);
                 frame.code_position = code_pos.pos;
-                pop_values(1);
+                frame.pop_values(1);
                 pop_frame();
                 assert(exit);
-                break; }
+                return; }
             case ExecuteBufferReader::Op::Jump: {
                 auto dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 code_pos = ExecuteBufferReader::Position{ dest };
@@ -1182,24 +1149,21 @@ namespace OwcaScript::Internal {
         assert(exit);
         return {};
     }
-    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2() {
-        auto right = peek_value(1);
-        auto left = peek_value(2);
-        auto &ret = peek_value_and_make_top(2);
+    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(ExecutionFrame &frame) {
+        auto right = frame.peek_value(1);
+        auto left = frame.peek_value(2);
+        auto &ret = frame.peek_value_and_make_top(2);
         ret = left.visit([&](auto left_val) -> OwcaValue {
             return right.visit([&](auto right_val) -> OwcaValue {
                 return expr_oper_2(Tag{}, left_val, right_val);
             });
         });
     }
-    void Executor::run_impl() {
+    void Executor::run() {
         while(!completed()) {
-            if (vm->stacktrace.size() + 2 >= vm->stacktrace.capacity()) {
-                vm->stacktrace.reserve(vm->stacktrace.capacity() * 2);
-            }
             auto &frame = currently_executing_frame();
 #ifdef OWCA_SCRIPT_EXEC_LOG
-            std::cout << "Executing frame at depth " << vm->current_stack_trace_index << " function " << frame.runtime_function->full_name;
+            std::cout << "Executing frame at depth " << currently_executing_frame_index() << " (" << (void*)&frame << ") function " << frame.runtime_function->full_name;
             if (auto q = std::get_if<RuntimeFunction::ScriptFunction>(&frame.runtime_function->data)) {
                 std::cout << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")";
             }
@@ -1215,7 +1179,7 @@ namespace OwcaScript::Internal {
                         pop_frame();
                         return;
                     }
-                    auto frame_index = vm->current_stack_trace_index;
+                    auto frame_index = currently_executing_frame_index();
                     run_impl_opcodes(frame, sf);
 #ifdef OWCA_SCRIPT_EXEC_LOG
                     std::cout << "Suspended frame at depth " << frame_index << std::endl;
@@ -1223,7 +1187,7 @@ namespace OwcaScript::Internal {
                 },
                 [&](RuntimeFunction::NativeFunction& nf) -> void {
                     try {
-                        *frame.return_value = nf.function(vm, frame.values);
+                        *frame.return_value = nf.function(vm, std::span{ frame.values_, frame.max_values });
                         pop_frame();
                     }
                     catch(OwcaException e) {
@@ -1240,7 +1204,7 @@ namespace OwcaScript::Internal {
                 [&](RuntimeFunction::NativeGenerator& ngf) -> void {
                     if (!frame.iterator_object) {
                         frame.iterator_object = vm->allocate<Iterator>(0, true);
-                        frame.iterator_object->internal_value()->generator = ngf.generator(vm, frame.values);
+                        frame.iterator_object->internal_value()->generator = ngf.generator(vm, std::span{ frame.values_, frame.max_values });
                         *frame.return_value = *frame.iterator_object;
                         pop_frame();
                         return;
@@ -1286,33 +1250,18 @@ namespace OwcaScript::Internal {
         auto exc = return_value->as_exception(vm);
         throw exc;
     }
-    void Executor::run(OwcaMap *dict_output) {
-        run_impl();
-        if (dict_output) {
-            auto &old_frame = just_executed_executing_frame();
-            old_frame.runtime_function->visit(
-                [&](RuntimeFunction::ScriptFunction& sf) -> void {
-                    for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
-                        auto key = vm->create_string_from_view(sf.identifier_names[i]);
-                        (*dict_output)[key] = old_frame.values[i];
-                    }
-                },
-                [&](RuntimeFunction::NativeFunction&) -> void {
-                    assert(false);
-                },
-                [&](RuntimeFunction::NativeGenerator&) -> void {
-                    assert(false);
-                }
-            );
-        }
-    }
     void Executor::prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc) {
-        auto &frame = push_new_frame();
-        frame.initialize_code_block(return_value, vm, oc);
+        auto frame = ExecutionFrame::create(0, 1, 0);
+        frame->initialize_code_block(return_value, vm, oc);
+        push_new_frame(std::move(frame));
     }
     void Executor::prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
-        auto &frame = push_new_frame();
-        frame.initialize_main_block_function(return_value, vm, runtime_functions, arguments);
+        assert(runtime_functions->functions.size() == 1);
+        auto it = runtime_functions->functions.find(0u);
+        assert(it != runtime_functions->functions.end());
+        auto frame = ExecutionFrame::create(it->second);
+        frame->initialize_main_block_function(return_value, vm, runtime_functions, arguments);
+        push_new_frame(std::move(frame));
     }
 
 	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
@@ -1324,7 +1273,8 @@ namespace OwcaScript::Internal {
 		auto fnc = temp.as_functions(vm);
         assert(fnc.internal_self_object() == nullptr);
 		prepare_execute_main_function(temp, fnc.internal_value(), values);
-		run(dict_output);
+        currently_executing_frame().dict_output = dict_output;
+        run();
         return temp;
     }
 
@@ -1334,9 +1284,8 @@ namespace OwcaScript::Internal {
             return_value = OwcaCompleted{};
 			return;
 		}
-        auto &frame = push_new_frame();
-        std::swap(frame, oi.internal_value()->frame);
-        frame.return_value = &return_value;
+        push_new_frame(std::move(oi.internal_value()->frame));
+        currently_executing_frame().return_value = &return_value;
         oi.internal_value()->first_time = false;
         exit = true;
     }
@@ -1365,9 +1314,9 @@ namespace OwcaScript::Internal {
 		}
         if (exception_for_throwing_construction) {
             auto oe = OwcaValue{ obj }.as_exception(vm);
-            if (vm->current_stack_trace_index > 1) {
-                oe.internal_value()->parent_exception = vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress;
-                vm->stacktrace[vm->current_stack_trace_index - 2].exception_in_progress.reset();
+            if (currently_executing_frame_index() > 1) {
+                oe.internal_value()->parent_exception = vm->stacktrace[currently_executing_frame_index() - 2]->exception_in_progress;
+                vm->stacktrace[currently_executing_frame_index() - 2]->exception_in_progress.reset();
             }
         }
 		auto it = cls->values.find(std::string_view{ "__init__" });
@@ -1382,9 +1331,11 @@ namespace OwcaScript::Internal {
 		else {
 			visit_variant(it->second,
 				[&](RuntimeFunctions *rf) -> void {
-                    auto *frame = prepare_execute_function(return_value, rf, obj, arguments);
-                    if (frame && !cls->reload_self)
-                        frame->constructor_move_self_to_return_value = true;
+                    if (prepare_execute_function(return_value, rf, obj, arguments)) {
+                        auto &frame = currently_executing_frame();
+                        if (!cls->reload_self)
+                            frame.constructor_move_self_to_return_value = true;
+                    }
 				},
 				[&](Class* var) -> void {
 					prepare_throw_cant_call(std::format("type {} has __init__ variable, not a function", cls->full_name));
@@ -1401,7 +1352,7 @@ namespace OwcaScript::Internal {
         return return_value;
     }
 
-    ExecutionFrame *Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
+    bool Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
     {
 		auto it = runtime_functions->functions.find(arguments.size() + (self_value ? 1 : 0));
 		if (it == runtime_functions->functions.end()) {
@@ -1410,14 +1361,15 @@ namespace OwcaScript::Internal {
 				auto tmp = std::string{ "function " };
 				tmp += runtime_functions->name;
 				prepare_throw_not_callable_wrong_number_of_params(std::move(tmp), arguments.size());
-                return nullptr;
+                return false;
 			}
 		}
 
-        auto &frame = push_new_frame();
-        frame.initialize_execute_function(return_value, vm, it->second, self_value, arguments);
+        auto frame = ExecutionFrame::create(it->second);
+        frame->initialize_execute_function(return_value, vm, it->second, self_value, arguments);
+        push_new_frame(std::move(frame));
         exit = true;
-        return &frame;
+        return true;
     }
 
     void Executor::prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments)

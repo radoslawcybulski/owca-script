@@ -91,8 +91,6 @@ namespace OwcaScript {
 					full_name.resize(size);
 				}
 			};
-			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
-			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 
 			bool eof();
 			Line skip_ws();
@@ -150,6 +148,9 @@ namespace OwcaScript {
 			void compile_phase_2(AstFunction& root);
 		public:
 			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
+
+			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
+			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 
 			const auto& filename() const { return filename_; }
 			std::optional<OwcaCode> compile(std::vector<std::string> additional_variables = {});

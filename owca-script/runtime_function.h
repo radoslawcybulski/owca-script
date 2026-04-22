@@ -31,7 +31,10 @@ namespace OwcaScript {
 			OwcaCode code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;
 			std::string_view name, full_name;
-			unsigned int param_count = 0;
+			std::uint16_t param_count = 0;
+			std::uint16_t max_states = 0;
+			std::uint16_t max_temporaries = 0;
+			std::uint16_t max_values = 0; 
 			bool is_method = false;
 
 			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data);

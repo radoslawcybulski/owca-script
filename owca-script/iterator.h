@@ -17,7 +17,7 @@ namespace OwcaScript {
 		struct Iterator : public AllocationBase {
             static constexpr const Kind object_kind = Kind::Iterator;
 
-			ExecutionFrame frame;
+			std::unique_ptr<ExecutionFrame> frame;
 			std::optional<Generator> generator;
 			OwcaValue last_value;
 			bool first_time = true;

@@ -471,8 +471,8 @@ namespace OwcaScript::Internal {
 			if (left_) ++cnt;
 			if (right_) ++cnt;
 			if (third_) ++cnt;
-			if (cnt > 1)
-				ei.stack.pop(cnt - 1);
+			ei.stack.pop(cnt);
+			ei.stack.push();
 		}
 		else {
 			left_->emit(ei);

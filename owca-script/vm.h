@@ -30,9 +30,8 @@ namespace OwcaScript {
 			friend class ExecutionFrame;
 			
 			AllocationEmpty root_allocated_memory;
-			std::vector<ExecutionFrame> stacktrace;
+			std::vector<std::unique_ptr<ExecutionFrame>> stacktrace;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
-			size_t current_stack_trace_index = 0;
 			
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
