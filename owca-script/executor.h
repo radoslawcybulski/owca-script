@@ -41,7 +41,7 @@ namespace OwcaScript {
 			void run();
 			[[noreturn]] void run_and_throw();
 			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
-			bool run_impl_opcodes_execute_compare(ExecutionFrame &frame, ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
+			bool run_impl_opcodes_execute_compare(ExecutionFrame &frame, StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
 			void process_thrown_exception(ExecuteBufferReader::Position *pos);
 			struct TagBinOr {};
 			struct TagBinAnd {};

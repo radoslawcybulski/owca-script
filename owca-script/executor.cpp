@@ -197,7 +197,7 @@ namespace OwcaScript::Internal {
 		return std::pair<size_t, size_t>{ v3, v4 };
 	}
 
-    bool Executor::run_impl_opcodes_execute_compare(ExecutionFrame &frame, ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
+    bool Executor::run_impl_opcodes_execute_compare(ExecutionFrame &frame, StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
         auto jump_dest = ExecuteBufferReader::decode_jump(start_code, pos, {});
         const auto last = ExecuteBufferReader::decode<bool>(start_code, pos, {});
         auto &left = frame.peek_value(2);
@@ -226,7 +226,7 @@ namespace OwcaScript::Internal {
         static thread_local OwcaValue ignore_value;
         auto &code_object = frame.runtime_function->code;
         auto code_pos = ExecuteBufferReader::Position{ frame.code_position };
-        auto start_code = ExecuteBufferReader::StartOfCode{ frame.runtime_function->code.code() };
+        auto start_code = StartOfCode{ frame.runtime_function->code.code() };
         auto data_kinds = code_object.data_kinds();
 #ifdef MEASURE        
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
@@ -263,7 +263,7 @@ namespace OwcaScript::Internal {
                 assert(false);
                 break;
             case ExecuteBufferReader::Op::ClassInit: {
-                auto line = code_object.get_line_by_position(code_pos.pos - 1);
+                auto line = code_object.get_line_by_position(code_pos - 1);
                 auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                 auto cls = vm->allocate<Class>(0, line, name, full_name, frame.runtime_function->code);

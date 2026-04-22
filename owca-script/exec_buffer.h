@@ -220,19 +220,34 @@ namespace OwcaScript {
             }
         };
 
+        class CodePosition {
+            std::uint32_t pos = 0;
+        public:
+
+            CodePosition() = default;
+            explicit CodePosition(std::uint32_t p) : pos(p) {}
+
+            auto value() const { return pos; }
+            CodePosition operator + (std::int32_t offset) const {
+                return CodePosition(pos + offset);
+            }
+            CodePosition operator - (std::int32_t offset) const {
+                return CodePosition(pos - offset);
+            }
+        };
+        class StartOfCode {
+            const unsigned char *start;
+        public:
+            explicit StartOfCode(std::span<const unsigned char> code) : start(code.data()) {}
+
+            const unsigned char *operator +(CodePosition pos) const {
+                return start + pos.value();
+            }
+        };
         class ExecuteBufferReader {
         public:
-            struct Position {
-                std::uint32_t pos = 0;
-
-                Position() = default;
-                explicit Position(std::uint32_t p) : pos(p) {}
-            };
-            struct StartOfCode {
-                const unsigned char *start;
-                explicit StartOfCode(std::span<const unsigned char> code) : start(code.data()) {}
-            };
-
+            using Position = CodePosition;
+            
             using Op = ExecuteOp;
 
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_same_v<T, std::string_view>) {
@@ -241,7 +256,7 @@ namespace OwcaScript {
 #ifdef DEBUG                
                 if (size > 0) ensure_data_kind(data_kinds, DataKind::Blob, p);
 #endif
-                return std::string_view((const char*)(code.start + p), size);
+                return std::string_view((const char*)(code + p), size);
             }
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
@@ -250,7 +265,7 @@ namespace OwcaScript {
                 ensure_data_kind(data_kinds, std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
 #endif
                 T t;
-                std::memcpy(&t, code.start + p, sizeof(T));
+                std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
@@ -272,7 +287,7 @@ namespace OwcaScript {
                 }
 #endif
                 T t;
-                std::memcpy(&t, code.start + p, sizeof(T));
+                std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
             template <typename T> static T decode(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
@@ -288,7 +303,7 @@ namespace OwcaScript {
                 }
 #endif
                 T t;
-                std::memcpy(&t, code.start + p, sizeof(T));
+                std::memcpy(&t, code + p, sizeof(T));
                 return static_cast<T>(t);
             }
             static Position decode_jump(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
@@ -297,8 +312,8 @@ namespace OwcaScript {
                 ensure_data_kind(data_kinds, DataKind::JumpOffset, p);
 #endif
                 std::int32_t offset;
-                std::memcpy(&offset, code.start + p, sizeof(offset));
-                return Position{ (std::uint32_t)(pos.pos + offset) };
+                std::memcpy(&offset, code + p, sizeof(offset));
+                return Position{ (std::uint32_t)(pos.value() + offset) };
             }
         private:
             static size_t decode_size(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
@@ -307,21 +322,21 @@ namespace OwcaScript {
                 ensure_data_kind(data_kinds, DataKind::Size, p);
 #endif
                 std::uint32_t size;
-                std::memcpy(&size, code.start + p, sizeof(size));
+                std::memcpy(&size, code + p, sizeof(size));
                 return size;
             }
 #ifdef DEBUG
-            static void ensure_data_kind(std::span<const DataKind> data_kinds, DataKind expected, size_t p) {
-                if (!data_kinds.empty() && data_kinds[p] != expected) {
-                    auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p, to_string(expected), to_string(data_kinds[p]));
+            static void ensure_data_kind(std::span<const DataKind> data_kinds, DataKind expected, Position p) {
+                if (!data_kinds.empty() && data_kinds[p.value()] != expected) {
+                    auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", p.value(), to_string(expected), to_string(data_kinds[p.value()]));
                     std::cout << msg << std::endl;
                     throw std::runtime_error(msg);
                 }
             }
 #endif
-            static size_t align_pos(Position &pos, size_t align, size_t size) {
-                auto p = pos.pos;
-                pos.pos += size;
+            static Position align_pos(Position &pos, size_t align, size_t size) {
+                auto p = pos;
+                pos = Position{ (std::uint32_t)(p.value() + size) };
                 return p;
             }
         };
