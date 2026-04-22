@@ -448,18 +448,18 @@ namespace OwcaScript::Internal {
 		if (kind_ == Kind::LogOr) {
 			left_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::ExprRetTrueAndJumpIfTrue);
-			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			auto pos = ei.code_writer.append_jump_placeholder(line);
 			right_->emit(ei);
 			ei.stack.pop();
-			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
+			ei.code_writer.update_jump_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::LogAnd) {
 			left_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::ExprRetFalseAndJumpIfFalse);
-			auto pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			auto pos = ei.code_writer.append_jump_placeholder(line);
 			right_->emit(ei);
 			ei.stack.pop();
-			ei.code_writer.update_placeholder(pos, ei.code_writer.position());
+			ei.code_writer.update_jump_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::MakeRange) {
 			if (left_) left_->emit(ei);

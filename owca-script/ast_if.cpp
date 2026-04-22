@@ -52,18 +52,18 @@ namespace OwcaScript::Internal {
 		assert(ei.stack.empty());
 		ei.code_writer.append(line, ExecuteOp::If);
 		if (if_false_) {
-			auto else_pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			auto else_pos = ei.code_writer.append_jump_placeholder(line);
 			if_true_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::Jump);
-			auto end_pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
-			ei.code_writer.update_placeholder(else_pos, ei.code_writer.position());
+			auto end_pos = ei.code_writer.append_jump_placeholder(line);
+			ei.code_writer.update_jump_placeholder(else_pos, (std::int32_t)ei.code_writer.position());
 			if_false_->emit(ei);
-			ei.code_writer.update_placeholder(end_pos, ei.code_writer.position());
+			ei.code_writer.update_jump_placeholder(end_pos, (std::int32_t)ei.code_writer.position());
 		}
 		else {
-			auto end_pos = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			auto end_pos = ei.code_writer.append_jump_placeholder(line);
 			if_true_->emit(ei);
-			ei.code_writer.update_placeholder(end_pos, ei.code_writer.position());
+			ei.code_writer.update_jump_placeholder(end_pos, (std::int32_t)ei.code_writer.position());
 		}
 	}
 

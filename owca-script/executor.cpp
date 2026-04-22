@@ -22,7 +22,10 @@
 #include <iomanip>
 #include <utility>
 
+#ifdef DEBUG
 //#define OWCA_SCRIPT_EXEC_LOG
+#endif
+
 //#define MEASURE
 
 namespace OwcaScript::Internal {
@@ -46,7 +49,7 @@ namespace OwcaScript::Internal {
         assert(frame);
         vm->pop_frame(frame);
 #ifdef OWCA_SCRIPT_EXEC_LOG
-        std::cout << "Popping frame " << (void*)frame.get() << std::endl;
+        std::cout << "Popping frame " << (void*)frame << std::endl;
 #endif
         if (frame->constructor_move_self_to_return_value) {
             assert(frame->return_value);
@@ -82,7 +85,7 @@ namespace OwcaScript::Internal {
             );
         }
 #ifdef OWCA_SCRIPT_EXEC_LOG
-        std::cout << "Deleting frame " << (void*)frame.get() << std::endl;
+        std::cout << "Deleting frame " << (void*)frame << std::endl;
 #endif
         vm->deallocate_stack_frame(frame);
     }
@@ -96,9 +99,9 @@ namespace OwcaScript::Internal {
             while(frame.has_state()) {
                 if (auto state = frame.try_state<ExecutionFrame::TryCatchState>()) {
                     frame.code_position = state->catches_pos;
-                    if (pos) *pos = ExecuteBufferReader::Position{ state->catches_pos };
+                    if (pos) *pos = state->catches_pos;
 #ifdef OWCA_SCRIPT_EXEC_LOG
-                    std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
+                    std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position.pos << std::endl;
 #endif
                     return;
                 }
@@ -195,7 +198,7 @@ namespace OwcaScript::Internal {
 	}
 
     bool Executor::run_impl_opcodes_execute_compare(ExecutionFrame &frame, ExecuteBufferReader::StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind) {
-        auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, pos, {});
+        auto jump_dest = ExecuteBufferReader::decode_jump(start_code, pos, {});
         const auto last = ExecuteBufferReader::decode<bool>(start_code, pos, {});
         auto &left = frame.peek_value(2);
         auto right = frame.peek_value(1);
@@ -235,6 +238,9 @@ namespace OwcaScript::Internal {
 
         exit = false;
         do {
+#ifdef MEASURE            
+            auto start = std::chrono::high_resolution_clock::now();
+#endif
             //std::cout << "Running opcode at position " << reader.position() << std::endl;
 #ifdef OWCA_SCRIPT_EXEC_LOG
             auto line = code_object.get_line_by_position(code_pos.pos);
@@ -252,9 +258,6 @@ namespace OwcaScript::Internal {
             std::cout << std::endl;
 #endif
             //last_time = std::chrono::high_resolution_clock::now();
-#ifdef MEASURE            
-            auto start = std::chrono::high_resolution_clock::now();
-#endif
             switch(opcode) {
             case ExecuteBufferReader::Op::_Count:
                 assert(false);
@@ -421,18 +424,18 @@ namespace OwcaScript::Internal {
                 left = -left.as_float(vm);
                 break; }
             case ExecuteBufferReader::Op::ExprRetTrueAndJumpIfTrue: {
-                auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
                 if (frame.peek_value(1).is_true()) {
-                    code_pos.pos = jump_dest;
+                    code_pos = jump_dest;
                 }
                 else {
                     frame.pop_values(1);
                 }
                 break; }
             case ExecuteBufferReader::Op::ExprRetFalseAndJumpIfFalse: {
-                auto jump_dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
                 if (!frame.peek_value(1).is_true()) {
-                    code_pos.pos = jump_dest;
+                    code_pos = jump_dest;
                 }
                 else {
                     frame.pop_values(1);
@@ -720,10 +723,10 @@ namespace OwcaScript::Internal {
                 auto iterator = frame.peek_value(1).as_iterator(vm);
                 frame.pop_values(1);
                 auto &state = frame.push_state<ExecutionFrame::ForState>(iterator);
-                state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
                 state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
-                state.continue_position = code_pos.pos;
+                state.continue_position = code_pos;
                 break; }
             case ExecuteBufferReader::Op::ForCondition: {
                 auto &state = frame.state<ExecutionFrame::ForState>();
@@ -812,9 +815,9 @@ namespace OwcaScript::Internal {
                         auto identifier_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                         sf.copy_from_parents.push_back({ index_in_parent, identifier_index });
                     }
-                    auto next = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    sf.entry_point = code_pos.pos;
-                    code_pos = ExecuteBufferReader::Position{ next };
+                    auto z = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                    sf.entry_point = code_pos;
+                    code_pos = z;
 
                     sf.values_from_parents.reserve(sf.copy_from_parents.size());
                     for(auto c : sf.copy_from_parents) {
@@ -832,9 +835,9 @@ namespace OwcaScript::Internal {
                 break; }
             case ExecuteBufferReader::Op::If: {
                 auto val = frame.peek_value(1).is_true();
-                auto else_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto else_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
                 if (!val) {
-                    code_pos = ExecuteBufferReader::Position{ else_position };
+                    code_pos = else_position;
                 }
                 frame.pop_values(1);
                 break; }
@@ -906,10 +909,10 @@ namespace OwcaScript::Internal {
                 auto &state = frame.push_state<ExecutionFrame::TryCatchState>();
                 state.parent_exception = frame.exception_in_progress;
                 frame.exception_in_progress.reset();
-                state.begin_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                state.end_pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                state.catches_pos = code_pos.pos;
-                code_pos = ExecuteBufferReader::Position{ state.begin_pos };
+                state.begin_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                state.catches_pos = code_pos;
+                code_pos = ExecuteBufferReader::Position{ state.begin_position };
                 state.temporary_ptr = frame.temporary_;
                 break; }
             case ExecuteBufferReader::Op::TryCompleted: {
@@ -920,7 +923,7 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::TryCatchType: {
                 auto values = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 auto ident = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto skip_jump = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto skip_jump = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
 
                 auto exc_types = frame.peek_values(values, values);
                 frame.pop_values(values);
@@ -949,15 +952,15 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::TryBlockCompleted: {
                 assert(frame.exception_in_progress);
                 frame.exception_in_progress = std::nullopt;
-                auto pos = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                code_pos = ExecuteBufferReader::Position{ pos };
+                auto pos = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                code_pos = pos;
                 break; }
             case ExecuteBufferReader::Op::WhileInit: {
                 auto &state = frame.push_state<ExecutionFrame::WhileState>();
-                state.end_position = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
                 state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                 state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
-                state.continue_position = code_pos.pos;
+                state.continue_position = code_pos;
                 break; }
             case ExecuteBufferReader::Op::WhileCondition: {
                 auto &state = frame.state<ExecutionFrame::WhileState>();
@@ -1007,17 +1010,17 @@ namespace OwcaScript::Internal {
             case ExecuteBufferReader::Op::Yield: {
                 assert(frame.runtime_function->is_generator());
                 *frame.return_value = frame.peek_value(1);
-                frame.code_position = code_pos.pos;
+                frame.code_position = code_pos;
                 frame.pop_values(1);
                 pop_frame();
                 assert(exit);
                 return; }
             case ExecuteBufferReader::Op::Jump: {
-                auto dest = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                code_pos = ExecuteBufferReader::Position{ dest };
+                auto dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                code_pos = dest;
                 break; }
             }
-            frame.code_position = code_pos.pos;
+            frame.code_position = code_pos;
 #ifdef MEASURE
             auto end = std::chrono::high_resolution_clock::now();
             times[(size_t)opcode] += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -1166,7 +1169,7 @@ namespace OwcaScript::Internal {
 #ifdef OWCA_SCRIPT_EXEC_LOG
             std::cout << "Executing frame at depth " << currently_executing_frame_index() << " (" << (void*)&frame << ") function " << frame.runtime_function->full_name;
             if (auto q = std::get_if<RuntimeFunction::ScriptFunction>(&frame.runtime_function->data)) {
-                std::cout << " with code position " << frame.code_position << " (" << (void*)&frame.code_position << ")";
+                std::cout << " with code position " << frame.code_position.pos << " (" << (void*)&frame.code_position << ")";
             }
             std::cout << std::endl;
 #endif

@@ -31,6 +31,7 @@ namespace OwcaScript {
 			
 			AllocationEmpty root_allocated_memory;
 			//std::vector<std::unique_ptr<ExecutionFrame>> stacktrace;
+			std::vector<char> stack_trace_storage;
 			ExecutionFrame *first_frame = nullptr, *last_frame = nullptr;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
 			size_t frame_count = 0;

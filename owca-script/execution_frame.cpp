@@ -1,3 +1,4 @@
+#include "exec_buffer.h"
 #include "stdafx.h"
 #include "execution_frame.h"
 #include "owca_value.h"
@@ -106,7 +107,7 @@ namespace OwcaScript::Internal {
 				}
                 code_position = sf.entry_point;
 #ifdef OWCA_SCRIPT_EXEC_LOG                
-                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position.pos << std::endl;
 #endif
                 is_iterator = sf.is_generator;
 			});
@@ -139,7 +140,7 @@ namespace OwcaScript::Internal {
 			[&](RuntimeFunction::ScriptFunction& sf) -> void {
                 this->code_position = sf.entry_point;
 #ifdef OWCA_SCRIPT_EXEC_LOG                
-                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&this->code_position << ") to " << this->code_position << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&this->code_position << ") to " << this->code_position.pos << std::endl;
 #endif
                 assert(max_values == sf.identifier_names.size());
 				std::unordered_map<std::string_view, unsigned int> value_index_map;
@@ -173,7 +174,7 @@ namespace OwcaScript::Internal {
     void ExecutionFrame::initialize_code_block(OwcaValue &return_value, VM *vm, const OwcaCode &oc)
     {
 #ifdef OWCA_SCRIPT_EXEC_LOG        
-        std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position << std::endl;
+        std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)&code_position << ") to " << code_position.pos << std::endl;
 #endif
 
         runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{});

@@ -23,6 +23,7 @@
 namespace OwcaScript::Internal {
 	VM::VM() {
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
+		stack_trace_storage.reserve(1024 * 1024 * 8);
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
@@ -51,10 +52,15 @@ namespace OwcaScript::Internal {
 	}
 	void VM::deallocate_stack_frame(ExecutionFrame *frame) {
 		frame->~ExecutionFrame();
-		delete [](char*)frame;
+		auto offset = (char*)frame - stack_trace_storage.data();
+		assert(offset >= 0 && offset < stack_trace_storage.size());
+		stack_trace_storage.resize(offset);
 	}
 	ExecutionFrame *VM::allocate_stack_frame(size_t oversize) {
-		auto ptr = new char[sizeof(ExecutionFrame) + oversize];
+		auto offset = stack_trace_storage.size();
+		assert(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize < stack_trace_storage.capacity());
+		stack_trace_storage.resize(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize);
+		auto ptr = stack_trace_storage.data() + offset;
 		auto frame = new (ptr) ExecutionFrame();
 		return frame;
 	}
@@ -810,7 +816,7 @@ function native time();
 		for(auto s : iterate_frames()) {
 			auto &st = *s;
 			exc.frames.push_back({ .code = st.runtime_function->code });
-			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position > 0 ? st.code_position - 1 : 0).line;
+			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position.pos > 0 ? st.code_position.pos - 1 : 0).line;
 			exc.frames.back().function = st.runtime_function->full_name;
 		}
 	}

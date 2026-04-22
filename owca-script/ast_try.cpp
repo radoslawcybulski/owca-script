@@ -89,9 +89,9 @@ namespace OwcaScript::Internal {
         ei.states.push();
         auto start = ei.code_writer.position();
         ei.code_writer.append(line, ExecuteOp::TryInit);
-        auto body_start = ei.code_writer.append_placeholder<std::uint32_t>(line);
-        auto body_end = ei.code_writer.append_placeholder<std::uint32_t>(line);
-        std::vector<ExecuteBufferWriter::Placeholder<std::uint32_t>> fallback_jumps;
+        auto body_start = ei.code_writer.append_jump_placeholder(line);
+        auto body_end = ei.code_writer.append_jump_placeholder(line);
+        std::vector<ExecuteBufferWriter::JumpPlaceholder> fallback_jumps;
         for(auto &c : catches_) {
             for(auto &q : std::get<2>(c)) {
                 q->emit(ei);
@@ -101,21 +101,21 @@ namespace OwcaScript::Internal {
             ei.code_writer.append(line, ExecuteOp::TryCatchType);
             ei.code_writer.append(line, (std::uint32_t)std::get<2>(c).size());
             ei.code_writer.append(line, std::get<1>(c));
-            auto skip = ei.code_writer.append_placeholder<std::uint32_t>(line);
+            auto skip = ei.code_writer.append_jump_placeholder(line);
             std::get<3>(c)->emit(ei);
             assert(ei.stack.empty());
             ei.code_writer.append(line, ExecuteOp::TryBlockCompleted);
-            fallback_jumps.push_back(ei.code_writer.append_placeholder<std::uint32_t>(line));
-            ei.code_writer.update_placeholder(skip, ei.code_writer.position());
+            fallback_jumps.push_back(ei.code_writer.append_jump_placeholder(line));
+            ei.code_writer.update_jump_placeholder(skip, ei.code_writer.position());
         }
         ei.code_writer.append(line, ExecuteOp::TryCatchTypeCompleted);
-        ei.code_writer.update_placeholder(body_start, ei.code_writer.position());
+        ei.code_writer.update_jump_placeholder(body_start, ei.code_writer.position());
         assert(ei.stack.empty());
         body_->emit(ei);
         assert(ei.stack.empty());
-        ei.code_writer.update_placeholder(body_end, ei.code_writer.position());
+        ei.code_writer.update_jump_placeholder(body_end, ei.code_writer.position());
         for(auto &j : fallback_jumps) {
-            ei.code_writer.update_placeholder(j, ei.code_writer.position());
+            ei.code_writer.update_jump_placeholder(j, ei.code_writer.position());
         }
         ei.code_writer.append(line, ExecuteOp::TryCompleted);
         ei.states.pop();

@@ -5,7 +5,9 @@
 #include "line.h"
 #include "owca_code.h"
 
+#ifdef DEBUG
 //#define OWCA_SCRIPT_EXEC_LOG
+#endif
 
 namespace OwcaScript {
 	namespace Internal {
@@ -39,6 +41,7 @@ namespace OwcaScript {
             Size,
             Float32,
             Float64,
+            JumpOffset,
             Blob,
         };
         inline std::string_view to_string(DataKind kind) {
@@ -55,6 +58,7 @@ namespace OwcaScript {
             case DataKind::Size: return "Size";
             case DataKind::Float32: return "Float32";
             case DataKind::Float64: return "Float64";
+            case DataKind::JumpOffset: return "JumpOffset";
             case DataKind::Blob: return "Blob";
             default: return "Unknown";
             }
@@ -287,6 +291,15 @@ namespace OwcaScript {
                 std::memcpy(&t, code.start + p, sizeof(T));
                 return static_cast<T>(t);
             }
+            static Position decode_jump(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
+                auto p = align_pos(pos, alignof(std::int32_t), sizeof(std::int32_t));
+#ifdef DEBUG
+                ensure_data_kind(data_kinds, DataKind::JumpOffset, p);
+#endif
+                std::int32_t offset;
+                std::memcpy(&offset, code.start + p, sizeof(offset));
+                return Position{ (std::uint32_t)(pos.pos + offset) };
+            }
         private:
             static size_t decode_size(StartOfCode code, Position &pos, std::span<const DataKind> data_kinds) {
                 auto p = align_pos(pos, alignof(std::uint32_t), sizeof(std::uint32_t));
@@ -364,6 +377,10 @@ namespace OwcaScript {
             auto take() && {
                 return std::make_tuple(std::move(buffer), std::move(data_kinds), std::move(lines));
             }
+            void append_jump_position(Line line, std::uint32_t target_pos) {
+                auto jump_pos = append_jump_placeholder(line);
+                update_jump_placeholder(jump_pos, target_pos);
+            }
             template <typename T> void append(Line line, T value) requires(std::is_enum_v<T>) {
                 append_impl(line, value, std::is_same_v<T, ExecuteBufferReader::Op> ? DataKind::Op : DataKind::Enum);
             }
@@ -424,9 +441,26 @@ namespace OwcaScript {
                 auto pos = prepare((T*)nullptr, 1, kind);
                 return Placeholder<T>{ pos };
             }
-            template <typename T> void update_placeholder(const Placeholder<T> &placeholder, T value) {
+            template <typename T> void update_placeholder(const Placeholder<T> &placeholder, std::int32_t value) {
                 assert(placeholder.pos + sizeof(T) <= buffer.size());
                 std::memcpy(buffer.data() + placeholder.pos, &value, sizeof(T));
+            }
+
+            struct JumpPlaceholder {
+                const std::uint32_t pos;
+            };
+
+            JumpPlaceholder append_jump_placeholder(Line line) {
+                DataKind kind = DataKind::JumpOffset;
+                handle_line(line);
+                auto pos = prepare((std::int32_t*)nullptr, 1, kind);
+                return JumpPlaceholder{ pos };
+            }
+            void update_jump_placeholder(const JumpPlaceholder &placeholder, std::int32_t value) {
+                assert(placeholder.pos + sizeof(std::int32_t) <= buffer.size());
+                auto src = placeholder.pos + sizeof(std::int32_t);
+                auto offset = (std::int32_t)((std::int64_t)value - (std::int64_t)src);
+                std::memcpy(buffer.data() + placeholder.pos, &offset, sizeof(std::int32_t));
             }
         };
 

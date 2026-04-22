@@ -143,7 +143,7 @@ namespace OwcaScript::Internal {
 				ei.code_writer.append(line, copy_from_parents_[i].index_in_parent);
 				ei.code_writer.append(line, copy_from_parents_[i].index_in_child);
 			}
-			auto next = ei.code_writer.append_placeholder<std::uint32_t>(line);
+			auto next = ei.code_writer.append_jump_placeholder(line);
 
 			EmitInfo::MaxCounter us_stack, us_states;
 			std::swap(us_stack, ei.stack);
@@ -163,7 +163,7 @@ namespace OwcaScript::Internal {
 			std::swap(us_stack, ei.stack);
 			std::swap(us_states, ei.states);
 			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
-			ei.code_writer.update_placeholder(next, ei.code_writer.position());
+			ei.code_writer.update_jump_placeholder(next, (std::int32_t)ei.code_writer.position());
 		}
 		ei.stack.push();
 	}

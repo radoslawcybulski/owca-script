@@ -132,7 +132,7 @@ namespace OwcaScript::Internal {
         iterator_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::ExprToIterator);
         ei.code_writer.append(line, ExecuteOp::ForInit);
-        auto end = ei.code_writer.append_placeholder<std::uint32_t>(line);
+        auto end = ei.code_writer.append_jump_placeholder(line);
         ei.code_writer.append(line, loop_ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
         ei.code_writer.append(line, loop_control_depth_);
         auto pos = ei.code_writer.position();
@@ -147,8 +147,8 @@ namespace OwcaScript::Internal {
         body_->emit(ei);
         assert(ei.stack.empty());
         ei.code_writer.append(line, ExecuteOp::Jump);
-        ei.code_writer.append(line, pos);
-        ei.code_writer.update_placeholder(end, ei.code_writer.position());
+        ei.code_writer.append_jump_position(line, pos);
+        ei.code_writer.update_jump_placeholder(end, (std::int32_t)ei.code_writer.position());
         ei.code_writer.append(line, ExecuteOp::ForCompleted);
         ei.states.pop();
 	}

@@ -35,7 +35,7 @@ namespace OwcaScript {
 				static constexpr const std::uint8_t Kind = 1;
 				std::uint64_t index = (std::uint64_t)-1;
 				OwcaIterator iterator;
-				std::uint32_t continue_position = 0, end_position = 0;
+				ExecuteBufferReader::Position continue_position, end_position;
 				std::uint32_t loop_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
@@ -46,7 +46,7 @@ namespace OwcaScript {
 			struct WhileState {
 				static constexpr const std::uint8_t Kind = 2;
 				std::uint64_t index = (std::uint64_t)-1;
-				std::uint32_t end_position = 0, continue_position = 0;
+				ExecuteBufferReader::Position end_position, continue_position;
 				std::uint32_t loop_index = 0, value_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
@@ -54,8 +54,8 @@ namespace OwcaScript {
 			};
 			struct TryCatchState {
 				static constexpr const std::uint8_t Kind = 3;
-				std::uint32_t begin_pos = 0, end_pos = 0;
-				std::uint32_t catches_pos = 0;
+				ExecuteBufferReader::Position begin_position, end_position;
+				ExecuteBufferReader::Position catches_pos;
 				OwcaValue *temporary_ptr = nullptr;
 				std::optional<OwcaException> parent_exception;
 
@@ -90,7 +90,7 @@ namespace OwcaScript {
 			std::optional<OwcaIterator> iterator_object;
 			std::optional<OwcaException> exception_in_progress;
 			RuntimeFunction* runtime_function = nullptr;
-			std::uint32_t code_position = 0;
+			ExecuteBufferReader::Position code_position{ 0 };
 			OwcaValue *return_value = nullptr;
 			OwcaMap *dict_output = nullptr;
 			bool constructor_move_self_to_return_value = false;

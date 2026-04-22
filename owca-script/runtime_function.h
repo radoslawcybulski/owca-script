@@ -7,6 +7,7 @@
 #include "owca_vm.h"
 #include "owca_code.h"
 #include "owca_value.h"
+#include "exec_buffer.h"
 
 namespace OwcaScript {
 	namespace Internal {
@@ -17,7 +18,7 @@ namespace OwcaScript {
 				std::vector<OwcaValue> values_from_parents;
 				std::vector<AstFunction::CopyFromParent> copy_from_parents;
 				std::vector<std::string_view> identifier_names;
-				std::uint32_t entry_point = 0;
+				ExecuteBufferReader::Position entry_point{ 0 };
 				bool is_generator = false;
 			};
 			struct NativeFunction {

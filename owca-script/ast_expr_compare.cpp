@@ -261,7 +261,7 @@ namespace OwcaScript::Internal {
 	}
 
 	void AstExprCompare::emit(EmitInfo& ei) {
-		std::vector<ExecuteBufferWriter::Placeholder<std::uint32_t>> jump_placeholders;
+		std::vector<ExecuteBufferWriter::JumpPlaceholder> jump_placeholders;
 		first_->emit(ei);
 		for (auto& q : nexts_) {
 			std::get<2>(q)->emit(ei);
@@ -275,12 +275,12 @@ namespace OwcaScript::Internal {
 			case CompareKind::More: ei.code_writer.append(line, ExecuteOp::ExprCompareMore); break;
 			case CompareKind::Is: ei.code_writer.append(line, ExecuteOp::ExprCompareIs); break;
 			}
-			jump_placeholders.emplace_back(ei.code_writer.append_placeholder<std::uint32_t>(line));
+			jump_placeholders.emplace_back(ei.code_writer.append_jump_placeholder(line));
 			ei.code_writer.append(line, &q == &nexts_.back());
 		}
 		auto pos = ei.code_writer.position();
 		for (auto& ph : jump_placeholders) {
-			ei.code_writer.update_placeholder(ph, (std::uint32_t)pos);
+			ei.code_writer.update_jump_placeholder(ph, (std::int32_t)pos);
 		}
 	}
 	void AstExprCompare::visit(AstVisitor& vis) { vis.apply(*this); }
