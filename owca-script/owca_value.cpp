@@ -1,3 +1,4 @@
+#include "owca-script/owca_iterator.h"
 #include "stdafx.h"
 #include "owca_value.h"
 #include "owca_exception.h"
@@ -278,6 +279,11 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_cant_convert_to_float_message(std::format("{} argument ({}) can't be converted to a number value", I + 1, v.type()));
 		}
 
+		OwcaIterator convert_impl2(OwcaVM vm, size_t I, OwcaIterator *b, OwcaValue v) {
+			if (v.kind() != OwcaValueKind::Iterator) 
+				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an iterator", I + 1, v.type()));
+			return v.as_iterator(vm);
+		}
 		bool convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Bool) 
 				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));

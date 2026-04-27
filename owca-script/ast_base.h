@@ -35,6 +35,7 @@ namespace OwcaScript {
 				ExecuteBufferWriter code_writer;
 				MaxCounter stack, states;
 				AstCompiler &compiler;
+				bool generator = false;
 			};
 
 			AstBase(Line line) : line(line) {}

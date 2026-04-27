@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #ifdef DEBUG
-//#define OWCA_SCRIPT_EXEC_LOG
+#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 namespace OwcaScript {
@@ -119,6 +119,7 @@ namespace OwcaScript {
             LoopControlBreak,
             LoopControlContinue,
             Return,
+            ReturnCloseIterator,
             ReturnValue,
             Throw,
             TryInit,
@@ -131,7 +132,6 @@ namespace OwcaScript {
             WhileNext,
             WhileCompleted,
             WithInit,
-            WithInitPrepare,
             WithCompleted,
             Yield,
             Jump,
@@ -193,6 +193,7 @@ namespace OwcaScript {
             case ExecuteOp::LoopControlBreak: return "LoopControlBreak";
             case ExecuteOp::LoopControlContinue: return "LoopControlContinue";
             case ExecuteOp::Return: return "Return";
+            case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";
             case ExecuteOp::Throw: return "Throw";
             case ExecuteOp::TryInit: return "TryInit";
@@ -205,7 +206,6 @@ namespace OwcaScript {
             case ExecuteOp::WhileNext: return "WhileNext";
             case ExecuteOp::WhileCompleted: return "WhileCompleted";
             case ExecuteOp::WithInit: return "WithInit";
-            case ExecuteOp::WithInitPrepare: return "WithInitPrepare";
             case ExecuteOp::WithCompleted: return "WithCompleted";
             case ExecuteOp::Yield: return "Yield";
             case ExecuteOp::Jump: return "Jump";
@@ -391,7 +391,13 @@ namespace OwcaScript {
                 return Line{ lines.back().line };
             }
             auto take() && {
-                return std::make_tuple(std::move(buffer), ExecuteBufferReader::DataKindsType{}, std::move(lines));
+                ExecuteBufferReader::DataKindsType data_kinds_converted;
+#ifdef DEBUG
+                for(auto &entry : data_kinds) {
+                    data_kinds_converted[buffer.data() + entry.first] = entry.second;
+                }
+#endif
+                return std::make_tuple(std::move(buffer), std::move(data_kinds_converted), std::move(lines));
             }
             void append_jump_position(Line line, std::uint32_t target_pos) {
                 auto jump_pos = append_jump_placeholder(line);

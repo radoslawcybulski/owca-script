@@ -21,7 +21,7 @@ namespace OwcaScript {
 		auto internal_value() const { return object; }
 
         bool completed() const;
-        OwcaValue next() const;
+        std::optional<OwcaValue> next() const;
 
         friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &);
 

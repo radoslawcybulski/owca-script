@@ -30,11 +30,8 @@ namespace OwcaScript {
 			friend class ExecutionFrame;
 			
 			AllocationEmpty root_allocated_memory;
-			//std::vector<std::unique_ptr<ExecutionFrame>> stacktrace;
-			std::vector<char> stack_trace_storage;
-			ExecutionFrame *first_frame = nullptr, *last_frame = nullptr;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
-			size_t frame_count = 0;
+			std::unique_ptr<Executor> executor;
 			
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
@@ -139,17 +136,17 @@ namespace OwcaScript {
 			// [[noreturn]] void throw_too_many_elements(size_t expected);
 			// [[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 			
-			ExecutionFrame *allocate_stack_frame(size_t oversize);
-			void deallocate_stack_frame(ExecutionFrame *frame);
-			void push_frame(ExecutionFrame *frame);
-			void pop_frame(ExecutionFrame *frame);
-			ExecutionFrame *current_frame();
-			std::generator<ExecutionFrame*> iterate_frames() const;
+			// ExecutionFrame *allocate_stack_frame(size_t oversize);
+			// void deallocate_stack_frame(ExecutionFrame *frame);
+			// void push_frame(ExecutionFrame *frame);
+			// void pop_frame(ExecutionFrame *frame);
+			// ExecutionFrame *current_frame();
+			// std::generator<ExecutionFrame*> iterate_frames() const;
 
 			const auto &get_builtin_objects() const { return builtin_objects; }
 			OwcaValue execute_code_block(const OwcaCode&, std::optional<OwcaMap> values, OwcaMap *output_dict);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
-			OwcaValue resume_generator(OwcaIterator oi);
+			std::optional<OwcaValue> resume_generator(OwcaIterator oi);
 			OwcaArray create_array(std::deque<OwcaValue> arguments);
 			OwcaTuple create_tuple(std::vector<OwcaValue> arguments);
 			OwcaTuple create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
@@ -164,8 +161,8 @@ namespace OwcaScript {
 			OwcaString create_string(OwcaString str, size_t count);
 			OwcaString create_string(OwcaString left, OwcaString right);
 			String *precreate_string(size_t size);
-			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
-			Generator iterate_value(OwcaValue val);
+			//OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
+			//Generator iterate_value(OwcaValue val);
 			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);

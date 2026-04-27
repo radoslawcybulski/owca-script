@@ -449,16 +449,16 @@ namespace OwcaScript::Internal {
 			left_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::ExprRetTrueAndJumpIfTrue);
 			auto pos = ei.code_writer.append_jump_placeholder(line);
-			right_->emit(ei);
 			ei.stack.pop();
+			right_->emit(ei);
 			ei.code_writer.update_jump_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::LogAnd) {
 			left_->emit(ei);
 			ei.code_writer.append(line, ExecuteOp::ExprRetFalseAndJumpIfFalse);
 			auto pos = ei.code_writer.append_jump_placeholder(line);
-			right_->emit(ei);
 			ei.stack.pop();
+			right_->emit(ei);
 			ei.code_writer.update_jump_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::MakeRange) {

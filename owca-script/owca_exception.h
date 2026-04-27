@@ -31,6 +31,13 @@ namespace OwcaScript {
 		Frame frame(unsigned int) const;
 
 		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaException &);
+
+		bool operator == (OwcaException other) const {
+			return owner == other.owner;
+		}
+		bool operator != (OwcaException other) const {
+			return !(*this == other);
+		}
 	};
 }
 

@@ -18,12 +18,12 @@
 #include "iterator.h"
 #include "range.h"
 #include "executor.h"
-#include "execution_frame.h"
+#include <memory>
 
 namespace OwcaScript::Internal {
 	VM::VM() {
+		executor = std::make_unique<Executor>(this);
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
-		stack_trace_storage.reserve(1024 * 1024 * 8);
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
@@ -33,6 +33,7 @@ namespace OwcaScript::Internal {
 		builtin_objects.clear();
 		empty_tuple = nullptr;
 		empty_string = nullptr;
+		executor.reset();
 		AllocationBase *valid = &root_allocated_memory;
 		while (valid->next != &root_allocated_memory) {
 			auto obj = valid->next;
@@ -43,55 +44,55 @@ namespace OwcaScript::Internal {
 		}
 	}
 
-	std::generator<ExecutionFrame*> VM::iterate_frames() const {
-		auto frame = first_frame;
-		while (frame) {
-			co_yield frame;
-			frame = frame->next_frame;
-		}
-	}
-	void VM::deallocate_stack_frame(ExecutionFrame *frame) {
-		frame->~ExecutionFrame();
-		auto offset = (char*)frame - stack_trace_storage.data();
-		assert(offset >= 0 && offset < stack_trace_storage.size());
-		stack_trace_storage.resize(offset);
-	}
-	ExecutionFrame *VM::allocate_stack_frame(size_t oversize) {
-		auto offset = stack_trace_storage.size();
-		assert(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize < stack_trace_storage.capacity());
-		stack_trace_storage.resize(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize);
-		auto ptr = stack_trace_storage.data() + offset;
-		auto frame = new (ptr) ExecutionFrame();
-		return frame;
-	}
-	void VM::push_frame(ExecutionFrame *frame) {
-		frame->previous_frame = last_frame;
-		frame->next_frame = nullptr;
-		if (last_frame) {
-			last_frame->next_frame = frame;
-		}
-		else {
-			first_frame = frame;
-		}
-		last_frame = frame;
-		++frame_count;
-	}
-	void VM::pop_frame(ExecutionFrame *frame) {
-		assert(frame == last_frame);
-		assert(first_frame);
-		last_frame = frame->previous_frame;
-		if (last_frame) {
-			last_frame->next_frame = nullptr;
-		}
-		else {
-			first_frame = nullptr;
-		}
-		--frame_count;
-	}
+	// std::generator<ExecutionFrame*> VM::iterate_frames() const {
+	// 	auto frame = first_frame;
+	// 	while (frame) {
+	// 		co_yield frame;
+	// 		frame = frame->next_frame;
+	// 	}
+	// }
+	// void VM::deallocate_stack_frame(ExecutionFrame *frame) {
+	// 	frame->~ExecutionFrame();
+	// 	auto offset = (char*)frame - stack_trace_storage.data();
+	// 	assert(offset >= 0 && offset < stack_trace_storage.size());
+	// 	stack_trace_storage.resize(offset);
+	// }
+	// ExecutionFrame *VM::allocate_stack_frame(size_t oversize) {
+	// 	auto offset = stack_trace_storage.size();
+	// 	assert(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize < stack_trace_storage.capacity());
+	// 	stack_trace_storage.resize(stack_trace_storage.size() + sizeof(ExecutionFrame) + oversize);
+	// 	auto ptr = stack_trace_storage.data() + offset;
+	// 	auto frame = new (ptr) ExecutionFrame();
+	// 	return frame;
+	// }
+	// void VM::push_frame(ExecutionFrame *frame) {
+	// 	frame->previous_frame = last_frame;
+	// 	frame->next_frame = nullptr;
+	// 	if (last_frame) {
+	// 		last_frame->next_frame = frame;
+	// 	}
+	// 	else {
+	// 		first_frame = frame;
+	// 	}
+	// 	last_frame = frame;
+	// 	++frame_count;
+	// }
+	// void VM::pop_frame(ExecutionFrame *frame) {
+	// 	assert(frame == last_frame);
+	// 	assert(first_frame);
+	// 	last_frame = frame->previous_frame;
+	// 	if (last_frame) {
+	// 		last_frame->next_frame = nullptr;
+	// 	}
+	// 	else {
+	// 		first_frame = nullptr;
+	// 	}
+	// 	--frame_count;
+	// }
 
-	ExecutionFrame *VM::current_frame() {
-		return last_frame;
-	}
+	// ExecutionFrame *VM::current_frame() {
+	// 	return last_frame;
+	// }
 
 	struct VM::BuiltinProvider : public NativeCodeProvider {
 		static OwcaValue range_init1(OwcaVM vm, OwcaRange self, Number upper) {
@@ -129,6 +130,12 @@ namespace OwcaScript::Internal {
 		}
 		static Generator range_iter(OwcaVM vm, OwcaRange o) {
 			return o.internal_object()->iter(vm);
+		}
+		static OwcaValue iterator_completed(OwcaVM vm, OwcaIterator oi) {
+			return oi.completed();
+		}
+		static OwcaValue iterator_next(OwcaVM vm, OwcaIterator oi) {
+			return VM::get(vm).resume_generator(oi).value_or(OwcaEmpty{});
 		}
 		static OwcaValue bool_init(OwcaVM vm, OwcaValue, OwcaValue r) {
 			return VM::get(vm).calculate_if_true(r);
@@ -289,8 +296,8 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
-					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
-						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+					while(auto v = iter.next()) {
+						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(*v);
 						self[pair.first] = pair.second;
 					}
 				},
@@ -335,8 +342,8 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
-					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
-						self.add(v);
+					while(auto v = iter.next()) {
+						self.add(*v);
 					}
 				},
 				[&](OwcaIterator o) {
@@ -406,8 +413,8 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
-					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
-						self.internal_value()->values.push_back(v);
+					while(auto v = iter.next()) {
+						self.internal_value()->values.push_back(*v);
 					}
 				},
 				[&](OwcaIterator o) {
@@ -477,8 +484,8 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaObject o) {
 					auto iter = VM::get(vm).create_iterator(o);
-					for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
-						self.internal_value()->values.push_back(v);
+					while(auto v = iter.next()) {
+						self.internal_value()->values.push_back(*v);
 					}
 				},
 				[&](OwcaIterator o) {
@@ -562,6 +569,8 @@ namespace OwcaScript::Internal {
 			if (full_name == "Range.upper") return adapt(range_upper);
 			if (full_name == "Range.step") return adapt(range_step);
 			if (full_name == "Range.size") return adapt(range_size);
+			if (full_name == "Iterator.completed") return adapt(iterator_completed);
+			if (full_name == "Iterator.next") return adapt(iterator_next);
 			if (full_name == "Bool.__init__") return adapt(bool_init);
 			if (full_name == "Float.__init__") return adapt(float_init);
 			if (full_name == "String.__init__") return adapt(string_init);
@@ -629,6 +638,8 @@ namespace OwcaScript::Internal {
 class Nul {
 }
 class Iterator {
+	function native completed(self);
+	function native next(self);
 }
 class Range {
 	function native __init__(self, upper);
@@ -718,8 +729,7 @@ function native time();
 		auto code_compiled = vm.compile("<builtin>", std::move(code), std::make_shared<BuiltinProvider>());
 		auto builtin_dictionary = create_map();
 		auto gc_project = TempGCProtect{ *this, builtin_dictionary };
-		Executor executor{ this };
-		executor.execute_code_block(code_compiled, std::nullopt, &builtin_dictionary);
+		executor->execute_code_block(code_compiled, std::nullopt, &builtin_dictionary);
 
 		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class(vm).internal_value();
@@ -813,11 +823,11 @@ function native time();
 	}
 	void VM::initialize_exception_object(Exception &exc)
 	{
-		for(auto s : iterate_frames()) {
-			auto &st = *s;
-			exc.frames.push_back({ .code = st.runtime_function->code });
-			exc.frames.back().line = st.runtime_function->code.get_line_by_position(st.code_position - 1).line;
-			exc.frames.back().function = st.runtime_function->full_name;
+		for(auto &s : executor->stacktrace) {
+			auto rf = s.runtime_function;
+			exc.frames.push_back({ .code = rf->code });
+			exc.frames.back().line = rf->code.get_line_by_position(s.code_position - 1).line;
+			exc.frames.back().function = rf->full_name;
 		}
 	}
 	Exception *VM::is_exception(OwcaObject obj) const
@@ -849,242 +859,210 @@ function native time();
 	// }
 	void VM::throw_dictionary_changed(bool is_dict)
 	{
-		Executor executor{ this };
-		executor.throw_dictionary_changed(is_dict);
+		executor->throw_dictionary_changed(is_dict);
 	}
 	void VM::throw_not_implemented(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_not_implemented(msg);
+		executor->throw_not_implemented(msg);
 	}
 	void VM::throw_range_step_is_zero()
 	{
-		Executor executor{ this };
-		executor.throw_range_step_is_zero();
+		executor->throw_range_step_is_zero();
 	}
 	void VM::throw_division_by_zero()
 	{
-		Executor executor{ this };
-		executor.throw_division_by_zero();
+		executor->throw_division_by_zero();
 	}
 
 	void VM::throw_mod_division_by_zero()
 	{
-		Executor executor{ this };
-		executor.throw_mod_division_by_zero();
+		executor->throw_mod_division_by_zero();
 	}
 
 	void VM::throw_cant_convert_to_float_message(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_cant_convert_to_float_message(msg);
+		executor->throw_cant_convert_to_float_message(msg);
 	}
 
 	void VM::throw_cant_convert_to_float(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_cant_convert_to_float_message(std::format("can't convert value of type `{}` to floating point", type));
+		executor->throw_cant_convert_to_float_message(std::format("can't convert value of type `{}` to floating point", type));
 	}
 
 	void VM::throw_cant_convert_to_integer(Number val)
 	{
-		Executor executor{ this };
-		executor.throw_cant_convert_to_integer(val);
+		executor->throw_cant_convert_to_integer(val);
 	}
 
 	void VM::throw_cant_convert_to_integer(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_cant_convert_to_integer(type);
+		executor->throw_cant_convert_to_integer(type);
 	}
 
 	void VM::throw_not_a_number(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_not_a_number(type);
+		executor->throw_not_a_number(type);
 	}
 
 	void VM::throw_overflow(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_overflow(msg);
+		executor->throw_overflow(msg);
 	}
 
 	void VM::throw_range_step_must_be_one_in_left_side_of_write_assign()
 	{
-		Executor executor{ this };
-		executor.throw_range_step_must_be_one_in_left_side_of_write_assign();
+		executor->throw_range_step_must_be_one_in_left_side_of_write_assign();
 	}
 
 	void VM::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
 	{
-		Executor executor{ this };
-		executor.throw_cant_compare(kind, left, right);
+		executor->throw_cant_compare(kind, left, right);
 	}
 
 	void VM::throw_string_too_large(size_t size)
 	{
-		Executor executor{ this };
-		executor.throw_string_too_large(size);
+		executor->throw_string_too_large(size);
 	}
 	void VM::throw_index_out_of_range(std::string msg)
 	{
-		Executor executor{ this };
-		executor.throw_index_out_of_range(msg);
+		executor->throw_index_out_of_range(msg);
 	}
 
 	void VM::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
-		Executor executor{ this };
-		executor.throw_value_not_indexable(type, key_type);
+		executor->throw_value_not_indexable(type, key_type);
 	}
 
 	void VM::throw_missing_member(std::string_view type, std::string_view ident)
 	{
-		Executor executor{ this };
-		executor.throw_missing_member(type, ident);
+		executor->throw_missing_member(type, ident);
 	}
 
 	void VM::throw_cant_call(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_cant_call(msg);
+		executor->throw_cant_call(msg);
 	}
 
 	void VM::throw_not_callable(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_not_callable(type);
+		executor->throw_not_callable(type);
 	}
 	
 	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
-		Executor executor{ this };
-		executor.throw_not_callable_wrong_number_of_params(type, params);
+		executor->throw_not_callable_wrong_number_of_params(type, params);
 	}
 
 	void VM::throw_wrong_type(std::string_view type, std::string_view expected)
 	{
-		Executor executor{ this };
-		executor.throw_wrong_type(type, expected);
+		executor->throw_wrong_type(type, expected);
 	}
 
 	void VM::throw_wrong_type(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_wrong_type(msg);
+		executor->throw_wrong_type(msg);
 	}
 
 	void VM::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
 	{
-		Executor executor{ this };
-		executor.throw_unsupported_operation_2(oper, left, right);
+		executor->throw_unsupported_operation_2(oper, left, right);
 	}
 
 	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
 	{
-		Executor executor{ this };
-		executor.throw_invalid_operand_for_mul_string(val)	;
+		executor->throw_invalid_operand_for_mul_string(val);
 	}
 
 	void VM::throw_missing_key(std::string_view key)
 	{
-		Executor executor{ this };
-		executor.throw_missing_key(key);
+		executor->throw_missing_key(key);
 	}
 
 	void VM::throw_not_hashable(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_not_hashable(type);
+		executor->throw_not_hashable(type);
 	}
 
 	void VM::throw_value_cant_have_fields(std::string_view type)
 	{
-		Executor executor{ this };
-		executor.throw_value_cant_have_fields(type);
+		executor->throw_value_cant_have_fields(type);
 	}
 
 	void VM::throw_missing_native(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_missing_native(msg);
+		executor->throw_missing_native(msg);
 	}
 
 	void VM::throw_not_iterable(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_not_iterable(msg);
+		executor->throw_not_iterable(msg);
 	}
 
 	void VM::throw_readonly(std::string_view msg)
 	{
-		Executor executor{ this };
-		executor.throw_readonly(msg);
+		executor->throw_readonly(msg);
 	}
 
 	void VM::throw_cant_return_value_from_generator()
 	{
-		Executor executor{ this };
-		executor.throw_cant_return_value_from_generator();
+		executor->throw_cant_return_value_from_generator();
 	}
 
 	void VM::throw_container_is_empty()
 	{
-		Executor executor{ this };
-		executor.throw_container_is_empty();
+		executor->throw_container_is_empty();
 	}
-	Generator VM::iterate_value(OwcaValue val)
-	{
-		return val.visit(
-			[&](OwcaArray o) -> Generator {
-				for(auto v : o) {
-					co_yield v;
-				}
-				co_return;
-			},
-			[&](OwcaTuple o) -> Generator {
-				for(auto v : o) {
-					co_yield v;
-				}
-				co_return;
-			},
-			[&](OwcaMap o) -> Generator {
-				for(auto val : o) {
-					co_yield val.first;
-				}
-				co_return;
-			},
-			[&](OwcaSet o) -> Generator {
-				for(auto val : o) {
-					co_yield val;
-				}
-				co_return;
-			},
-			[&](OwcaString o) -> Generator {
-				for(auto i = 0u; i < o.size(); ++i) {
-					co_yield o.substr(i, i + 1);
-				}
-				co_return;
-			},
-			[&](OwcaIterator o) -> Generator {
-				for(auto v : o) {
-					co_yield v;
-				}
-				co_return;
-			},
-			[&](OwcaObject o) -> Generator {
-				auto iter = VM::get(this).create_iterator(o);
-				for(auto v = iter.next(); v.kind() != OwcaValueKind::Completed; v = iter.next()) {
-					co_yield v;
-				}
-				co_return;
-			},
-			[&](const auto &) -> Generator {
-				throw_wrong_type(std::format("can't create an iterator from {}", val.type()));
-			}
-		);
-	}
+	// Generator VM::iterate_value(OwcaValue val)
+	// {
+	// 	return val.visit(
+	// 		[&](OwcaArray o) -> Generator {
+	// 			for(auto v : o) {
+	// 				co_yield v;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaTuple o) -> Generator {
+	// 			for(auto v : o) {
+	// 				co_yield v;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaMap o) -> Generator {
+	// 			for(auto val : o) {
+	// 				co_yield val.first;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaSet o) -> Generator {
+	// 			for(auto val : o) {
+	// 				co_yield val;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaString o) -> Generator {
+	// 			for(auto i = 0u; i < o.size(); ++i) {
+	// 				co_yield o.substr(i, i + 1);
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaIterator o) -> Generator {
+	// 			for(auto v : o) {
+	// 				co_yield v;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](OwcaObject o) -> Generator {
+	// 			auto iter = VM::get(this).create_iterator(o);
+	// 			while(auto v = iter.next()) {
+	// 				co_yield *v;
+	// 			}
+	// 			co_return;
+	// 		},
+	// 		[&](const auto &) -> Generator {
+	// 			throw_wrong_type(std::format("can't create an iterator from {}", val.type()));
+	// 		}
+	// 	);
+	// }
 
 	std::pair<OwcaValue, OwcaValue> VM::unpack_two_elements_or_raise(OwcaValue val) {
 		return val.visit(
@@ -1346,8 +1324,7 @@ function native time();
 
 	OwcaValue VM::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
 	{
-		Executor executor{ this };
-		return executor.execute_code_block(oc, values, dict_output);
+		return executor->execute_code_block(oc, values, dict_output);
 		
 		// OwcaValue val;
 		// RuntimeFunction::ScriptFunction sf;
@@ -1430,10 +1407,9 @@ function native time();
 		// return execute();
 	}
 
-	OwcaValue VM::resume_generator(OwcaIterator oi)
+	std::optional<OwcaValue> VM::resume_generator(OwcaIterator oi)
 	{
-		Executor executor{ this };
-		return executor.resume_generator(oi);
+		return executor->continue_iterator(oi);
 
 		// stacktrace.push_back(std::move(oi.internal_value()->frame));
 		// std::optional<OwcaValue> value;
@@ -1458,15 +1434,14 @@ function native time();
 		// return *value;
 	}
 
-	OwcaValue VM::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-		Executor executor{ this };
-		return executor.allocate_user_class(cls, arguments);
-	}
+	// OwcaValue VM::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
+	// 	Executor executor{ this };
+	// 	return executor.allocate_user_class(cls, arguments);
+	// }
 
 	OwcaValue VM::execute_call(OwcaValue func, std::span<OwcaValue> arguments)
 	{
-		Executor executor{ this };
-		return executor.execute_call(func, arguments);
+		return executor->execute_call(func, arguments);
 	}
 	OwcaArray VM::create_array(std::deque<OwcaValue> arguments)
 	{
@@ -1572,12 +1547,6 @@ function native time();
 		std::memcpy(new_s->pointer(), l.text().data(), l.size());
 		std::memcpy(new_s->pointer() + l.size(), r.text().data(), r.size());
 		return OwcaString{ new_s };
-	}
-
-	OwcaCode VM::currently_running_code() const
-	{
-		auto& s = *last_frame;
-		return s.runtime_function->code;
 	}
 
 	bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
@@ -1689,9 +1658,8 @@ function native time();
 		// mark
 		gc_mark_value(this, ggc, empty_tuple);
 		gc_mark_value(this, ggc, empty_string);
-		for(auto s : iterate_frames()) {
-			gc_mark_value(this, ggc, *s);
-		}
+		gc_mark_value(this, ggc, *executor);
+
 		gc_mark_value(this, ggc, builtin_objects);
 		gc_mark_value(this, ggc, temp_gc_protect_list);
 

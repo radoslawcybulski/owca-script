@@ -1,11 +1,13 @@
 #ifndef RC_OWCA_SCRIPT_EXECUTOR_H
 #define RC_OWCA_SCRIPT_EXECUTOR_H
 
+#include "owca_exception.h"
 #include "stdafx.h"
 #include "owca_value.h"
 #include "execution_frame.h"
 #include "runtime_function.h"
 #include "exec_buffer.h"
+#include <optional>
 
 namespace OwcaScript {
 	class OwcaCode;
@@ -17,32 +19,233 @@ namespace OwcaScript {
         class VM;
 
         class Executor {
+			friend class VM;
+
+		public:
+			struct TemporariesPtr {
+				OwcaValue *temporaries_ptr;
+
+				explicit TemporariesPtr(OwcaValue *ptr) : temporaries_ptr(ptr) {}
+
+				TemporariesPtr operator+(int offset) const {
+					return TemporariesPtr(temporaries_ptr + offset);
+				}
+				TemporariesPtr operator-(int offset) const {
+					return TemporariesPtr(temporaries_ptr - offset);
+				}
+
+				TemporariesPtr &operator++() {
+					++temporaries_ptr;
+					return *this;
+				}
+				TemporariesPtr &operator--() {
+					--temporaries_ptr;
+					return *this;
+				}
+				TemporariesPtr operator ++ ( int ) {
+					TemporariesPtr tmp = *this;
+					++temporaries_ptr;
+					return tmp;
+				}
+				TemporariesPtr operator -- ( int ) {
+					TemporariesPtr tmp = *this;
+					--temporaries_ptr;
+					return tmp;
+				}
+			};
+			struct LocalsPtr {
+				OwcaValue *local_values_ptr;
+
+				explicit LocalsPtr(OwcaValue *ptr) : local_values_ptr(ptr) {}
+
+				LocalsPtr operator+(int offset) const {
+					return LocalsPtr(local_values_ptr + offset);
+				}
+				LocalsPtr operator-(int offset) const {
+					return LocalsPtr(local_values_ptr - offset);
+				}
+				LocalsPtr &operator++() {
+					++local_values_ptr;
+					return *this;
+				}
+				LocalsPtr &operator--() {
+					--local_values_ptr;
+					return *this;
+				}
+				LocalsPtr operator ++ ( int ) {
+					LocalsPtr tmp = *this;
+					++local_values_ptr;
+					return tmp;
+				}
+				LocalsPtr operator -- ( int ) {
+					LocalsPtr tmp = *this;
+					--local_values_ptr;
+					return tmp;
+				}
+				TemporariesPtr temporaries() const {
+					return TemporariesPtr(local_values_ptr);
+				}
+			};
+			struct ClassState {
+				static constexpr const std::uint8_t Kind = 0;
+				std::string_view name, full_name;
+				Class *cls;
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ClassState &e);
+			};
+			struct ForState {
+				static constexpr const std::uint8_t Kind = 1;
+				std::uint64_t index = (std::uint64_t)-1;
+				OwcaIterator iterator;
+				ExecuteBufferReader::Position continue_position, end_position;
+				std::uint32_t loop_index = 0;
+				std::uint8_t loop_control_depth = 0;
+
+				ForState(OwcaIterator iterator) : iterator(iterator) {}
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ForState &e);
+			};
+			struct WhileState {
+				static constexpr const std::uint8_t Kind = 2;
+				std::uint64_t index = (std::uint64_t)-1;
+				ExecuteBufferReader::Position end_position, continue_position;
+				std::uint32_t loop_index = 0, value_index = 0;
+				std::uint8_t loop_control_depth = 0;
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WhileState &e);
+			};
+			struct TryState {
+				static constexpr const std::uint8_t Kind = 3;
+				ExecuteBufferReader::Position begin_position, end_position;
+				ExecuteBufferReader::Position catches_pos;
+				TemporariesPtr temporary_ptr;
+				std::optional<OwcaException> original_exception_being_handled;
+
+				TryState(TemporariesPtr temporary_ptr) : temporary_ptr(temporary_ptr) {}
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const TryState &e);
+			};
+			struct CatchState {
+				static constexpr const std::uint8_t Kind = 4;
+				std::optional<OwcaException> exception_being_handled;
+				std::optional<OwcaException> original_exception_being_handled;
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const CatchState &e);
+			};
+			struct WithState {
+				static constexpr const std::uint8_t Kind = 5;
+				OwcaValue context;
+				bool entered = false;
+
+				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WithState &e);
+			};
+			struct EmptyState {
+				static constexpr const std::uint8_t Kind = 255;
+			};
+			using StatesType = std::variant<EmptyState, ClassState, ForState, WhileState, TryState, CatchState, WithState>;
+			struct StatesTypePtr {
+				StatesType *states_type_ptr;
+
+				explicit StatesTypePtr(StatesType *ptr) : states_type_ptr(ptr) {}
+
+				StatesTypePtr operator+(int offset) const {
+					return StatesTypePtr(states_type_ptr + offset);
+				}
+				StatesTypePtr operator-(int offset) const {
+					return StatesTypePtr(states_type_ptr - offset);
+				}
+				StatesTypePtr &operator++() {
+					++states_type_ptr;
+					return *this;
+				}
+				StatesTypePtr &operator--() {					--states_type_ptr;
+					return *this;
+				}
+				StatesTypePtr operator ++ ( int ) {
+					StatesTypePtr tmp = *this;
+					++states_type_ptr;
+					return tmp;
+				}
+				StatesTypePtr operator -- ( int ) {
+					StatesTypePtr tmp = *this;
+					--states_type_ptr;
+					return tmp;
+				}
+			};
+			friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const StatesType &e);
+		private:
             VM *vm;
-			const size_t stack_top_level_index = 0;
-	        bool exit = false;
+			struct Frame {
+				RuntimeFunction* runtime_function = nullptr;
+				ExecuteBufferReader::Position code_position{ 0 };
+			};
+			std::vector<Frame> stacktrace;
+			std::vector<OwcaValue> values_vector;
+			std::vector<StatesType> states_vector;
+			LocalsPtr locals_ptr_top;
+			StatesTypePtr states_ptr_top;
+			std::optional<OwcaException> exception_being_thrown;
+			std::optional<OwcaException> exception_being_handled;
+			
+			struct StackTraceState {
+				Executor &e;
 
-			size_t currently_executing_frame_index() const;
-			ExecutionFrame &currently_executing_frame();
-			void pop_frame();
-			bool completed() const;
+				StackTraceState(Executor &e, RuntimeFunction* runtime_function, ExecuteBufferReader::Position code_position) : e(e) {
+					e.stacktrace.push_back({ runtime_function, code_position });
+				}
+				~StackTraceState() {
+					e.stacktrace.pop_back();
+				}
+			};
+			struct TopPtrState {
+				Executor &e;
+				LocalsPtr locals_ptr_top;
+				StatesTypePtr states_ptr_top;
 
-			void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
-			void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
-			void prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments);
-			bool prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
-			void prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
-			void prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc);
+				TopPtrState(Executor &e, LocalsPtr locals_ptr_top_new, StatesTypePtr states_ptr_top_new) : e(e), locals_ptr_top(e.locals_ptr_top), states_ptr_top(e.states_ptr_top) {
+					e.locals_ptr_top = locals_ptr_top_new;
+					e.states_ptr_top = states_ptr_top_new;
+				}
+				~TopPtrState() {
+					e.locals_ptr_top = locals_ptr_top;
+					e.states_ptr_top = states_ptr_top;
+				}
+			};
+			// void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
+			// void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
+			// void prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments);
+			// bool prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			// void prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments);
+			// void prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc);
 
             // void prepare_exec(OwcaValue &return_value, RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
 			// // only used for executing main block func
 			// void prepare_exec(OwcaValue &return_value, RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaMap> arguments);
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
-			void run();
-			[[noreturn]] void run_and_throw();
-			void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
-			bool run_impl_opcodes_execute_compare(ExecutionFrame &frame, StartOfCode start_code, ExecuteBufferReader::Position &pos, CompareKind kind);
-			void process_thrown_exception(ExecuteBufferReader::Position *pos);
+			std::tuple<OwcaValue, TemporariesPtr, StatesTypePtr, ExecuteBufferReader::Position> run_opcodes(LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
+			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos);
+			Generator run_native_generator(Iterator *iter_object, RuntimeFunction *function, RuntimeFunction::NativeGenerator& ng, std::span<OwcaValue> arguments);
+			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
+			OwcaValue index_read(OwcaValue self, OwcaValue key);
+			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
+
+			OwcaValue run_script_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
+			OwcaValue run_native_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeFunction& sf);
+			OwcaValue start_native_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng);
+			OwcaValue start_script_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
+			OwcaValue execute_function(RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count);
+			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, bool has_self, unsigned int arg_count);
+			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
+			OwcaValue allocate_user_class_from_values(Class *cls, unsigned int arg_count);
+
+			// void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
+			ExecuteBufferReader::Position run_impl_opcodes_execute_compare(TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position pos, CompareKind kind, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
+			OwcaValue create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, LocalsPtr locals_ptr, StatesTypePtr states_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
+			// false if current frame can't handle the exception, true otherwise
+			void process_thrown_exception(ExecuteBufferReader::Position *pos, StatesTypePtr &states_ptr, OwcaException exc);
+
 			struct TagBinOr {};
 			struct TagBinAnd {};
 			struct TagBinXor {};
@@ -53,7 +256,7 @@ namespace OwcaScript {
 			struct TagMul {};
 			struct TagDiv {};
 			struct TagMod {};
-			template <typename Tag> __attribute__((always_inline)) void run_impl_opcodes_execute_expr_oper2(ExecutionFrame &frame);
+			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(TemporariesPtr &temporary_ptr);
 			Number expr_oper_2(TagAdd, Number left, Number right);
 			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
 			OwcaTuple expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right);
@@ -75,55 +278,57 @@ namespace OwcaScript {
 			Number expr_oper_2(TagBinRShift, Number left, Number right);
 			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
 
-			void prepare_throw_division_by_zero();
-			void prepare_throw_mod_division_by_zero();
-			void prepare_throw_cant_convert_to_float(std::string_view type);
-			void prepare_throw_cant_convert_to_float_message(std::string_view msg);
-			void prepare_throw_cant_convert_to_integer(Number val);
-			void prepare_throw_cant_convert_to_integer(std::string_view type);
-			void prepare_throw_not_a_number(std::string_view type);
-			void prepare_throw_overflow(std::string_view msg);
-			void prepare_throw_range_step_is_zero();
-			void prepare_throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
-			void prepare_throw_range_step_must_be_one_in_left_side_of_write_assign();
-			void prepare_throw_index_out_of_range(std::string msg);
-			void prepare_throw_string_too_large(size_t size);
-			void prepare_throw_value_not_indexable(std::string_view type, std::string_view key_type="");
-			void prepare_throw_missing_member(std::string_view type, std::string_view ident);
-			void prepare_throw_cant_call(std::string_view msg);
-			void prepare_throw_not_callable(std::string_view type);
-			void prepare_throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);
-			void prepare_throw_wrong_type(std::string_view type, std::string_view expected);
-			void prepare_throw_wrong_type(std::string_view msg);
-			void prepare_throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
-			void prepare_throw_invalid_operand_for_mul_string(std::string_view val);
-			void prepare_throw_missing_key(std::string_view key);
-			void prepare_throw_not_hashable(std::string_view type);
-			void prepare_throw_value_cant_have_fields(std::string_view type);
-			void prepare_throw_missing_native(std::string_view msg);
-			void prepare_throw_not_iterable(std::string_view type);
-			void prepare_throw_readonly(std::string_view msg);
-			void prepare_throw_cant_return_value_from_generator();
-			void prepare_throw_container_is_empty();
-			void prepare_throw_not_implemented(std::string_view msg);
-			void prepare_throw_dictionary_changed(bool is_dict);
-			void prepare_throw_too_many_elements(size_t expected);
-			void prepare_throw_not_enough_elements(size_t expected, size_t got);
-			void prepare_throw_cpp_exception(std::string_view msg);
+			// void prepare_throw_division_by_zero();
+			// void prepare_throw_mod_division_by_zero();
+			// void prepare_throw_cant_convert_to_float(std::string_view type);
+			// void prepare_throw_cant_convert_to_float_message(std::string_view msg);
+			// void prepare_throw_cant_convert_to_integer(Number val);
+			// void prepare_throw_cant_convert_to_integer(std::string_view type);
+			// void prepare_throw_not_a_number(std::string_view type);
+			// void prepare_throw_overflow(std::string_view msg);
+			// void prepare_throw_range_step_is_zero();
+			// void prepare_throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
+			// void prepare_throw_range_step_must_be_one_in_left_side_of_write_assign();
+			// void prepare_throw_index_out_of_range(std::string msg);
+			// void prepare_throw_string_too_large(size_t size);
+			// void prepare_throw_value_not_indexable(std::string_view type, std::string_view key_type="");
+			// void prepare_throw_missing_member(std::string_view type, std::string_view ident);
+			// void prepare_throw_cant_call(std::string_view msg);
+			// void prepare_throw_not_callable(std::string_view type);
+			// void prepare_throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int);
+			// void prepare_throw_wrong_type(std::string_view type, std::string_view expected);
+			// void prepare_throw_wrong_type(std::string_view msg);
+			// void prepare_throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
+			// void prepare_throw_invalid_operand_for_mul_string(std::string_view val);
+			// void prepare_throw_missing_key(std::string_view key);
+			// void prepare_throw_not_hashable(std::string_view type);
+			// void prepare_throw_value_cant_have_fields(std::string_view type);
+			// void prepare_throw_missing_native(std::string_view msg);
+			// void prepare_throw_not_iterable(std::string_view type);
+			// void prepare_throw_readonly(std::string_view msg);
+			// void prepare_throw_cant_return_value_from_generator();
+			// void prepare_throw_container_is_empty();
+			// void prepare_throw_not_implemented(std::string_view msg);
+			// void prepare_throw_dictionary_changed(bool is_dict);
+			// void prepare_throw_too_many_elements(size_t expected);
+			// void prepare_throw_not_enough_elements(size_t expected, size_t got);
+			// void prepare_throw_cpp_exception(std::string_view msg);
 
-			std::optional<std::tuple<Number, Number, Number>> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
-			std::optional<size_t> verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
-			std::optional<std::pair<size_t, size_t>> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
-
+			std::tuple<Number, Number, Number> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
+			size_t verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
+			std::pair<size_t, size_t> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
         public:
             Executor(VM *vm);
 
 			void clear();
 
 			OwcaValue execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output);
-			OwcaValue resume_generator(OwcaIterator oi);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
+			OwcaValue execute_call(std::span<OwcaValue> arguments) {
+				assert(!arguments.empty());
+				return execute_call(arguments[0], arguments.subspan(1));
+			}
 
 			[[noreturn]] void throw_division_by_zero();
 			[[noreturn]] void throw_mod_division_by_zero();
@@ -159,6 +364,8 @@ namespace OwcaScript {
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
 			[[noreturn]] void throw_too_many_elements(size_t expected);
 			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
+
+			friend void gc_mark_value(OwcaVM vm, GenerationGC ggc, const Executor &);
 		};
 	}
 }

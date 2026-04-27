@@ -7,14 +7,15 @@
 namespace OwcaScript {
     bool OwcaIterator::completed() const
     {
-        return object->completed;
+        return !object->generator.has_value();
     }
-    OwcaValue OwcaIterator::next() const
+    std::optional<OwcaValue> OwcaIterator::next() const
     {
         return object->vm->resume_generator(*this);
     }
     OwcaIterator::Iterator& OwcaIterator::Iterator::operator++() {
-        iter->next();
+        auto v= iter->next();
+        iter->object->last_value = v.value_or(OwcaEmpty{});
         return *this;
     }
     OwcaIterator::Iterator::Iterator(OwcaIterator *iter) : iter(iter) {

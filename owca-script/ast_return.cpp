@@ -38,7 +38,13 @@ namespace OwcaScript::Internal {
 			value_->emit(ei);
 			ei.stack.pop();
 			assert(ei.stack.empty());
-			ei.code_writer.append(line, ExecuteOp::ReturnValue);
+			if (ei.generator) {
+				ei.code_writer.append(line, ExecuteOp::Yield);
+				ei.code_writer.append(line, ExecuteOp::ReturnCloseIterator);
+			}
+			else {
+				ei.code_writer.append(line, ExecuteOp::ReturnValue);
+			}
 		}
 		else {
 			ei.code_writer.append(line, ExecuteOp::Return);

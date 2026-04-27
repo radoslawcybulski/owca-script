@@ -3,9 +3,13 @@
 #include "exec_buffer.h"
 
 namespace OwcaScript {
+    OwcaCode::~OwcaCode() {
+        std::cout << "Destroying code " << (void*)code_.get() << " " << code_.use_count() << "\n";
+    }
     Internal::Line OwcaCode::get_line_by_position(Internal::CodePosition pos) const
     {
         auto offset = pos.value() - code().data();
+        assert(offset >= 0 && offset <= code().size());
         auto it = std::lower_bound(code_->lines.begin(), code_->lines.end(), offset, [](const Internal::LineEntry &entry, size_t pos) {
             return entry.code_pos < pos;
         });

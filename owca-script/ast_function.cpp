@@ -146,8 +146,10 @@ namespace OwcaScript::Internal {
 			auto next = ei.code_writer.append_jump_placeholder(line);
 
 			EmitInfo::MaxCounter us_stack, us_states;
+			bool us_generator = generator_ == Generator::Yes;
 			std::swap(us_stack, ei.stack);
 			std::swap(us_states, ei.states);
+			std::swap(us_generator, ei.generator);
 			assert(body_);
 			body_->emit(ei);
 			assert(ei.stack.empty());
@@ -159,9 +161,10 @@ namespace OwcaScript::Internal {
 				ei.compiler.add_error(OwcaErrorKind::TooManyStates, ei.compiler.filename(), line, "too many states - maximum is 65535");
 			}
 			ei.code_writer.update_placeholder(temporaries_count, (std::uint16_t)ei.stack.maximum());
-			ei.code_writer.update_placeholder(states_count, (std::uint16_t)ei.states.maximum());
+			ei.code_writer.update_placeholder(states_count, (std::uint16_t)ei.states.maximum() + 1);
 			std::swap(us_stack, ei.stack);
 			std::swap(us_states, ei.states);
+			std::swap(us_generator, ei.generator);
 			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 			ei.code_writer.update_jump_placeholder(next, (std::int32_t)ei.code_writer.position());
 		}
