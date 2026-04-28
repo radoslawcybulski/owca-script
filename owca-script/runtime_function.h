@@ -24,10 +24,12 @@ namespace OwcaScript {
 			struct NativeFunction {
 				std::vector<std::string_view> parameter_names;
 				NativeCodeProvider::Function function;
+				unsigned int line;
 			};
 			struct NativeGenerator {
 				std::vector<std::string_view> parameter_names;
 				NativeCodeProvider::GeneratorFunction generator;
+				unsigned int line;
 			};
 			OwcaCode code;
 			std::variant<ScriptFunction, NativeFunction, NativeGenerator> data;

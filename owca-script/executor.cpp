@@ -379,6 +379,7 @@ namespace OwcaScript::Internal {
                 fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeGenerator{});
                 auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
                 ng.parameter_names = std::move(identifier_names);
+                ng.line = code_object.get_line_by_position(code_pos).line;
                 if (native_provider) {
                     if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, ng.parameter_names)) {
                         ng.generator = std::move(*impl);
@@ -392,6 +393,7 @@ namespace OwcaScript::Internal {
                 fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeFunction{});
                 auto &nf = std::get<RuntimeFunction::NativeFunction>(fnc->data);
                 nf.parameter_names = std::move(identifier_names);
+                nf.line = code_object.get_line_by_position(code_pos).line;
                 if (native_provider) {
                     if (auto impl = native_provider->native_function(full_name, class_, FunctionToken{ fnc }, nf.parameter_names)) {
                         nf.function = std::move(*impl);
@@ -781,8 +783,9 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCall: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    execute_call_from_values(temporary_ptr, states_ptr, size);
-                    POP_VALUES(size - 1);
+                    auto val = execute_call_from_values(temporary_ptr, states_ptr, size);
+                    POP_VALUES(size);
+                    PUSH_VALUE(val);
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateArray: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);

@@ -826,7 +826,17 @@ function native time();
 		for(auto &s : executor->stacktrace) {
 			auto rf = s.runtime_function;
 			exc.frames.push_back({ .code = rf->code });
-			exc.frames.back().line = rf->code.get_line_by_position(s.code_position - 1).line;
+			exc.frames.back().line = rf->visit(
+				[&](const RuntimeFunction::ScriptFunction &sf) {
+					return rf->code.get_line_by_position(s.code_position - 1).line;
+				},
+				[&](const RuntimeFunction::NativeFunction &nf) {
+					return nf.line;
+				},
+				[&](const RuntimeFunction::NativeGenerator &ng) {
+					return ng.line;
+				}
+			);
 			exc.frames.back().function = rf->full_name;
 		}
 	}
