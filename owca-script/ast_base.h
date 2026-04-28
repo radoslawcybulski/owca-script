@@ -1,7 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_AST_BASE_H
 #define RC_OWCA_SCRIPT_AST_BASE_H
 
-#include "stdafx.h"
+#include "stdafx.h" 
 #include "impl_base.h"
 #include "ast_visitor.h"
 #include "line.h"

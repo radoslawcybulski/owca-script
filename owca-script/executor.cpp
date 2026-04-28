@@ -25,7 +25,7 @@
 //#define MEASURE
 
 namespace OwcaScript::Internal {
-    Executor::Executor(VM *vm) : vm(vm), values_vector(1024 * 1024), states_vector(1024 * 16), locals_ptr_top(values_vector.data()), states_ptr_top(states_vector.data() + 1) {
+    Executor::Executor(VM *vm) : vm(vm), values_vector(1024 * 1024), states_vector(1024 * 16), temporary_ptr_current_top(values_vector.data()), states_ptr_current_top(states_vector.data()) {
     }
 
 //     ExecutionFrame &Executor::currently_executing_frame() {
@@ -88,12 +88,12 @@ namespace OwcaScript::Internal {
 #define STATE(tp) std::get<tp>(*(states_ptr.states_type_ptr - 1))
 #define PUSH_STATE(tp) do { *states_ptr.states_type_ptr = (tp); ++states_ptr; } while(0)
 #define TRY_STATE(tp) (std::get_if<tp>(states_ptr.states_type_ptr - 1))
-#define HAS_STATE() (std::get_if<EmptyState>(states_ptr.states_type_ptr - 1) == nullptr)
-#define PEEK_VALUES(offset, count) std::span<OwcaValue>{ temporary_ptr.temporaries_ptr - offset, count }
-#define PEEK_VALUE(offset) (*(temporary_ptr.temporaries_ptr - offset))
+#define HAS_STATE() (!states_ptr.empty())
+#define PEEK_VALUES(offset, count) std::span<OwcaValue>{ temporary_ptr[{ (offset), (count) }] }
+#define PEEK_VALUE(offset) temporary_ptr[(offset)]
 #define POP_VALUES(count) do { temporary_ptr = temporary_ptr - (count); } while(0)
-#define PUSH_VALUE(val) do { *temporary_ptr.temporaries_ptr = (val); ++temporary_ptr; } while(0)
-#define LOCAL_VAR(index) (locals_ptr.local_values_ptr[index])
+#define PUSH_VALUE(val) do { temporary_ptr[0] = (val); ++temporary_ptr; } while(0)
+#define LOCAL_VAR(index) (locals_ptr[index])
 
     void Executor::process_thrown_exception(ExecuteBufferReader::Position *code_pos, StatesTypePtr &states_ptr, OwcaException exception)
     {
@@ -433,15 +433,15 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, Executor::TemporariesPtr, Executor::StatesTypePtr, ExecuteBufferReader::Position> Executor::run_opcodes(LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
+    std::tuple<OwcaValue, Executor::TemporariesPtr, Executor::StatesTypePtr, ExecuteBufferReader::Position> Executor::run_opcodes(const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
     {
         assert(!stacktrace.empty());
         const size_t stacktrace_index = stacktrace.size() - 1;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace.back().runtime_function->code;
-        auto temporary_ptr_start = (locals_ptr + stacktrace.back().runtime_function->max_values).temporaries();
+        auto temporary_ptr_start = temporary_ptr;
         auto states_ptr_start = states_ptr;
-        while(std::get_if<EmptyState>(states_ptr_start.states_type_ptr - 1) == nullptr) {
+        while(!states_ptr_start.empty()) {
             --states_ptr_start;
         }
         const auto &data_kinds = code_object.data_kinds();
@@ -699,7 +699,7 @@ restart:
                             throw_not_iterable(val.type());
                         }
                         val = *func;
-                        val = execute_call_from_values(temporary_ptr, 1);
+                        val = execute_call_from_values(temporary_ptr, states_ptr, 1);
                     }
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinOr: {
@@ -781,7 +781,7 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCall: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    execute_call_from_values(temporary_ptr, size);
+                    execute_call_from_values(temporary_ptr, states_ptr, size);
                     POP_VALUES(size - 1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateArray: {
@@ -1021,7 +1021,7 @@ restart:
                     auto &obj = PEEK_VALUE(1);
                     state.context = obj;
                     obj = vm->member(obj, "__enter__");
-                    obj = execute_call_from_values(temporary_ptr, 1);
+                    obj = execute_call_from_values(temporary_ptr, states_ptr, 1);
                     state.entered = true;
                     auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     if (index != std::numeric_limits<std::uint32_t>::max()) {
@@ -1034,7 +1034,8 @@ restart:
                     if (state.entered) {
                         auto mbm = vm->member(state.context, "__exit__");
                         PUSH_VALUE(mbm);
-                        execute_call_from_values(temporary_ptr, 1);
+                        execute_call_from_values(temporary_ptr, states_ptr, 1);
+                        POP_VALUES(1);
                     }
                     POP_STATE();
                     break; }
@@ -1191,41 +1192,30 @@ next_iteration:
         POP_VALUES(1);
     }
 
-    OwcaValue Executor::run_script_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
-        auto locals_ptr = locals_ptr_top - arg_count;
-        auto states_ptr = states_ptr_top;
-        if (function->is_method) {
-            assert(arg_count > 0);
-            LOCAL_VAR(0) = *LOCAL_VAR(0).as_functions(vm).self();
-        }
-        else {
-            locals_ptr++;
-        }
+    OwcaValue Executor::run_script_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
+        auto locals_ptr = temporary_ptr.locals(arg_count);
+        const auto max_values = function->max_values;
+        temporary_ptr = temporary_ptr + max_values - arg_count;
 
-        auto temporaries_ptr = (locals_ptr + function->max_values).temporaries();
-        assert(locals_ptr.local_values_ptr + function->max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
+        assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
         assert(states_ptr.states_type_ptr + function->max_states <= states_vector.data() + states_vector.size());
-        for(auto *v = locals_ptr.local_values_ptr + arg_count; v < locals_ptr.local_values_ptr + function->max_values; ++v) {
-            *v = OwcaEmpty{};
+        for(auto i = arg_count; i < max_values; ++i) {
+            locals_ptr[i] = OwcaEmpty{};
         }
 
-        auto tps = TopPtrState{ *this, locals_ptr + function->max_values, states_ptr_top + function->max_states };
+        PUSH_STATE(EmptyState{});
         auto est = StackTraceState{ *this, function, sf.entry_point };
-        auto [ retval, new_values_ptr, new_states_ptr, new_code_pos ] = run_opcodes(locals_ptr, temporaries_ptr, states_ptr + 1, StartOfCode{}, sf.entry_point);
+        auto [ retval, new_values_ptr, new_states_ptr, new_code_pos ] = run_opcodes(locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, sf.entry_point);
         return retval;
     }
-    OwcaValue Executor::run_native_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeFunction& sf) {
-        auto locals_ptr = locals_ptr_top - arg_count;
-        if (function->is_method) {
-            assert(arg_count > 0);
-            LOCAL_VAR(0) = *LOCAL_VAR(0).as_functions(vm).self();
-        }
-        else {
-            locals_ptr++;
-        }
-        assert(locals_ptr.local_values_ptr  + function->max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
-        auto tps = TopPtrState{ *this, locals_ptr + function->max_values, states_ptr_top };
+    OwcaValue Executor::run_native_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeFunction& sf) {
+        auto locals_ptr = temporary_ptr.locals(arg_count);
+        const auto max_values = function->max_values;
+        temporary_ptr = temporary_ptr + max_values - arg_count;
+
+        assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
         auto est = StackTraceState{ *this, function, {} };
+        update_current_top_ptrs(temporary_ptr + function->max_temporaries, states_ptr);
         return sf.function(vm, std::span{ locals_ptr.local_values_ptr, arg_count });
     }
     Generator Executor::run_native_generator(Iterator *iter_object, RuntimeFunction *function, RuntimeFunction::NativeGenerator& ng, std::span<OwcaValue> arguments) {
@@ -1247,16 +1237,10 @@ next_iteration:
             }
         }
     }
-    OwcaValue Executor::start_native_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng) {
-        auto locals_ptr = locals_ptr_top - arg_count;
-        if (function->is_method) {
-            assert(arg_count > 0);
-            LOCAL_VAR(0) = *LOCAL_VAR(0).as_functions(vm).self();
-        }
-        else {
-            locals_ptr++;
-        }
-        assert(locals_ptr.local_values_ptr + function->max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
+    OwcaValue Executor::start_native_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng) {
+        auto locals_ptr = temporary_ptr.locals(arg_count);
+        const auto max_values = function->max_values;
+        assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
         auto iter = vm->allocate<Iterator>(0, function, std::span<OwcaValue>{}, std::span<StatesType>{});
         Generator generator = run_native_generator(iter, function, ng, std::span{ locals_ptr.local_values_ptr, arg_count });
         iter->generator = std::move(generator);
@@ -1266,7 +1250,8 @@ next_iteration:
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
         auto states_ptr = StatesTypePtr{ states_vec.data() + 1 };
-        const auto temporary_ptr = locals_ptr_top.temporaries();
+        states_vec[0] = EmptyState{};
+        const auto temporary_ptr = temporary_ptr_current_top;
         while(true) {
             OwcaValue val;
             {
@@ -1293,15 +1278,8 @@ next_iteration:
         return oi.internal_value()->generator->next();
     }
 
-    OwcaValue Executor::start_script_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
-        auto locals_ptr = locals_ptr_top - arg_count;
-        if (function->is_method) {
-            assert(arg_count > 0);
-            LOCAL_VAR(0) = *LOCAL_VAR(0).as_functions(vm).self();
-        }
-        else {
-            locals_ptr++;
-        }
+    OwcaValue Executor::start_script_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
+        auto locals_ptr = temporary_ptr.locals(arg_count);
         assert(locals_ptr.local_values_ptr + function->max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
 
         std::vector<OwcaValue> values_vec(function->max_values + function->max_temporaries);
@@ -1422,20 +1400,113 @@ next_iteration:
     //     vm->push_frame(frame);
     // }
 
+    // void Executor::prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi)
+    // {
+	// 	if (oi.internal_value()->completed) {
+    //         return_value = OwcaCompleted{};
+	// 		return;
+	// 	}
+    //     vm->push_frame(oi.internal_value()->frame.get());
+    //     currently_executing_frame().return_value = &return_value;
+    //     oi.internal_value()->first_time = false;
+    //     exit = true;
+    // }
+
+	OwcaValue Executor::allocate_user_class_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count) {
+		OwcaValue obj;
+        
+        assert(arg_count > 0);
+        
+        auto locals_ptr = temporary_ptr.locals(arg_count);
+        auto cls = LOCAL_VAR(0).as_class(vm).internal_value();
+
+		if (cls->allocator_override) {
+			obj = cls->allocator_override();
+		}
+		else if (cls->reload_self) {
+			obj = {};
+		}
+		else {
+			obj = OwcaObject{ vm->allocate<Object>(cls->native_storage_total, cls) };
+		}
+
+		auto it = cls->values.find(std::string_view{ "__init__" });
+		if (it == cls->values.end()) {
+			if (arg_count > 1) {
+				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} parameters", cls->full_name, arg_count - 1));
+			}
+            return obj;
+		}
+        if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
+            LOCAL_VAR(0) = obj;
+            auto retval = execute_function_call_from_values(*state, temporary_ptr, states_ptr, true, arg_count);
+            if (!cls->reload_self) [[likely]]
+                retval = obj;
+            return retval;
+        }
+        throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
+	}
+    // OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
+    //     OwcaValue return_value;
+    //     prepare_allocate_user_class(return_value, cls, arguments);
+    //     run();
+    //     return return_value;
+    // }
+    OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int argument_count) {
+        auto func = PEEK_VALUE(argument_count);
+        if (func.kind() == OwcaValueKind::Functions) [[likely]] {
+            auto f = func.as_functions(vm);
+            auto runtime_functions = f.internal_value();
+            bool has_self = f.internal_self_object() != nullptr;
+            PEEK_VALUE(argument_count) = has_self ? *f.self() : OwcaEmpty{};
+            
+            return execute_function_call_from_values(runtime_functions, temporary_ptr, states_ptr, has_self, argument_count - (has_self ? 0 : 1));
+        }
+        else {
+            if (func.kind() == OwcaValueKind::Class) [[likely]] {
+                return allocate_user_class_from_values(temporary_ptr, states_ptr, argument_count);
+            }
+            throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
+        }
+    }
+    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, bool has_self, unsigned int arg_count) {
+        auto runtime_function = runtime_functions->functions[arg_count];
+        if (!runtime_function && has_self) [[unlikely]] {
+            runtime_function = runtime_functions->functions[arg_count - 1];
+            --arg_count;
+        }
+        if (!runtime_function) [[unlikely]] {
+            auto tmp = std::string{ "function " };
+            tmp += runtime_functions->name;
+            throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count + (has_self ? 1 : 0));
+        }
+        if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) [[likely]] {
+            return run_script_function(runtime_function, temporary_ptr, states_ptr, arg_count, *state);
+        }
+        return run_native_function(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeFunction>(runtime_function->data));
+    }
+
+
 	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
 	{
+        auto tpk = TopPtrsKeeper{ *this };
+
         auto runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{
             .entry_point = CodePosition{ oc.code().data()}
         });
-        auto fnc = run_script_function(runtime_function, 0, std::get<RuntimeFunction::ScriptFunction>(runtime_function->data));
-        auto locals_ptr = locals_ptr_top;
-        auto temporary_ptr = locals_ptr.temporaries();
-        PUSH_VALUE(fnc);
-        auto retval = execute_call_from_values(temporary_ptr, 1);
+        auto temporary_ptr = temporary_ptr_current_top;
+        auto locals_ptr = temporary_ptr.locals(0);
+        auto states_ptr = states_ptr_current_top;
+        PUSH_STATE(EmptyState{});
+        auto fnc = run_script_function(runtime_function, temporary_ptr, states_ptr, 0, std::get<RuntimeFunction::ScriptFunction>(runtime_function->data));
+        auto f = fnc.as_functions(vm);
+        auto f2 = f.internal_value()->functions[0];
+        assert(f2);
+        assert(!f.self());
+
+        auto retval = run_script_function(f2, temporary_ptr, states_ptr, 0, std::get<RuntimeFunction::ScriptFunction>(f2->data));
         if (dict_output) {
-            ++locals_ptr;
-            auto rf = fnc.as_functions(vm).internal_value();
-            rf->functions[0]->visit(
+            f2->visit(
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
                     for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
                         auto key = vm->create_string_from_view(sf.identifier_names[i]);
@@ -1453,97 +1524,31 @@ next_iteration:
         return retval;
     }
 
-    // void Executor::prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi)
-    // {
-	// 	if (oi.internal_value()->completed) {
-    //         return_value = OwcaCompleted{};
-	// 		return;
-	// 	}
-    //     vm->push_frame(oi.internal_value()->frame.get());
-    //     currently_executing_frame().return_value = &return_value;
-    //     oi.internal_value()->first_time = false;
-    //     exit = true;
-    // }
-
-	OwcaValue Executor::allocate_user_class_from_values(Class *cls, unsigned int arg_count) {
-		OwcaValue obj;
-		
-		if (cls->allocator_override) {
-			obj = cls->allocator_override();
-		}
-		else if (cls->reload_self) {
-			obj = {};
-		}
-		else {
-			obj = OwcaObject{ vm->allocate<Object>(cls->native_storage_total, cls) };
-		}
-        auto locals_ptr = locals_ptr_top - arg_count;
-
-		auto it = cls->values.find(std::string_view{ "__init__" });
-		if (it == cls->values.end()) {
-			if (arg_count > 0) {
-				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} values", cls->full_name, arg_count - 1));
-			}
-            return obj;
-		}
-        if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
-            LOCAL_VAR(arg_count) = obj;
-            auto retval = execute_function_call_from_values(*state, true, arg_count);
-            if (!cls->reload_self) [[likely]]
-                retval = obj;
-            return retval;
-        }
-        throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
-	}
-    // OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-    //     OwcaValue return_value;
-    //     prepare_allocate_user_class(return_value, cls, arguments);
-    //     run();
-    //     return return_value;
-    // }
-    OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
-        auto func = PEEK_VALUE(argument_count);
-        if (func.kind() == OwcaValueKind::Functions) [[likely]] {
-            auto f = func.as_functions(vm);
-            auto runtime_functions = f.internal_value();
-            return execute_function_call_from_values(runtime_functions, f.internal_self_object() != nullptr, argument_count);
-        }
-        else if (func.kind() == OwcaValueKind::Class) {
-            return allocate_user_class_from_values(func.as_class(vm).internal_value(), argument_count);
-        }
-        throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
-    }
-    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, bool has_self, unsigned int arg_count) {
-        auto runtime_function = runtime_functions->functions[arg_count - (has_self ? 0 : 1)];
-        if (!runtime_function && has_self) [[unlikely]] {
-            runtime_function = runtime_functions->functions[arg_count - 1];
-        }
-        if (!runtime_function) [[unlikely]] {
-            auto tmp = std::string{ "function " };
-            tmp += runtime_functions->name;
-            throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count - (has_self ? 1 : 0));
-        }
-        if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) [[likely]] {
-            return run_script_function(runtime_function, arg_count - (has_self ? 0 : 1), *state);
-        }
-        return run_native_function(runtime_function, arg_count - (has_self ? 0 : 1), std::get<RuntimeFunction::NativeFunction>(runtime_function->data));
-
-    }
     OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-        auto locals_ptr = locals_ptr_top;
-        for(size_t i = 0; i < arguments.size(); ++i) {
-            LOCAL_VAR(i) = arguments[i];
+        auto tpk = TopPtrsKeeper{ *this };
+
+        auto temporary_ptr = temporary_ptr_current_top;
+        auto states_ptr = states_ptr_current_top;
+        auto locals_ptr = temporary_ptr.locals(0);
+        PUSH_VALUE(OwcaClass{ cls });
+        for(auto &v : arguments) {
+            PUSH_VALUE(v);
         }
-        return allocate_user_class_from_values(cls, (unsigned int)arguments.size());
+
+        return allocate_user_class_from_values(temporary_ptr, states_ptr, (unsigned int)arguments.size() + 1);
 
     }
     OwcaValue Executor::execute_call(OwcaValue func, std::span<OwcaValue> arguments) {
-        auto locals_ptr = locals_ptr_top;
+        auto tpk = TopPtrsKeeper{ *this };
+
+        auto temporary_ptr = temporary_ptr_current_top;
+        auto states_ptr = states_ptr_current_top;
+        auto locals_ptr = temporary_ptr.locals(0);
         LOCAL_VAR(0) = func;
         for(size_t i = 0; i < arguments.size(); ++i) {
             LOCAL_VAR(i + 1) = arguments[i];
         }
-        return execute_call_from_values(locals_ptr_top.temporaries(), (unsigned int)arguments.size() + 1);
+        return execute_call_from_values(temporary_ptr, states_ptr, (unsigned int)arguments.size() + 1);
     }
     // bool Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
     // {
@@ -1831,10 +1836,10 @@ next_iteration:
         );
     }
     void gc_mark_value(OwcaVM vm, GenerationGC ggc, const Executor &e) {
-        for(auto v = e.values_vector.data(); v < e.locals_ptr_top.local_values_ptr; ++v) {
+        for(auto v = e.values_vector.data(); v < e.temporary_ptr_current_top.temporaries_ptr; ++v) {
             gc_mark_value(vm, ggc, *v);
         }
-        for(auto s = e.states_vector.data(); s < e.states_ptr_top.states_type_ptr; ++s) {
+        for(auto s = e.states_vector.data(); s < e.states_ptr_current_top.states_type_ptr; ++s) {
             gc_mark_value(vm, ggc, *s);
         }
         for(auto &s : e.stacktrace) {

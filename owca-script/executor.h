@@ -22,6 +22,39 @@ namespace OwcaScript {
 			friend class VM;
 
 		public:
+			struct LocalsPtr {
+				OwcaValue *local_values_ptr;
+
+				explicit LocalsPtr(OwcaValue *ptr) : local_values_ptr(ptr) {}
+
+				LocalsPtr operator+(int offset) const {
+					return LocalsPtr(local_values_ptr + offset);
+				}
+				LocalsPtr operator-(int offset) const {
+					return LocalsPtr(local_values_ptr - offset);
+				}
+				LocalsPtr &operator++() {
+					++local_values_ptr;
+					return *this;
+				}
+				LocalsPtr &operator--() {
+					--local_values_ptr;
+					return *this;
+				}
+				LocalsPtr operator ++ ( int ) {
+					LocalsPtr tmp = *this;
+					++local_values_ptr;
+					return tmp;
+				}
+				LocalsPtr operator -- ( int ) {
+					LocalsPtr tmp = *this;
+					--local_values_ptr;
+					return tmp;
+				}
+				OwcaValue &operator [] (std::size_t index) const {
+					return local_values_ptr[index];
+				}
+			};
 			struct TemporariesPtr {
 				OwcaValue *temporaries_ptr;
 
@@ -52,40 +85,23 @@ namespace OwcaScript {
 					--temporaries_ptr;
 					return tmp;
 				}
-			};
-			struct LocalsPtr {
-				OwcaValue *local_values_ptr;
-
-				explicit LocalsPtr(OwcaValue *ptr) : local_values_ptr(ptr) {}
-
-				LocalsPtr operator+(int offset) const {
-					return LocalsPtr(local_values_ptr + offset);
+				bool operator == (TemporariesPtr other) const {
+					return temporaries_ptr == other.temporaries_ptr;
 				}
-				LocalsPtr operator-(int offset) const {
-					return LocalsPtr(local_values_ptr - offset);
+				bool operator < (TemporariesPtr other) const {
+					return temporaries_ptr < other.temporaries_ptr;
 				}
-				LocalsPtr &operator++() {
-					++local_values_ptr;
-					return *this;
+				OwcaValue &operator [] (std::size_t index ) {
+					return *(temporaries_ptr - index);
 				}
-				LocalsPtr &operator--() {
-					--local_values_ptr;
-					return *this;
+				std::span<OwcaValue> operator [] (std::pair<std::size_t, std::size_t> indexes) {
+					return std::span{ temporaries_ptr - indexes.first, indexes.second };
 				}
-				LocalsPtr operator ++ ( int ) {
-					LocalsPtr tmp = *this;
-					++local_values_ptr;
-					return tmp;
-				}
-				LocalsPtr operator -- ( int ) {
-					LocalsPtr tmp = *this;
-					--local_values_ptr;
-					return tmp;
-				}
-				TemporariesPtr temporaries() const {
-					return TemporariesPtr(local_values_ptr);
+				LocalsPtr locals(size_t args) {
+					return LocalsPtr(temporaries_ptr - args);
 				}
 			};
+
 			struct ClassState {
 				static constexpr const std::uint8_t Kind = 0;
 				std::string_view name, full_name;
@@ -171,6 +187,9 @@ namespace OwcaScript {
 					--states_type_ptr;
 					return tmp;
 				}
+				bool empty() const {
+					return std::get_if<EmptyState>(states_type_ptr - 1) != nullptr;
+				}
 			};
 			friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const StatesType &e);
 		private:
@@ -182,11 +201,23 @@ namespace OwcaScript {
 			std::vector<Frame> stacktrace;
 			std::vector<OwcaValue> values_vector;
 			std::vector<StatesType> states_vector;
-			LocalsPtr locals_ptr_top;
-			StatesTypePtr states_ptr_top;
 			std::optional<OwcaException> exception_being_thrown;
 			std::optional<OwcaException> exception_being_handled;
+			TemporariesPtr temporary_ptr_current_top;
+			StatesTypePtr states_ptr_current_top;
 			
+			struct TopPtrsKeeper {
+				Executor &e;
+				TemporariesPtr temporary_ptr_current_top;
+				StatesTypePtr states_ptr_current_top;
+
+				TopPtrsKeeper(Executor &e) : e(e), temporary_ptr_current_top(e.temporary_ptr_current_top), states_ptr_current_top(e.states_ptr_current_top) {}
+				~TopPtrsKeeper() {
+					e.temporary_ptr_current_top = temporary_ptr_current_top;
+					e.states_ptr_current_top = states_ptr_current_top;
+				}
+			};
+
 			struct StackTraceState {
 				Executor &e;
 
@@ -195,20 +226,6 @@ namespace OwcaScript {
 				}
 				~StackTraceState() {
 					e.stacktrace.pop_back();
-				}
-			};
-			struct TopPtrState {
-				Executor &e;
-				LocalsPtr locals_ptr_top;
-				StatesTypePtr states_ptr_top;
-
-				TopPtrState(Executor &e, LocalsPtr locals_ptr_top_new, StatesTypePtr states_ptr_top_new) : e(e), locals_ptr_top(e.locals_ptr_top), states_ptr_top(e.states_ptr_top) {
-					e.locals_ptr_top = locals_ptr_top_new;
-					e.states_ptr_top = states_ptr_top_new;
-				}
-				~TopPtrState() {
-					e.locals_ptr_top = locals_ptr_top;
-					e.states_ptr_top = states_ptr_top;
 				}
 			};
 			// void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
@@ -223,22 +240,26 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaMap> arguments);
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
-			std::tuple<OwcaValue, TemporariesPtr, StatesTypePtr, ExecuteBufferReader::Position> run_opcodes(LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
+			void update_current_top_ptrs(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr) {
+				temporary_ptr_current_top = temporary_ptr;
+				states_ptr_current_top = states_ptr;
+			}
+			std::tuple<OwcaValue, TemporariesPtr, StatesTypePtr, ExecuteBufferReader::Position> run_opcodes(const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
 			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos);
 			Generator run_native_generator(Iterator *iter_object, RuntimeFunction *function, RuntimeFunction::NativeGenerator& ng, std::span<OwcaValue> arguments);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
 			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
 
-			OwcaValue run_script_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
-			OwcaValue run_native_function(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeFunction& sf);
-			OwcaValue start_native_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng);
-			OwcaValue start_script_generator(RuntimeFunction *function, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
-			OwcaValue execute_function(RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
-			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count);
-			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, bool has_self, unsigned int arg_count);
+			OwcaValue run_script_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
+			OwcaValue run_native_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeFunction& sf);
+			OwcaValue start_native_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng);
+			OwcaValue start_script_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf);
+			OwcaValue execute_function(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int argument_count);
+			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, bool has_self, unsigned int arg_count);
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
-			OwcaValue allocate_user_class_from_values(Class *cls, unsigned int arg_count);
+			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count);
 
 			// void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
 			ExecuteBufferReader::Position run_impl_opcodes_execute_compare(TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position pos, CompareKind kind, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);

@@ -41,25 +41,6 @@ namespace OwcaScript {
             code_->native_code_provider = std::move(native_code_provider);
             code_->on_destroy = std::move(on_destroy);
         }
-        OwcaCode(OwcaCode&&o) {
-            code_ = std::move(o.code_);
-        }
-        OwcaCode& operator=(OwcaCode&& o) {
-            if (this != &o) {
-                code_ = std::move(o.code_);
-            }
-            return *this;
-        }
-        OwcaCode(const OwcaCode&o) {
-            code_ = o.code_;
-        }
-        OwcaCode& operator=(const OwcaCode& o) {
-            if (this != &o) {
-                code_ = o.code_;
-            }
-            return *this;
-        }
-        ~OwcaCode();
 
 		const auto filename() const { return code_->filename; }
         const auto code() const { return code_->code; }
