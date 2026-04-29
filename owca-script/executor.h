@@ -215,6 +215,8 @@ namespace OwcaScript {
 				~TopPtrsKeeper() {
 					e.temporary_ptr_current_top = temporary_ptr_current_top;
 					e.states_ptr_current_top = states_ptr_current_top;
+					e.exception_being_thrown.reset();
+					e.exception_being_handled.reset();
 				}
 			};
 

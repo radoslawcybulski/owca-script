@@ -100,6 +100,7 @@ namespace OwcaScript::Internal {
         while(HAS_STATE()) {
             if (auto state = TRY_STATE(TryState)) {
                 *code_pos = state->catches_pos;
+                exception_being_thrown = exception;
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)code_pos << ") to " << (void*)code_pos->value() << std::endl;
 #endif
@@ -488,7 +489,7 @@ restart:
                     );
                 }
                 std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace.back().runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
-                    " states `" << states_debug << "` opcode " << std::setw(25) << to_string(opcode);
+                    " states " << std::setw(6) << states_debug << " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";
                 if (exception_being_handled) std::cout << " (exception being handled)";
                 std::cout << std::endl;
@@ -1576,7 +1577,7 @@ next_iteration:
         for(size_t i = 0; i < arguments.size(); ++i) {
             LOCAL_VAR(i + 1) = arguments[i];
         }
-        return execute_call_from_values(temporary_ptr, states_ptr, (unsigned int)arguments.size() + 1);
+        return execute_call_from_values(temporary_ptr + (unsigned int)arguments.size() + 1, states_ptr, (unsigned int)arguments.size() + 1);
     }
     // bool Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
     // {
