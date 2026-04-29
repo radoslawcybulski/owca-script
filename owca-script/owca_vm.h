@@ -77,8 +77,10 @@ namespace OwcaScript {
 			}
 		};
 
+		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line);
 		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
-		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
+		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
+		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line = 1);
 		OwcaValue execute(const OwcaCode&);
 		OwcaValue execute(const OwcaCode&, OwcaMap values);
 		OwcaValue execute(const OwcaCode&, OwcaMap values, OwcaMap *output_dict);

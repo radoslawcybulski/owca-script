@@ -1205,8 +1205,14 @@ next_iteration:
         assert(states_ptr.states_type_ptr + function->max_states <= states_vector.data() + states_vector.size());
         if (clear_locals) [[likely]] {
             for(auto i = arg_count; i < max_values; ++i) {
-                locals_ptr[i] = OwcaEmpty{};
+                LOCAL_VAR(i) = OwcaEmpty{};
             }
+        }
+
+        assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
+
+        for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
+            LOCAL_VAR(sf.copy_from_parents[i].index_in_child) = sf.values_from_parents[i];
         }
 
         PUSH_STATE(EmptyState{});

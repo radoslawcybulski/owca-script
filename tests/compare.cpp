@@ -18,7 +18,7 @@ public:
                 pp.push_back(*p4);
             }
         }
-        auto code = vm.compile("test.os", std::format(R"(
+        auto code = compile(__LINE__, vm, "test.os", std::format(R"(
 a = {} 1, 2, 3 {};
 result = 0;
 if (a == b) result = result | 1;
@@ -36,7 +36,7 @@ return result;
     void run_basic_test(int mode) {
         OwcaVM vm;
 
-        auto code = vm.compile("test.os", R"(
+        auto code = compile(__LINE__, vm, "test.os", R"(
     function cmp(a, b, c, d) {
         if (a == b) {
             if (not c) return d + 1;

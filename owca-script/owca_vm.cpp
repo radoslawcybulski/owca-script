@@ -43,12 +43,20 @@ namespace OwcaScript {
 
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
-		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
+		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), 1);
+	}
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line)
+	{
+		return compile(std::move(filename), std::move(content), std::move(additional_variables), nullptr, first_line);
+	}
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
+	{
+		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), first_line);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
 	{
-		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider) };
+		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
 		auto v = compiler.compile(std::move(additional_variables));
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
