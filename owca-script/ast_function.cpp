@@ -165,7 +165,7 @@ namespace OwcaScript::Internal {
 			std::swap(us_stack, ei.stack);
 			std::swap(us_states, ei.states);
 			std::swap(us_generator, ei.generator);
-			ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
+			ei.code_writer.append(ei.code_writer.current_line(), generator_ == Generator::Yes ? Internal::ExecuteOp::ReturnCloseIterator : Internal::ExecuteOp::Return);
 			ei.code_writer.update_jump_placeholder(next, (std::int32_t)ei.code_writer.position());
 		}
 		ei.stack.push();
