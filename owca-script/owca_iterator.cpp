@@ -20,7 +20,7 @@ namespace OwcaScript {
     }
     OwcaIterator::Iterator::Iterator(OwcaIterator *iter) : iter(iter) {
         if (iter && iter->object->first_time) {
-            iter->object->vm->resume_generator(*iter);
+            iter->object->last_value = iter->object->vm->resume_generator(*iter).value_or(OwcaEmpty{});;
         }
     }
 
