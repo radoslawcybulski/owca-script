@@ -1233,6 +1233,7 @@ next_iteration:
     Generator Executor::run_native_generator(Iterator *iter_object, RuntimeFunction *function, RuntimeFunction::NativeGenerator& ng, std::span<OwcaValue> arguments) {
         assert(arguments.size() > 0);
         Generator generator = ng.generator(vm, arguments);
+        co_yield OwcaEmpty{};
         while(true) {
             std::optional<OwcaValue> val;
             {
@@ -1244,7 +1245,7 @@ next_iteration:
                 co_yield *val;
             }
             else {
-                iter_object->generator.reset();
+                std::cout << __FILE__ << ":" << __LINE__ << " generator completed for object " << (void*)iter_object << std::endl;
                 break;
             }
         }
@@ -1255,6 +1256,7 @@ next_iteration:
         assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
         auto iter = vm->allocate<Iterator>(0, function, std::span<OwcaValue>{}, std::span<StatesType>{});
         Generator generator = run_native_generator(iter, function, ng, std::span{ locals_ptr.local_values_ptr, arg_count });
+        generator.next(); // we need to resume once so implementation could pick up parameters.
         iter->generator = std::move(generator);
         return OwcaIterator{ iter };
     }
@@ -1277,7 +1279,6 @@ next_iteration:
 
             iter_object->first_time = false;
             if (val.kind() == OwcaValueKind::Completed) {
-                iter_object->generator.reset();
                 break;
             }
             else {
@@ -1287,7 +1288,17 @@ next_iteration:
     }
 
     std::optional<OwcaValue> Executor::continue_iterator(OwcaIterator oi) {
-        return oi.internal_value()->generator->next();
+        if (!oi.internal_value()->generator) [[unlikely]] {
+            std::cout << __FILE__ << ":" << __LINE__ << " generator completed for object " << (void*)oi.internal_value() << std::endl;
+            return std::nullopt;
+        }
+        std::cout << __FILE__ << ":" << __LINE__ << " resuming generator for object " << (void*)oi.internal_value() << std::endl;
+        auto val = oi.internal_value()->generator->next();
+        if (!val) {
+            oi.internal_value()->generator.reset();
+            return std::nullopt;
+        }
+        return val;
     }
 
     OwcaValue Executor::start_script_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
@@ -1495,7 +1506,10 @@ next_iteration:
         if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) [[likely]] {
             return run_script_function(runtime_function, temporary_ptr, states_ptr, arg_count, *state);
         }
-        return run_native_function(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeFunction>(runtime_function->data));
+        if (auto state = std::get_if<RuntimeFunction::NativeFunction>(&runtime_function->data)) [[likely]] {
+            return run_native_function(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeFunction>(runtime_function->data));
+        }
+        return start_native_generator(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeGenerator>(runtime_function->data));
     }
 
 
