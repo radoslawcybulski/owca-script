@@ -1311,6 +1311,12 @@ next_iteration:
             values_vec[i] = LOCAL_VAR(i);
         }
 
+        assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
+
+        for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
+            values_vec[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
+        }
+
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
         auto states_span = std::span{ states_vec.data(), states_vec.size() };
         auto iter = vm->allocate<Iterator>(0, function, values_span, states_span);
