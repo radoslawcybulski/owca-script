@@ -1195,15 +1195,17 @@ next_iteration:
         POP_VALUES(1);
     }
 
-    OwcaValue Executor::run_script_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
+    OwcaValue Executor::run_script_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf, bool clear_locals) {
         auto locals_ptr = temporary_ptr.locals(arg_count);
         const auto max_values = function->max_values;
         temporary_ptr = temporary_ptr + max_values - arg_count;
 
         assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
         assert(states_ptr.states_type_ptr + function->max_states <= states_vector.data() + states_vector.size());
-        for(auto i = arg_count; i < max_values; ++i) {
-            locals_ptr[i] = OwcaEmpty{};
+        if (clear_locals) [[likely]] {
+            for(auto i = arg_count; i < max_values; ++i) {
+                locals_ptr[i] = OwcaEmpty{};
+            }
         }
 
         PUSH_STATE(EmptyState{});
@@ -1490,7 +1492,7 @@ next_iteration:
     }
 
 
-	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output)
+	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values_to_set, OwcaMap *dict_output)
 	{
         auto tpk = TopPtrsKeeper{ *this };
 
@@ -1507,7 +1509,30 @@ next_iteration:
         assert(f2);
         assert(!f.self());
 
-        auto retval = run_script_function(f2, temporary_ptr, states_ptr, 0, std::get<RuntimeFunction::ScriptFunction>(f2->data));
+        {
+            auto &sf = std::get<RuntimeFunction::ScriptFunction>(f2->data);
+            std::unordered_map<std::string_view, unsigned int> value_index_map;
+            for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
+                value_index_map[sf.identifier_names[i]] = i;
+            }
+            
+            for(auto &it : vm->builtin_objects) {
+                auto it2 = value_index_map.find(it.first);
+                assert(it2 != value_index_map.end());
+                LOCAL_VAR(it2->second) = it.second;
+            }
+            if (values_to_set) {
+                for (auto it : *values_to_set) {
+                    auto key = it.first.as_string(vm).text();
+                    auto it2 = value_index_map.find(key);
+                    if (it2 != value_index_map.end()) {
+                        LOCAL_VAR(it2->second) = it.second;
+                    }
+                }
+            }
+        }
+
+        auto retval = run_script_function(f2, temporary_ptr, states_ptr, 0, std::get<RuntimeFunction::ScriptFunction>(f2->data), false);
         if (dict_output) {
             f2->visit(
                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
