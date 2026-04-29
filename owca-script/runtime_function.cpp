@@ -3,8 +3,8 @@
 #include "vm.h"
 
 namespace OwcaScript::Internal {
-	RuntimeFunction::RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data) :
-		code(std::move(code)), name(name), full_name(full_name), data(std::move(data)) {}
+	RuntimeFunction::RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data, bool is_method, bool is_generator) :
+		code(std::move(code)), name(name), full_name(full_name), data(std::move(data)), is_method(is_method), is_generator(is_generator) {}
 
 
 	std::string_view RuntimeFunction::type() const {
@@ -18,18 +18,6 @@ namespace OwcaScript::Internal {
 			gc_mark_value(vm, generation_gc, s.values_from_parents);
 			},
 			[](const auto&) {});
-	}
-
-	bool RuntimeFunction::is_generator() const {
-		return visit([&](const ScriptFunction& s) {
-			return s.is_generator;
-			},
-			[](const NativeFunction&) {
-				return false;
-			},
-			[](const NativeGenerator&) {
-				return true;
-			});
 	}
 
 	std::string_view RuntimeFunctions::type() const {

@@ -19,7 +19,6 @@ namespace OwcaScript {
 				std::vector<AstFunction::CopyFromParent> copy_from_parents;
 				std::vector<std::string_view> identifier_names;
 				ExecuteBufferReader::Position entry_point{ 0 };
-				bool is_generator = false;
 			};
 			struct NativeFunction {
 				std::vector<std::string_view> parameter_names;
@@ -38,13 +37,13 @@ namespace OwcaScript {
 			std::uint16_t max_states = 0;
 			std::uint16_t max_temporaries = 0;
 			std::uint16_t max_values = 0; 
-			bool is_method = false;
+			const bool is_method = false;
+			const bool is_generator = false;
 
-			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data);
+			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, std::variant<ScriptFunction, NativeFunction, NativeGenerator> data, bool is_method, bool is_generator);
 
 			template <typename ... F> auto visit(F &&...fns) { return visit_variant(data, std::forward<F>(fns)...); }
 			template <typename ... F> auto visit(F &&...fns) const { return visit_variant(data, std::forward<F>(fns)...); }
-			bool is_generator() const;
 			
 			std::string_view type() const override;
 			std::string to_string() const override;

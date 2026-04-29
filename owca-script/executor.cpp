@@ -377,7 +377,7 @@ namespace OwcaScript::Internal {
                 }
             }
             if (is_generator) {
-                fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeGenerator{});
+                fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeGenerator{}, is_method, is_generator);
                 auto &ng = std::get<RuntimeFunction::NativeGenerator>(fnc->data);
                 ng.parameter_names = std::move(identifier_names);
                 ng.line = code_object.get_line_by_position(code_pos).line;
@@ -391,7 +391,7 @@ namespace OwcaScript::Internal {
                 }
             }
             else {
-                fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeFunction{});
+                fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::NativeFunction{}, is_method, is_generator);
                 auto &nf = std::get<RuntimeFunction::NativeFunction>(fnc->data);
                 nf.parameter_names = std::move(identifier_names);
                 nf.line = code_object.get_line_by_position(code_pos).line;
@@ -406,9 +406,8 @@ namespace OwcaScript::Internal {
             }
         }
         else {
-            fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::ScriptFunction{});
+            fnc = vm->allocate<RuntimeFunction>(0, code_object, name, full_name, RuntimeFunction::ScriptFunction{}, is_method, is_generator);
             auto &sf = std::get<RuntimeFunction::ScriptFunction>(fnc->data);
-            sf.is_generator = is_generator;
             sf.identifier_names = std::move(identifier_names);
             auto copy_from_parent_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
             sf.copy_from_parents.reserve(copy_from_parent_count);
@@ -430,7 +429,6 @@ namespace OwcaScript::Internal {
         fnc->max_temporaries = temporaries_count;
         fnc->max_states = state_count;
         fnc->max_values = value_count;
-        fnc->is_method = is_method;
         auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
         rfs->functions[fnc->param_count] = fnc;
         return OwcaFunctions{ rfs };
@@ -489,7 +487,9 @@ restart:
                     );
                 }
                 std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace.back().runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
-                    " states " << std::setw(6) << states_debug << " opcode " << std::setw(30) << to_string(opcode);
+                    " states " << std::setw(6) << states_debug <<
+                    " stack " << std::setw(2) << stacktrace.size() <<
+                    " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";
                 if (exception_being_handled) std::cout << " (exception being handled)";
                 std::cout << std::endl;
@@ -1503,13 +1503,18 @@ next_iteration:
             tmp += runtime_functions->name;
             throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count + (has_self ? 1 : 0));
         }
-        if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) [[likely]] {
-            return run_script_function(runtime_function, temporary_ptr, states_ptr, arg_count, *state);
+        if (runtime_function->is_generator) [[unlikely]] {
+            if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) {
+                return start_script_generator(runtime_function, temporary_ptr, states_ptr, arg_count, *state);
+            }
+            return start_native_generator(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeGenerator>(runtime_function->data));
         }
-        if (auto state = std::get_if<RuntimeFunction::NativeFunction>(&runtime_function->data)) [[likely]] {
+        else {
+            if (auto state = std::get_if<RuntimeFunction::ScriptFunction>(&runtime_function->data)) [[likely]] {
+                return run_script_function(runtime_function, temporary_ptr, states_ptr, arg_count, *state);
+            }
             return run_native_function(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeFunction>(runtime_function->data));
         }
-        return start_native_generator(runtime_function, temporary_ptr, states_ptr, arg_count, std::get<RuntimeFunction::NativeGenerator>(runtime_function->data));
     }
 
 
@@ -1519,7 +1524,7 @@ next_iteration:
 
         auto runtime_function = vm->allocate<RuntimeFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), RuntimeFunction::ScriptFunction{
             .entry_point = CodePosition{ oc.code().data()}
-        });
+        }, false, false);
         auto temporary_ptr = temporary_ptr_current_top;
         auto locals_ptr = temporary_ptr.locals(0);
         auto states_ptr = states_ptr_current_top;
