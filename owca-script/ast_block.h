@@ -7,17 +7,15 @@
 namespace OwcaScript {
 	namespace Internal {
 		class AstBlock : public AstStat {
-			std::vector<std::unique_ptr<AstStat>> children;
+			std::vector<std::unique_ptr<AstStat>> children_;
 
 		public:
-			AstBlock(Line line, std::vector<std::unique_ptr<AstStat>> children) : AstStat(line), children(std::move(children)) {}
+			AstBlock(Line line, std::vector<std::unique_ptr<AstStat>> children) : AstStat(line), children_(std::move(children)) {}
 
-			ImplStat* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplStat*(Deserializer&, Line)>> functions);
 		};
 	}
 }

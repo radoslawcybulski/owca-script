@@ -6,19 +6,69 @@ class PerformanceTest : public SimpleTest {
 
 };
 
-TEST_F(PerformanceTest, book_building)
+TEST_F(PerformanceTest, DISABLED_simple_1)
+{ // 8.636
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+s = 0;
+start = time();
+i = 0;
+while (i < 100000000) {
+    s = (s * 11035 + 12345) & 0xffff;
+    i = i + 1;
+}
+end = time();
+print(`Time taken: {end - start} seconds`);
+print(`Final result: {s}`);
+)");
+	auto val = vm.execute(code);
+}
+
+TEST_F(PerformanceTest, DISABLED_simple_2)
+{ // 20.856
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+function foo1(s) {
+    return s + 1;
+}
+function foo2(s) {
+    return foo1(s);
+}
+function foo3(s) {
+    return foo2(s);
+}
+function foo4(s) {
+    return foo3(s);
+}
+function foo5(s) {
+    return foo4(s);
+}
+s = 0;
+start = time();
+i = 0;
+while (i < 100000000) {
+    s = foo5((s * 11035 + 12345) & 0xffff);
+    i = i + 1;
+}
+end = time();
+print(`Time taken: {end - start} seconds`);
+print(`Final result: {s}`);
+)");
+	auto val = vm.execute(code);
+}
+
+TEST_F(PerformanceTest, DISABLED_book_building)
 {
     // GTEST_SKIP();
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
 states = {};
+final_result = [ 0 ];
+
 function update_state(name, is_bid, val, count) {
     v = states.set_default(name, {});
-    if (count > 0)
-        key = '+';
-    else
-        key = '-';
-    key = key + String(val);
+    key = val * 2;
+    if (is_bid) key = key + 1;
     old = v.get_or_default(key, 0);
     new = old + count;
     if (old > 0 and new <= 0) {
@@ -26,6 +76,8 @@ function update_state(name, is_bid, val, count) {
     }
     else {
         v[key] = new;
+        old = final_result[0];
+        final_result[0] = (old * 3 + new) & 0xffffffff;
     }
 }
 
@@ -35,13 +87,13 @@ function run() {
             self.state = 0;
         }
         function next(self) {
-            self.state = (self.state * 1103515245 + 12345) % 2147483648;
+            self.state = (self.state * 11035 + 12345) & 0xffff;
             return self.state;
         }
     }
     random = Random();
 
-    for(i = 0:100000) {
+    for(i = 0:10000000) {
         v = random.next();
         s_index = v % 1000;
         is_bid = (random.next() % 2) == 0;
@@ -54,6 +106,7 @@ start = time();
 run();
 end = time();
 print("Time taken: " + String(end - start) + " seconds");
+print("Final result: " + String(final_result[0]));
 )");
 	auto val = vm.execute(code);
 }

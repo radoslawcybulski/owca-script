@@ -8,6 +8,7 @@
 #include "execution_frame.h"
 #include "impl_base.h"
 #include "owca_variable.h"
+#include "owca_code.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -20,13 +21,17 @@ namespace OwcaScript {
 		struct Array;
 		struct RuntimeFunction;
 		struct Exception;
-		enum class CompareKind;
+		class Executor;
+
+		enum class CompareKind : std::uint8_t;
 
 		class VM {
+			friend class Executor;
+			friend class ExecutionFrame;
+			
 			AllocationEmpty root_allocated_memory;
-			std::vector<ExecutionFrame> stacktrace;
-			std::vector<AllocationBase*> allocated_objects;
 			std::unordered_map<std::string, OwcaValue> builtin_objects;
+			std::unique_ptr<Executor> executor;
 			
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
@@ -54,43 +59,29 @@ namespace OwcaScript {
 			std::optional<OwcaException> exception_being_handled;
 			std::optional<OwcaValue> value_to_yield;
 			std::optional<ClassToken> currently_building_class;
+			std::list<OwcaValue> temp_gc_protect_list;
 
-			struct PopStack {
-				VM* vm = nullptr;
-
-				PopStack(VM* vm) : vm(vm) {}
-				PopStack(PopStack&& o) : vm(o.vm) { o.vm = nullptr; }
-				~PopStack() {
-					if (vm)
-						vm->stacktrace.pop_back();
-				}
-			};
-
-			PopStack prepare_exec(RuntimeFunctions* runtime_functions, unsigned int index, bool has_self_value);
-			OwcaValue execute();
-			Generator execute_generator(ImplStat::State &state, ImplStat *body);
 			void initialize_builtins();
 
 			struct BuiltinProvider;
 		public:
 			std::string_view current_class_in_progress;
 
-			struct AllocatedObjectsPointer {
-				std::vector<AllocationBase*> &allocated_objects;
-				size_t size;
-
-				AllocatedObjectsPointer(VM &vm) : allocated_objects(vm.allocated_objects) {
-					size = allocated_objects.size();
-				}
-				~AllocatedObjectsPointer() {
-					assert(allocated_objects.size() >= size);
-					allocated_objects.resize(size);
-				}
-			};
-
 			VM();
 			~VM();
 			
+			class TempGCProtect {
+				VM &vm;
+				std::list<OwcaValue>::iterator it;
+			public:
+				TempGCProtect(VM &vm, OwcaValue val) : vm(vm) {
+					it = vm.temp_gc_protect_list.insert(vm.temp_gc_protect_list.end(), val);
+				}
+				~TempGCProtect() {
+					vm.temp_gc_protect_list.erase(it);
+				}
+			};
+
 			void initialize_exception_object(Exception &);
 			[[noreturn]] void throw_exception(Class *exc, std::string_view msg);
 
@@ -116,11 +107,11 @@ namespace OwcaScript {
 			[[noreturn]] void throw_cant_convert_to_integer(std::string_view type);
 			[[noreturn]] void throw_not_a_number(std::string_view type);
 			[[noreturn]] void throw_overflow(std::string_view msg);
-			[[noreturn]] void range_step_is_zero();
+			[[noreturn]] void throw_range_step_is_zero();
 
 			// invalid operation exception
 			[[noreturn]] void throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right);
-			[[noreturn]] void range_step_must_be_one_in_left_side_of_write_assign();
+			[[noreturn]] void throw_range_step_must_be_one_in_left_side_of_write_assign();
 			[[noreturn]] void throw_index_out_of_range(std::string msg);
 			[[noreturn]] void throw_string_too_large(size_t size);
 			[[noreturn]] void throw_value_not_indexable(std::string_view type, std::string_view key_type="");
@@ -142,31 +133,36 @@ namespace OwcaScript {
 			[[noreturn]] void throw_container_is_empty();
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
-			[[noreturn]] void throw_too_many_elements(size_t expected);
-			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
+			// [[noreturn]] void throw_too_many_elements(size_t expected);
+			// [[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
+			
+			// ExecutionFrame *allocate_stack_frame(size_t oversize);
+			// void deallocate_stack_frame(ExecutionFrame *frame);
+			// void push_frame(ExecutionFrame *frame);
+			// void pop_frame(ExecutionFrame *frame);
+			// ExecutionFrame *current_frame();
+			// std::generator<ExecutionFrame*> iterate_frames() const;
 
-			void update_execution_line(Line);
 			const auto &get_builtin_objects() const { return builtin_objects; }
-			OwcaValue execute_code_block(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
+			OwcaValue execute_code_block(const OwcaCode&, std::optional<OwcaMap> values, OwcaMap *output_dict);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
-			OwcaValue resume_generator(OwcaIterator oi);
-			void set_yield_value(OwcaValue v);
-			OwcaValue create_array(std::deque<OwcaValue> arguments);
-			OwcaValue create_tuple(std::vector<OwcaValue> arguments);
-			OwcaValue create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
-			OwcaValue create_exception();
-			OwcaValue create_range();
-			OwcaValue create_map(const std::span<OwcaValue> &arguments = {});
-			OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
-			OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
-			OwcaValue create_set(const std::span<OwcaValue> &arguments);
-			OwcaValue create_string_from_view(std::string_view txt);
-			OwcaValue create_string(OwcaValue str, size_t start, size_t end);
-			OwcaValue create_string(OwcaValue str, size_t count);
-			OwcaValue create_string(OwcaValue left, OwcaValue right);
-			OwcaValue create_user_class(Class *cls, std::span<OwcaValue> arguments);
-			OwcaValue get_identifier(unsigned int index);
-			Generator iterate_value(OwcaValue val);
+			std::optional<OwcaValue> resume_generator(OwcaIterator oi);
+			OwcaArray create_array(std::deque<OwcaValue> arguments);
+			OwcaTuple create_tuple(std::vector<OwcaValue> arguments);
+			OwcaTuple create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
+			OwcaException create_exception();
+			OwcaRange create_range();
+			OwcaMap create_map(const std::span<OwcaValue> &arguments = {});
+			OwcaMap create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
+			OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
+			OwcaSet create_set(const std::span<OwcaValue> &arguments);
+			OwcaString create_string_from_view(std::string_view txt);
+			OwcaString create_string(OwcaString str, size_t start, size_t end);
+			OwcaString create_string(OwcaString str, size_t count);
+			OwcaString create_string(OwcaString left, OwcaString right);
+			String *precreate_string(size_t size);
+			//OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
+			//Generator iterate_value(OwcaValue val);
 			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
@@ -193,8 +189,7 @@ namespace OwcaScript {
 			CurrentlyBuildingClassGuard set_currently_building_class(std::optional<ClassToken> token) { return CurrentlyBuildingClassGuard{ *this, token }; }
 			auto get_currently_building_class() const { return currently_building_class; }
 
-			void set_identifier(unsigned int index, OwcaValue value, bool function_write=false);
-			std::shared_ptr<CodeBuffer> currently_running_code() const;
+			OwcaCode currently_running_code() const;
 			void run_gc();
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
@@ -207,7 +202,6 @@ namespace OwcaScript {
 				p2->prev->next = p2->next->prev = p2;
 				p2->vm = this;
 				p2->kind = T::object_kind;
-				allocated_objects.push_back(p2);
 				return p2;
 			}
 
@@ -225,6 +219,11 @@ namespace OwcaScript {
 			}
 		}
 		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::deque<T> &vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q);
+			}
+		}
+		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::list<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}

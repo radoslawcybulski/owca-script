@@ -20,6 +20,8 @@ namespace OwcaScript {
 		StringContainsEndOfLineCharacter,
 		InvalidIdentifier,
 		LoopControlError,
+		TooManyValues,
+		TooManyStates,
 		_Count
 	};
 	std::string_view to_string(OwcaErrorKind);

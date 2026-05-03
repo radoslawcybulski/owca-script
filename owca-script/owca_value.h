@@ -47,7 +47,7 @@ namespace OwcaScript {
 			};
 			static_assert(sizeof(PtrsValue) > sizeof(Number));
 			struct NumberValue {
-				std::uint8_t kind;
+				OwcaValueKind kind;
 				Number value;
 			};
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
@@ -62,15 +62,12 @@ namespace OwcaScript {
 			struct NumberValue {
 				Number value;
 				std::byte padding[sizeof(PtrsValue) - sizeof(Number) - 1];
-				std::uint8_t kind;
+				OwcaValueKind kind;
 			};
 
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
 		};
 	}
-
-	class OwcaEmpty {};
-	class OwcaCompleted {};
 
 	class OwcaValue {
 		friend class Internal::VM;
@@ -82,28 +79,53 @@ namespace OwcaScript {
 			NumberValue number;
 		} value_encoded_;
 
-		OwcaValue(OwcaValueKind, void *ptr1, void *ptr2);
-		OwcaValue(OwcaValueKind, Number num);
+		OwcaValue(OwcaValueKind kind, void *ptr1, void *ptr2) {
+			std::uintptr_t k = (std::uintptr_t)ptr1;
+			assert((k & 15) == 0);
+			assert((int)kind < 16 && (int)kind >= 0);
+			k |= (std::uintptr_t)kind;
+			value_encoded_.ptrs.ptr1 = k;
+			value_encoded_.ptrs.ptr2 = ptr2;
+			assert(this->kind() == kind);
+			assert(internal_ptr1() == ptr1);
+			assert(internal_ptr2() == ptr2);
+		}
+		OwcaValue(OwcaValueKind kind, Number num) {
+			assert((int)kind < 16 && (int)kind >= 0);
+			value_encoded_.number.value = num;
+			value_encoded_.number.kind = kind;
+			assert(this->kind() == kind);
+		}
 
-		void *internal_ptr1() const;
-		void *internal_ptr2() const;
+
+		void *internal_ptr1() const {
+			PtrsValue tmp;
+			std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
+			return (void*)(tmp.ptr1 & ~(std::uintptr_t)15);
+		}
+		void *internal_ptr2() const {
+			PtrsValue tmp;
+			std::memcpy(&tmp, &value_encoded_, sizeof(PtrsValue));
+			return tmp.ptr2;
+		}
+
 	public:
 		OwcaValue() : OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
 		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : OwcaValue(OwcaValueKind::Bool, (Number)(value ? 1 : 0)) {}
 		template <typename T> OwcaValue(T value) requires(!std::is_same_v<std::remove_cvref_t<T>, bool> && std::is_arithmetic_v<T>) : OwcaValue(OwcaValueKind::Float, (Number)value) {}
-		OwcaValue(OwcaEmpty value);
-		OwcaValue(OwcaCompleted value);
-		OwcaValue(OwcaRange value);
-		OwcaValue(OwcaString value);
-		OwcaValue(OwcaFunctions value);
-		OwcaValue(OwcaMap value);
-		OwcaValue(OwcaClass value);
-		OwcaValue(OwcaObject value);
-		OwcaValue(OwcaTuple value);
-		OwcaValue(OwcaArray value);
-		OwcaValue(OwcaSet value);
-		OwcaValue(OwcaException value);
-		OwcaValue(OwcaIterator value);
+		OwcaValue(OwcaEmpty value): OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
+		OwcaValue(OwcaCompleted value): OwcaValue(OwcaValueKind::Completed, nullptr, nullptr) {}
+		OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_object(), nullptr) {}
+		OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), value.internal_self_object()) {}
+		OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaArray value): OwcaValue(OwcaValueKind::Array, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
+		OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
 
 		OwcaValueKind kind() const;
 		long long int as_int(OwcaVM ) const;
@@ -196,6 +218,7 @@ namespace OwcaScript {
 		OwcaMap convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, OwcaValue v);
 		OwcaClass convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, OwcaValue v);
 		OwcaObject convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, OwcaValue v);
+		OwcaIterator convert_impl2(OwcaVM vm, size_t I, OwcaIterator *b, OwcaValue v);
 		OwcaArray convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, OwcaValue v);
 		OwcaTuple convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, OwcaValue v);
 		OwcaSet convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, OwcaValue v);

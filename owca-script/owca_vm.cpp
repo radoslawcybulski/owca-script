@@ -3,7 +3,6 @@
 #include "vm.h"
 #include "owca_code.h"
 #include "ast_compiler.h"
-#include "code_buffer.h"
 
 namespace OwcaScript {
 	OwcaVM::CompilationFailed::CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_) : filename_(std::move(filename_)), error_messages_(std::move(error_messages_)) {
@@ -22,13 +21,13 @@ namespace OwcaScript {
 	OwcaVM::~OwcaVM() = default;
 
 	OwcaValue OwcaVM::execute(const OwcaCode &oc) {
-		return execute(oc, {}, nullptr);
+		return vm->execute_code_block(oc, std::nullopt, nullptr);
 	}
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaValue values) {
-		return execute(oc, values, nullptr);
+	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaMap values) {
+		return vm->execute_code_block(oc, values, nullptr);
 	}
 
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaValue values, OwcaValue *output_dict)
+	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaMap values, OwcaMap *output_dict)
 	{
 		return vm->execute_code_block(oc, values, output_dict);
 	}
@@ -44,65 +43,68 @@ namespace OwcaScript {
 
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
-		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider));
+		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), 1);
+	}
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line)
+	{
+		return compile(std::move(filename), std::move(content), std::move(additional_variables), nullptr, first_line);
+	}
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
+	{
+		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), first_line);
 	}
 
-	OwcaCode OwcaVM::load(std::string filename, std::span<unsigned char> binary_content, std::shared_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
 	{
-		auto code = std::make_shared<Internal::CodeBuffer>(std::move(filename), binary_content, std::move(native_code_provider));
-		return OwcaCode{ std::move(code) };
-	}
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider)
-	{
-		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider) };
-		auto v = compiler.compile(additional_variables);
+		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
+		auto v = compiler.compile(std::move(additional_variables));
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
 
-		return OwcaCode{ std::move(v) };
+		return std::move(*v);
 	}
 
-	OwcaValue OwcaVM::create_array() const
+	OwcaArray OwcaVM::create_array() const
 	{
 		return vm->create_array(std::deque<OwcaValue>{});
 	}
-	OwcaValue OwcaVM::create_array(std::span<OwcaValue> values) const
+	OwcaArray OwcaVM::create_array(std::span<OwcaValue> values) const
 	{
 		return vm->create_array({ values.begin(), values.end() });
 	}
-	OwcaValue OwcaVM::create_array(std::deque<OwcaValue> values) const
+	OwcaArray OwcaVM::create_array(std::deque<OwcaValue> values) const
 	{
 		return vm->create_array(std::move(values));
 	}
-	OwcaValue OwcaVM::create_tuple(std::pair<OwcaValue, OwcaValue> values) const
+	OwcaTuple OwcaVM::create_tuple(std::pair<OwcaValue, OwcaValue> values) const
 	{
 		return vm->create_tuple(values);
 	}
-	OwcaValue OwcaVM::create_tuple(std::vector<OwcaValue> values) const
+	OwcaTuple OwcaVM::create_tuple(std::vector<OwcaValue> values) const
 	{
 		return vm->create_tuple(std::move(values));
 	}
-	OwcaValue OwcaVM::create_map() const
+	OwcaMap OwcaVM::create_map() const
 	{
 		return vm->create_map(std::span<OwcaValue>{});
 	}
-	OwcaValue OwcaVM::create_map(const std::span<OwcaValue> &values) const
+	OwcaMap OwcaVM::create_map(const std::span<OwcaValue> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const
+	OwcaMap OwcaVM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const
+	OwcaMap OwcaVM::create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const
 	{
 		return vm->create_map(values);
 	}
-	OwcaValue OwcaVM::create_set(const std::span<OwcaValue> &values) const
+	OwcaSet OwcaVM::create_set(const std::span<OwcaValue> &values) const
 	{
 		return vm->create_set(values);
 	}
-	OwcaValue OwcaVM::create_string(std::string_view txt) const
+	OwcaString OwcaVM::create_string(std::string_view txt) const
 	{
 		return vm->create_string_from_view(txt);
 	}

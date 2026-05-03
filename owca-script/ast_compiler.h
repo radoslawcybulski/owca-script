@@ -8,8 +8,9 @@
 #include "owca_vm.h"
 
 namespace OwcaScript {
+	class OwcaCode;
+
 	namespace Internal {
-		class CodeBuffer;
 		class AstFunction;
 
 		class AstCompiler {
@@ -90,8 +91,6 @@ namespace OwcaScript {
 					full_name.resize(size);
 				}
 			};
-			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
-			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 
 			bool eof();
 			Line skip_ws();
@@ -103,7 +102,7 @@ namespace OwcaScript {
 			std::pair<Line, std::string_view> consume();
 			void skip_string_fstring_part();
 			std::string_view consume_as_follow_fstring_part();
-			Line consume(std::string_view);
+			Line consume(std::string_view, bool dont_skip_ws = false);
 			bool is_keyword(std::string_view) const;
 			bool is_identifier(std::string_view) const;
 			bool is_operator(std::string_view) const;
@@ -142,16 +141,23 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_break_or_continue();
 			std::unique_ptr<AstStat> compile_stat();
-			std::unique_ptr<AstFunction> compile_main_block();
+			std::unique_ptr<AstFunction> compile_main_block(std::vector<std::string_view> variables);
 
 			struct Phase2;
 			struct RewriteAsWrite;
-			void compile_phase_2(AstFunction& root, std::span<const std::string> additional_variables);
+			void compile_phase_2(AstFunction& root);
 		public:
-			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider) : filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) {}
+			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line) : 
+						filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) 
+			{
+				content_line = Line{ (unsigned int)first_line };
+			}
+
+			void add_error(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
+			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 
 			const auto& filename() const { return filename_; }
-			std::shared_ptr<CodeBuffer> compile(std::span<const std::string> additional_variables = {});
+			std::optional<OwcaCode> compile(std::vector<std::string> additional_variables = {});
 			auto take_error_messages() const { return std::move(error_messages_); }
 		};
 	}

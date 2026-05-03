@@ -5,8 +5,7 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	Class::Class(Line line, std::string_view name, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
-		base_classes.reserve(base_class_count);
+	Class::Class(Line line, std::string_view name, std::string_view full_name, OwcaCode code) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
 	}
 	Object::Object(Class* type) : type_(type) {
 		for (auto it : type_->native_storage_pointers) {
@@ -60,10 +59,9 @@ namespace OwcaScript::Internal {
 		return (const char*)o + sizeof(*o);
 	}
 
-	void Class::initialize_add_base_class(OwcaVM vm, OwcaValue b)
+	void Class::initialize_add_base_class(OwcaVM vm, OwcaClass b)
 	{
-		auto c = b.as_class(vm).internal_value();
-		base_classes.push_back(c);
+		base_classes.push_back(b.internal_value());
 	}
 	void Class::initialize_add_variable(std::string_view name) {
 		runtime_variables.push_back(name);
@@ -71,12 +69,12 @@ namespace OwcaScript::Internal {
 	void Class::initialize_set_all_variables() {
 		all_variables = true;
 	}
-	void Class::initialize_add_function(OwcaVM vm, OwcaValue f)
+	void Class::initialize_add_function(OwcaVM vm, OwcaFunctions fnc)
 	{
-		auto fnc = f.as_functions(vm);
-		assert(fnc.internal_value()->functions.size() == 1);
-		for (auto it2 : fnc.internal_value()->functions) {
-			runtime_functions.push_back(it2.second);
+		for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
+			if (fnc.internal_value()->functions[i]) {
+				runtime_functions.push_back(fnc.internal_value()->functions[i]);
+			}
 		}
 	}
 	void Class::finalize_initializing(OwcaVM vm)

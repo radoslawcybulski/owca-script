@@ -3,14 +3,16 @@
 
 #include "stdafx.h"
 #include "allocation_base.h"
+#include "owca_code.h"
 #include "line.h"
 
 namespace OwcaScript {
 	class OwcaVM;
+	class OwcaClass;
+	class OwcaFunctions;
 	class NativeClassInterface;
 
 	namespace Internal {
-		class CodeBuffer;
 		struct RuntimeFunction;
 		struct RuntimeFunctions;
 		struct Object;
@@ -20,7 +22,7 @@ namespace OwcaScript {
 
 			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>, StringHash, StringCmp> values;
 			const std::string_view name, full_name;
-			std::shared_ptr<CodeBuffer> code;
+			OwcaCode code;
 			Line fileline;
 			std::unordered_set<Class*> all_base_classes;
 			std::vector<Class*> base_classes;
@@ -40,15 +42,15 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 
-			void initialize_add_base_class(OwcaVM vm, OwcaValue b);
-			void initialize_add_function(OwcaVM vm, OwcaValue f);
+			void initialize_add_base_class(OwcaVM vm, OwcaClass b);
+			void initialize_add_function(OwcaVM vm, OwcaFunctions f);
 			void initialize_add_variable(std::string_view name);
 			void initialize_set_all_variables();
 			void finalize_initializing(OwcaVM vm);
 			char* native_storage_ptr(Object *) const;
 			const char* native_storage_ptr(const Object *) const;
 
-			Class(Line line, std::string_view type, std::string_view full_name, std::shared_ptr<CodeBuffer> code, size_t base_class_count);
+			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code);
 		};
 
 		struct Object : public AllocationBase {

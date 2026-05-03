@@ -1,34 +1,34 @@
 #ifndef RC_OWCA_SCRIPT_ITERATOR_H
 #define RC_OWCA_SCRIPT_ITERATOR_H
 
+#include "runtime_function.h"
 #include "stdafx.h"
 #include "allocation_base.h"
-#include "execution_frame.h"
 #include "impl_base.h"
 #include "owca_iterator.h"
 #include "owca_value.h"
 #include "owca_variable.h"
 #include "generator.h"
+#include "executor.h"
 
 namespace OwcaScript {
 	class OwcaVM;
 
 	namespace Internal {
-        class CodeBuffer;
-
 		struct Iterator : public AllocationBase {
             static constexpr const Kind object_kind = Kind::Iterator;
 
-            ExecutionFrame frame;
-            ImplStat::State state;
-            std::optional<Generator> generator;
-			std::vector<AllocationBase*> allocated_objects;
-			OwcaValue value;
+			std::optional<Generator> generator;
+			RuntimeFunction *function;
+			std::span<OwcaValue> values;
+			std::span<Executor::StatesType> states;
+			OwcaValue last_value;
 			bool first_time = true;
 
-            Iterator(size_t sz, Line line) : frame(line), state(sz) {}
+            Iterator(RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states);
+			~Iterator();
 
-            OwcaValue execute_next();
+            // OwcaValue execute_next();
 			std::string_view type() const override{
 				return "Iterator";
 			}

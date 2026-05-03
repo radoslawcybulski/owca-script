@@ -8,147 +8,111 @@
 
 namespace OwcaScript::Internal {
 	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool all_variable_names, bool native) : 
-		AstExpr(line), base_classes(std::move(base_classes)), members(std::move(members)), variable_names(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), all_variable_names(all_variable_names), native(native) {
-			assert(this->variable_names.empty() || native);
+		AstExpr(line), base_classes_(std::move(base_classes)), members_(std::move(members)), variable_names_(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), all_variable_names_(all_variable_names), native_(native) {
+			assert(this->variable_names_.empty() || native_);
 		}
 
-	class ImplExprScriptClass : public ImplExpr {
-	public:
-		using ImplExpr::ImplExpr;
+	// class ImplExprScriptClass : public ImplExpr {
+	// public:
+	// 	using ImplExpr::ImplExpr;
 
-		#define FIELDS(Q) \
-			Q(name, std::string_view) \
-			Q(full_name, std::string_view) \
-			Q(base_classes, std::span<ImplExpr*>) \
-			Q(members, std::span<ImplExpr*>) \
-			Q(native_variable_names, std::span<std::string_view>) \
-			Q(all_variables, bool)
+	// 	#define FIELDS(Q) \
+	// 		Q(name, std::string_view) \
+	// 		Q(full_name, std::string_view) \
+	// 		Q(base_classes, std::span<ImplExpr*>) \
+	// 		Q(members, std::span<ImplExpr*>) \
+	// 		Q(native_variable_names, std::span<std::string_view>) \
+	// 		Q(all_variables, bool)
 
-		IMPL_DEFINE_EXPR(Kind::ScriptClass)
+	// 	IMPL_DEFINE_EXPR(Kind::ScriptClass)
 
-		OwcaValue execute_expression_impl(OwcaVM vm) const override
-		{
-			auto code = VM::get(vm).currently_running_code();
-			assert(code);
+	// 	OwcaValue execute_expression_impl(OwcaVM vm) const override
+	// 	{
+	// 		auto code = VM::get(vm).currently_running_code();
+	// 		assert(code);
 
-			auto cls = VM::get(vm).allocate<Class>(0, line, name, full_name, std::move(code), base_classes.size());
-			auto guard = VM::get(vm).set_currently_building_class(ClassToken{ cls });
-			for (auto b : base_classes) {
-				auto res = b->execute_expression(vm);
-				cls->initialize_add_base_class(vm, res);
-			}
+	// 		auto cls = VM::get(vm).allocate<Class>(0, line, name, full_name, std::move(code), base_classes.size());
+	// 		auto guard = VM::get(vm).set_currently_building_class(ClassToken{ cls });
+	// 		for (auto b : base_classes) {
+	// 			auto res = b->execute_expression(vm);
+	// 			cls->initialize_add_base_class(vm, res);
+	// 		}
 
-			for (auto m : members) {
-				auto f = m->execute_expression(vm);
-				cls->initialize_add_function(vm, f);
-			}
-			if (all_variables) {
-				cls->initialize_set_all_variables();
-			}
-			else {
-				for(auto i = 0u; i < native_variable_names.size(); ++i) {
-					cls->initialize_add_variable(native_variable_names[i]);
-				}
-			}
+	// 		for (auto m : members) {
+	// 			auto f = m->execute_expression(vm);
+	// 			cls->initialize_add_function(vm, f);
+	// 		}
+	// 		if (all_variables) {
+	// 			cls->initialize_set_all_variables();
+	// 		}
+	// 		else {
+	// 			for(auto i = 0u; i < native_variable_names.size(); ++i) {
+	// 				cls->initialize_add_variable(native_variable_names[i]);
+	// 			}
+	// 		}
 
-			cls->finalize_initializing(vm);
+	// 		cls->finalize_initializing(vm);
 
-			return OwcaClass{ cls };
+	// 		return OwcaClass{ cls };
+	// 	}
+	// };
+
+	// class ImplExprNativeClass : public ImplExprScriptClass {
+	// public:
+	// 	using ImplExprScriptClass::ImplExprScriptClass;
+
+	// 	Kind kind() const override { return Kind::NativeClass; }
+	// 	OwcaValue execute_expression_impl(OwcaVM vm) const override
+	// 	{
+	// 		auto res = ImplExprScriptClass::execute_expression_impl(vm);
+	// 		auto cls = res.as_class(vm).internal_value();
+	// 		auto native = cls->code->native_code_provider();
+	// 		if (native) {
+	// 			if (auto impl = native->native_class(full_name, ClassToken{ cls })) {
+	// 				auto size = impl->native_storage_size();
+	// 				cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
+	// 				cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;
+	// 				cls->native = std::move(impl);
+	// 			}
+	// 		}
+	// 		if (!cls->native) {
+	// 			VM::get(vm).throw_missing_native(std::format("missing native class {}", full_name));
+	// 		}
+
+	// 		return res;
+	// 	}
+	// };
+
+	void AstClass::emit(EmitInfo& ei) {
+		ei.states.push();
+		ei.code_writer.append(line, ExecuteOp::ClassInit);
+		ei.code_writer.append(line, name_);
+		ei.code_writer.append(line, full_name_);
+		for(auto &q : members_) {
+			q->emit(ei);
 		}
-	};
-
-	class ImplExprNativeClass : public ImplExprScriptClass {
-	public:
-		using ImplExprScriptClass::ImplExprScriptClass;
-
-		Kind kind() const override { return Kind::NativeClass; }
-		OwcaValue execute_expression_impl(OwcaVM vm) const override
-		{
-			auto res = ImplExprScriptClass::execute_expression_impl(vm);
-			auto cls = res.as_class(vm).internal_value();
-			auto native = cls->code->native_code_provider();
-			if (native) {
-				if (auto impl = native->native_class(full_name, ClassToken{ cls })) {
-					auto size = impl->native_storage_size();
-					cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
-					cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;
-					cls->native = std::move(impl);
-				}
-			}
-			if (!cls->native) {
-				VM::get(vm).throw_missing_native(std::format("missing native class {}", full_name));
-			}
-
-			return res;
+		for(auto &q : base_classes_) {
+			q->emit(ei);
 		}
-	};
+		ei.code_writer.append(line, ExecuteOp::ClassCreate);
+		ei.code_writer.append(line, native_);
+		ei.code_writer.append(line, (std::uint32_t)base_classes_.size());
+		ei.code_writer.append(line, (std::uint32_t)members_.size());
+		ei.code_writer.append(line, all_variable_names_);
+		ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
+		for (auto &q : variable_names_)
+			ei.code_writer.append(line, q);
 
-	void AstClass::calculate_size(CodeBufferSizeCalculator &ei) const
-	{
-		if (native) ei.code_buffer.preallocate<ImplExprNativeClass>(line);
-		else ei.code_buffer.preallocate<ImplExprScriptClass>(line);
-
-		ei.code_buffer.allocate(name_);
-		ei.code_buffer.allocate(full_name_);
-
-		ei.code_buffer.preallocate_array<ImplExpr*>(base_classes.size());
-		for (auto i = 0u; i < base_classes.size(); ++i) {
-			base_classes[i]->calculate_size(ei);
-		}
-		ei.code_buffer.preallocate_array<ImplExpr*>(members.size());
-		for (auto i = 0u; i < members.size(); ++i) {
-			members[i]->calculate_size(ei);
-		}
-
-		ei.code_buffer.preallocate_array<std::string_view>(variable_names.size());
-		for (auto i = 0u; i < variable_names.size(); ++i) {
-			ei.code_buffer.allocate(variable_names[i]);
-		}
-	}
-
-	ImplExpr* AstClass::emit(EmitInfo& ei) {
-		ImplExprScriptClass* ret1 = nullptr;
-		ImplExprNativeClass* ret2 = nullptr;
-		
-		if (native) ret2 = ei.code_buffer.preallocate<ImplExprNativeClass>(line);
-		else ret1 = ei.code_buffer.preallocate<ImplExprScriptClass>(line);
-
-		auto nm = ei.code_buffer.allocate(name_);
-		auto fm = ei.code_buffer.allocate(full_name_);
-		
-		auto bc = ei.code_buffer.preallocate_array<ImplExpr*>(base_classes.size());
-		for (auto i = 0u; i < base_classes.size(); ++i) {
-			bc[i] = base_classes[i]->emit(ei);
-		}
-		auto fncs = ei.code_buffer.preallocate_array<ImplExpr*>(members.size());
-		for (auto i = 0u; i < members.size(); ++i) {
-			fncs[i] = members[i]->emit(ei);
-		}
-		auto var_names = ei.code_buffer.preallocate_array<std::string_view>(variable_names.size());
-		for (auto i = 0u; i < variable_names.size(); ++i) {
-			var_names[i] = ei.code_buffer.allocate(variable_names[i]);
-		}
-
-		if (native) {
-			ret2->init(nm, fm, bc, fncs, var_names, all_variable_names);
-			return ret2;
-		}
-		else {
-			ret1->init(nm, fm, bc, fncs, var_names, all_variable_names);
-			return ret1;
-		}
+		ei.stack.pop(members_.size() + base_classes_.size());
+		ei.stack.push();
+		ei.states.pop();
 	}
 
 	void AstClass::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstClass::visit_children(AstVisitor& vis) {
-		for(auto &q : base_classes)
+		for(auto &q : base_classes_)
 			q->visit(vis);
-		for(auto &q : members)
+		for(auto &q : members_)
 			q->visit(vis);
-	}
-	void AstClass::initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions)
-	{
-		functions[(size_t)ImplExpr::Kind::NativeClass] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprNativeClass>(line); };
-		functions[(size_t)ImplExpr::Kind::ScriptClass] = [](Deserializer &ser, Line line) { return ser.allocate_object<ImplExprScriptClass>(line); };
 	}
 }

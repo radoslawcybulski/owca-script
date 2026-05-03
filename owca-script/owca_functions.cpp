@@ -35,9 +35,9 @@ namespace OwcaScript {
 		return OwcaFunctions{ internal_value(), s };
 	}
 
-	OwcaValue OwcaFunctions::self() const
+	std::optional<OwcaValue> OwcaFunctions::self() const
 	{
-		if (!self_object) return {};
+		if (!self_object) return std::nullopt;
 		switch(self_object->kind) {
 		case Internal::AllocationBase::Kind::User: return OwcaObject{ static_cast<Internal::Object*>(self_object) };
 		case Internal::AllocationBase::Kind::String: return OwcaString{ static_cast<Internal::String*>(self_object) };

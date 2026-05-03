@@ -16,18 +16,19 @@ namespace OwcaScript {
 				CreateMap,
 			};
 		private:
-			std::vector<std::unique_ptr<AstExpr>> args;
-			Kind kind;
+			std::vector<std::unique_ptr<AstExpr>> args_;
+			Kind kind_;
 
 		public:
-			AstExprOperX(Line line, Kind kind, std::vector<std::unique_ptr<AstExpr>> args) : AstExpr (line), args(std::move(args)), kind(kind) {}
+			AstExprOperX(Line line, Kind kind, std::vector<std::unique_ptr<AstExpr>> args) : AstExpr (line), args_(std::move(args)), kind_(kind) {}
 
-			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			auto kind() const { return kind_; }
+			const auto &args() const { return args_; }
+
+			void emit(EmitInfo& ei) override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "ast_compiler.h"
-#include "code_buffer.h"
 #include "ast_block.h"
 #include "ast_expr_as_stat.h"
 #include "ast_expr_oper_2.h"
@@ -23,6 +22,9 @@
 #include "ast_loop_control.h"
 #include "vm.h"
 #include "ast_with.h"
+#include "owca_code.h"
+#include "exec_buffer.h"
+#include <string_view>
 
 namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
@@ -197,14 +199,15 @@ namespace OwcaScript::Internal {
 		skip_ws();
 		return { line, tok };
 	}
-	Line AstCompiler::consume(std::string_view txt)
+	Line AstCompiler::consume(std::string_view txt, bool dont_skip_ws)
 	{
 		auto [line, tok] = preview();
 		if (tok != txt) {
 			add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, line, std::format("unexpected token `{}`, expected `{}`", tok, txt));
 		}
 		content_offset += tok.size();
-		skip_ws();
+		if (!dont_skip_ws)
+			skip_ws();
 		return line;
 	}
 	bool AstCompiler::is_keyword(std::string_view txt) const
@@ -376,7 +379,7 @@ namespace OwcaScript::Internal {
 			if (content[content_offset] != '}') {
 				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, content_line, "missing `}` in f-string expression");
 			}
-			consume("}");
+			consume("}", true);
 			parts.push_back(std::move(val));
 			if (content_line.line != start_line.line) {
 				add_error_and_throw(OwcaErrorKind::SyntaxError, filename_, start_line, "unexpected end of line in unfinished f-string expression");
@@ -387,8 +390,8 @@ namespace OwcaScript::Internal {
 				str_part = str_part.substr(0, str_part.size() - 1);
 			}
 			strings += str_part;
-			sizes.push_back(str_part.size());
 			if (end) break;
+			sizes.push_back(str_part.size());
 		}
 		return std::make_unique<AstExprInterpretedString>(start_line, std::move(parts), std::move(sizes), std::move(strings));
 	}
@@ -852,7 +855,7 @@ namespace OwcaScript::Internal {
 		if (!is_identifier(func_name)) {
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier for function name, got `{}`", func_name));
 		}
-		std::vector<std::string> param_names;
+		std::vector<std::string_view> param_names;
 
 		consume("(");
 		if (preview().second != ")") {
@@ -866,7 +869,7 @@ namespace OwcaScript::Internal {
 				if (!is_identifier(p_name)) {
 					add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line3, std::format("expected identifier for function's parameter name, got `{}`", p_name));
 				}
-				param_names.push_back(std::string{ p_name });
+				param_names.push_back(p_name);
 				if (!idents.insert(std::string{ p_name }).second) {
 					add_error_and_throw(OwcaErrorKind::InvalidIdentifier, filename_, line3, std::format("reused function's parameter name `{}`", p_name));
 				}
@@ -880,7 +883,8 @@ namespace OwcaScript::Internal {
 		}
 		consume(")");
 		auto full_name_updater = FullNameUpdater{ full_name, func_name };
-		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), use_native ? AstFunction::Native::Yes : AstFunction::Native::No, is_generator ? AstFunction::Generator::Yes : AstFunction::Generator::No);
+		auto param_count = param_names.size();
+		auto f = std::make_unique<AstFunction>(line, std::string{ func_name }, full_name, std::move(param_names), param_count, use_native ? AstFunction::Native::Yes : AstFunction::Native::No, is_generator ? AstFunction::Generator::Yes : AstFunction::Generator::No);
 		if (use_native) {
 			auto [txt_line, txt] = preview();
 			if (txt == "{") {
@@ -1157,11 +1161,11 @@ namespace OwcaScript::Internal {
 		return compile_expression_as_stat();
 	}
 
-	std::unique_ptr<AstFunction> AstCompiler::compile_main_block()
+	std::unique_ptr<AstFunction> AstCompiler::compile_main_block(std::vector<std::string_view> variables)
 	{
 		functions_stack.clear();
 		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::vector<std::string>{}, AstFunction::Native::No, AstFunction::Generator::No);
+		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::move(variables), 0, AstFunction::Native::No, AstFunction::Generator::No);
 		functions_stack.push_back(f.get());
 		
 		try {
@@ -1243,12 +1247,11 @@ namespace OwcaScript::Internal {
 			}
 		};
 		std::unordered_map<AstFunction*, Stack> stacks;
-		std::span<const std::string> additional_variables;
 		Stack* current_stack = nullptr;
 		bool first_run = true;
 		AstCompiler* compiler;
 
-		Phase2(AstCompiler* compiler, std::span<const std::string> additional_variables) : additional_variables(additional_variables), compiler(compiler) {}
+		Phase2(AstCompiler* compiler) : compiler(compiler) {}
 
 		void add_error(OwcaErrorKind kind, Line line, std::string msg) {
 			compiler->add_error(kind, compiler->filename_, line, std::move(msg));
@@ -1259,13 +1262,13 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstWhile &o) override {
 			if (first_run) {
-				if (!o.get_loop_identifier().empty()) {
-					current_stack->define_identifier(o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					current_stack->define_identifier(o.loop_identifier());
 				}
 			}
 			else {
-				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.loop_identifier());
 					o.update_loop_ident_index(index);
 				}
 			}
@@ -1273,22 +1276,22 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstFor &o) override {
 			if (first_run) {
-				if (!o.get_loop_identifier().empty()) {
-					current_stack->define_identifier(o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					current_stack->define_identifier(o.loop_identifier());
 				}
-				for(auto &ident : o.get_values()) {
+				for(auto &ident : o.values()) {
 					current_stack->define_identifier(ident);
 				}
 			}
 			else {
-				if (!o.get_loop_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_loop_identifier());
+				if (!o.loop_identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.loop_identifier());
 					o.update_loop_ident_index(index);
 				}
 				std::vector<unsigned int> value_indexes;
-				value_indexes.resize(o.get_values().size());
-				for(size_t i = 0; i < o.get_values().size(); ++i) {
-					 value_indexes[i] = current_stack->ensure_writable_identifier(compiler, o.line, o.get_values()[i]);
+				value_indexes.resize(o.values().size());
+				for(size_t i = 0; i < o.values().size(); ++i) {
+					 value_indexes[i] = current_stack->ensure_writable_identifier(compiler, o.line, o.values()[i]);
 				}
 				o.update_value_indexes(std::move(value_indexes));
 			}
@@ -1296,13 +1299,13 @@ namespace OwcaScript::Internal {
 		}
 		void apply(AstWith &o) override {
 			if (first_run) {
-				if (!o.get_identifier().empty()) {
-					current_stack->define_identifier(o.get_identifier());
+				if (!o.identifier().empty()) {
+					current_stack->define_identifier(o.identifier());
 				}
 			}
 			else {
-				if (!o.get_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.get_identifier());
+				if (!o.identifier().empty()) {
+					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.identifier());
 					o.update_ident_index(index);
 				}
 			}
@@ -1344,7 +1347,7 @@ namespace OwcaScript::Internal {
 						if (!writable) 
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_index(index);
+					o.update_value_to_write_index(index);
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
@@ -1360,10 +1363,8 @@ namespace OwcaScript::Internal {
 					for(auto &it : compiler->vm.get_builtin_objects()) {
 						current_stack->define_identifier(it.first);
 					}
-					for (auto& ident : additional_variables)
-						current_stack->define_identifier(ident);
 				}
-				for (auto& p : o.parameters()) {
+				for (auto& p : o.identifier_names()) {
 					current_stack->define_identifier(p);
 				}
 			}
@@ -1371,6 +1372,10 @@ namespace OwcaScript::Internal {
 			apply(static_cast<AstExpr&>(o));
 			
 			if (!first_run) {
+				for(auto i = 0u; i < o.param_count(); ++i) {
+					assert(i < st.identifier_names.size());
+					assert(st.identifier_names[i] == o.identifier_names()[i]);
+				}
 				o.update_copy_from_parents(std::move(st.copy_from_parents));
 				o.update_identifier_names(std::move(st.identifier_names));
 			}
@@ -1379,37 +1384,45 @@ namespace OwcaScript::Internal {
 		}
 	};
 
-	void AstCompiler::compile_phase_2(AstFunction &root, std::span<const std::string> additional_variables)
+	void AstCompiler::compile_phase_2(AstFunction &root)
 	{
-		auto p = Phase2{ this, additional_variables };
+		auto p = Phase2{ this };
 		p.first_run = true;
 		root.visit(p);
 		p.first_run = false;
 		root.visit(p);
 	}
 
-	std::shared_ptr<CodeBuffer> AstCompiler::compile(std::span<const std::string> additional_variables)
+	std::optional<OwcaCode> AstCompiler::compile(std::vector<std::string> additional_variables)
 	{
-		auto root = compile_main_block();
+		auto root = compile_main_block(std::vector<std::string_view>{ additional_variables.begin(), additional_variables.end() });
 		if (!error_messages_.empty()) {
 			assert(!error_messages_.empty());
-			return nullptr;
+			return std::nullopt;
 		}
 		assert(root);
 
-		compile_phase_2(*root, additional_variables);
+		compile_phase_2(*root);
 		if (!error_messages_.empty()) {
-			return nullptr;
+			return std::nullopt;
 		}
 
-		auto code_buffer_size_calc = CodeBufferSizeCalculator{};
-		root->calculate_size(code_buffer_size_calc);
+		auto ei = AstBase::EmitInfo{
+			.compiler = *this
+		};
+		root->emit(ei);
+		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::ReturnValue);
+		assert(error_messages_.empty());
 
-		auto emit_info = AstBase::EmitInfo{ CodeBuffer{ filename(), code_buffer_size_calc.get_total_size(), std::move(native_code_provider) } };
-		root->emit(emit_info);
+		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
+		auto buffer_span = std::span{ buffer.data(), buffer.size() };
+		std::shared_ptr<ExecuteBufferReader::DataKindsType> data_kinds_ = std::make_shared<ExecuteBufferReader::DataKindsType>(std::move(data_kinds));
+		auto data_kinds_span_ptr = data_kinds_.get();
+		auto lines_span = std::span{ lines.data(), lines.size() };
+		auto fname = std::vector<char>(filename_.begin(), filename_.end());
+		auto fname_sv = std::string_view{ fname.data(), fname.size() };
 
-		emit_info.code_buffer.validate_size(code_buffer_size_calc.get_total_size());
-
-		return std::make_shared<CodeBuffer>(std::move(emit_info.code_buffer));
+		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds_), lines = std::move(lines), fname = std::move(fname)]() {};
+		return OwcaCode{ fname_sv, buffer_span, *data_kinds_span_ptr, lines_span, native_code_provider, std::move(dstr) };
 	}
 }

@@ -8,7 +8,7 @@ namespace OwcaScript::Internal {
     std::string Exception::to_string() const {
         std::string temp;
         for(auto &f: frames) {
-            temp += f.code->filename();
+            temp += f.code.filename();
             temp += ":";
             temp += f.line;
             temp += " ";

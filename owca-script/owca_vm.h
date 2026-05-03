@@ -8,6 +8,11 @@
 namespace OwcaScript {
 	class OwcaVM;
 	class OwcaCode;
+	class OwcaMap;
+	class OwcaSet;
+	class OwcaArray;
+	class OwcaString;
+	class OwcaTuple;
 	class OwcaValue;
 	class OwcaVariable;
 	class NativeClassInterface;
@@ -19,7 +24,7 @@ namespace OwcaScript {
 	
 	class GenerationGC {
 		unsigned int value;
-	
+
 	public:
 		explicit GenerationGC(unsigned int value) : value(value) {}
 
@@ -72,26 +77,27 @@ namespace OwcaScript {
 			}
 		};
 
-		OwcaCode load(std::string filename, std::span<unsigned char> binary_content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
+		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line);
 		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
-		OwcaCode compile(std::string filename, std::string content, std::span<const std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
+		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
+		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line = 1);
 		OwcaValue execute(const OwcaCode&);
-		OwcaValue execute(const OwcaCode&, OwcaValue values);
-		OwcaValue execute(const OwcaCode&, OwcaValue values, OwcaValue *output_dict);
+		OwcaValue execute(const OwcaCode&, OwcaMap values);
+		OwcaValue execute(const OwcaCode&, OwcaMap values, OwcaMap *output_dict);
 		OwcaValue get_member(OwcaValue self, std::string_view key);
 		void set_member(OwcaValue self, std::string_view key, OwcaValue value);
 		OwcaValue call(OwcaValue func, std::span<OwcaValue> values);
-		OwcaValue create_array() const;
-		OwcaValue create_array(std::span<OwcaValue> values) const;
-		OwcaValue create_array(std::deque<OwcaValue> values) const;
-		OwcaValue create_tuple(std::vector<OwcaValue> values) const;
-		OwcaValue create_tuple(std::pair<OwcaValue, OwcaValue> values) const;
-		OwcaValue create_map() const;
-		OwcaValue create_map(const std::span<OwcaValue> &values) const;
-		OwcaValue create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const;
-		OwcaValue create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const;
-		OwcaValue create_set(const std::span<OwcaValue> &values) const;
-		OwcaValue create_string(std::string_view) const;
+		OwcaArray create_array() const;
+		OwcaArray create_array(std::span<OwcaValue> values) const;
+		OwcaArray create_array(std::deque<OwcaValue> values) const;
+		OwcaTuple create_tuple(std::vector<OwcaValue> values) const;
+		OwcaTuple create_tuple(std::pair<OwcaValue, OwcaValue> values) const;
+		OwcaMap create_map() const;
+		OwcaMap create_map(const std::span<OwcaValue> &values) const;
+		OwcaMap create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const;
+		OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const;
+		OwcaSet create_set(const std::span<OwcaValue> &values) const;
+		OwcaString create_string(std::string_view) const;
 		
 		void run_gc();
 	};

@@ -6,7 +6,7 @@
 
 namespace OwcaScript {
 	namespace Internal {
-		enum class CompareKind {
+		enum class CompareKind : std::uint8_t {
 			Less,
 			LessEq,
 			More,
@@ -17,20 +17,21 @@ namespace OwcaScript {
 		};
 		class AstExprCompare : public AstExpr {
 		private:
-			std::unique_ptr<AstExpr> first;
-			std::vector<std::tuple<CompareKind, Line, std::unique_ptr<AstExpr>>> nexts;
+			std::unique_ptr<AstExpr> first_;
+			std::vector<std::tuple<CompareKind, Line, std::unique_ptr<AstExpr>>> nexts_;
 
 		public:
-			AstExprCompare(Line line, std::unique_ptr<AstExpr> first, std::vector<std::tuple<CompareKind, Line, std::unique_ptr<AstExpr>>> nexts) : AstExpr (line), first(std::move(first)), nexts(std::move(nexts)) {}
+			AstExprCompare(Line line, std::unique_ptr<AstExpr> first, std::vector<std::tuple<CompareKind, Line, std::unique_ptr<AstExpr>>> nexts) : AstExpr (line), first_(std::move(first)), nexts_(std::move(nexts)) {}
+			
+			auto &first() const { return *first_; }
+			const auto &nexts() const { return nexts_; }
 
-			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 
 			static bool execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right);
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

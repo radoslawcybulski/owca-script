@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "owca_exception.h"
 #include "exception.h"
-#include "code_buffer.h"
 #include "object.h"
+#include "owca_class.h"
 
 namespace OwcaScript {
     OwcaClass OwcaException::type() const
@@ -22,7 +22,7 @@ namespace OwcaScript {
         assert(index < object->frames.size());
 
         return {
-            object->frames[index].code->filename(),
+            object->frames[index].code.filename(),
             object->frames[index].function,
             object->frames[index].line
         };

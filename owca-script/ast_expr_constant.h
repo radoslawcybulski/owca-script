@@ -8,23 +8,23 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstExprConstant : public AstExpr {
 		private:
-			std::variant<OwcaEmpty, Number, bool, std::string> value;
+			std::variant<OwcaEmpty, Number, bool, std::string> value_;
 			
 			template <typename ... F> auto visit(F &&...fns) const {
-				return visit_variant(value, std::forward<F>(fns)...);
+				return visit_variant(value_, std::forward<F>(fns)...);
 			}	
 		public:
-			AstExprConstant(Line line, OwcaEmpty value) : AstExpr (line), value(value) {}
-			AstExprConstant(Line line, Number value) : AstExpr (line), value(value) {}
-			AstExprConstant(Line line, bool value) : AstExpr (line), value(value) {}
-			AstExprConstant(Line line, std::string value) : AstExpr (line), value(std::move(value)) {}
+			AstExprConstant(Line line, OwcaEmpty value) : AstExpr (line), value_(value) {}
+			AstExprConstant(Line line, Number value) : AstExpr (line), value_(value) {}
+			AstExprConstant(Line line, bool value) : AstExpr (line), value_(value) {}
+			AstExprConstant(Line line, std::string value) : AstExpr (line), value_(std::move(value)) {}
 
-			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
+
+			auto value() const { return value_; }
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

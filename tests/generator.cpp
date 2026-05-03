@@ -3,65 +3,64 @@
 using namespace OwcaScript;
 
 class GeneratorTest : public SimpleTest {
+protected:
+    static int run_gen(unsigned int line, std::string code_text, OwcaValue add_val)
+    {
+        OwcaVM vm;
+        std::vector<std::string> tmp{ { "a" } };
+        auto code = compile(line, vm, "test.os", std::move(code_text), tmp);
+        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
+        auto val = vm.execute(code, vm.create_map(map_data));
+        return (int)val.as_int(vm);
+    }
 
+    static int run_try(unsigned int line, int v)
+    {
+        return run_gen(line, R"(
+            class A(Exception) {}
+            class B(Exception) {}
+            
+            function generator foo() {
+                try {
+                    if (a == 1) throw A("q");
+                    if (a == 2) throw B("q");
+                }
+                catch(e: A) {
+                    yield 1;
+                }
+                catch(e: B) {
+                    yield 2;
+                }
+                yield 3;
+            }
+            for(q = foo()) {
+                return q;
+            }
+            )", v);
+    }
 };
-
-static int run_gen(std::string code_text, OwcaValue add_val)
-{
-    OwcaVM vm;
-    std::vector<std::string> tmp{ { "a" } };
-    auto code = vm.compile("test.os", std::move(code_text), tmp);
-    auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
-    auto val = vm.execute(code, vm.create_map(map_data));
-    return (int)val.as_int(vm);
-}
-
-static int run_try(int v)
-{
-    return run_gen(R"(
-        class A(Exception) {}
-        class B(Exception) {}
-        
-        function generator foo() {
-            try {
-                if (a == 1) throw A("q");
-                if (a == 2) throw B("q");
-            }
-            catch(e: A) {
-                yield 1;
-            }
-            catch(e: B) {
-                yield 2;
-            }
-            yield 3;
-        }
-        for(q = foo()) {
-            return q;
-        }
-        )", v);
-}
 
 TEST_F(GeneratorTest, try1)
 {
-    auto val = run_try(1);
+    auto val = run_try(__LINE__, 1);
 	ASSERT_EQ(val, 1);
 }
 
 TEST_F(GeneratorTest, try2)
 {
-    auto val = run_try(2);
+    auto val = run_try(__LINE__, 2);
 	ASSERT_EQ(val, 2);
 }
 
 TEST_F(GeneratorTest, try3)
 {
-    auto val = run_try(3);
+    auto val = run_try(__LINE__, 3);
 	ASSERT_EQ(val, 3);
 }
 
 TEST_F(GeneratorTest, while_simple1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     i = 0;
     total = 0;
@@ -81,7 +80,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, while_simple2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     i = 0;
     total = 0;
@@ -101,7 +100,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, while_simple3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     i = 0;
     total = 0;
@@ -125,7 +124,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, while_loop_ident1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     l1: while(true) {
@@ -146,7 +145,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, while_loop_ident2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     l1: while(true) {
@@ -167,7 +166,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, while_loop_ident3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     l1: while(true) {
@@ -188,7 +187,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, while_loop_ident4)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     l1: while(true) {
@@ -214,7 +213,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, for_simple1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -233,7 +232,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, for_simple2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -252,7 +251,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, for_simple3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -275,7 +274,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, for_loop_ident1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -297,7 +296,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, for_loop_ident2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -319,7 +318,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, for_loop_ident3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -341,7 +340,7 @@ for(q = foo()) return q;
 }
 TEST_F(GeneratorTest, for_loop_ident4)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -368,7 +367,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, if_simple1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -383,7 +382,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, if_simple2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -398,7 +397,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, if_simple3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -413,7 +412,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, no_else1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -426,7 +425,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, no_else2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -439,7 +438,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, no_else3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a) {
         yield 1;
@@ -452,7 +451,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, elif1)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a == 1) {
         yield 1;
@@ -473,7 +472,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, elif2)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a == 1) {
         yield 1;
@@ -494,7 +493,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, elif3)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a == 1) {
         yield 1;
@@ -515,7 +514,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, elif4)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a == 1) {
         yield 1;
@@ -536,7 +535,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, elif5)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     if (a == 1) {
         yield 1;
@@ -557,7 +556,7 @@ for(q = foo()) return q;
 
 TEST_F(GeneratorTest, simple)
 {
-    ASSERT_EQ(run_gen(R"(
+    ASSERT_EQ(run_gen(__LINE__, R"(
 function generator foo() {
     yield 1;
     yield 2;

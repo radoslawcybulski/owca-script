@@ -4,18 +4,17 @@
 #include "stdafx.h"
 #include "allocation_base.h"
 #include "owca_exception.h"
+#include "owca_code.h"
 
 namespace OwcaScript {
 	class OwcaVM;
 
 	namespace Internal {
-        class CodeBuffer;
-
 		struct Exception  {
 			struct Frame {
-				std::shared_ptr<CodeBuffer> code;
-				unsigned int line;
+				OwcaCode code;
 				std::string_view function;
+				std::uint32_t line;
 			};
 			std::vector<Frame> frames;
             std::string message;

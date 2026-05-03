@@ -13,14 +13,13 @@ namespace OwcaScript {
             std::vector<std::uint32_t> sizes;
             std::string strings;
 		public:
-			AstExprInterpretedString(Line line, std::vector<std::unique_ptr<AstExpr>> evals, std::vector<std::uint32_t> sizes, std::string strings) : AstExpr (line), evals(std::move(evals)), sizes(std::move(sizes)), strings(std::move(strings)) {}
+			AstExprInterpretedString(Line line, std::vector<std::unique_ptr<AstExpr>> evals, std::vector<std::uint32_t> sizes, std::string strings) : AstExpr (line), evals(std::move(evals)), sizes(std::move(sizes)), strings(std::move(strings)) {
+				assert(this->sizes.size() == this->evals.size());
+			}
 
-			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

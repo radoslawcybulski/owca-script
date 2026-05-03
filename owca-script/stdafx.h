@@ -1,33 +1,38 @@
 #ifndef RC_OWCA_SCRIPT_STDAFX_H
 #define RC_OWCA_SCRIPT_STDAFX_H
 
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <cassert>
+#include <charconv>
+#include <chrono>
+#include <chrono>
+#include <cmath>
+#include <coroutine>
 #include <cstdint>
-#include <vector>
-#include <string>
+#include <deque>
+#include <exception>
+#include <format>
+#include <functional>
+#include <generator>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <limits>
+#include <list>
+#include <memory>
+#include <optional>
+#include <span>
+#include <sstream>
 #include <string_view>
+#include <string>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
-#include <memory>
+#include <utility>
 #include <variant>
-#include <cassert>
-#include <span>
-#include <format>
-#include <optional>
-#include <tuple>
-#include <limits>
-#include <charconv>
-#include <sstream>
-#include <functional>
-#include <iterator>
-#include <algorithm>
-#include <coroutine>
-#include <iostream>
-#include <deque>
-#include <array>
-#include <cstring>
-#include <cmath>
-#include <bit>
-#include <chrono>
+#include <vector>
 
 namespace OwcaScript {
     using Number = double;
@@ -36,6 +41,8 @@ namespace OwcaScript {
     class Function;
 	class OwcaVM;
 	class GenerationGC;
+	class OwcaEmpty {};
+	class OwcaCompleted {};
 
     namespace Internal {
 		template <typename T, typename ... F> auto visit_variant(T && t, F &&...fns) {

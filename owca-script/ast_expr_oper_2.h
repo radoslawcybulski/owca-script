@@ -17,20 +17,22 @@ namespace OwcaScript {
 			};
 
 		private:
-			std::unique_ptr<AstExpr> left, right, third;
+			std::unique_ptr<AstExpr> left_, right_, third_;
 			Kind kind_;
 
 		public:
-			AstExprOper2(Line line, Kind kind, std::unique_ptr<AstExpr> left, std::unique_ptr<AstExpr> right, std::unique_ptr<AstExpr> third = nullptr) : AstExpr (line), left(std::move(left)), right(std::move(right)), third(std::move(third)), kind_(kind) {}
+			AstExprOper2(Line line, Kind kind, std::unique_ptr<AstExpr> left, std::unique_ptr<AstExpr> right, std::unique_ptr<AstExpr> third = nullptr) : AstExpr (line), left_(std::move(left)), right_(std::move(right)), third_(std::move(third)), kind_(kind) {}
 
 			auto kind() const { return kind_; }
+			auto &left() { return *left_; }
+			auto &right() { return *right_; }
+			auto &third() { return *third_; }
+			bool has_third() const { return third_ != nullptr; }
 			void update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third);
-			ImplExpr* emit(EmitInfo& ei) override;
-			void calculate_size(CodeBufferSizeCalculator &) const override;
+			void emit(EmitInfo& ei) override;
+
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static void initialize_serialization_functions(std::span<std::function<ImplExpr*(Deserializer&, Line)>> functions);
 		};
 	}
 }

@@ -18,7 +18,7 @@ public:
                 pp.push_back(*p4);
             }
         }
-        auto code = vm.compile("test.os", std::format(R"(
+        auto code = compile(__LINE__, vm, "test.os", std::format(R"(
 a = {} 1, 2, 3 {};
 result = 0;
 if (a == b) result = result | 1;
@@ -29,14 +29,14 @@ if (a <  b) result = result | 16;
 if (a >  b) result = result | 32;
 return result;
     )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"), std::vector<std::string>{ "b" });
-        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? vm.create_tuple(std::move(pp)) : vm.create_array(std::span{ pp.begin(), pp.end() }) } } };
+        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? OwcaValue{ vm.create_tuple(std::move(pp)) } : OwcaValue{ vm.create_array(std::span{ pp.begin(), pp.end() }) } } } };
         auto val = vm.execute(code, vm.create_map(map_data));
         ASSERT_EQ(val.as_float(vm), expected) << val.to_string();
     }
     void run_basic_test(int mode) {
         OwcaVM vm;
 
-        auto code = vm.compile("test.os", R"(
+        auto code = compile(__LINE__, vm, "test.os", R"(
     function cmp(a, b, c, d) {
         if (a == b) {
             if (not c) return d + 1;

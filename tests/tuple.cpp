@@ -47,7 +47,7 @@ TEST_F(TupleTest, owca_iter)
 	OwcaVM vm;
 	auto t = vm.create_tuple({1, 2, 3, 4});
 	std::vector<double> values;
-	for(auto q : t.as_tuple(vm)) {
+	for(auto q : t) {
 		values.push_back(q.as_float(vm));
 	}
 	ASSERT_EQ(values, std::vector<double>({1, 2, 3, 4}));
