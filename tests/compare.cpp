@@ -19,18 +19,20 @@ public:
             }
         }
         auto code = compile(__LINE__, vm, "test.os", std::format(R"(
-a = {} 1, 2, 3 {};
-result = 0;
-if (a == b) result = result | 1;
-if (a != b) result = result | 2;
-if (a <= b) result = result | 4;
-if (a >= b) result = result | 8;
-if (a <  b) result = result | 16;
-if (a >  b) result = result | 32;
-return result;
-    )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"), std::vector<std::string>{ "b" });
-        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "b", is_tuple ? OwcaValue{ vm.create_tuple(std::move(pp)) } : OwcaValue{ vm.create_array(std::span{ pp.begin(), pp.end() }) } } } };
-        auto val = vm.execute(code, vm.create_map(map_data));
+function r(b) {{
+    a = {} 1, 2, 3 {};
+    result = 0;
+    if (a == b) result = result | 1;
+    if (a != b) result = result | 2;
+    if (a <= b) result = result | 4;
+    if (a >= b) result = result | 8;
+    if (a <  b) result = result | 16;
+    if (a >  b) result = result | 32;
+    return result;
+}}
+)", is_tuple ? "(" : "[", is_tuple ? ")" : "]"));
+        auto b_val = is_tuple ? OwcaValue{ vm.create_tuple(std::move(pp)) } : OwcaValue{ vm.create_array(std::span{ pp.begin(), pp.end() }) };
+        auto val = vm.execute(code).member("r").call(b_val);
         ASSERT_EQ(val.as_float(vm), expected) << val.to_string();
     }
     void run_basic_test(int mode) {
@@ -65,88 +67,89 @@ return result;
         10: [ 1, 2 ],
         11: { 1, 2 },
     };
-    function create() {
-        return objects[mode];
+    function r(mode) {
+        function create() {
+            return objects[mode];
+        }
+        d = cmp(create(), nul, mode == 0, 10);
+        if (d) return d;
+
+        d = cmp(create(), nul, mode == 0, 15);
+        if (d) return d;
+
+        d = cmp(create(), (1:2), mode == 1, 20);
+        if (d) return d;
+
+        d = cmp(create(), (2:3), false, 25);
+        if (d) return d;
+
+        d = cmp(create(), true, mode == 2, 30);
+        if (d) return d;
+
+        d = cmp(create(), false, false, 35);
+        if (d) return d;
+
+        d = cmp(create(), 1, mode == 3, 40);
+        if (d) return d;
+
+        d = cmp(create(), 2, false, 45);
+        if (d) return d;
+
+        d = cmp(create(), 1.0, mode == 3, 50);
+        if (d) return d;
+
+        d = cmp(create(), 1.5, false, 55);
+        if (d) return d;
+
+        d = cmp(create(), "1", mode == 4, 60);
+        if (d) return d;
+
+        d = cmp(create(), "2", false, 65);
+        if (d) return d;
+
+        d = cmp(create(), cmp, mode == 5, 70);
+        if (d) return d;
+
+        d = cmp(create(), create, false, 75);
+        if (d) return d;
+
+        d = cmp(create(), { 1 : 2 }, mode == 6, 80);
+        if (d) return d;
+
+        d = cmp(create(), { 1: 2, 3: 4 }, false, 85);
+        if (d) return d;
+
+        d = cmp(create(), String, mode == 7, 90);
+        if (d) return d;
+
+        d = cmp(create(), q, mode == 8, 100);
+        if (d) return d;
+
+        d = cmp(create(), q2, false, 105);
+        if (d) return d;
+
+        d = cmp(create(), (1, 2), mode == 9, 110);
+        if (d) return d;
+
+        d = cmp(create(), (1, ), false, 115);
+        if (d) return d;
+
+        d = cmp(create(), [ 1, 2 ], mode == 10, 120);
+        if (d) return d;
+
+        d = cmp(create(), [ 1, 3 ], false, 125);
+        if (d) return d;
+
+        d = cmp(create(), { 1, 2 }, mode == 11, 120);
+        if (d) return d;
+
+        d = cmp(create(), { 1, 3 }, false, 125);
+        if (d) return d;
+
+        return 0;
     }
-    d = cmp(create(), nul, mode == 0, 10);
-    if (d) return d;
-
-    d = cmp(create(), nul, mode == 0, 15);
-    if (d) return d;
-
-    d = cmp(create(), (1:2), mode == 1, 20);
-    if (d) return d;
-
-    d = cmp(create(), (2:3), false, 25);
-    if (d) return d;
-
-    d = cmp(create(), true, mode == 2, 30);
-    if (d) return d;
-
-    d = cmp(create(), false, false, 35);
-    if (d) return d;
-
-    d = cmp(create(), 1, mode == 3, 40);
-    if (d) return d;
-
-    d = cmp(create(), 2, false, 45);
-    if (d) return d;
-
-    d = cmp(create(), 1.0, mode == 3, 50);
-    if (d) return d;
-
-    d = cmp(create(), 1.5, false, 55);
-    if (d) return d;
-
-    d = cmp(create(), "1", mode == 4, 60);
-    if (d) return d;
-
-    d = cmp(create(), "2", false, 65);
-    if (d) return d;
-
-    d = cmp(create(), cmp, mode == 5, 70);
-    if (d) return d;
-
-    d = cmp(create(), create, false, 75);
-    if (d) return d;
-
-    d = cmp(create(), { 1 : 2 }, mode == 6, 80);
-    if (d) return d;
-
-    d = cmp(create(), { 1: 2, 3: 4 }, false, 85);
-    if (d) return d;
-
-    d = cmp(create(), String, mode == 7, 90);
-    if (d) return d;
-
-    d = cmp(create(), q, mode == 8, 100);
-    if (d) return d;
-
-    d = cmp(create(), q2, false, 105);
-    if (d) return d;
-
-    d = cmp(create(), (1, 2), mode == 9, 110);
-    if (d) return d;
-
-    d = cmp(create(), (1, ), false, 115);
-    if (d) return d;
-
-    d = cmp(create(), [ 1, 2 ], mode == 10, 120);
-    if (d) return d;
-
-    d = cmp(create(), [ 1, 3 ], false, 125);
-    if (d) return d;
-
-    d = cmp(create(), { 1, 2 }, mode == 11, 120);
-    if (d) return d;
-
-    d = cmp(create(), { 1, 3 }, false, 125);
-    if (d) return d;
-
-    return 0;
-    )", std::vector<std::string>{ "mode" });
-        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "mode", mode } } };
-        auto val = vm.execute(code, vm.create_map(map_data));
+    )");
+        auto val = vm.execute(code).member("r").call(mode);
         ASSERT_EQ(val.as_float(vm), 0) << val.to_string();
     }
 };

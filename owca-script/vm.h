@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_VM_H
 #define RC_OWCA_SCRIPT_VM_H
 
+#include "owca-script/owca_namespace.h"
 #include "stdafx.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
@@ -9,6 +10,8 @@
 #include "impl_base.h"
 #include "owca_variable.h"
 #include "owca_code.h"
+#include <unordered_map>
+#include <vector>
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -30,7 +33,6 @@ namespace OwcaScript {
 			friend class ExecutionFrame;
 			
 			AllocationEmpty root_allocated_memory;
-			std::unordered_map<std::string, OwcaValue> builtin_objects;
 			std::unique_ptr<Executor> executor;
 			
 			Class *c_nul = nullptr;
@@ -52,6 +54,7 @@ namespace OwcaScript {
 			Class *c_math_exception = nullptr;
 			Class *c_invalid_operation_exception = nullptr;
 			Class *c_iterator = nullptr;
+			Class *c_namespace = nullptr;
 			Tuple *empty_tuple = nullptr;
 			String *empty_string = nullptr;
 			unsigned int generation_gc = 0;
@@ -60,12 +63,13 @@ namespace OwcaScript {
 			std::optional<OwcaValue> value_to_yield;
 			std::optional<ClassToken> currently_building_class;
 			std::list<OwcaValue> temp_gc_protect_list;
+			std::vector<std::string_view> builtin_identifiers;
 
 			void initialize_builtins();
 
 			struct BuiltinProvider;
 		public:
-			std::string_view current_class_in_progress;
+			static constexpr const std::string builtin_filename = "<builtin>";
 
 			VM();
 			~VM();
@@ -143,8 +147,8 @@ namespace OwcaScript {
 			// ExecutionFrame *current_frame();
 			// std::generator<ExecutionFrame*> iterate_frames() const;
 
-			const auto &get_builtin_objects() const { return builtin_objects; }
-			OwcaValue execute_code_block(const OwcaCode&, std::optional<OwcaMap> values, OwcaMap *output_dict);
+			auto get_builtin_identifiers() const { return builtin_identifiers; }
+			OwcaNamespace execute_code_block(const OwcaCode&);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			std::optional<OwcaValue> resume_generator(OwcaIterator oi);
 			OwcaArray create_array(std::deque<OwcaValue> arguments);
@@ -156,6 +160,7 @@ namespace OwcaScript {
 			OwcaMap create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
 			OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
 			OwcaSet create_set(const std::span<OwcaValue> &arguments);
+			OwcaNamespace create_namespace(OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index);
 			OwcaString create_string_from_view(std::string_view txt);
 			OwcaString create_string(OwcaString str, size_t start, size_t end);
 			OwcaString create_string(OwcaString str, size_t count);
@@ -213,6 +218,11 @@ namespace OwcaScript {
 		template <std::floating_point T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, T) {}
 		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::string &) {}
 		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, std::string_view) {}
+		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, std::span<T> vct) {
+			for(auto &q : vct) {
+				gc_mark_value(vm, ggc, q);
+			}
+		}
 		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::vector<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);

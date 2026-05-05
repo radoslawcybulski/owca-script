@@ -20,16 +20,8 @@ namespace OwcaScript {
 
 	OwcaVM::~OwcaVM() = default;
 
-	OwcaValue OwcaVM::execute(const OwcaCode &oc) {
-		return vm->execute_code_block(oc, std::nullopt, nullptr);
-	}
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaMap values) {
-		return vm->execute_code_block(oc, values, nullptr);
-	}
-
-	OwcaValue OwcaVM::execute(const OwcaCode &oc, OwcaMap values, OwcaMap *output_dict)
-	{
-		return vm->execute_code_block(oc, values, output_dict);
+	OwcaNamespace OwcaVM::execute(const OwcaCode &oc) {
+		return vm->execute_code_block(oc);
 	}
 	OwcaValue OwcaVM::get_member(OwcaValue self, std::string_view key) {
 		return vm->member(self, key);
@@ -41,23 +33,14 @@ namespace OwcaScript {
 		return vm->execute_call(func, values);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider)
+	OwcaCode OwcaVM::compile(std::string filename, std::string content, size_t first_line)
 	{
-		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), 1);
-	}
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line)
-	{
-		return compile(std::move(filename), std::move(content), std::move(additional_variables), nullptr, first_line);
+		return compile(std::move(filename), std::move(content), nullptr, first_line);
 	}
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
 	{
-		return compile(std::move(filename), std::move(content), {}, std::move(native_code_provider), first_line);
-	}
-
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
-	{
 		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
-		auto v = compiler.compile(std::move(additional_variables));
+		auto v = compiler.compile();
 		if (!v)
 			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
 

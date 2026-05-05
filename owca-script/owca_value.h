@@ -13,6 +13,7 @@
 #include "owca_set.h"
 #include "owca_exception.h"
 #include "owca_iterator.h"
+#include "owca_namespace.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -33,6 +34,7 @@ namespace OwcaScript {
 		Set,
 		Iterator,
 		Exception,
+		Namespace,
 		_Count,
 	};
 
@@ -126,6 +128,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
 		OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaNamespace value): OwcaValue(OwcaValueKind::Namespace, value.internal_value(), nullptr) {}
 
 		OwcaValueKind kind() const;
 		long long int as_int(OwcaVM ) const;
@@ -146,7 +149,7 @@ namespace OwcaScript {
 		OwcaSet as_set(OwcaVM ) const;
 		OwcaException as_exception(OwcaVM) const;
 		OwcaIterator as_iterator(OwcaVM) const;
-
+		OwcaNamespace as_namespace(OwcaVM) const;
 		std::string_view type() const;
 		std::string to_string() const;
 
@@ -156,7 +159,11 @@ namespace OwcaScript {
 
 		OwcaValue member(const std::string& key) const;
 		void member(const std::string& key, OwcaValue val);
-		OwcaValue call(std::span<OwcaValue> args) const;
+		OwcaValue call_with_args(std::span<OwcaValue> args) const;
+		template <typename ... ARGS> OwcaValue call(ARGS&&... args) const {
+			std::array<OwcaValue, sizeof...(ARGS)> arr{ OwcaValue(std::forward<ARGS>(args))... };
+			return call_with_args(arr);
+		}
 
 		template <typename ... F> auto visit(F &&...fns) const {
 			struct overloaded : F... {
@@ -179,6 +186,7 @@ namespace OwcaScript {
 			case OwcaValueKind::Set: return tmp(as_set(nullptr));
 			case OwcaValueKind::Exception: return tmp(as_exception(nullptr));
 			case OwcaValueKind::Iterator: return tmp(as_iterator(nullptr));
+			case OwcaValueKind::Namespace: return tmp(as_namespace(nullptr));
 			case OwcaValueKind::_Count: break;
 			}
 			assert(false);

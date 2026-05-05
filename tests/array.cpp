@@ -10,9 +10,9 @@ TEST_F(ArrayTest, simple1)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-return [ 1, 2, 3, 4 ][1];
+function r() { return [ 1, 2, 3, 4 ][1]; }
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();
 	ASSERT_EQ(val.as_float(vm), 2);
 }
 
@@ -20,9 +20,9 @@ TEST_F(ArrayTest, simple2)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-return [ 1, 2, 3, 4 ][3];
+function r() { return [ 1, 2, 3, 4 ][3]; }
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();
 	ASSERT_EQ(val.as_float(vm), 4);
 }
 
@@ -30,10 +30,12 @@ TEST_F(ArrayTest, simple3)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][2:3];
-return v == [ 3 ];
+function r() { 
+	v = [ 1, 2, 3, 4 ][2:3];
+	return v == [ 3 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -41,10 +43,12 @@ TEST_F(ArrayTest, simple4)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][2:6];
-return v == [ 3, 4 ];
+function r() {
+	v = [ 1, 2, 3, 4 ][2:6];
+	return v == [ 3, 4 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -52,10 +56,12 @@ TEST_F(ArrayTest, simple5)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][-10:2];
-return v == [ 1, 2 ];
+function r() { 
+	v = [ 1, 2, 3, 4 ][-10:2];
+	return v == [ 1, 2 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -63,10 +69,12 @@ TEST_F(ArrayTest, simple6)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][-2:-1];
-return v == [ 3 ];
+function r() { 
+	v = [ 1, 2, 3, 4 ][-2:-1];
+	return v == [ 3 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -74,10 +82,12 @@ TEST_F(ArrayTest, simple7)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][-2:];
-return v == [ 3, 4 ];
+function r() {
+	v = [ 1, 2, 3, 4 ][-2:];
+	return v == [ 3, 4 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -85,10 +95,12 @@ TEST_F(ArrayTest, simple8)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][:-2];
-return v == [ 1, 2 ];
+function r() {
+	v = [ 1, 2, 3, 4 ][:-2];
+	return v == [ 1, 2 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -96,10 +108,12 @@ TEST_F(ArrayTest, simple9)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ][:];
-return v == [ 1, 2, 3, 4 ];
+function r() {
+	v = [ 1, 2, 3, 4 ][:];
+	return v == [ 1, 2, 3, 4 ];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_TRUE(val.as_bool(vm));
 }
 
@@ -107,11 +121,13 @@ TEST_F(ArrayTest, update)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = [ 1, 2, 3, 4 ];
-v[2] = 5;
-return v[2];
+function r() {
+	v = [ 1, 2, 3, 4 ];
+	v[2] = 5;
+	return v[2];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(vm), 5);
 }
 
@@ -119,15 +135,18 @@ TEST_F(ArrayTest, from_iter)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
+function r() { 
 function generator foo() {
-	yield 1;
-	yield 2;
-	yield 3;
-	yield 4;
+		yield 1;
+		yield 2;
+		yield 3;
+		yield 4;
+	}
+
+	return Array(foo()) == [ 1, 2, 3, 4 ];
 }
-return Array(foo()) == [ 1, 2, 3, 4 ];
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_TRUE(val.as_bool(vm));
 }
 

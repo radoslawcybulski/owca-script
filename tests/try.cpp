@@ -7,26 +7,26 @@ public:
     static int run(int mode)
     {
         OwcaVM vm;
-        std::vector<std::string> tmp{ { "a" } };
         auto code = vm.compile("test.os", R"(
 class A(Exception) {}
 class B(Exception) {}
-try {
-    if (a == 1) throw A("q");
-    if (a == 2) throw B("q");
+function r(a) {
+    try {
+        if (a == 1) throw A("q");
+        if (a == 2) throw B("q");
+    }
+    catch(e: A) {
+        return 1;
+    }
+    catch(e: B) {
+        return 2;
+    }
+    return 3;
 }
-catch(e: A) {
-    return 1;
-}
-catch(e: B) {
-    return 2;
-}
-return 3;
-)", tmp);
+)");
         try {
-            auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", mode } } };
-            auto val = vm.execute(code, vm.create_map(map_data));
-            return (int)val.as_int(vm);
+            auto val = vm.execute(code);
+            return (int)val.member("r").call(mode).as_int(vm);
         }
         catch(OwcaException oe) {
             return -1;

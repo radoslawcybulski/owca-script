@@ -13,9 +13,9 @@ TEST_F(ClassTest, name)
 		auto code = vm.compile("test.os", R"(
 	class A {
 	}
-	return A.name();
+	function r() { return A.name(); }
 	)");
-		auto val = vm.execute(code);
+		auto val = vm.execute(code).member("r").call();
 		ASSERT_EQ(val.as_string(vm).text(), "A");
 	}
 	catch(OwcaVM::CompilationFailed &e) {
@@ -27,11 +27,11 @@ TEST_F(ClassTest, full_name)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
+function r() { return A.full_name(); }
 class A {
 }
-return A.full_name();
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_string(vm).text(), "A");
 }
 

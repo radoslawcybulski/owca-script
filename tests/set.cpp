@@ -10,10 +10,12 @@ TEST_F(SetTest, size)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-a = { 1, 2, 3, 4 };
-return a.size();
+function r() {
+	a = { 1, 2, 3, 4 };
+	return a.size();
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(vm), 4);
 }
 
@@ -30,12 +32,14 @@ TEST_F(SetTest, simple)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-a = { 1, 2, 3, 4 };
-a.add(5);
-a.remove(3);
-return a;
+function r() {
+	a = { 1, 2, 3, 4 };
+	a.add(5);
+	a.remove(3);
+	return a;
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
     auto data = to_sorted_vector(val, vm);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2, 4, 5 }));
 }
@@ -44,12 +48,14 @@ TEST_F(SetTest, union)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
+function r() {
 a = { 1, 2, 3, 4 };
-b = { 3, 4, 5, 6 };
-a = a.union_with(b);
-return a;
+	b = { 3, 4, 5, 6 };
+	a = a.union_with(b);
+	return a;
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
     auto data = to_sorted_vector(val, vm);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2, 3, 4, 5, 6 }));
 }
@@ -58,12 +64,14 @@ TEST_F(SetTest, intersection)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-a = { 1, 2, 3, 4 };
-b = { 3, 4, 5, 6 };
-a = a.intersection_with(b);
-return a;
+function r() {
+	a = { 1, 2, 3, 4 };
+	b = { 3, 4, 5, 6 };
+	a = a.intersection_with(b);
+	return a;
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
     auto data = to_sorted_vector(val, vm);
 	ASSERT_EQ(data, std::vector<double>({ 3, 4 }));
 }
@@ -72,12 +80,14 @@ TEST_F(SetTest, difference)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-a = { 1, 2, 3, 4 };
-b = { 3, 4, 5, 6 };
-a = a.difference_with(b);
-return a;
+function r() {
+	a = { 1, 2, 3, 4 };
+	b = { 3, 4, 5, 6 };
+	a = a.difference_with(b);
+	return a;
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
     auto data = to_sorted_vector(val, vm);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2 }));
 }

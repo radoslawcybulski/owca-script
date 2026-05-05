@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_AST_COMPILER_H
 #define RC_OWCA_SCRIPT_AST_COMPILER_H
 
+#include "owca-script/ast_block.h"
 #include "stdafx.h"
 #include "owca_error_message.h"
 #include "ast_base.h"
@@ -141,11 +142,11 @@ namespace OwcaScript {
 			std::unique_ptr<AstStat> compile_while(std::string_view loop_ident);
 			std::unique_ptr<AstStat> compile_break_or_continue();
 			std::unique_ptr<AstStat> compile_stat();
-			std::unique_ptr<AstFunction> compile_main_block(std::vector<std::string_view> variables);
+			std::vector<std::unique_ptr<AstStat>> compile_main_block();
 
 			struct Phase2;
 			struct RewriteAsWrite;
-			void compile_phase_2(AstFunction& root);
+			std::vector<std::string> compile_phase_2(const std::vector<std::unique_ptr<AstStat>> &);
 		public:
 			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line) : 
 						filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) 

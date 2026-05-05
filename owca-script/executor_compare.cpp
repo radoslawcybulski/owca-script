@@ -207,6 +207,7 @@ namespace OwcaScript::Internal {
 			case OwcaValueKind::Set: return (left.as_set(vm).internal_value() == right.as_set(vm).internal_value()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::Iterator: return (left.as_iterator(vm).internal_value() == right.as_iterator(vm).internal_value()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::Exception: return (left.as_exception(vm).internal_owner() == right.as_exception(vm).internal_owner()) ? CompareResult::True : CompareResult::False;
+            case OwcaValueKind::Namespace: return (left.as_namespace(vm).internal_value() == right.as_namespace(vm).internal_value()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::Completed: return CompareResult::True;
 			case OwcaValueKind::_Count: break;
 			}

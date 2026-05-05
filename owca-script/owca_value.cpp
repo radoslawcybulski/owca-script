@@ -17,7 +17,7 @@
 namespace OwcaScript {
 
 	OwcaValueKind OwcaValue::kind() const {
-		static_assert((int)OwcaValueKind::_Count <= 15, "OwcaValueKind must fit in 4 bits");
+		static_assert((int)OwcaValueKind::_Count <= 16, "OwcaValueKind must fit in 4 bits");
 		NumberValue tmp;
 		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
 		auto k = (std::uint8_t)tmp.kind & 15;
@@ -55,7 +55,8 @@ namespace OwcaScript {
 			[](OwcaTuple o) { return !o.internal_value()->values.empty(); },
 			[](OwcaSet o) { return o.size() != 0; },
 			[](OwcaIterator o) { return !o.completed(); },
-			[](OwcaException o) { return true; }
+			[](OwcaException o) { return true; },
+			[](OwcaNamespace o) { return true; }
 		);
 	}
 
@@ -141,6 +142,12 @@ namespace OwcaScript {
 			Internal::VM::get(vm).throw_wrong_type(type(), "Set");
 		return OwcaSet{ (Internal::SetShared*)internal_ptr1() };
 	}
+	OwcaNamespace OwcaValue::as_namespace(OwcaVM vm) const
+	{
+		if (kind() != OwcaValueKind::Namespace)
+			Internal::VM::get(vm).throw_wrong_type(type(), "Namespace");
+		return OwcaNamespace{ (Internal::Namespace*)internal_ptr1() };
+	}
 	OwcaException OwcaValue::as_exception(OwcaVM vm) const
 	{
 		if (kind() == OwcaValueKind::Exception)
@@ -178,7 +185,8 @@ namespace OwcaScript {
 			[](OwcaTuple) -> std::string_view { return "Tuple"; },
 			[](OwcaSet) -> std::string_view { return "Set"; },
 			[](OwcaIterator) -> std::string_view { return "Iterator"; },
-			[](OwcaException o) -> std::string_view { return o.internal_owner()->type(); }
+			[](OwcaException o) -> std::string_view { return o.internal_owner()->type(); },
+			[](OwcaNamespace) -> std::string_view { return "Namespace"; }
 			);
 	}
 
@@ -199,7 +207,8 @@ namespace OwcaScript {
 			[](OwcaTuple o) -> std::string { return o.to_string(); },
 			[](OwcaSet o) -> std::string { return o.to_string(); },
 			[](OwcaIterator o) -> std::string { return o.internal_value()->to_string(); },
-			[](OwcaException o) -> std::string { return o.internal_value()->to_string(); }
+			[](OwcaException o) -> std::string { return o.internal_value()->to_string(); },
+			[](OwcaNamespace o) -> std::string { return o.to_string(); }
 			);
 	}
 
@@ -217,7 +226,7 @@ namespace OwcaScript {
 		return Internal::VM::get(vm).member(*this, key, std::move(val));
 	}
 
-	OwcaValue OwcaValue::call(std::span<OwcaValue> args) const {
+	OwcaValue OwcaValue::call_with_args(std::span<OwcaValue> args) const {
 		return visit(
 			[&](OwcaFunctions o) -> OwcaValue {
 				return o.internal_value()->vm->execute_call(*this, args);
@@ -244,6 +253,7 @@ namespace OwcaScript {
 			[&](OwcaTuple o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
 			[&](OwcaSet o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
 			[&](OwcaIterator o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
+			[&](OwcaNamespace o) -> OwcaValue { return o.member(key); },
 			[&](auto) -> OwcaValue { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
 			);
 	}
@@ -260,6 +270,7 @@ namespace OwcaScript {
 			[&](OwcaTuple o) -> void { o.internal_value()->vm->member(*this, key, val); },
 			[&](OwcaSet o) -> void { o.internal_value()->vm->member(*this, key, val); },
 			[&](OwcaIterator o) -> void { o.internal_value()->vm->member(*this, key, val); },
+			[&](OwcaNamespace o) -> void { o.member(key, std::move(val)); },
 			[&](auto) -> void { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
 			);
 	}

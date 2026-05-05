@@ -39,7 +39,7 @@ namespace OwcaScript::Internal {
 	}
 
 	OwcaValue RuntimeFunctionScriptFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) {
-		return e.run_script_code(this, temporary_ptr, states_ptr, param_count, true);
+		return e.run_script_code(this, globals_ptr, temporary_ptr, states_ptr, param_count, true);
 	}
 
 	void RuntimeFunctionScriptGenerator::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
@@ -65,7 +65,7 @@ namespace OwcaScript::Internal {
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
         auto states_span = std::span{ states_vec.data(), states_vec.size() };
         auto iter = vm->allocate<Iterator>(0, this, values_span, states_span);
-        iter->generator = e.run_script_generator(iter, this, std::move(values_vec), std::move(states_vec), entry_point);
+        iter->generator = e.run_script_generator(iter, this, globals_ptr, std::move(values_vec), std::move(states_vec), entry_point);
         return OwcaIterator{ iter };
 	}
 

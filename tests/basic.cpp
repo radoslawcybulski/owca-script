@@ -10,16 +10,16 @@ TEST_F(SimpleTest, empty)
 TEST_F(SimpleTest, simple)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", "return 14;");
-	auto val = vm.execute(code);
+	auto code = vm.compile("test.os", "function r() { return 14; }");
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(vm), 14);
 }
 
 TEST_F(SimpleTest, string)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", "return 'qwe' + 'rty';");
-	auto val = vm.execute(code);
+	auto code = vm.compile("test.os", "function r() { return 'qwe' + 'rty'; }");
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_string(vm).text(), "qwerty");
 }
 
@@ -27,19 +27,23 @@ TEST_F(SimpleTest, range)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-return 'qwerty'[2:4];
+function r() {
+    return 'qwerty'[2:4];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_string(vm).text(), "er");
 }
 TEST_F(SimpleTest, dict)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-v = { 'a': 1, 'b': 2 };
-return v['a'] + v['b'];
+function r() {
+    v = { 'a': 1, 'b': 2 };
+    return v['a'] + v['b'];
+}
 )");
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(vm), 3);
 }
 TEST_F(SimpleTest, native_func)
@@ -58,19 +62,22 @@ TEST_F(SimpleTest, native_func)
 	};
 	auto code = vm.compile("test.os", R"(
 function native foo(a, b);
-return foo(1, 2);
+function r() {
+    return foo(1, 2);
+}
 )", std::make_shared<Provider>());
-	auto val = vm.execute(code);
+	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(vm), 3);
 }
 TEST_F(SimpleTest, external_vars)
 {
 	OwcaVM vm;
 	auto code = vm.compile("test.os", R"(
-return q + b + c;
-)", std::vector<std::string>{ "q", "b", "c" });
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
-	auto val = vm.execute(code, vm.create_map(map_data));
+function r(q, b, c) {
+    return q + b + c;
+}
+)");
+	auto val = vm.execute(code).member("r").call(1, 2, 3);
 
 	ASSERT_EQ(val.as_float(vm), 6);
 }
@@ -83,10 +90,11 @@ class A {
 		self.value = a + b + c;
 	}
 }
-return A(q, b, c);
-)", std::vector<std::string>{ "q", "b", "c" });
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
-	auto val = vm.execute(code, vm.create_map(map_data));
+function r(q, b, c) {
+    return A(q, b, c);
+}
+)");
+	auto val = vm.execute(code).member("r").call(1, 2, 3);
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_float(vm), 6);
 }
@@ -119,10 +127,11 @@ class native A {
 		self.value = a + b + c;
 	}
 }
-return A(q, b, c);
-)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
-	auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
-	auto val = vm.execute(code, vm.create_map(map_data));
+function r(q, b, c) {
+    return A(q, b, c);
+}
+)", std::make_shared<Provider>());
+	auto val = vm.execute(code).member("r").call(1, 2, 3);
 	auto val2 = val.member(vm, "value");
 	ASSERT_EQ(val2.as_float(vm), 6);
 }
@@ -178,14 +187,12 @@ TEST_F(SimpleTest, native_class_with_funcs)
 		function native set_value(self, v);
 		function native get_value(self);
 	}
-	return A(q, b, c);
-	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>());
-		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
-		auto val = vm.execute(code, vm.create_map(map_data));
-		
-		code = vm.compile("test.os", "return a.get_value();", std::vector<std::string>{ "a" });
-		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
-		auto val2 = vm.execute(code, vm.create_map(map_data));
+	function r(q, b, c) {
+		return A(q, b, c);
+	}
+	)", std::make_shared<Provider>());
+		auto val = vm.execute(code).member("r").call(1, 2, 3);
+		auto val2 = val.member(vm, "get_value").call();
 		ASSERT_EQ(val2.as_float(vm), 6);
 	}
 	catch(std::exception &e) {
@@ -252,16 +259,15 @@ TEST_F(SimpleTest, native_class_with_vars)
 		}
 		var value;
 	}
-	return A(q, b, c);
-	)", std::vector<std::string>{ "q", "b", "c" }, std::make_shared<Provider>(reads, writes));
-		auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "q", 1 }, { "b", 2 }, { "c", 3 } } };
-		auto val = vm.execute(code, vm.create_map(map_data));
+	function r(q, b, c) {
+		return A(q, b, c);
+	}
+	)", std::make_shared<Provider>(reads, writes));
+		auto val = vm.execute(code).member("r").call(1, 2, 3);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
-		
-		code = vm.compile("test.os", "return a.value;", std::vector<std::string>{ "a" });
-		map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", val } } };
-		auto val2 = vm.execute(code, vm.create_map(map_data));
+
+		auto val2 = val.member(vm, "value");
 		ASSERT_EQ(val2.as_float(vm), 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
@@ -324,16 +330,18 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		};
 		unsigned int reads = 0, writes = 0;
 		auto code = vm.compile("test.os", R"(
-	class native A {
-		var value;
+class native A {
+	var value;
 
-		function get(self) {
-			return self.value + 100;
-		}
+	function get(self) {
+		return self.value + 100;
 	}
+}
+function r() {
 	return A();
-	)", {}, std::make_shared<Provider>(reads, writes));
-		auto object = vm.execute(code);
+}
+	)", std::make_shared<Provider>(reads, writes));
+		auto object = vm.execute(code).member("r").call();
 		ASSERT_EQ(writes, 0);
 		ASSERT_EQ(reads, 0);
 		
@@ -369,7 +377,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 		ASSERT_EQ(val.as_float(vm), 6);
 
 		fnc = object.member("get");
-		val = fnc.call({});
+		val = fnc.call();
 
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 5);
@@ -420,9 +428,11 @@ TEST_F(SimpleTest, variable_missing)
 		function get1(self) { return self.value; }
 		function get2(self) { return self.value2; }
 	}
-	return A();
-	)", {}, std::make_shared<Provider>());
-		object = vm.execute(code);
+	function r() {
+		return A();
+	}
+	)", std::make_shared<Provider>());
+		object = vm.execute(code).member("r").call();;
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";

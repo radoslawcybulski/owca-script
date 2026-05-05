@@ -42,15 +42,15 @@ namespace OwcaScript {
 			std::vector<AstFunction::CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
 			ExecuteBufferReader::Position entry_point{ 0 };
+			Executor::GlobalsPtr globals_ptr;
 		protected:
-			RuntimeFunctionScript(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, ExecuteBufferReader::Position entry_point) : 
-					RuntimeFunction(std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point) {}
+			RuntimeFunctionScript(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, ExecuteBufferReader::Position entry_point, Executor::GlobalsPtr globals_ptr) : 
+					RuntimeFunction(std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
-
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point) {}
+			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
 		};
@@ -58,7 +58,7 @@ namespace OwcaScript {
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
 			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptGenerator(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point) {}
+			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
 		};

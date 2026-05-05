@@ -1161,27 +1161,20 @@ namespace OwcaScript::Internal {
 		return compile_expression_as_stat();
 	}
 
-	std::unique_ptr<AstFunction> AstCompiler::compile_main_block(std::vector<std::string_view> variables)
+	std::vector<std::unique_ptr<AstStat>> AstCompiler::compile_main_block()
 	{
 		functions_stack.clear();
-		auto mb = std::format("<main-block {}>", filename_);
-		auto f = std::make_unique<AstFunction>(Line{ 1 }, mb, mb, std::move(variables), 0, AstFunction::Native::No, AstFunction::Generator::No);
-		functions_stack.push_back(f.get());
-		
+
 		try {
 			std::vector<std::unique_ptr<AstStat>> temp;
 
 			while (!eof()) {
 				temp.push_back(compile_stat());
 			}
-
-			functions_stack.pop_back();
-			f->update_body(std::make_unique<AstBlock>(Line{ 1 }, std::move(temp)));
-
-			return f;
+			return temp;
 		}
 		catch (CompilationError) {
-			return nullptr;
+			return {};
 		}
 	}
 
@@ -1244,6 +1237,9 @@ namespace OwcaScript::Internal {
 				auto [ index, writeable ] = *index_pp;
 				if (!writeable) comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack", name));
 				return index;
+			}
+			bool is_global() const {
+				return parent == nullptr;
 			}
 		};
 		std::unordered_map<AstFunction*, Stack> stacks;
@@ -1347,7 +1343,7 @@ namespace OwcaScript::Internal {
 						if (!writable) 
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_value_to_write_index(index);
+					o.update_identifier_index(index, current_stack->is_global());
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
@@ -1360,8 +1356,8 @@ namespace OwcaScript::Internal {
 
 			if (first_run) {
 				if (current_stack->parent == nullptr) {
-					for(auto &it : compiler->vm.get_builtin_objects()) {
-						current_stack->define_identifier(it.first);
+					for(auto it : compiler->vm.get_builtin_identifiers()) {
+						current_stack->define_identifier(it);
 					}
 				}
 				for (auto& p : o.identifier_names()) {
@@ -1382,27 +1378,43 @@ namespace OwcaScript::Internal {
 
 			current_stack = st.parent;
 		}
+		void initialize_global_stack() {
+			auto &st = stacks[nullptr];
+			st.owner = nullptr;
+			st.parent = nullptr;
+			current_stack = &st;
+		}
 	};
 
-	void AstCompiler::compile_phase_2(AstFunction &root)
+	std::vector<std::string> AstCompiler::compile_phase_2(const std::vector<std::unique_ptr<AstStat>>& root)
 	{
 		auto p = Phase2{ this };
+		p.initialize_global_stack();
 		p.first_run = true;
-		root.visit(p);
+		for(auto &r : root) {
+			r->visit(p);
+		}
 		p.first_run = false;
-		root.visit(p);
+		for(auto &r : root) {
+			r->visit(p);
+		}
+		auto stack = p.stacks[nullptr];
+		std::vector<std::string> ident_names;
+		for(auto v : stack.identifier_names) {
+			ident_names.push_back(std::string{ v });
+		}
+		return ident_names;
 	}
 
 	std::optional<OwcaCode> AstCompiler::compile(std::vector<std::string> additional_variables)
 	{
-		auto root = compile_main_block(std::vector<std::string_view>{ additional_variables.begin(), additional_variables.end() });
+		auto root = compile_main_block();
 		if (!error_messages_.empty()) {
 			assert(!error_messages_.empty());
 			return std::nullopt;
 		}
-		assert(root);
 
-		compile_phase_2(*root);
+		auto ident_names = compile_phase_2(root);
 		if (!error_messages_.empty()) {
 			return std::nullopt;
 		}
@@ -1410,8 +1422,15 @@ namespace OwcaScript::Internal {
 		auto ei = AstBase::EmitInfo{
 			.compiler = *this
 		};
-		root->emit(ei);
-		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::ReturnValue);
+		ei.code_writer.append(Line{ 0 }, (std::uint32_t)ident_names.size());
+		for(auto &name : ident_names) {
+			ei.code_writer.append(Line{ 0 }, name);
+		}
+
+		for(auto &r : root) {
+			r->emit(ei);
+		}
+		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 		assert(error_messages_.empty());
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();

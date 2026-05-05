@@ -10,6 +10,7 @@
 #include "tuple.h"
 #include "iterator.h"
 #include "range.h"
+#include "namespace.h"
 
 namespace OwcaScript {
 	OwcaFunctions::OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::AllocationBase* self_object) : functions(functions), self_object(self_object) {}
@@ -51,6 +52,7 @@ namespace OwcaScript {
 		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };
 		case Internal::AllocationBase::Kind::BoundSelfObject: return static_cast<Internal::BoundFunctionSelfObject*>(self_object)->self;
 		case Internal::AllocationBase::Kind::Range: return OwcaRange{ static_cast<Internal::Range*>(self_object) };
+		case Internal::AllocationBase::Kind::Namespace: return OwcaNamespace{ static_cast<Internal::Namespace*>(self_object) };
 		}
 		assert(false);
 		return {};

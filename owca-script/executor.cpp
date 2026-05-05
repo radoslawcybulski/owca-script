@@ -1,4 +1,5 @@
 #include "execution_frame.h"
+#include "owca-script/owca_namespace.h"
 #include "owca_exception.h"
 #include "owca_iterator.h"
 #include "owca_map.h"
@@ -17,6 +18,7 @@
 #include "dictionary.h"
 #include "ast_function.h"
 #include "exception.h"
+#include "namespace.h"
 
 #ifdef DEBUG
 //#define OWCA_SCRIPT_EXEC_LOG
@@ -351,7 +353,7 @@ namespace OwcaScript::Internal {
         );
     }
 
-    OwcaValue Executor::create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, LocalsPtr locals_ptr, StatesTypePtr states_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds)
+    OwcaValue Executor::create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, StatesTypePtr states_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds)
     {
         auto &code_object = stacktrace.back().runtime_function->code;
         auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
@@ -419,10 +421,10 @@ namespace OwcaScript::Internal {
 
             RuntimeFunctionScript *f;
             if (is_generator) {
-                f = vm->allocate<RuntimeFunctionScriptGenerator>(0, code_object, name, full_name, is_method, entry_point);
+                f = vm->allocate<RuntimeFunctionScriptGenerator>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
             }
             else {
-                f = vm->allocate<RuntimeFunctionScriptFunction>(0, code_object, name, full_name, is_method, entry_point);
+                f = vm->allocate<RuntimeFunctionScriptFunction>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
             }
             fnc = f;
             f->identifier_names = std::move(identifier_names);
@@ -441,7 +443,7 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, Executor::TemporariesPtr, Executor::StatesTypePtr, ExecuteBufferReader::Position> Executor::run_opcodes(const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
+    std::tuple<OwcaValue, Executor::TemporariesPtr, Executor::StatesTypePtr, ExecuteBufferReader::Position> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
     {
         assert(!stacktrace.empty());
         const size_t stacktrace_index = stacktrace.size() - 1;
@@ -648,6 +650,21 @@ restart:
                     auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     auto &val = PEEK_VALUE(1);
                     auto &tgt = LOCAL_VAR(index);
+                    tgt = set_identifier_function(tgt, val);
+                    val = tgt;
+                    break; }
+                case ExecuteBufferReader::Op::ExprGlobalRead: {
+                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    PUSH_VALUE(globals_ptr[index]);
+                    break; }
+                case ExecuteBufferReader::Op::ExprGlobalWrite: {
+                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    globals_ptr[index] = PEEK_VALUE(1);
+                    break; }
+                case ExecuteBufferReader::Op::ExprGlobalFunctionWrite: {
+                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    auto &val = PEEK_VALUE(1);
+                    auto &tgt = globals_ptr[index];
                     tgt = set_identifier_function(tgt, val);
                     val = tgt;
                     break; }
@@ -860,7 +877,7 @@ restart:
                     POP_STATE();
                     break; }
                 case ExecuteBufferReader::Op::Function: {
-                    PUSH_VALUE(create_function(start_code, code_pos, locals_ptr, states_ptr, data_kinds));
+                    PUSH_VALUE(create_function(start_code, code_pos, globals_ptr, locals_ptr, states_ptr, data_kinds));
                     break; }
                 case ExecuteBufferReader::Op::If: {
                     auto val = PEEK_VALUE(1).is_true();
@@ -1209,7 +1226,7 @@ next_iteration:
         POP_VALUES(1);
     }
 
-    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, bool clear_locals) {
+    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, bool clear_locals) {
         auto locals_ptr = temporary_ptr.locals(arg_count);
         const auto max_values = function->max_values;
         temporary_ptr = temporary_ptr + max_values - arg_count;
@@ -1230,7 +1247,7 @@ next_iteration:
 
         PUSH_STATE(EmptyState{});
         auto est = StackTraceState{ *this, function, function->entry_point };
-        auto [ retval, new_values_ptr, new_states_ptr, new_code_pos ] = run_opcodes(locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, function->entry_point);
+        auto [ retval, new_values_ptr, new_states_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, function->entry_point);
         return retval;
     }
     // OwcaValue Executor::run_native_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeFunction& sf) {
@@ -1243,7 +1260,7 @@ next_iteration:
     //     update_current_top_ptrs(temporary_ptr + function->max_temporaries, states_ptr);
     //     return sf.function(vm, std::span{ locals_ptr.local_values_ptr, arg_count });
     // }
-    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos)
+    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
         auto states_ptr = StatesTypePtr{ states_vec.data() + 1 };
@@ -1253,7 +1270,7 @@ next_iteration:
             OwcaValue val;
             {
                 auto est = StackTraceState{ *this, function, code_pos };
-                auto [ retval, new_temporary_ptr, new_states_ptr, new_code_pos ] = run_opcodes(locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, code_pos);
+                auto [ retval, new_temporary_ptr, new_states_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, code_pos);
                 assert(new_temporary_ptr.temporaries_ptr == temporary_ptr.temporaries_ptr);
                 val = retval;
                 states_ptr = new_states_ptr;
@@ -1504,51 +1521,44 @@ next_iteration:
     }
 
 
-	OwcaValue Executor::execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values_to_set, OwcaMap *dict_output)
+	OwcaNamespace Executor::execute_code_block(OwcaCode oc)
 	{
-        auto tpk = TopPtrsKeeper{ *this };
+        auto it = namespaces.find(oc.filename());
+        if (it != namespaces.end()) {
+            return OwcaNamespace{ it->second };
+        }
 
-        auto runtime_function = vm->allocate<RuntimeFunctionScriptFunction>(0, oc, std::string_view("main-code-block"), std::string_view("main-code-block"), false, CodePosition{ oc.code().data()});
+        auto tpk = TopPtrsKeeper{ *this };
+        auto code_pos = CodePosition{ oc.code().data()};
+        auto start_code = StartOfCode{};
+        auto &data_kinds = oc.data_kinds();
+
+        auto global_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+        std::unordered_map<std::string_view, size_t> identifier_to_global_index;
+        for(auto i = 0u; i < global_count; ++i) {
+            auto ident = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+            identifier_to_global_index[ident] = i;
+        }
+        auto ns = vm->create_namespace(std::move(oc), std::move(identifier_to_global_index));
+        namespaces.insert({ ns.internal_value()->code.filename(), ns});
+        if (!namespaces.empty()) {
+            auto ns_it = namespaces.at(vm->builtin_filename);
+            for(auto it : ns_it.internal_value()->identifier_to_global_index) {
+                auto val = ns_it.internal_value()->globals[it.second];
+                ns.try_member(it.first, val);
+            }
+        }
+
         auto temporary_ptr = temporary_ptr_current_top;
         auto locals_ptr = temporary_ptr.locals(0);
         auto states_ptr = states_ptr_current_top;
+        auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
         PUSH_STATE(EmptyState{});
-        auto fnc = runtime_function->call(*this, temporary_ptr, states_ptr);
-        auto f = fnc.as_functions(vm);
-        auto f2 = dynamic_cast<RuntimeFunctionScriptFunction*>(f.internal_value()->functions[0]);
-        assert(f2);
-        assert(!f.self());
-        
-        {
-            std::unordered_map<std::string_view, unsigned int> value_index_map;
-            for (auto i = 0u; i < f2->identifier_names.size(); ++i) {
-                value_index_map[f2->identifier_names[i]] = i;
-            }
-            
-            for(auto &it : vm->builtin_objects) {
-                auto it2 = value_index_map.find(it.first);
-                assert(it2 != value_index_map.end());
-                LOCAL_VAR(it2->second) = it.second;
-            }
-            if (values_to_set) {
-                for (auto it : *values_to_set) {
-                    auto key = it.first.as_string(vm).text();
-                    auto it2 = value_index_map.find(key);
-                    if (it2 != value_index_map.end()) {
-                        LOCAL_VAR(it2->second) = it.second;
-                    }
-                }
-            }
-        }
 
-        auto retval = run_script_code(f2, temporary_ptr, states_ptr, f2->param_count, false);
-        if (dict_output) {
-            for (auto i = 0u; i < f2->identifier_names.size(); ++i) {
-                auto key = vm->create_string_from_view(f2->identifier_names[i]);
-                (*dict_output)[key] = LOCAL_VAR(i);
-            }
-        }
-        return retval;
+        auto function = vm->allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, CodePosition{ ns.internal_value()->code.code().data()});
+        auto est = StackTraceState{ *this, function, function->entry_point };
+        run_opcodes(globals_ptr, locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, code_pos);
+        return ns;
     }
 
     OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
@@ -1863,6 +1873,9 @@ next_iteration:
         );
     }
     void gc_mark_value(OwcaVM vm, GenerationGC ggc, const Executor &e) {
+        for(auto it : e.namespaces) {
+            gc_mark_value(vm, ggc, it.second);
+        }
         for(auto v = e.values_vector.data(); v < e.temporary_ptr_current_top.temporaries_ptr; ++v) {
             gc_mark_value(vm, ggc, *v);
         }

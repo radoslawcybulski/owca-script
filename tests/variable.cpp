@@ -44,12 +44,14 @@ TEST_F(VariableTest, simple1)
 	auto code = vm.compile("test.os", R"(
 class native A {
 }
-return A();
+function r() {
+    return A();
+}
 )", std::make_shared<Provider>(counter));
     auto provider = Provider{ counter };
 
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.as_object(vm).type(), "A");
+	ASSERT_EQ(val.member("r").call().as_object(vm).type(), "A");
     ASSERT_EQ(counter, 1);
     vm.run_gc();
     ASSERT_EQ(counter, 1001);

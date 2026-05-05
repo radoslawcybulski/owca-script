@@ -1,12 +1,15 @@
 #ifndef RC_OWCA_SCRIPT_EXECUTOR_H
 #define RC_OWCA_SCRIPT_EXECUTOR_H
 
+#include "owca-script/owca_namespace.h"
 #include "owca_exception.h"
 #include "stdafx.h"
 #include "owca_value.h"
 #include "execution_frame.h"
 #include "exec_buffer.h"
 #include <optional>
+#include <unordered_map>
+#include <vector>
 
 namespace OwcaScript {
 	class OwcaCode;
@@ -56,6 +59,15 @@ namespace OwcaScript {
 					return local_values_ptr[index];
 				}
 			};
+			struct GlobalsPtr {
+				OwcaValue *global_values_ptr;
+
+				explicit GlobalsPtr(OwcaValue *ptr) : global_values_ptr(ptr) {}
+
+				OwcaValue &operator [] (std::size_t index) const {
+					return global_values_ptr[index];
+				}
+			};			
 			struct TemporariesPtr {
 				OwcaValue *temporaries_ptr;
 
@@ -208,6 +220,7 @@ namespace OwcaScript {
 			std::vector<Frame> stacktrace;
 			std::vector<OwcaValue> values_vector;
 			std::vector<StatesType> states_vector;
+			std::unordered_map<std::string_view, OwcaNamespace> namespaces;
 			std::optional<OwcaException> exception_being_thrown;
 			std::optional<OwcaException> exception_being_handled;
 			TemporariesPtr temporary_ptr_current_top;
@@ -251,7 +264,7 @@ namespace OwcaScript {
 			// void prepare_exec(OwcaValue &return_value, RuntimeFunctions* runtime_functions, unsigned int index, std::optional<OwcaMap> arguments);
 			// void prepare_exec(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_exec(OwcaValue &return_value, const OwcaCode &);
-			std::tuple<OwcaValue, TemporariesPtr, StatesTypePtr, ExecuteBufferReader::Position> run_opcodes(const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
+			std::tuple<OwcaValue, TemporariesPtr, StatesTypePtr, ExecuteBufferReader::Position> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
 			//Generator run_native_generator(Iterator *iter_object, RuntimeFunction *function, RuntimeFunction::NativeGenerator& ng, std::span<OwcaValue> arguments);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
@@ -269,7 +282,7 @@ namespace OwcaScript {
 
 			// void run_impl_opcodes(ExecutionFrame &frame, RuntimeFunction::ScriptFunction& sf);
 			ExecuteBufferReader::Position run_impl_opcodes_execute_compare(TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position pos, CompareKind kind, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
-			OwcaValue create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, LocalsPtr locals_ptr, StatesTypePtr states_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
+			OwcaValue create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, StatesTypePtr states_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
 			// false if current frame can't handle the exception, true otherwise
 			void process_thrown_exception(ExecuteBufferReader::Position *pos, StatesTypePtr &states_ptr, OwcaException exc);
 
@@ -352,9 +365,9 @@ namespace OwcaScript {
 			std::span<const OwcaValue> values_vector_span() const { return std::span{ values_vector.data(), values_vector.size() }; };
 			std::span<const StatesType> states_vector_span() const { return std::span{ states_vector.data(), states_vector.size() }; };
 
-			OwcaValue execute_code_block(const OwcaCode &oc, std::optional<OwcaMap> values, OwcaMap *dict_output);
-			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos);
-			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, bool clear_locals);
+			OwcaNamespace execute_code_block(OwcaCode oc);
+			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos);
+			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(std::span<OwcaValue> arguments) {

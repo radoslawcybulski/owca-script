@@ -7,10 +7,8 @@ protected:
     static int run_gen(unsigned int line, std::string code_text, OwcaValue add_val)
     {
         OwcaVM vm;
-        std::vector<std::string> tmp{ { "a" } };
-        auto code = compile(line, vm, "test.os", std::move(code_text), tmp);
-        auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
-        auto val = vm.execute(code, vm.create_map(map_data));
+        auto code = compile(line, vm, "test.os", std::move(code_text));
+        auto val = vm.execute(code).member("r").call(add_val);
         return (int)val.as_int(vm);
     }
 
@@ -20,21 +18,24 @@ protected:
             class A(Exception) {}
             class B(Exception) {}
             
-            function generator foo() {
-                try {
-                    if (a == 1) throw A("q");
-                    if (a == 2) throw B("q");
+            function r(a) {
+                function generator foo() {
+                    try {
+                        if (a == 1) throw A("q");
+                        if (a == 2) throw B("q");
+                    }
+                    catch(e: A) {
+                        yield 1;
+                    }
+                    catch(e: B) {
+                        yield 2;
+                    }
+                    yield 3;
                 }
-                catch(e: A) {
-                    yield 1;
+
+                for(q = foo()) {
+                    return q;
                 }
-                catch(e: B) {
-                    yield 2;
-                }
-                yield 3;
-            }
-            for(q = foo()) {
-                return q;
             }
             )", v);
     }

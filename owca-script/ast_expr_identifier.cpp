@@ -34,8 +34,13 @@ namespace OwcaScript::Internal {
 		else {
 			ei.stack.push();
 		}
-		ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprIdentifierFunctionWrite : ExecuteOp::ExprIdentifierWrite) : ExecuteOp::ExprIdentifierRead);
-		ei.code_writer.append(line, value_to_write_index_);
+		if (identifier_index_.second) {
+			ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprGlobalFunctionWrite : ExecuteOp::ExprGlobalWrite) : ExecuteOp::ExprGlobalRead);
+		}
+		else {
+			ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprIdentifierFunctionWrite : ExecuteOp::ExprIdentifierWrite) : ExecuteOp::ExprIdentifierRead);
+		}
+		ei.code_writer.append(line, identifier_index_.first);
 	}
 	void AstExprIdentifier::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {

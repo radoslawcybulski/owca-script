@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_OWCA_VM_H
 #define RC_OWCA_SCRIPT_OWCA_VM_H
 
+#include "owca-script/owca_namespace.h"
 #include "stdafx.h"
 #include "owca_error_message.h"
 #include "tokens.h"
@@ -15,6 +16,7 @@ namespace OwcaScript {
 	class OwcaTuple;
 	class OwcaValue;
 	class OwcaVariable;
+	class OwcaNamespace;
 	class NativeClassInterface;
 	class Generator;
 
@@ -77,13 +79,9 @@ namespace OwcaScript {
 			}
 		};
 
-		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line);
-		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
-		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
-		OwcaCode compile(std::string filename, std::string content, std::vector<std::string> additional_variables, size_t first_line = 1);
-		OwcaValue execute(const OwcaCode&);
-		OwcaValue execute(const OwcaCode&, OwcaMap values);
-		OwcaValue execute(const OwcaCode&, OwcaMap values, OwcaMap *output_dict);
+		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
+		OwcaCode compile(std::string filename, std::string content, size_t first_line = 1);
+		OwcaNamespace execute(const OwcaCode&);
 		OwcaValue get_member(OwcaValue self, std::string_view key);
 		void set_member(OwcaValue self, std::string_view key, OwcaValue value);
 		OwcaValue call(OwcaValue func, std::span<OwcaValue> values);
