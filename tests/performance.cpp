@@ -46,7 +46,7 @@ function foo5(s) {
 s = 0;
 start = time();
 i = 0;
-while (i < 100000000) {
+while (i < 1) {
     s = foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }

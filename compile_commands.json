@@ -1,0 +1,536 @@
+[
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/allocation_base.cpp.o -c /home/y/work/owca-script/owca-script/allocation_base.cpp",
+  "file": "/home/y/work/owca-script/owca-script/allocation_base.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/allocation_base.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/array.cpp.o -c /home/y/work/owca-script/owca-script/array.cpp",
+  "file": "/home/y/work/owca-script/owca-script/array.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/array.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_base.cpp.o -c /home/y/work/owca-script/owca-script/ast_base.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_base.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_base.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_block.cpp.o -c /home/y/work/owca-script/owca-script/ast_block.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_block.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_block.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_class.cpp.o -c /home/y/work/owca-script/owca-script/ast_class.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_class.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_class.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_compiler.cpp.o -c /home/y/work/owca-script/owca-script/ast_compiler.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_compiler.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_compiler.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_as_stat.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_as_stat.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_as_stat.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_as_stat.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_compare.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_compare.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_compare.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_compare.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_constant.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_constant.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_constant.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_constant.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_identifier.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_identifier.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_identifier.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_identifier.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_interpreted_string.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_interpreted_string.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_interpreted_string.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_interpreted_string.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_member.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_member.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_member.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_member.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_1.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_oper_1.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_oper_1.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_1.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_2.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_oper_2.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_oper_2.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_2.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_x.cpp.o -c /home/y/work/owca-script/owca-script/ast_expr_oper_x.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_expr_oper_x.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_expr_oper_x.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_for.cpp.o -c /home/y/work/owca-script/owca-script/ast_for.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_for.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_for.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_function.cpp.o -c /home/y/work/owca-script/owca-script/ast_function.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_function.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_function.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_if.cpp.o -c /home/y/work/owca-script/owca-script/ast_if.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_if.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_if.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_loop_control.cpp.o -c /home/y/work/owca-script/owca-script/ast_loop_control.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_loop_control.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_loop_control.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_return.cpp.o -c /home/y/work/owca-script/owca-script/ast_return.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_return.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_return.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_throw.cpp.o -c /home/y/work/owca-script/owca-script/ast_throw.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_throw.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_throw.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_try.cpp.o -c /home/y/work/owca-script/owca-script/ast_try.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_try.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_try.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_visitor.cpp.o -c /home/y/work/owca-script/owca-script/ast_visitor.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_visitor.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_visitor.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_while.cpp.o -c /home/y/work/owca-script/owca-script/ast_while.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_while.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_while.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_with.cpp.o -c /home/y/work/owca-script/owca-script/ast_with.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_with.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_with.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/ast_yield.cpp.o -c /home/y/work/owca-script/owca-script/ast_yield.cpp",
+  "file": "/home/y/work/owca-script/owca-script/ast_yield.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/ast_yield.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/dictionary.cpp.o -c /home/y/work/owca-script/owca-script/dictionary.cpp",
+  "file": "/home/y/work/owca-script/owca-script/dictionary.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/dictionary.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/exception.cpp.o -c /home/y/work/owca-script/owca-script/exception.cpp",
+  "file": "/home/y/work/owca-script/owca-script/exception.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/exception.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/exec_buffer.cpp.o -c /home/y/work/owca-script/owca-script/exec_buffer.cpp",
+  "file": "/home/y/work/owca-script/owca-script/exec_buffer.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/exec_buffer.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/execution_frame.cpp.o -c /home/y/work/owca-script/owca-script/execution_frame.cpp",
+  "file": "/home/y/work/owca-script/owca-script/execution_frame.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/execution_frame.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/executor.cpp.o -c /home/y/work/owca-script/owca-script/executor.cpp",
+  "file": "/home/y/work/owca-script/owca-script/executor.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/executor.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/executor_compare.cpp.o -c /home/y/work/owca-script/owca-script/executor_compare.cpp",
+  "file": "/home/y/work/owca-script/owca-script/executor_compare.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/executor_compare.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/flow_control.cpp.o -c /home/y/work/owca-script/owca-script/flow_control.cpp",
+  "file": "/home/y/work/owca-script/owca-script/flow_control.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/flow_control.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/generator.cpp.o -c /home/y/work/owca-script/owca-script/generator.cpp",
+  "file": "/home/y/work/owca-script/owca-script/generator.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/generator.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/impl_base.cpp.o -c /home/y/work/owca-script/owca-script/impl_base.cpp",
+  "file": "/home/y/work/owca-script/owca-script/impl_base.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/impl_base.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/iterator.cpp.o -c /home/y/work/owca-script/owca-script/iterator.cpp",
+  "file": "/home/y/work/owca-script/owca-script/iterator.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/iterator.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/line.cpp.o -c /home/y/work/owca-script/owca-script/line.cpp",
+  "file": "/home/y/work/owca-script/owca-script/line.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/line.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/namespace.cpp.o -c /home/y/work/owca-script/owca-script/namespace.cpp",
+  "file": "/home/y/work/owca-script/owca-script/namespace.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/namespace.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/native_class_interface.cpp.o -c /home/y/work/owca-script/owca-script/native_class_interface.cpp",
+  "file": "/home/y/work/owca-script/owca-script/native_class_interface.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/native_class_interface.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/object.cpp.o -c /home/y/work/owca-script/owca-script/object.cpp",
+  "file": "/home/y/work/owca-script/owca-script/object.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/object.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_array.cpp.o -c /home/y/work/owca-script/owca-script/owca_array.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_array.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_array.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_class.cpp.o -c /home/y/work/owca-script/owca-script/owca_class.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_class.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_class.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_code.cpp.o -c /home/y/work/owca-script/owca-script/owca_code.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_code.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_code.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_error_message.cpp.o -c /home/y/work/owca-script/owca-script/owca_error_message.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_error_message.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_error_message.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_exception.cpp.o -c /home/y/work/owca-script/owca-script/owca_exception.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_exception.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_exception.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_functions.cpp.o -c /home/y/work/owca-script/owca-script/owca_functions.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_functions.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_functions.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_iterator.cpp.o -c /home/y/work/owca-script/owca-script/owca_iterator.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_iterator.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_iterator.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_map.cpp.o -c /home/y/work/owca-script/owca-script/owca_map.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_map.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_map.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_namespace.cpp.o -c /home/y/work/owca-script/owca-script/owca_namespace.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_namespace.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_namespace.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_object.cpp.o -c /home/y/work/owca-script/owca-script/owca_object.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_object.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_object.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_range.cpp.o -c /home/y/work/owca-script/owca-script/owca_range.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_range.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_range.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_set.cpp.o -c /home/y/work/owca-script/owca-script/owca_set.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_set.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_set.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_string.cpp.o -c /home/y/work/owca-script/owca-script/owca_string.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_string.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_string.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_tuple.cpp.o -c /home/y/work/owca-script/owca-script/owca_tuple.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_tuple.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_tuple.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_value.cpp.o -c /home/y/work/owca-script/owca-script/owca_value.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_value.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_value.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_variable.cpp.o -c /home/y/work/owca-script/owca-script/owca_variable.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_variable.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_variable.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_vm.cpp.o -c /home/y/work/owca-script/owca-script/owca_vm.cpp",
+  "file": "/home/y/work/owca-script/owca-script/owca_vm.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_vm.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/range.cpp.o -c /home/y/work/owca-script/owca-script/range.cpp",
+  "file": "/home/y/work/owca-script/owca-script/range.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/range.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/runtime_function.cpp.o -c /home/y/work/owca-script/owca-script/runtime_function.cpp",
+  "file": "/home/y/work/owca-script/owca-script/runtime_function.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/runtime_function.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/stdafx.cpp.o -c /home/y/work/owca-script/owca-script/stdafx.cpp",
+  "file": "/home/y/work/owca-script/owca-script/stdafx.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/stdafx.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/string.cpp.o -c /home/y/work/owca-script/owca-script/string.cpp",
+  "file": "/home/y/work/owca-script/owca-script/string.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/string.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/tokens.cpp.o -c /home/y/work/owca-script/owca-script/tokens.cpp",
+  "file": "/home/y/work/owca-script/owca-script/tokens.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/tokens.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/tuple.cpp.o -c /home/y/work/owca-script/owca-script/tuple.cpp",
+  "file": "/home/y/work/owca-script/owca-script/tuple.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/tuple.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/vm.cpp.o -c /home/y/work/owca-script/owca-script/vm.cpp",
+  "file": "/home/y/work/owca-script/owca-script/vm.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/vm.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/array.cpp.o -c /home/y/work/owca-script/tests/array.cpp",
+  "file": "/home/y/work/owca-script/tests/array.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/array.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/basic.cpp.o -c /home/y/work/owca-script/tests/basic.cpp",
+  "file": "/home/y/work/owca-script/tests/basic.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/basic.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/buffer.cpp.o -c /home/y/work/owca-script/tests/buffer.cpp",
+  "file": "/home/y/work/owca-script/tests/buffer.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/buffer.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/class.cpp.o -c /home/y/work/owca-script/tests/class.cpp",
+  "file": "/home/y/work/owca-script/tests/class.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/class.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/compare.cpp.o -c /home/y/work/owca-script/tests/compare.cpp",
+  "file": "/home/y/work/owca-script/tests/compare.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/compare.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/for.cpp.o -c /home/y/work/owca-script/tests/for.cpp",
+  "file": "/home/y/work/owca-script/tests/for.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/for.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/function.cpp.o -c /home/y/work/owca-script/tests/function.cpp",
+  "file": "/home/y/work/owca-script/tests/function.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/function.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/generator.cpp.o -c /home/y/work/owca-script/tests/generator.cpp",
+  "file": "/home/y/work/owca-script/tests/generator.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/generator.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/if.cpp.o -c /home/y/work/owca-script/tests/if.cpp",
+  "file": "/home/y/work/owca-script/tests/if.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/if.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/map.cpp.o -c /home/y/work/owca-script/tests/map.cpp",
+  "file": "/home/y/work/owca-script/tests/map.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/map.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/performance.cpp.o -c /home/y/work/owca-script/tests/performance.cpp",
+  "file": "/home/y/work/owca-script/tests/performance.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/performance.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/range.cpp.o -c /home/y/work/owca-script/tests/range.cpp",
+  "file": "/home/y/work/owca-script/tests/range.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/range.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/set.cpp.o -c /home/y/work/owca-script/tests/set.cpp",
+  "file": "/home/y/work/owca-script/tests/set.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/set.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/storage.cpp.o -c /home/y/work/owca-script/tests/storage.cpp",
+  "file": "/home/y/work/owca-script/tests/storage.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/storage.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/string.cpp.o -c /home/y/work/owca-script/tests/string.cpp",
+  "file": "/home/y/work/owca-script/tests/string.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/string.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/test.cpp.o -c /home/y/work/owca-script/tests/test.cpp",
+  "file": "/home/y/work/owca-script/tests/test.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/test.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/try.cpp.o -c /home/y/work/owca-script/tests/try.cpp",
+  "file": "/home/y/work/owca-script/tests/try.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/try.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/tuple.cpp.o -c /home/y/work/owca-script/tests/tuple.cpp",
+  "file": "/home/y/work/owca-script/tests/tuple.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/tuple.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/variable.cpp.o -c /home/y/work/owca-script/tests/variable.cpp",
+  "file": "/home/y/work/owca-script/tests/variable.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/variable.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/while.cpp.o -c /home/y/work/owca-script/tests/while.cpp",
+  "file": "/home/y/work/owca-script/tests/while.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/while.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=gnu++23 -o CMakeFiles/owca-script-test.dir/tests/with.cpp.o -c /home/y/work/owca-script/tests/with.cpp",
+  "file": "/home/y/work/owca-script/tests/with.cpp",
+  "output": "CMakeFiles/owca-script-test.dir/tests/with.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script/googletest/googlemock/include -I/home/y/work/owca-script/googletest/googlemock -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=c++23 -Wall -Wshadow -Wconversion -Wundef -DGTEST_HAS_PTHREAD=1 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Winline -Wredundant-decls -Wchar-subscripts -o googletest/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o -c /home/y/work/owca-script/googletest/googlemock/src/gmock-all.cc",
+  "file": "/home/y/work/owca-script/googletest/googlemock/src/gmock-all.cc",
+  "output": "googletest/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -isystem /home/y/work/owca-script/googletest/googlemock/include -isystem /home/y/work/owca-script/googletest/googlemock -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=c++23 -Wall -Wshadow -Wconversion -Wundef -DGTEST_HAS_PTHREAD=1 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Winline -Wredundant-decls -Wchar-subscripts -o googletest/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o -c /home/y/work/owca-script/googletest/googlemock/src/gmock_main.cc",
+  "file": "/home/y/work/owca-script/googletest/googlemock/src/gmock_main.cc",
+  "output": "googletest/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script/googletest/googletest/include -I/home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=c++23 -Wall -Wshadow -Wconversion -Wundef -DGTEST_HAS_PTHREAD=1 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Winline -Wredundant-decls -Wchar-subscripts -o googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o -c /home/y/work/owca-script/googletest/googletest/src/gtest-all.cc",
+  "file": "/home/y/work/owca-script/googletest/googletest/src/gtest-all.cc",
+  "output": "googletest/googletest/CMakeFiles/gtest.dir/src/gtest-all.cc.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -isystem /home/y/work/owca-script/googletest/googletest/include -isystem /home/y/work/owca-script/googletest/googletest  -g -gdwarf-5 -g -fsanitize=address -DDEBUG -std=c++23 -Wall -Wshadow -Wconversion -Wundef -DGTEST_HAS_PTHREAD=1 -fexceptions -W -Wpointer-arith -Wreturn-type -Wcast-qual -Wwrite-strings -Wswitch -Wunused-parameter -Wcast-align -Winline -Wredundant-decls -Wchar-subscripts -o googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /home/y/work/owca-script/googletest/googletest/src/gtest_main.cc",
+  "file": "/home/y/work/owca-script/googletest/googletest/src/gtest_main.cc",
+  "output": "googletest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+}
+]

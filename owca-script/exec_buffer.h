@@ -7,7 +7,7 @@
 #include <unordered_map>
 
 #ifdef DEBUG
-#define OWCA_SCRIPT_EXEC_LOG
+//#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 namespace OwcaScript {
