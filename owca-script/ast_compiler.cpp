@@ -1180,63 +1180,66 @@ namespace OwcaScript::Internal {
 
 	struct AstCompiler::Phase2 : public AstVisitor {
 		struct Stack {
-			enum class IdentifierState {
-				Unknown, Writable, ReadOnly
+			struct LookupResult {
+				unsigned int index;
+				bool writeable;
+				bool global;
 			};
-			std::unordered_map<std::string_view, std::pair<unsigned int, IdentifierState>> identifiers;
+			std::unordered_map<std::string_view, LookupResult> identifiers;
 			std::vector<std::string_view> identifier_names;
 			using CopyFromParent = AstFunction::CopyFromParent;
 			std::vector<CopyFromParent> copy_from_parents;
+			bool check_ = false;
+			unsigned int next_index = 0;
 
 			AstFunction* owner;
 			Stack* parent = nullptr;
 
-			auto define_identifier(std::string_view name) {
-				auto it = identifiers.insert({ name, { (unsigned int)identifiers.size(), IdentifierState::Unknown } });
-				if (it.second) {
-					identifier_names.push_back(it.first->first);
-				}
-				return it.first;
+			void define_identifier(std::string_view name) {
+				identifiers.insert({ name, { next_index++, true, !parent } });
+				identifier_names.push_back(name);
 			}
-			std::optional<std::pair<unsigned int, bool>> lookup_identifier(std::string_view name) {
-				auto it = identifiers.find(name);
-				if (it != identifiers.end()) {
-					bool wa;
-					switch(it->second.second) {
-					case IdentifierState::Writable: wa = true; break;
-					case IdentifierState::ReadOnly: wa = false; break;
-					case IdentifierState::Unknown:
-						if (parent) {
-							auto p = parent->lookup_identifier(name);
-							wa = !p;
-						}
-						else wa = true;
-						it->second.second = wa ? IdentifierState::Writable : IdentifierState::ReadOnly;
-						break;
+			void check() {
+				if (check_) return;
+				check_ = true;
+				if (!parent) return;
+				parent->check();
+				
+				for(auto &[name, res] : identifiers) {
+					auto res_parent = parent->lookup_identifier(name);
+					if (res_parent) {
+						res.writeable = false;
+						res.global = res_parent->global;
 					}
-					return std::pair<unsigned int, bool>{ it->second.first, wa };
 				}
-
-				if (parent == nullptr)
-					return std::nullopt;
-
-				auto pp = parent->lookup_identifier(name);
-				if (!pp)
-					return std::nullopt;
-				auto [ p, _ ] = *pp;
-
-				auto it2 = define_identifier(name);
-				copy_from_parents.push_back({ p, it2->second.first });
-				it2->second.second = IdentifierState::ReadOnly;
-
-				return std::pair<unsigned int, bool>{ it2->second.first, false };
+			}
+			std::optional<LookupResult> lookup_identifier(std::string_view name) {
+				assert(check_);
+				auto it = identifiers.find(name);
+				if (it == identifiers.end()) {
+					if (!parent) return std::nullopt;
+					auto parent_res = parent->lookup_identifier(name);
+					if (!parent_res) return std::nullopt;
+					if (parent_res->global) {
+						parent_res->writeable = false;
+						identifiers.insert({ name, *parent_res });
+						return *parent_res;
+					}
+					auto index = next_index++;
+					it = identifiers.insert({ name, { index, false, false } }).first;
+					identifier_names.push_back(name);
+					assert(identifier_names.size() == next_index);
+					copy_from_parents.push_back({ parent_res->index, index });
+				}
+				assert(it != identifiers.end());
+				return it->second;
 			}
 			unsigned int ensure_writable_identifier(AstCompiler *comp, Line line, std::string_view name) {
-				auto index_pp = lookup_identifier(name);
-				assert(index_pp);
-				auto [ index, writeable ] = *index_pp;
-				if (!writeable) comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack", name));
-				return index;
+				assert(check_);
+				auto pp = lookup_identifier(name);
+				assert(pp);
+				if (!pp->writeable) comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack", name));
+				return pp->index;
 			}
 			bool is_global() const {
 				return parent == nullptr;
@@ -1249,6 +1252,11 @@ namespace OwcaScript::Internal {
 
 		Phase2(AstCompiler* compiler) : compiler(compiler) {}
 
+		void check_all_stacks() {
+			for(auto &[func, st] : stacks) {
+				st.check();
+			}
+		}
 		void add_error(OwcaErrorKind kind, Line line, std::string msg) {
 			compiler->add_error(kind, compiler->filename_, line, std::move(msg));
 		}
@@ -1338,12 +1346,11 @@ namespace OwcaScript::Internal {
 					add_error(OwcaErrorKind::UndefinedIdentifier, o.line, std::format("variable `{}` has not been written", o.identifier()));
 				}
 				else {
-					auto [ index, writable ] = *index_pp;
 					if (o.write()) {
-						if (!writable) 
+						if (!index_pp->writeable) 
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_identifier_index(index, current_stack->is_global());
+					o.update_identifier_index(index_pp->index, index_pp->global);
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
@@ -1355,11 +1362,6 @@ namespace OwcaScript::Internal {
 			current_stack = &st;
 
 			if (first_run) {
-				if (current_stack->parent == nullptr) {
-					for(auto it : compiler->vm.get_builtin_identifiers()) {
-						current_stack->define_identifier(it);
-					}
-				}
 				for (auto& p : o.identifier_names()) {
 					current_stack->define_identifier(p);
 				}
@@ -1383,6 +1385,9 @@ namespace OwcaScript::Internal {
 			st.owner = nullptr;
 			st.parent = nullptr;
 			current_stack = &st;
+			for(auto it : compiler->vm.get_builtin_identifiers()) {
+				current_stack->define_identifier(it);
+			}
 		}
 	};
 
@@ -1394,6 +1399,7 @@ namespace OwcaScript::Internal {
 		for(auto &r : root) {
 			r->visit(p);
 		}
+		p.check_all_stacks();
 		p.first_run = false;
 		for(auto &r : root) {
 			r->visit(p);

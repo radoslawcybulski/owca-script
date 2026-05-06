@@ -21,7 +21,7 @@
 #include "namespace.h"
 
 #ifdef DEBUG
-//#define OWCA_SCRIPT_EXEC_LOG
+#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 //#define MEASURE
@@ -1528,6 +1528,9 @@ next_iteration:
             return OwcaNamespace{ it->second };
         }
 
+#ifdef OWCA_SCRIPT_EXEC_LOG
+        std::cout << "Executing code block from file " << oc.filename() << std::endl;
+#endif        
         auto tpk = TopPtrsKeeper{ *this };
         auto code_pos = CodePosition{ oc.code().data()};
         auto start_code = StartOfCode{};
@@ -1541,7 +1544,7 @@ next_iteration:
         }
         auto ns = vm->create_namespace(std::move(oc), std::move(identifier_to_global_index));
         namespaces.insert({ ns.internal_value()->code.filename(), ns});
-        if (!namespaces.empty()) {
+        if (namespaces.size() > 1) {
             auto ns_it = namespaces.at(vm->builtin_filename);
             for(auto it : ns_it.internal_value()->identifier_to_global_index) {
                 auto val = ns_it.internal_value()->globals[it.second];

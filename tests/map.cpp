@@ -9,7 +9,7 @@ class MapTest : public SimpleTest {
 TEST_F(MapTest, size)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 a = {
 		1: 2,
@@ -26,7 +26,7 @@ a = {
 TEST_F(MapTest, simple)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 	a = {
 		1: 2,
@@ -51,7 +51,7 @@ function r() {
 TEST_F(MapTest, with_default)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 	a = {
 		1: 2,
@@ -74,7 +74,7 @@ function r() {
 TEST_F(MapTest, iters)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 	a = {
 		1: 2,
@@ -94,7 +94,7 @@ function r() {
 TEST_F(MapTest, iters_mod)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 	a = {
 		1: 2,
@@ -124,7 +124,7 @@ function r() {
 TEST_F(MapTest, pop)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
 	a = {
 		1: 2,
