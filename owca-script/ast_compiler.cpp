@@ -1184,6 +1184,7 @@ namespace OwcaScript::Internal {
 				unsigned int index;
 				bool writeable;
 				bool global;
+				bool parameter = false;
 			};
 			std::unordered_map<std::string_view, LookupResult> identifiers;
 			std::vector<std::string_view> identifier_names;
@@ -1195,9 +1196,12 @@ namespace OwcaScript::Internal {
 			AstFunction* owner;
 			Stack* parent = nullptr;
 
-			void define_identifier(std::string_view name) {
-				identifiers.insert({ name, { next_index++, true, !parent } });
-				identifier_names.push_back(name);
+			void define_identifier(std::string_view name, bool parameter = false) {
+				auto it = identifiers.insert({ name, { next_index, true, !parent, parameter } });
+				if (it.second) {
+					identifier_names.push_back(name);
+					++next_index;
+				}
 			}
 			void check() {
 				if (check_) return;
@@ -1206,6 +1210,7 @@ namespace OwcaScript::Internal {
 				parent->check();
 				
 				for(auto &[name, res] : identifiers) {
+					if (res.parameter) continue;
 					auto res_parent = parent->lookup_identifier(name);
 					if (res_parent) {
 						res.writeable = false;
@@ -1362,8 +1367,9 @@ namespace OwcaScript::Internal {
 			current_stack = &st;
 
 			if (first_run) {
+				assert(current_stack->next_index == 0);
 				for (auto& p : o.identifier_names()) {
-					current_stack->define_identifier(p);
+					current_stack->define_identifier(p, true);
 				}
 			}
 

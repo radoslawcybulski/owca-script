@@ -9,7 +9,7 @@ class PerformanceTest : public SimpleTest {
 TEST_F(PerformanceTest, DISABLED_simple_1)
 { // 8.636
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 s = 0;
 start = time();
 i = 0;
@@ -27,7 +27,7 @@ print(`Final result: {s}`);
 TEST_F(PerformanceTest, DISABLED_simple_2)
 { // 20.856
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function foo1(s) {
     return s + 1;
 }
@@ -46,7 +46,7 @@ function foo5(s) {
 s = 0;
 start = time();
 i = 0;
-while (i < 1) {
+while (i < 100000000) {
     s = foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }
@@ -61,7 +61,7 @@ TEST_F(PerformanceTest, DISABLED_book_building)
 {
     // GTEST_SKIP();
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 states = {};
 final_result = [ 0 ];
 
