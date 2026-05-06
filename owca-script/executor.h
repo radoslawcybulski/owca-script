@@ -252,6 +252,16 @@ namespace OwcaScript {
 				}
 			};
 		private:
+			struct Interface {
+				OwcaValue (*call)(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count);
+			};
+			static std::array<Interface, static_cast<size_t>(OwcaValueKind::_Count)> interfaces;
+			static std::array<Interface, static_cast<size_t>(OwcaValueKind::_Count)> construct_interfaces();
+
+            static OwcaValue exec_call_cant(Executor &vm, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count);
+            static OwcaValue exec_call_function(Executor &vm, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count);
+			static OwcaValue exec_call_class(Executor &vm, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count);
+
 			// void prepare_allocate_user_class(OwcaValue &return_value, Class *cls, std::span<OwcaValue> arguments, bool exception_for_throwing_construction = false);
 			// void prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi);
 			// void prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments);

@@ -27,6 +27,77 @@
 //#define MEASURE
 
 namespace OwcaScript::Internal {
+    std::array<Executor::Interface, static_cast<size_t>(OwcaValueKind::_Count)> Executor::interfaces = []() { return Executor::construct_interfaces(); }();
+
+    std::array<Executor::Interface, static_cast<size_t>(OwcaValueKind::_Count)> Executor::construct_interfaces() {
+        std::array<Interface, static_cast<size_t>(OwcaValueKind::_Count)> arr{};
+        arr[static_cast<size_t>(OwcaValueKind::Empty)] = Interface{
+            .call = exec_call_cant
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Completed)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Range)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Bool)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Float)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::String)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Functions)] = Interface{
+            .call = exec_call_function,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Map)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Class)] = Interface{
+            .call = exec_call_class,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Object)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Tuple)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Array)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Set)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Iterator)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Exception)] = Interface{
+            .call = exec_call_cant,
+        };
+        arr[static_cast<size_t>(OwcaValueKind::Namespace)] = Interface{
+            .call = exec_call_cant,
+        };
+        return arr;
+    };
+    
+    OwcaValue Executor::exec_call_cant(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count) {
+        auto func = temporary_ptr[arg_count];
+        e.throw_cant_call(std::format("can't call {} with {} parameters", func.type(), arg_count - 1));
+    }
+    OwcaValue Executor::exec_call_function(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count) {
+        auto f = temporary_ptr[arg_count].as_functions(e.vm);
+        auto runtime_functions = f.internal_value();
+        bool has_self = f.internal_self_object() != nullptr;
+        temporary_ptr[arg_count] = has_self ? *f.self() : OwcaEmpty{};
+        
+        return e.execute_function_call_from_values(runtime_functions, temporary_ptr, states_ptr, has_self, arg_count - (has_self ? 0 : 1));
+    }
+    OwcaValue Executor::exec_call_class(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count) {
+        return e.allocate_user_class_from_values(temporary_ptr, states_ptr, arg_count);
+    }
+
     Executor::Executor(VM *vm) : vm(vm), values_vector(1024 * 1024), states_vector(1024 * 16), temporary_ptr_current_top(values_vector.data()), states_ptr_current_top(states_vector.data()) {
     }
 
@@ -808,7 +879,8 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCall: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    PEEK_VALUE(size) = execute_call_from_values(temporary_ptr, states_ptr, size);
+                    auto val = PEEK_VALUE(size);
+                    PEEK_VALUE(size) = interfaces[static_cast<size_t>(val.kind())].call(*this, temporary_ptr, states_ptr, size);
                     POP_VALUES(size - 1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateArray: {
