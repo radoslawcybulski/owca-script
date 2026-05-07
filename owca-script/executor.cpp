@@ -21,7 +21,7 @@
 #include "namespace.h"
 
 #ifdef DEBUG
-#define OWCA_SCRIPT_EXEC_LOG
+//#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 //#define MEASURE
@@ -31,57 +31,68 @@ namespace OwcaScript::Internal {
 
     std::array<Executor::Interface, static_cast<size_t>(OwcaValueKind::_Count)> Executor::construct_interfaces() {
         std::array<Interface, static_cast<size_t>(OwcaValueKind::_Count)> arr{};
-        arr[static_cast<size_t>(OwcaValueKind::Empty)] = Interface{
-            .call = exec_call_cant
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Completed)] = Interface{
+        Interface default_interface{
             .call = exec_call_cant,
+            .add = exec_oper_2_add_cant,
+            .mul = exec_oper_2_mul_cant,
+            .bin_and = exec_oper_2_bin_and_cant
         };
-        arr[static_cast<size_t>(OwcaValueKind::Range)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Bool)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Float)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::String)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Functions)] = Interface{
-            .call = exec_call_function,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Map)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Class)] = Interface{
-            .call = exec_call_class,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Object)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Tuple)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Array)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Set)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Iterator)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Exception)] = Interface{
-            .call = exec_call_cant,
-        };
-        arr[static_cast<size_t>(OwcaValueKind::Namespace)] = Interface{
-            .call = exec_call_cant,
-        };
+        for(auto &a : arr) a = default_interface;
+
+        arr[static_cast<size_t>(OwcaValueKind::Float)].add = exec_oper_2_number_add;
+        arr[static_cast<size_t>(OwcaValueKind::Float)].mul = exec_oper_2_number_mul;
+        arr[static_cast<size_t>(OwcaValueKind::Float)].bin_and = exec_oper_2_number_bin_and;
+        arr[static_cast<size_t>(OwcaValueKind::Functions)].call = exec_call_function;
+        arr[static_cast<size_t>(OwcaValueKind::Class)].call = exec_call_class;
         return arr;
     };
     
+    void Executor::exec_oper_2_number_add(Executor &e, Executor::TemporariesPtr temporary_ptr) {
+        auto left = temporary_ptr[2];
+        auto right = temporary_ptr[1];
+        auto l = left.as_float_certainly();
+        if (right.kind() == OwcaValueKind::Float) [[likely]] {
+            auto r = right.as_float_certainly();
+            temporary_ptr[2] = l + r;
+            return;
+        }
+        return exec_oper_2_add_cant(e, temporary_ptr);
+    }
+    void Executor::exec_oper_2_number_mul(Executor &e, Executor::TemporariesPtr temporary_ptr) {
+        auto left = temporary_ptr[2];
+        auto right = temporary_ptr[1];
+        auto l = left.as_float_certainly();
+        if (right.kind() == OwcaValueKind::Float) [[likely]] {
+            auto r = right.as_float_certainly();
+            temporary_ptr[2] = l * r;
+            return;
+        }
+        return exec_oper_2_mul_cant(e, temporary_ptr);
+    }
+    void Executor::exec_oper_2_number_bin_and(Executor &e, Executor::TemporariesPtr temporary_ptr) {
+        auto left = temporary_ptr[2];
+        auto right = temporary_ptr[1];
+        auto l = left.as_float_certainly();
+        if (right.kind() == OwcaValueKind::Float) [[likely]] {
+            auto r = right.as_float_certainly();
+            temporary_ptr[2] = static_cast<std::uint64_t>(l) & static_cast<std::uint64_t>(r);
+            return;
+        }
+        return exec_oper_2_bin_and_cant(e, temporary_ptr);
+    }
+    void Executor::exec_oper_2_add_cant(Executor &vm, Executor::TemporariesPtr temporary_ptr) {
+        assert(false);
+        return;
+    }
+    void Executor::exec_oper_2_mul_cant(Executor &vm, Executor::TemporariesPtr temporary_ptr) {
+        assert(false);
+        return;
+    }
+    void Executor::exec_oper_2_bin_and_cant(Executor &vm, Executor::TemporariesPtr temporary_ptr) {
+        assert(false);
+        return;
+    }
+
     OwcaValue Executor::exec_call_cant(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count) {
         auto func = temporary_ptr[arg_count];
         e.throw_cant_call(std::format("can't call {} with {} parameters", func.type(), arg_count - 1));
@@ -804,7 +815,9 @@ restart:
                     run_impl_opcodes_execute_expr_oper2<TagBinOr>(temporary_ptr);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinAnd: {
-                    run_impl_opcodes_execute_expr_oper2<TagBinAnd>(temporary_ptr);
+                    auto val = PEEK_VALUE(2);
+                    interfaces[static_cast<size_t>(val.kind())].bin_and(*this, temporary_ptr);
+                    POP_VALUES(1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinXor: {
                     run_impl_opcodes_execute_expr_oper2<TagBinXor>(temporary_ptr);
@@ -816,13 +829,17 @@ restart:
                     run_impl_opcodes_execute_expr_oper2<TagBinRShift>(temporary_ptr);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Add: {
-                    run_impl_opcodes_execute_expr_oper2<TagAdd>(temporary_ptr);
+                    auto val = PEEK_VALUE(2);
+                    interfaces[static_cast<size_t>(val.kind())].add(*this, temporary_ptr);
+                    POP_VALUES(1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Sub: {
                     run_impl_opcodes_execute_expr_oper2<TagSub>(temporary_ptr);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Mul: {
-                    run_impl_opcodes_execute_expr_oper2<TagMul>(temporary_ptr);
+                    auto val = PEEK_VALUE(2);
+                    interfaces[static_cast<size_t>(val.kind())].mul(*this, temporary_ptr);
+                    POP_VALUES(1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Div: {
                     run_impl_opcodes_execute_expr_oper2<TagDiv>(temporary_ptr);
