@@ -87,7 +87,7 @@ namespace OwcaScript::Internal {
         e.throw_cant_call(std::format("can't call {} with {} parameters", func.type(), arg_count - 1));
     }
     OwcaValue Executor::exec_call_function(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr, unsigned int arg_count) {
-        auto f = temporary_ptr[arg_count].as_functions(e.vm);
+        auto f = temporary_ptr[arg_count].as_functions_certainly();
         auto runtime_functions = f.internal_value();
         bool has_self = f.internal_self_object() != nullptr;
         temporary_ptr[arg_count] = has_self ? *f.self() : OwcaEmpty{};

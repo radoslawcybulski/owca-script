@@ -40,6 +40,8 @@ namespace OwcaScript {
 
 	namespace Internal {
 		class VM;
+		class Class;
+		
 
 		template <bool LittleEndian> struct ValuePtrs;
 		template <> struct ValuePtrs<true> {
@@ -150,6 +152,27 @@ namespace OwcaScript {
 		OwcaException as_exception(OwcaVM) const;
 		OwcaIterator as_iterator(OwcaVM) const;
 		OwcaNamespace as_namespace(OwcaVM) const;
+
+		OwcaEmpty as_nul_certainly() const { assert(kind() == OwcaValueKind::Empty); return {}; }
+		OwcaCompleted as_completed_certainly() const { assert(kind() == OwcaValueKind::Completed); return {}; }
+		OwcaRange as_range_certainly() const { assert(kind() == OwcaValueKind::Range); return OwcaRange{ (Internal::Range*)internal_ptr1() }; }
+		bool as_bool_certainly() const { assert(kind() == OwcaValueKind::Bool); NumberValue tmp; std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue)); return tmp.value != 0; }
+		Number as_float_certainly() const { assert(kind() == OwcaValueKind::Float); NumberValue tmp; std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue)); return tmp.value; }
+		OwcaString as_string_certainly() const { assert(kind() == OwcaValueKind::String); return { (Internal::String*)internal_ptr1() }; }
+		OwcaFunctions as_functions_certainly() const { assert(kind() == OwcaValueKind::Functions); return { (Internal::RuntimeFunctions*)internal_ptr1(), (Internal::AllocationBase*)internal_ptr2() }; }
+		OwcaMap as_map_certainly() const { assert(kind() == OwcaValueKind::Map); return OwcaMap{ (Internal::DictionaryShared*)internal_ptr1() }; }
+		OwcaClass as_class_certainly() const { assert(kind() == OwcaValueKind::Class); return OwcaClass{ (Internal::Class*)internal_ptr1() }; }
+		OwcaObject as_object_certainly() const { assert(kind() == OwcaValueKind::Object); return OwcaObject{ (Internal::Object*)internal_ptr1() }; }
+		OwcaTuple as_tuple_certainly() const { assert(kind() == OwcaValueKind::Tuple); return OwcaTuple{ (Internal::Tuple*)internal_ptr1() }; }
+		OwcaArray as_array_certainly() const { assert(kind() == OwcaValueKind::Array); return OwcaArray{ (Internal::Array*)internal_ptr1() }; }
+		OwcaSet as_set_certainly() const { assert(kind() == OwcaValueKind::Set); return OwcaSet{ (Internal::SetShared*)internal_ptr1() }; }
+		OwcaException as_exception_certainly() const { 
+			assert(kind() == OwcaValueKind::Exception); 
+			return OwcaException{ (Internal::Object*)internal_ptr1(), (Internal::Exception*)internal_ptr2() };
+		}
+		OwcaIterator as_iterator_certainly() const { assert(kind() == OwcaValueKind::Iterator); return OwcaIterator{ (Internal::Iterator*)internal_ptr1() }; }
+		OwcaNamespace as_namespace_certainly() const { assert(kind() == OwcaValueKind::Namespace); return OwcaNamespace{ (Internal::Namespace*)internal_ptr1() }; }
+
 		std::string_view type() const;
 		std::string to_string() const;
 
@@ -173,20 +196,20 @@ namespace OwcaScript {
 			switch(kind()) {
 			case OwcaValueKind::Empty: return tmp(OwcaEmpty{});
 			case OwcaValueKind::Completed: return tmp(OwcaCompleted{});
-			case OwcaValueKind::Range: return tmp(as_range(nullptr));
-			case OwcaValueKind::Bool: return tmp(as_bool(nullptr));
-			case OwcaValueKind::Float: return tmp(as_float(nullptr));
-			case OwcaValueKind::String: return tmp(as_string(nullptr));
-			case OwcaValueKind::Functions: return tmp(as_functions(nullptr));
-			case OwcaValueKind::Map: return tmp(as_map(nullptr));
-			case OwcaValueKind::Class: return tmp(as_class(nullptr));
-			case OwcaValueKind::Object: return tmp(as_object(nullptr));
-			case OwcaValueKind::Tuple: return tmp(as_tuple(nullptr));
-			case OwcaValueKind::Array: return tmp(as_array(nullptr));
-			case OwcaValueKind::Set: return tmp(as_set(nullptr));
-			case OwcaValueKind::Exception: return tmp(as_exception(nullptr));
-			case OwcaValueKind::Iterator: return tmp(as_iterator(nullptr));
-			case OwcaValueKind::Namespace: return tmp(as_namespace(nullptr));
+			case OwcaValueKind::Range: return tmp(as_range_certainly());
+			case OwcaValueKind::Bool: return tmp(as_bool_certainly());
+			case OwcaValueKind::Float: return tmp(as_float_certainly());
+			case OwcaValueKind::String: return tmp(as_string_certainly());
+			case OwcaValueKind::Functions: return tmp(as_functions_certainly());
+			case OwcaValueKind::Map: return tmp(as_map_certainly());
+			case OwcaValueKind::Class: return tmp(as_class_certainly());
+			case OwcaValueKind::Object: return tmp(as_object_certainly());
+			case OwcaValueKind::Tuple: return tmp(as_tuple_certainly());
+			case OwcaValueKind::Array: return tmp(as_array_certainly());
+			case OwcaValueKind::Set: return tmp(as_set_certainly());
+			case OwcaValueKind::Exception: return tmp(as_exception_certainly());
+			case OwcaValueKind::Iterator: return tmp(as_iterator_certainly());
+			case OwcaValueKind::Namespace: return tmp(as_namespace_certainly());
 			case OwcaValueKind::_Count: break;
 			}
 			assert(false);

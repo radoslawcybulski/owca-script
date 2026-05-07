@@ -151,7 +151,7 @@ namespace OwcaScript {
 	OwcaException OwcaValue::as_exception(OwcaVM vm) const
 	{
 		if (kind() == OwcaValueKind::Exception)
-			return OwcaException{ (Internal::Object*)internal_ptr1(), (Internal::Exception*)internal_ptr2() };
+			return as_exception_certainly();
 		if (kind() == OwcaValueKind::Object) {
 			auto obj = as_object(vm);
 			auto oe = Internal::VM::get(vm).is_exception(obj);
