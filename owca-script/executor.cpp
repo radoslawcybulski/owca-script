@@ -1544,7 +1544,7 @@ next_iteration:
         assert(arg_count > 0);
         
         auto locals_ptr = temporary_ptr.locals(arg_count);
-        auto cls = LOCAL_VAR(0).as_class(vm).internal_value();
+        auto cls = LOCAL_VAR(0).as_class_certainly().internal_value();
 
 		if (cls->allocator_override) {
 			obj = cls->allocator_override();
@@ -1580,20 +1580,7 @@ next_iteration:
     // }
     OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int argument_count) {
         auto func = PEEK_VALUE(argument_count);
-        if (func.kind() == OwcaValueKind::Functions) [[likely]] {
-            auto f = func.as_functions(vm);
-            auto runtime_functions = f.internal_value();
-            bool has_self = f.internal_self_object() != nullptr;
-            PEEK_VALUE(argument_count) = has_self ? *f.self() : OwcaEmpty{};
-            
-            return execute_function_call_from_values(runtime_functions, temporary_ptr, states_ptr, has_self, argument_count - (has_self ? 0 : 1));
-        }
-        else {
-            if (func.kind() == OwcaValueKind::Class) [[likely]] {
-                return allocate_user_class_from_values(temporary_ptr, states_ptr, argument_count);
-            }
-            throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
-        }
+        return interfaces[static_cast<size_t>(func.kind())].call(*this, temporary_ptr, states_ptr, argument_count);
     }
     OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, bool has_self, unsigned int arg_count) {
         auto runtime_function = runtime_functions->functions[arg_count];
