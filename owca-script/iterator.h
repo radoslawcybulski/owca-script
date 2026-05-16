@@ -4,7 +4,6 @@
 #include "runtime_function.h"
 #include "stdafx.h"
 #include "allocation_base.h"
-#include "impl_base.h"
 #include "owca_iterator.h"
 #include "owca_value.h"
 #include "owca_variable.h"
@@ -28,7 +27,6 @@ namespace OwcaScript {
             Iterator(RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states);
 			~Iterator();
 
-            // OwcaValue execute_next();
 			std::string_view type() const override{
 				return "Iterator";
 			}

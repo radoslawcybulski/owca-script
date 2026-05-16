@@ -188,31 +188,6 @@ namespace OwcaScript::Internal {
 			);
 	}
 
-// 	class ImplExprCompare : public ImplExpr {
-// 	public:
-// 		using ImplExpr::ImplExpr;
-
-// #define FIELDS(Q) \
-// 	Q(first, ImplExpr*) \
-// 	Q(nexts, std::span<std::tuple<CompareKind, Line, ImplExpr*>>)
-
-// 		IMPL_DEFINE_EXPR(Kind::Compare)
-
-// 		OwcaValue execute_expression_impl(OwcaVM vm) const override {
-// 			auto left = first->execute_expression(vm);
-
-// 			for (auto i = 0u; i < nexts.size(); ++i) {
-// 				auto [kind, compare_line, next_value] = nexts[i];
-// 				auto right = next_value->execute_expression(vm);
-// 				VM::get(vm).update_execution_line(compare_line);
-
-// 				if (!AstExprCompare::execute_compare(vm, kind, left, right)) return false;
-// 				left = right;
-// 			}
-// 			return true;
-// 		}
-// 	};
-
 	bool AstExprCompare::execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right)
 	{
 		if (kind == CompareKind::Is) {

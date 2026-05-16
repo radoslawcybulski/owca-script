@@ -216,15 +216,6 @@ namespace OwcaScript::Internal {
 		}
 		
         auto res = compare(vm, kind, left, right);
-		// auto res = left.visit(
-		// 	[&](const auto& ll) {
-		// 		return right.visit(
-		// 			[&](const auto& rr) {
-		// 				return compare_split(vm, kind, ll, rr);
-		// 			}
-		// 		);
-		// 	}
-		// );
 		switch (res) {
 		case Result::True: return CompareResult::True;
 		case Result::False: return CompareResult::False;

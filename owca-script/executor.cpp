@@ -1,4 +1,3 @@
-#include "execution_frame.h"
 #include "owca-script/owca_namespace.h"
 #include "owca_exception.h"
 #include "owca_iterator.h"
@@ -30,62 +29,6 @@ namespace OwcaScript::Internal {
     Executor::Executor(VM *vm) : vm(vm), values_vector(1024 * 1024), states_vector(1024 * 16), temporary_ptr_current_top(values_vector.data()), states_ptr_current_top(states_vector.data()) {
     }
 
-//     ExecutionFrame &Executor::currently_executing_frame() {
-//         return *vm->current_frame();
-//     }
-// //     void Executor::push_new_frame(std::unique_ptr<ExecutionFrame> frame) {
-// // #ifdef OWCA_SCRIPT_EXEC_LOG
-// //         std::cout << "Pushing frame " << (void*)frame.get() << "\n";
-// // #endif
-// //         vm->stacktrace.push_back(std::move(frame));
-// //     }
-//     void Executor::pop_frame() {
-//         exit = true;
-//         auto frame = vm->current_frame();
-//         assert(frame);
-//         vm->pop_frame(frame);
-// #ifdef OWCA_SCRIPT_EXEC_LOG
-//         std::cout << "Popping frame " << (void*)frame << std::endl;
-// #endif
-//         if (frame->constructor_move_self_to_return_value) {
-//             assert(frame->return_value);
-//             *frame->return_value = std::move(frame->values_[0]);
-//         }
-//         if (frame->is_iterator) {
-//             assert(frame->return_value);
-//             assert(frame->iterator_object);
-//             auto iter = frame->iterator_object->internal_value();
-
-//             if (frame->return_value->kind() == OwcaValueKind::Completed) {
-//                 iter->generator = {};
-//                 iter->completed = true;
-//                 iter->frame.reset();
-//             }
-//             exit = true;
-//             return;
-//         }
-//         if (frame->dict_output) {
-//             frame->runtime_function->visit(
-//                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
-//                     for (auto i = 0u; i < sf.identifier_names.size(); ++i) {
-//                         auto key = vm->create_string_from_view(sf.identifier_names[i]);
-//                         (*frame->dict_output)[key] = frame->get_identifier(i);
-//                     }
-//                 },
-//                 [&](RuntimeFunction::NativeFunction&) -> void {
-//                     assert(false);
-//                 },
-//                 [&](RuntimeFunction::NativeGenerator&) -> void {
-//                     assert(false);
-//                 }
-//             );
-//         }
-// #ifdef OWCA_SCRIPT_EXEC_LOG
-//         std::cout << "Deleting frame " << (void*)frame << std::endl;
-// #endif
-//         vm->deallocate_stack_frame(frame);
-//     }
-
 #define POP_STATE() --states_ptr;
 #define STATE(tp) std::get<tp>(*(states_ptr.states_type_ptr - 1))
 #define PUSH_STATE(tp) do { *states_ptr.states_type_ptr = (tp); ++states_ptr; } while(0)
@@ -112,12 +55,6 @@ namespace OwcaScript::Internal {
         }
         throw exception;
     }
-    // size_t Executor::currently_executing_frame_index() const {
-    //     return vm->frame_count;
-    // }
-    // bool Executor::completed() const {
-    //     return currently_executing_frame_index() <= stack_top_level_index;
-    // }
     
 	std::tuple<Number, Number, Number> Executor::parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size) {
 		return key.visit(
@@ -1250,16 +1187,6 @@ next_iteration:
         auto [ retval, new_values_ptr, new_states_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, states_ptr, StartOfCode{}, function->entry_point);
         return retval;
     }
-    // OwcaValue Executor::run_native_function(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeFunction& sf) {
-    //     auto locals_ptr = temporary_ptr.locals(arg_count);
-    //     const auto max_values = function->max_values;
-    //     temporary_ptr = temporary_ptr + max_values - arg_count;
-
-    //     assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
-    //     auto est = StackTraceState{ *this, function, {} };
-    //     update_current_top_ptrs(temporary_ptr + function->max_temporaries, states_ptr);
-    //     return sf.function(vm, std::span{ locals_ptr.local_values_ptr, arg_count });
-    // }
     Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
@@ -1287,16 +1214,6 @@ next_iteration:
         }
     }
 
-    // OwcaValue Executor::start_native_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::NativeGenerator& ng) {
-    //     auto locals_ptr = temporary_ptr.locals(arg_count);
-    //     const auto max_values = function->max_values;
-    //     assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
-    //     auto iter = vm->allocate<Iterator>(0, function, std::span<OwcaValue>{}, std::span<StatesType>{});
-    //     Generator generator = run_native_generator(iter, function, ng, std::span{ locals_ptr.local_values_ptr, arg_count });
-    //     generator.next(); // we need to resume once so implementation could pick up parameters.
-    //     iter->generator = std::move(generator);
-    //     return OwcaIterator{ iter };
-    // }
     std::optional<OwcaValue> Executor::continue_iterator(OwcaIterator oi) {
         if (!oi.internal_value()->generator) [[unlikely]] {
             return std::nullopt;
@@ -1308,146 +1225,6 @@ next_iteration:
         }
         return val;
     }
-
-    // OwcaValue Executor::start_script_generator(RuntimeFunction *function, TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count, RuntimeFunction::ScriptFunction& sf) {
-    //     auto locals_ptr = temporary_ptr.locals(arg_count);
-    //     assert(locals_ptr.local_values_ptr + function->max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
-
-    //     std::vector<OwcaValue> values_vec(function->max_values + function->max_temporaries);
-    //     std::vector<StatesType> states_vec(function->max_states);
-    //     for(auto i = 0u; i < arg_count; ++i) {
-    //         values_vec[i] = LOCAL_VAR(i);
-    //     }
-
-    //     assert(sf.copy_from_parents.size() == sf.values_from_parents.size());
-
-    //     for (auto i = 0u; i < sf.copy_from_parents.size(); ++i) {
-    //         values_vec[sf.copy_from_parents[i].index_in_child] = sf.values_from_parents[i];
-    //     }
-
-    //     auto values_span = std::span{ values_vec.data(), values_vec.size() };
-    //     auto states_span = std::span{ states_vec.data(), states_vec.size() };
-    //     auto iter = vm->allocate<Iterator>(0, function, values_span, states_span);
-    //     auto generator = run_script_generator(iter, function, std::move(values_vec), std::move(states_vec), sf.entry_point);
-    //     iter->generator = std::move(generator);
-    //     return OwcaIterator{ iter };
-    // }
-
-//     void Executor::run() {
-//         while(!completed()) {
-//             auto &frame = currently_executing_frame();
-// #ifdef OWCA_SCRIPT_EXEC_LOG
-//             std::cout << "Executing frame at depth " << currently_executing_frame_index() << " (" << (void*)&frame << ") function " << frame.runtime_function->full_name;
-//             if (auto q = std::get_if<RuntimeFunction::ScriptFunction>(&frame.runtime_function->data)) {
-//                 std::cout << " with code position " << frame.code_position.pos << " (" << (void*)&frame.code_position << ")";
-//             }
-//             std::cout << std::endl;
-// #endif
-//             visit_variant(
-//                 frame.runtime_function->data,
-//                 [&](RuntimeFunction::ScriptFunction& sf) -> void {
-//                     if (frame.is_iterator) {
-//                         if (!frame.iterator_object) {
-//                             auto obj = vm->allocate<Iterator>(0, false);
-//                             frame.iterator_object = obj;
-//                             auto iter_frame = frame.clone_for_iterator();
-//                             obj->frame = std::move(iter_frame);
-//                             *frame.return_value = OwcaIterator{ obj };
-//                             pop_frame();
-//                             return;
-//                         }
-//                     }
-//                     auto frame_index = currently_executing_frame_index();
-//                     run_impl_opcodes(frame, sf);
-// #ifdef OWCA_SCRIPT_EXEC_LOG
-//                     std::cout << "Suspended frame at depth " << frame_index << std::endl;
-// #endif
-//                 },
-//                 [&](RuntimeFunction::NativeFunction& nf) -> void {
-//                     try {
-//                         *frame.return_value = nf.function(vm, std::span{ frame.values_, frame.max_values });
-//                         pop_frame();
-//                     }
-//                     catch(OwcaException e) {
-//                         frame.exception_in_progress = e;
-//                         process_thrown_exception(nullptr);
-//                     }
-//                     catch(const std::exception &e) {
-//                         prepare_throw_cpp_exception(std::format("C++ exception during execution of native generator: {}", e.what()));
-//                     }
-//                     catch(...) {
-//                         prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
-//                     }
-//                 },
-//                 [&](RuntimeFunction::NativeGenerator& ngf) -> void {
-//                     if (!frame.iterator_object) {
-//                         frame.iterator_object = vm->allocate<Iterator>(0, true);
-//                         frame.iterator_object->internal_value()->generator = ngf.generator(vm, std::span{ frame.values_, frame.max_values });
-//                         *frame.return_value = *frame.iterator_object;
-//                         auto iter_frame = frame.clone_for_iterator();
-//                         frame.iterator_object->internal_value()->frame = std::move(iter_frame);
-//                         pop_frame();
-//                         return;
-//                     }
-//                     if (frame.iterator_object->internal_value()->completed) {
-//                         *frame.return_value = OwcaCompleted{};
-//                         pop_frame();
-//                         return;
-//                     }
-//                     try {
-//                         frame.iterator_object->internal_value()->first_time = false;
-//                         auto val = frame.iterator_object->internal_value()->generator->next();
-//                         if (!val) {
-//                             frame.iterator_object->internal_value()->completed = true;
-//                             *frame.return_value = frame.iterator_object->internal_value()->last_value = OwcaCompleted{};
-//                             pop_frame();
-//                             return;
-//                         }
-//                         *frame.return_value = frame.iterator_object->internal_value()->last_value = *val;
-//                         if (frame.return_value->kind() == OwcaValueKind::Completed) {
-//                             frame.iterator_object->internal_value()->completed = true;
-//                         }
-//                         pop_frame();
-//                         return;
-//                     }
-//                     catch(OwcaException e) {
-//                         frame.exception_in_progress = e;
-//                         process_thrown_exception(nullptr);
-//                     }
-//                     catch(const std::exception &e) {
-//                         prepare_throw_cpp_exception(std::format("C++ exception during execution of native generator: {}", e.what()));
-//                     }
-//                     catch(...) {
-//                         prepare_throw_cpp_exception("Unknown C++ exception during execution of native generator");
-//                     }
-//                 }
-//             );
-//         }
-//     }
-    // void Executor::prepare_execute_code_block(OwcaValue &return_value, const OwcaCode &oc) {
-    //     auto frame = ExecutionFrame::create(vm, 0, 1, 0);
-    //     frame->initialize_code_block(return_value, vm, oc);
-    //     vm->push_frame(frame);
-    // }
-    // void Executor::prepare_execute_main_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaMap> arguments) {
-    //     auto it = runtime_functions->functions[0];
-    //     assert(it != nullptr);
-    //     auto frame = ExecutionFrame::create(it);
-    //     frame->initialize_main_block_function(return_value, vm, runtime_functions, arguments);
-    //     vm->push_frame(frame);
-    // }
-
-    // void Executor::prepare_resume_generator(OwcaValue &return_value, OwcaIterator oi)
-    // {
-	// 	if (oi.internal_value()->completed) {
-    //         return_value = OwcaCompleted{};
-	// 		return;
-	// 	}
-    //     vm->push_frame(oi.internal_value()->frame.get());
-    //     currently_executing_frame().return_value = &return_value;
-    //     oi.internal_value()->first_time = false;
-    //     exit = true;
-    // }
 
 	OwcaValue Executor::allocate_user_class_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int arg_count) {
 		OwcaValue obj;
@@ -1483,12 +1260,6 @@ next_iteration:
         }
         throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
 	}
-    // OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-    //     OwcaValue return_value;
-    //     prepare_allocate_user_class(return_value, cls, arguments);
-    //     run();
-    //     return return_value;
-    // }
     OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr, unsigned int argument_count) {
         auto func = PEEK_VALUE(argument_count);
         if (func.kind() == OwcaValueKind::Functions) [[likely]] {
@@ -1590,57 +1361,6 @@ next_iteration:
         }
         return execute_call_from_values(temporary_ptr + (unsigned int)arguments.size() + 1, states_ptr, (unsigned int)arguments.size() + 1);
     }
-    // bool Executor::prepare_execute_function(OwcaValue &return_value, RuntimeFunctions* runtime_functions, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments)
-    // {
-	// 	auto it = runtime_functions->functions[arguments.size() + (self_value ? 1 : 0)];
-	// 	if (it == nullptr) {
-	// 		it = runtime_functions->functions[arguments.size()];
-	// 		if (it == nullptr || it->is_method) {
-	// 			auto tmp = std::string{ "function " };
-	// 			tmp += runtime_functions->name;
-	// 			prepare_throw_not_callable_wrong_number_of_params(std::move(tmp), arguments.size());
-    //             return false;
-	// 		}
-	// 	}
-
-    //     auto frame = ExecutionFrame::create(it);
-    //     frame->initialize_execute_function(return_value, vm, it, self_value, arguments);
-    //     vm->push_frame(frame);
-    //     exit = true;
-    //     return true;
-    // }
-
-    // void Executor::prepare_execute_call(OwcaValue &return_value, OwcaValue func, std::span<OwcaValue> arguments)
-    // {
-	// 	return func.visit(
-	// 		[&](OwcaIterator oi) -> void {
-	// 			if (!arguments.empty()) {
-    //                 prepare_throw_not_callable_wrong_number_of_params("generator", (unsigned int)arguments.size());
-    //             }
-    //             else {
-    //                 prepare_resume_generator(return_value, oi);
-    //             }
-	// 		},
-	// 		[&](OwcaFunctions of) -> void {
-	// 			auto runtime_functions = func.as_functions(vm).internal_value();
-    //             prepare_execute_function(return_value, runtime_functions, of.self(), arguments);
-	// 		},
-	// 		[&](OwcaClass oc) -> void {
-	// 			auto cls = func.as_class(vm).internal_value();
-	// 			prepare_allocate_user_class(return_value, cls, arguments);
-	// 		},
-	// 		[&](const auto&) -> void {
-	// 			prepare_throw_not_callable(func.type());
-	// 		}
-	// 	);
-    // }
-
-
-    // void Executor::prepare_throw_cpp_exception(std::string_view msg)
-    // {
-    //     OwcaValue temp_arg = vm->create_string_from_view(msg);
-    //     prepare_allocate_user_class(temporary_exception_return_value, vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }, true);
-    // }
 	void Executor::throw_too_many_elements(size_t expected)
 	{
         OwcaValue temp_arg = vm->create_string_from_view(std::format("too many values to unpack (expected {})", expected));
