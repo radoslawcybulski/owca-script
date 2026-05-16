@@ -14,6 +14,7 @@
 #include "owca_exception.h"
 #include "owca_iterator.h"
 #include "owca_namespace.h"
+#include <cstddef>
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -53,6 +54,7 @@ namespace OwcaScript {
 				Number value;
 			};
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
+			static constexpr const size_t kind_offset = offsetof(NumberValue, kind);
 		};
 		template <> struct ValuePtrs<false> {
 			struct PtrsValue {
@@ -68,6 +70,7 @@ namespace OwcaScript {
 			};
 
 			static_assert(sizeof(PtrsValue) == sizeof(NumberValue));
+			static constexpr const size_t kind_offset = offsetof(NumberValue, kind);
 		};
 	}
 
@@ -76,6 +79,7 @@ namespace OwcaScript {
 
 		using PtrsValue = Internal::ValuePtrs<std::endian::native == std::endian::little>::PtrsValue;
 		using NumberValue = Internal::ValuePtrs<std::endian::native == std::endian::little>::NumberValue;
+		static constexpr const size_t kind_offset = Internal::ValuePtrs<std::endian::native == std::endian::little>::kind_offset;
 		union {
 			PtrsValue ptrs;
 			NumberValue number;
@@ -130,7 +134,18 @@ namespace OwcaScript {
 		OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaNamespace value): OwcaValue(OwcaValueKind::Namespace, value.internal_value(), nullptr) {}
 
-		OwcaValueKind kind() const;
+		OwcaValueKind kind() const {
+			static_assert((int)OwcaValueKind::_Count <= 16, "OwcaValueKind must fit in 4 bits");
+			auto kind = ((std::uint8_t*)this)[kind_offset] & 15;
+#ifdef DEBUG			
+			NumberValue tmp;
+			std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+			auto k = (std::uint8_t)tmp.kind & 15;
+			assert(k == kind);
+#endif
+			return (OwcaValueKind)kind;
+
+		}
 		long long int as_int(OwcaVM ) const;
 		bool is_true() const;
 

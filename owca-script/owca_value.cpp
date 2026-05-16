@@ -16,15 +16,6 @@
 
 namespace OwcaScript {
 
-	OwcaValueKind OwcaValue::kind() const {
-		static_assert((int)OwcaValueKind::_Count <= 16, "OwcaValueKind must fit in 4 bits");
-		NumberValue tmp;
-		std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
-		auto k = (std::uint8_t)tmp.kind & 15;
-		assert(k < (int)OwcaValueKind::_Count);
-		return (OwcaValueKind)k;
-	}
-
 	long long int OwcaValue::as_int(OwcaVM vm) const
 	{
 		if (kind() == OwcaValueKind::Float) {
