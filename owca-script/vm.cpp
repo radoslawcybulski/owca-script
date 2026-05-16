@@ -45,19 +45,19 @@ namespace OwcaScript::Internal {
 	}
 
 	struct VM::BuiltinProvider : public NativeCodeProvider {
-		static OwcaValue range_init1(OwcaVM vm, OwcaRange self, Number upper) {
+		static OwcaValue range_init1(const OwcaVM &vm, OwcaRange self, Number upper) {
 			self.internal_object()->from = 0;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = 1;
 			return self;
 		}
-		static OwcaValue range_init2(OwcaVM vm, OwcaRange self, Number lower, Number upper) {
+		static OwcaValue range_init2(const OwcaVM &vm, OwcaRange self, Number lower, Number upper) {
 			self.internal_object()->from = lower;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = 1;
 			return self;
 		}
-		static OwcaValue range_init3(OwcaVM vm, OwcaRange self, Number lower, Number upper, Number step) {
+		static OwcaValue range_init3(const OwcaVM &vm, OwcaRange self, Number lower, Number upper, Number step) {
 			self.internal_object()->from = lower;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = step;
@@ -66,31 +66,31 @@ namespace OwcaScript::Internal {
 			}
 			return self;
 		}
-		static OwcaValue range_lower(OwcaVM vm, OwcaRange r) {
+		static OwcaValue range_lower(const OwcaVM &vm, OwcaRange r) {
 			return r.lower();
 		}
-		static OwcaValue range_upper(OwcaVM vm, OwcaRange r) {
+		static OwcaValue range_upper(const OwcaVM &vm, OwcaRange r) {
 			return r.upper();
 		}
-		static OwcaValue range_size(OwcaVM vm, OwcaRange r) {
+		static OwcaValue range_size(const OwcaVM &vm, OwcaRange r) {
 			return r.size();
 		}
-		static OwcaValue range_step(OwcaVM vm, OwcaRange r) {
+		static OwcaValue range_step(const OwcaVM &vm, OwcaRange r) {
 			return r.step();
 		}
-		static Generator range_iter(OwcaVM vm, OwcaRange o) {
+		static Generator range_iter(const OwcaVM &vm, OwcaRange o) {
 			return o.internal_object()->iter(vm);
 		}
-		static OwcaValue iterator_completed(OwcaVM vm, OwcaIterator oi) {
+		static OwcaValue iterator_completed(const OwcaVM &vm, OwcaIterator oi) {
 			return oi.completed();
 		}
-		static OwcaValue iterator_next(OwcaVM vm, OwcaIterator oi) {
+		static OwcaValue iterator_next(const OwcaVM &vm, OwcaIterator oi) {
 			return VM::get(vm).resume_generator(oi).value_or(OwcaEmpty{});
 		}
-		static OwcaValue bool_init(OwcaVM vm, OwcaValue, OwcaValue r) {
+		static OwcaValue bool_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
 			return VM::get(vm).calculate_if_true(r);
 		}
-		static OwcaValue float_init(OwcaVM vm, OwcaValue, OwcaValue r) {
+		static OwcaValue float_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
 			return r.visit(
 				[&](bool value) -> Number {
 					return value ? 1.0f : 0.0f;
@@ -159,7 +159,7 @@ namespace OwcaScript::Internal {
 				}
 			);
 		}
-		static OwcaValue string_init(OwcaVM vm, OwcaValue, OwcaValue r) {
+		static OwcaValue string_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
 			return r.visit(
 				[&](OwcaEmpty o) -> OwcaValue { return vm.create_string("nul"); },
 				[&](OwcaCompleted o) -> OwcaValue { return vm.create_string("completed"); },
@@ -179,50 +179,48 @@ namespace OwcaScript::Internal {
 				[&](OwcaNamespace s) -> OwcaValue { return vm.create_string(s.to_string()); }
 				);
 		}
-		static OwcaValue string_size(OwcaVM vm, OwcaValue r) {
-			return r.as_string(vm).internal_value()->size();
+		static OwcaValue string_size(const OwcaVM &vm, OwcaString r) {
+			return r.internal_value()->size();
 		}
-		static Generator string_iter(OwcaVM vm, OwcaString o) {
+		static Generator string_iter(const OwcaVM &vm, OwcaString o) {
 			for(auto i = 0u; i < o.size(); ++i) {
 				co_yield o.substr(i, 1);
 			}
 		}
-		static OwcaValue function_bind(OwcaVM vm, OwcaValue r, OwcaValue bind) {
-			auto f = r.as_functions(vm);
-			return f.bind(bind);
+		static OwcaValue function_bind(const OwcaVM &vm, OwcaFunctions r, OwcaValue bind) {
+			return r.bind(bind);
 		}
-		static OwcaValue function_bound_value(OwcaVM vm, OwcaValue r) {
-			auto f = r.as_functions(vm);
-			return f.self().value_or(OwcaValue{});
+		static OwcaValue function_bound_value(const OwcaVM &vm, OwcaFunctions r) {
+			return r.self().value_or(OwcaValue{});
 		}
-		static OwcaValue map_has_key(OwcaVM vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_has_key(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
 			return self.has_key(key);
 		}
-		static OwcaValue map_pop(OwcaVM vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_pop(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
 			return self.pop(key);
 		}
-		static OwcaValue map_pop_or_default_2(OwcaVM vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_pop_or_default_2(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
 			return self.pop_or_default(key, {});
 		}
-		static OwcaValue map_pop_or_default_3(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_pop_or_default_3(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.pop_or_default(key, default_value);
 		}
-		static OwcaValue map_get_or_default(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_get_or_default(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.get_or_default(key, default_value);
 		}
-		static OwcaValue map_set_default(OwcaVM vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_set_default(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.set_default(key, default_value);
 		}		
-		static Generator map_keys(OwcaVM vm, OwcaMap self) {
+		static Generator map_keys(const OwcaVM &vm, OwcaMap self) {
 			return self.keys();
 		}
-		static Generator map_values(OwcaVM vm, OwcaMap self) {
+		static Generator map_values(const OwcaVM &vm, OwcaMap self) {
 			return self.values();
 		}
-		static Generator map_items(OwcaVM vm, OwcaMap self) {
+		static Generator map_items(const OwcaVM &vm, OwcaMap self) {
 			return self.items();
 		}
-		static OwcaValue map_init(OwcaVM vm, OwcaMap self, OwcaValue r) {
+		static OwcaValue map_init(const OwcaVM &vm, OwcaMap self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					for(auto v : o.internal_value()->values) {
@@ -258,15 +256,15 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue map_size(OwcaVM vm, OwcaMap r) {
+		static OwcaValue map_size(const OwcaVM &vm, OwcaMap r) {
 			return r.size();
 		}
-		static Generator map_iter(OwcaVM vm, OwcaMap o) {
+		static Generator map_iter(const OwcaVM &vm, OwcaMap o) {
 			for(auto v : o) {
 				co_yield v.first;
 			}
 		}
-		static OwcaValue set_init(OwcaVM vm, OwcaSet self, OwcaValue r) {
+		static OwcaValue set_init(const OwcaVM &vm, OwcaSet self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					for(auto v : o) {
@@ -308,38 +306,38 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue set_union_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_union_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
 			return self | other;
 		}
-		static OwcaValue set_intersection_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_intersection_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
 			return self & other;
 		}
-		static OwcaValue set_difference_with(OwcaVM vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_difference_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
 			return self - other;
 		}
-		static OwcaValue set_add(OwcaVM vm, OwcaSet self, OwcaValue v) {
+		static OwcaValue set_add(const OwcaVM &vm, OwcaSet self, OwcaValue v) {
 			self.add(v);
 			return {};
 		}
-		static OwcaValue set_remove(OwcaVM vm, OwcaSet self, OwcaValue v) {
+		static OwcaValue set_remove(const OwcaVM &vm, OwcaSet self, OwcaValue v) {
 			self.remove(v);
 			return {};
 		}
-		static OwcaValue set_size(OwcaVM vm, const OwcaSet &r) {
+		static OwcaValue set_size(const OwcaVM &vm, const OwcaSet &r) {
 			return r.size();
 		}
-		static Generator set_iter(OwcaVM vm, OwcaSet o) {
+		static Generator set_iter(const OwcaVM &vm, OwcaSet o) {
 			for(auto v : o) {
 				co_yield v;
 			}
 		}
-		static OwcaValue class_name(OwcaVM vm, OwcaValue r) {
-			return vm.create_string(r.as_class(vm).internal_value()->name);
+		static OwcaValue class_name(const OwcaVM &vm, OwcaClass r) {
+			return vm.create_string(r.internal_value()->name);
 		}
-		static OwcaValue class_full_name(OwcaVM vm, OwcaValue r) {
-			return vm.create_string(r.as_class(vm).internal_value()->full_name);
+		static OwcaValue class_full_name(const OwcaVM &vm, OwcaClass r) {
+			return vm.create_string(r.internal_value()->full_name);
 		}
-		static OwcaValue array_init(OwcaVM vm, OwcaArray self, OwcaValue r) {
+		static OwcaValue array_init(const OwcaVM &vm, OwcaArray self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = o.internal_value()->values;
@@ -379,37 +377,37 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue array_size(OwcaVM vm, OwcaArray self) {
+		static OwcaValue array_size(const OwcaVM &vm, OwcaArray self) {
 			return self.internal_value()->values.size();
 		}
-		static Generator array_iter(OwcaVM vm, OwcaArray o) {
+		static Generator array_iter(const OwcaVM &vm, OwcaArray o) {
 			for(auto i = 0u; i < o.size(); ++i) {
 				co_yield o[i];
 			}
 		}
 		
-		static OwcaValue array_push_back(OwcaVM vm, OwcaArray self, OwcaValue v) {
+		static OwcaValue array_push_back(const OwcaVM &vm, OwcaArray self, OwcaValue v) {
 			self.push_back(v);
 			return {};
 		}
-		static OwcaValue array_push_front(OwcaVM vm, OwcaArray self, OwcaValue v) {
+		static OwcaValue array_push_front(const OwcaVM &vm, OwcaArray self, OwcaValue v) {
 			self.push_front(v);
 			return {};
 		}
-		static OwcaValue array_pop_back(OwcaVM vm, OwcaArray self) {
+		static OwcaValue array_pop_back(const OwcaVM &vm, OwcaArray self) {
 			return self.pop_back();
 		}
-		static OwcaValue array_pop_front(OwcaVM vm, OwcaArray self) {
+		static OwcaValue array_pop_front(const OwcaVM &vm, OwcaArray self) {
 			return self.pop_front();
 		}
-		static OwcaValue array_sort(OwcaVM vm, OwcaArray self) {
+		static OwcaValue array_sort(const OwcaVM &vm, OwcaArray self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
 				return VM::get(vm).compare_values(CompareKind::Less, a, b);
 			});
 			return OwcaArray{ VM::get(vm).allocate<Array>(0, std::move(values)) };
 		}
-		static OwcaValue tuple_init(OwcaVM vm, OwcaTuple self, OwcaValue r) {
+		static OwcaValue tuple_init(const OwcaVM &vm, OwcaTuple self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = { o.internal_value()->values.begin(), o.internal_value()->values.end() };
@@ -450,33 +448,33 @@ namespace OwcaScript::Internal {
 			);
 			return {};
 		}
-		static OwcaValue tuple_size(OwcaVM vm, OwcaTuple self) {
+		static OwcaValue tuple_size(const OwcaVM &vm, OwcaTuple self) {
 			return self.internal_value()->values.size();
 		}
-		static Generator tuple_iter(OwcaVM vm, OwcaTuple o) {
+		static Generator tuple_iter(const OwcaVM &vm, OwcaTuple o) {
 			for(auto i = 0u; i < o.size(); ++i) {
 				co_yield o[i];
 			}
 		}
-		static OwcaValue tuple_sort(OwcaVM vm, OwcaTuple self) {
+		static OwcaValue tuple_sort(const OwcaVM &vm, OwcaTuple self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
 				return VM::get(vm).compare_values(CompareKind::Less, a, b);
 			});
 			return OwcaTuple{ VM::get(vm).allocate<Tuple>(0, std::move(values)) };
 		}
-		static OwcaValue exception_init(OwcaVM vm, OwcaException self, OwcaString msg) {
+		static OwcaValue exception_init(const OwcaVM &vm, OwcaException self, OwcaString msg) {
 			VM::get(vm).initialize_exception_object(*self.internal_value());
 			self.internal_value()->message = std::string{ msg.text() };
 			return {};
 		}
-		static OwcaValue exception_count(OwcaVM vm, OwcaException self) {
+		static OwcaValue exception_count(const OwcaVM &vm, OwcaException self) {
 			return self.count();
 		}
-		static OwcaValue exception_message(OwcaVM vm, OwcaException self) {
+		static OwcaValue exception_message(const OwcaVM &vm, OwcaException self) {
 			return vm.create_string(self.message());
 		}
-		static OwcaValue exception_line(OwcaVM vm, OwcaException self, Number index) {
+		static OwcaValue exception_line(const OwcaVM &vm, OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
@@ -484,14 +482,14 @@ namespace OwcaScript::Internal {
 			return self.frame(ind).line;
 			
 		}
-		static OwcaValue exception_filename(OwcaVM vm, OwcaException self, Number index) {
+		static OwcaValue exception_filename(const OwcaVM &vm, OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
 				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
 			return vm.create_string(self.frame(ind).filename);
 		}
-		static OwcaValue exception_function(OwcaVM vm, OwcaException self, Number index) {
+		static OwcaValue exception_function(const OwcaVM &vm, OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
@@ -499,14 +497,14 @@ namespace OwcaScript::Internal {
 			return vm.create_string(self.frame(ind).function);
 		}
 
-		static OwcaValue hash(OwcaVM vm, OwcaValue r) {
+		static OwcaValue hash(const OwcaVM &vm, OwcaValue r) {
 			return VM::get(vm).calculate_hash(r);
 		}
-		static OwcaValue print(OwcaVM vm, OwcaValue r) {
+		static OwcaValue print(const OwcaVM &vm, OwcaValue r) {
 			std::cout << r.to_string() << "\n";
 			return {};
 		}
-		static OwcaValue time(OwcaVM vm) {
+		static OwcaValue time(const OwcaVM &vm) {
 			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1'000'000'000.0;
 		}
 
@@ -1357,7 +1355,7 @@ function native time();
 		}
 	}
 
-	void gc_mark_value(OwcaVM vm, GenerationGC ggc, const AllocationBase* ptr) {
+	void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const AllocationBase* ptr) {
 		if (ptr->last_gc_mark != ggc) {
 			ptr->last_gc_mark = ggc;
 			ptr->gc_mark(vm, ggc);

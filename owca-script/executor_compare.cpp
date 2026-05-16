@@ -194,20 +194,20 @@ namespace OwcaScript::Internal {
 
 			switch (left.kind()) {
 			case OwcaValueKind::Empty: return CompareResult::True;
-			case OwcaValueKind::Range: return (left.as_range(vm).lower() == right.as_range(vm).lower() && left.as_range(vm).upper() == right.as_range(vm).upper() && left.as_range(vm).step() == right.as_range(vm).step()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Bool: return (left.as_bool(vm) == right.as_bool(vm)) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Float: return (left.as_float(vm) == right.as_float(vm)) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Range: return (left.as_range_certainly().lower() == right.as_range_certainly().lower() && left.as_range_certainly().upper() == right.as_range_certainly().upper() && left.as_range_certainly().step() == right.as_range_certainly().step()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Bool: return (left.as_bool_certainly() == right.as_bool_certainly()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Float: return (left.as_float_certainly() == right.as_float_certainly()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::String: return (compare(vm, CompareKind::Eq, left, right) == Result::True) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Functions: return (left.as_functions(vm).internal_value() == right.as_functions(vm).internal_value() && left.as_functions(vm).internal_self_object() == right.as_functions(vm).internal_self_object()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Map: return (left.as_map(vm).internal_value() == right.as_map(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Class: return (left.as_class(vm).internal_value() == right.as_class(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Object: return (left.as_object(vm).internal_value() == right.as_object(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Array: return (left.as_array(vm).internal_value() == right.as_array(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Tuple: return (left.as_tuple(vm).internal_value() == right.as_tuple(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Set: return (left.as_set(vm).internal_value() == right.as_set(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Iterator: return (left.as_iterator(vm).internal_value() == right.as_iterator(vm).internal_value()) ? CompareResult::True : CompareResult::False;
-			case OwcaValueKind::Exception: return (left.as_exception(vm).internal_owner() == right.as_exception(vm).internal_owner()) ? CompareResult::True : CompareResult::False;
-            case OwcaValueKind::Namespace: return (left.as_namespace(vm).internal_value() == right.as_namespace(vm).internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Functions: return (left.as_functions_certainly().internal_value() == right.as_functions_certainly().internal_value() && left.as_functions_certainly().internal_self_object() == right.as_functions_certainly().internal_self_object()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Map: return (left.as_map_certainly().internal_value() == right.as_map_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Class: return (left.as_class_certainly().internal_value() == right.as_class_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Object: return (left.as_object_certainly().internal_value() == right.as_object_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Array: return (left.as_array_certainly().internal_value() == right.as_array_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Tuple: return (left.as_tuple_certainly().internal_value() == right.as_tuple_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Set: return (left.as_set_certainly().internal_value() == right.as_set_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Iterator: return (left.as_iterator_certainly().internal_value() == right.as_iterator_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
+			case OwcaValueKind::Exception: return (left.as_exception_certainly().internal_owner() == right.as_exception_certainly().internal_owner()) ? CompareResult::True : CompareResult::False;
+            case OwcaValueKind::Namespace: return (left.as_namespace_certainly().internal_value() == right.as_namespace_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::Completed: return CompareResult::True;
 			case OwcaValueKind::_Count: break;
 			}

@@ -152,9 +152,9 @@ namespace OwcaScript::Internal {
 
     OwcaValue Executor::set_identifier_function(OwcaValue target, OwcaValue value) {
         assert(value.kind() == OwcaValueKind::Functions);
-        auto fnc = value.as_functions(vm);
+        auto fnc = value.as_functions_certainly();
         if (target.kind() == OwcaValueKind::Functions) {
-            auto dst_fnc = target.as_functions(vm);
+            auto dst_fnc = target.as_functions_certainly();
             for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
                 if (fnc.internal_value()->functions[i]) {
                     dst_fnc.internal_value()->functions[i] = fnc.internal_value()->functions[i];
@@ -554,7 +554,7 @@ restart:
                     size_t size = strings.size();
                     auto values = PEEK_VALUES(expr_count, expr_count);
                     for(auto i = 0u; i < expr_count; ++i) {
-                        size += values[i].as_string(vm).size();
+                        size += values[i].as_string_certainly().size();
                     }
                     auto new_str = vm->precreate_string(size);
                     auto new_str_pt = new_str->pointer();
@@ -564,7 +564,7 @@ restart:
                         std::memcpy(new_str_pt, strings_ptr, sz);
                         new_str_pt += sz;
                         strings_ptr += sz;
-                        auto str = values[i].as_string(vm);
+                        auto str = values[i].as_string_certainly();
                         std::memcpy(new_str_pt, str.text().data(), str.size());
                         new_str_pt += str.size();
                     }
@@ -1232,7 +1232,7 @@ next_iteration:
         assert(arg_count > 0);
         
         auto locals_ptr = temporary_ptr.locals(arg_count);
-        auto cls = LOCAL_VAR(0).as_class(vm).internal_value();
+        auto cls = LOCAL_VAR(0).as_class_certainly().internal_value();
 
 		if (cls->allocator_override) {
 			obj = cls->allocator_override();
@@ -1242,6 +1242,9 @@ next_iteration:
 		}
 		else {
 			obj = OwcaObject{ vm->allocate<Object>(cls->native_storage_total, cls) };
+            if (auto exc = vm->is_exception(obj.as_object_certainly())) {
+                obj = OwcaException{ obj.as_object_certainly().internal_value(), exc };
+            }
 		}
 
 		auto it = cls->values.find(std::string_view{ "__init__" });
@@ -1254,8 +1257,9 @@ next_iteration:
         if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
             LOCAL_VAR(0) = obj;
             auto retval = execute_function_call_from_values(*state, temporary_ptr, states_ptr, true, arg_count);
-            if (!cls->reload_self) [[likely]]
+            if (!cls->reload_self) [[likely]] {
                 retval = obj;
+            }
             return retval;
         }
         throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
@@ -1347,7 +1351,6 @@ next_iteration:
         }
 
         return allocate_user_class_from_values(temporary_ptr, states_ptr, (unsigned int)arguments.size() + 1);
-
     }
     OwcaValue Executor::execute_call(OwcaValue func, std::span<OwcaValue> arguments) {
         auto tpk = TopPtrsKeeper{ *this };

@@ -15,6 +15,7 @@
 #include "owca_iterator.h"
 #include "owca_namespace.h"
 #include <cstddef>
+#include <string_view>
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -115,6 +116,7 @@ namespace OwcaScript {
 			return tmp.ptr2;
 		}
 
+		[[noreturn]] void throw_wrong_type(const OwcaVM &vm, std::string_view expected) const;
 	public:
 		OwcaValue() : OwcaValue(OwcaValueKind::Empty, nullptr, nullptr) {}
 		template <typename T> OwcaValue(T value) requires(std::is_same_v<std::remove_cvref_t<T>, bool>) : OwcaValue(OwcaValueKind::Bool, (Number)(value ? 1 : 0)) {}
@@ -149,22 +151,241 @@ namespace OwcaScript {
 		long long int as_int(const OwcaVM&) const;
 		bool is_true() const;
 
-		OwcaEmpty as_nul(const OwcaVM&) const;
-		OwcaCompleted as_completed(const OwcaVM&) const;
-		OwcaRange as_range(const OwcaVM&) const;
-		bool as_bool(const OwcaVM&) const;
-		Number as_float(const OwcaVM&) const;
-		OwcaString as_string(const OwcaVM&) const;
-		OwcaFunctions as_functions(const OwcaVM&) const;
-		OwcaMap as_map(const OwcaVM&) const;
-		OwcaClass as_class(const OwcaVM&) const;
-		OwcaObject as_object(const OwcaVM&) const;
-		OwcaTuple as_tuple(const OwcaVM&) const;
-		OwcaArray as_array(const OwcaVM&) const;
-		OwcaSet as_set(const OwcaVM&) const;
-		OwcaException as_exception(const OwcaVM&) const;
-		OwcaIterator as_iterator(const OwcaVM&) const;
-		OwcaNamespace as_namespace(const OwcaVM&) const;
+		OwcaEmpty as_nul(const OwcaVM& vm) const
+		{
+			if (auto v = as_nul_maybe()) return *v;
+			throw_wrong_type(vm, "Nul");
+		}
+		OwcaCompleted as_completed(const OwcaVM& vm) const
+		{
+			if (auto v = as_completed_maybe()) return *v;
+			throw_wrong_type(vm, "Completed");
+		}
+		OwcaRange as_range(const OwcaVM& vm) const
+		{
+			if (auto v = as_range_maybe()) return *v;
+			throw_wrong_type(vm, "Range");
+		}
+		bool as_bool(const OwcaVM& vm) const
+		{
+			if (auto v = as_bool_maybe()) return *v;
+			throw_wrong_type(vm, "Bool");
+		}
+		Number as_float(const OwcaVM& vm) const
+		{
+			if (auto v = as_float_maybe()) return *v;
+			throw_wrong_type(vm, "Float");
+		}
+		OwcaString as_string(const OwcaVM& vm) const
+		{
+			if (auto v = as_string_maybe()) return *v;
+			throw_wrong_type(vm, "String");
+		}
+		OwcaFunctions as_functions(const OwcaVM& vm) const
+		{
+			if (auto v = as_functions_maybe()) return *v;
+			throw_wrong_type(vm, "Function");
+		}
+		OwcaMap as_map(const OwcaVM& vm) const
+		{
+			if (auto v = as_map_maybe()) return *v;
+			throw_wrong_type(vm, "Map");
+		}
+		OwcaClass as_class(const OwcaVM& vm) const
+		{
+			if (auto v = as_class_maybe()) return *v;
+			throw_wrong_type(vm, "Class");
+		}
+		OwcaObject as_object(const OwcaVM& vm) const
+		{
+			if (auto v = as_object_maybe()) return *v;
+			throw_wrong_type(vm, "Object");
+		}
+		OwcaArray as_array(const OwcaVM& vm) const
+		{
+			if (auto v = as_array_maybe()) return *v;
+			throw_wrong_type(vm, "Array");
+		}
+		OwcaTuple as_tuple(const OwcaVM& vm) const
+		{
+			if (auto v = as_tuple_maybe()) return *v;
+			throw_wrong_type(vm, "Tuple");
+		}
+		OwcaSet as_set(const OwcaVM& vm) const
+		{
+			if (auto v = as_set_maybe()) return *v;
+			throw_wrong_type(vm, "Set");
+		}
+		OwcaNamespace as_namespace(const OwcaVM& vm) const
+		{
+			if (auto v = as_namespace_maybe()) return *v;
+			throw_wrong_type(vm, "Namespace");
+		}
+		OwcaException as_exception(const OwcaVM& vm) const
+		{
+			if (auto v = as_exception_maybe()) return *v;
+			throw_wrong_type(vm, "Exception");
+		}
+		OwcaIterator as_iterator(const OwcaVM& vm) const
+		{
+			if (auto v = as_iterator_maybe()) return *v;
+			throw_wrong_type(vm, "Iterator");
+		}
+
+		OwcaEmpty as_nul_certainly() const
+		{
+			return *as_nul_maybe();
+		}
+		OwcaCompleted as_completed_certainly() const
+		{
+			return *as_completed_maybe();
+		}
+		OwcaRange as_range_certainly() const
+		{
+			return *as_range_maybe();
+		}
+		bool as_bool_certainly() const
+		{
+			return *as_bool_maybe();
+		}
+		Number as_float_certainly() const
+		{
+			return *as_float_maybe();
+		}
+		OwcaString as_string_certainly() const
+		{
+			return *as_string_maybe();
+		}
+		OwcaFunctions as_functions_certainly() const
+		{
+			return *as_functions_maybe();
+		}
+		OwcaMap as_map_certainly() const
+		{
+			return *as_map_maybe();
+		}
+		OwcaClass as_class_certainly() const
+		{
+			return *as_class_maybe();
+		}
+		OwcaObject as_object_certainly() const
+		{
+			return *as_object_maybe();
+		}
+		OwcaArray as_array_certainly() const
+		{
+			return *as_array_maybe();
+		}
+		OwcaTuple as_tuple_certainly() const
+		{
+			return *as_tuple_maybe();
+		}
+		OwcaSet as_set_certainly() const
+		{
+			return *as_set_maybe();
+		}
+		OwcaNamespace as_namespace_certainly() const
+		{
+			return *as_namespace_maybe();
+		}
+		OwcaException as_exception_certainly() const
+		{
+			return *as_exception_maybe();
+		}
+		OwcaIterator as_iterator_certainly() const
+		{
+			return *as_iterator_maybe();
+		}
+
+		std::optional<OwcaEmpty> as_nul_maybe() const
+		{
+			if (kind() == OwcaValueKind::Empty) return OwcaEmpty{};
+			return std::nullopt;
+		}
+		std::optional<OwcaCompleted> as_completed_maybe() const
+		{
+			if (kind() == OwcaValueKind::Completed) return OwcaCompleted{};
+			return std::nullopt;
+		}
+		std::optional<OwcaRange> as_range_maybe() const
+		{
+			if (kind() == OwcaValueKind::Range) return OwcaRange{ (Internal::Range*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<bool> as_bool_maybe() const
+		{
+			if (kind() == OwcaValueKind::Bool) {
+				NumberValue tmp;
+				std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+				return tmp.value != 0;			
+			}
+			return std::nullopt;
+		}
+		std::optional<Number> as_float_maybe() const
+		{
+			if (kind() == OwcaValueKind::Float) {
+				NumberValue tmp;
+				std::memcpy(&tmp, &value_encoded_, sizeof(NumberValue));
+				return tmp.value;			
+			}
+			return std::nullopt;
+		}
+		std::optional<OwcaString> as_string_maybe() const
+		{
+			if (kind() == OwcaValueKind::String) return OwcaString{ (Internal::String*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaFunctions> as_functions_maybe() const
+		{
+			if (kind() == OwcaValueKind::Functions) return OwcaFunctions{ (Internal::RuntimeFunctions*)internal_ptr1(), (Internal::AllocationBase*)internal_ptr2() };
+			return std::nullopt;
+		}
+		std::optional<OwcaMap> as_map_maybe() const
+		{
+			if (kind() == OwcaValueKind::Map) return OwcaMap{ (Internal::DictionaryShared*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaClass> as_class_maybe() const
+		{
+			if (kind() == OwcaValueKind::Class) return OwcaClass{ (Internal::Class*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaObject> as_object_maybe() const
+		{
+			if (kind() == OwcaValueKind::Object) return OwcaObject{ (Internal::Object*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaArray> as_array_maybe() const
+		{
+			if (kind() == OwcaValueKind::Array) return OwcaArray{ (Internal::Array*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaTuple> as_tuple_maybe() const
+		{
+			if (kind() == OwcaValueKind::Tuple) return OwcaTuple{ (Internal::Tuple*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaSet> as_set_maybe() const
+		{
+			if (kind() == OwcaValueKind::Set) return OwcaSet{ (Internal::SetShared*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaNamespace> as_namespace_maybe() const
+		{
+			if (kind() == OwcaValueKind::Namespace) return OwcaNamespace{ (Internal::Namespace*)internal_ptr1() };
+			return std::nullopt;
+		}
+		std::optional<OwcaException> as_exception_maybe() const
+		{
+			if (kind() == OwcaValueKind::Exception) return OwcaException{ (Internal::Object*)internal_ptr1(), (Internal::Exception*)internal_ptr2() };
+			return std::nullopt;
+		}
+		std::optional<OwcaIterator> as_iterator_maybe() const
+		{
+			if (kind() == OwcaValueKind::Iterator) return OwcaIterator{ (Internal::Iterator*)internal_ptr1() };
+			return std::nullopt;
+		}
+
 		std::string_view type() const;
 		std::string to_string() const;
 
@@ -188,20 +409,20 @@ namespace OwcaScript {
 			switch(kind()) {
 			case OwcaValueKind::Empty: return tmp(OwcaEmpty{});
 			case OwcaValueKind::Completed: return tmp(OwcaCompleted{});
-			case OwcaValueKind::Range: return tmp(as_range(nullptr));
-			case OwcaValueKind::Bool: return tmp(as_bool(nullptr));
-			case OwcaValueKind::Float: return tmp(as_float(nullptr));
-			case OwcaValueKind::String: return tmp(as_string(nullptr));
-			case OwcaValueKind::Functions: return tmp(as_functions(nullptr));
-			case OwcaValueKind::Map: return tmp(as_map(nullptr));
-			case OwcaValueKind::Class: return tmp(as_class(nullptr));
-			case OwcaValueKind::Object: return tmp(as_object(nullptr));
-			case OwcaValueKind::Tuple: return tmp(as_tuple(nullptr));
-			case OwcaValueKind::Array: return tmp(as_array(nullptr));
-			case OwcaValueKind::Set: return tmp(as_set(nullptr));
-			case OwcaValueKind::Exception: return tmp(as_exception(nullptr));
-			case OwcaValueKind::Iterator: return tmp(as_iterator(nullptr));
-			case OwcaValueKind::Namespace: return tmp(as_namespace(nullptr));
+			case OwcaValueKind::Range: return tmp(as_range_certainly());
+			case OwcaValueKind::Bool: return tmp(as_bool_certainly());
+			case OwcaValueKind::Float: return tmp(as_float_certainly());
+			case OwcaValueKind::String: return tmp(as_string_certainly());
+			case OwcaValueKind::Functions: return tmp(as_functions_certainly());
+			case OwcaValueKind::Map: return tmp(as_map_certainly());
+			case OwcaValueKind::Class: return tmp(as_class_certainly());
+			case OwcaValueKind::Object: return tmp(as_object_certainly());
+			case OwcaValueKind::Tuple: return tmp(as_tuple_certainly());
+			case OwcaValueKind::Array: return tmp(as_array_certainly());
+			case OwcaValueKind::Set: return tmp(as_set_certainly());
+			case OwcaValueKind::Exception: return tmp(as_exception_certainly());
+			case OwcaValueKind::Iterator: return tmp(as_iterator_certainly());
+			case OwcaValueKind::Namespace: return tmp(as_namespace_certainly());
 			case OwcaValueKind::_Count: break;
 			}
 			assert(false);
@@ -222,13 +443,13 @@ namespace OwcaScript {
 		static T convert_impl2(const OwcaVM& vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Float) 
 				throw_cant_convert_to_number(vm, I, v);
-			return (T)v.as_float(vm);
+			return (T)v.as_float_certainly();
 		}
 		template <std::floating_point T>
 		static auto convert_impl2(const OwcaVM& vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Float) 
 				throw_cant_convert_to_number(vm, I, v);
-			return (T)v.as_float(vm);
+			return (T)v.as_float_certainly();
 		}
 		bool convert_impl2(const OwcaVM& vm, size_t I, bool *b, OwcaValue v);
 		std::string convert_impl2(const OwcaVM& vm, size_t I, std::string *b, OwcaValue v);
