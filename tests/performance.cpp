@@ -25,7 +25,7 @@ print(`Final result: {s}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 21.277
+{ // 20.94
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 function foo1(s) {

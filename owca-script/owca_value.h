@@ -146,31 +146,31 @@ namespace OwcaScript {
 			return (OwcaValueKind)kind;
 
 		}
-		long long int as_int(OwcaVM ) const;
+		long long int as_int(const OwcaVM&) const;
 		bool is_true() const;
 
-		OwcaEmpty as_nul(OwcaVM ) const;
-		OwcaCompleted as_completed(OwcaVM ) const;
-		OwcaRange as_range(OwcaVM ) const;
-		bool as_bool(OwcaVM ) const;
-		Number as_float(OwcaVM ) const;
-		OwcaString as_string(OwcaVM ) const;
-		OwcaFunctions as_functions(OwcaVM ) const;
-		OwcaMap as_map(OwcaVM ) const;
-		OwcaClass as_class(OwcaVM ) const;
-		OwcaObject as_object(OwcaVM ) const;
-		OwcaTuple as_tuple(OwcaVM ) const;
-		OwcaArray as_array(OwcaVM ) const;
-		OwcaSet as_set(OwcaVM ) const;
-		OwcaException as_exception(OwcaVM) const;
-		OwcaIterator as_iterator(OwcaVM) const;
-		OwcaNamespace as_namespace(OwcaVM) const;
+		OwcaEmpty as_nul(const OwcaVM&) const;
+		OwcaCompleted as_completed(const OwcaVM&) const;
+		OwcaRange as_range(const OwcaVM&) const;
+		bool as_bool(const OwcaVM&) const;
+		Number as_float(const OwcaVM&) const;
+		OwcaString as_string(const OwcaVM&) const;
+		OwcaFunctions as_functions(const OwcaVM&) const;
+		OwcaMap as_map(const OwcaVM&) const;
+		OwcaClass as_class(const OwcaVM&) const;
+		OwcaObject as_object(const OwcaVM&) const;
+		OwcaTuple as_tuple(const OwcaVM&) const;
+		OwcaArray as_array(const OwcaVM&) const;
+		OwcaSet as_set(const OwcaVM&) const;
+		OwcaException as_exception(const OwcaVM&) const;
+		OwcaIterator as_iterator(const OwcaVM&) const;
+		OwcaNamespace as_namespace(const OwcaVM&) const;
 		std::string_view type() const;
 		std::string to_string() const;
 
-		OwcaValue member(OwcaVM vm, const std::string& key) const;
-		void member(OwcaVM vm, const std::string& key, OwcaValue val);
-		OwcaValue call(OwcaVM vm, std::span<OwcaValue> args) const;
+		OwcaValue member(const OwcaVM&, const std::string& key) const;
+		void member(const OwcaVM&, const std::string& key, OwcaValue val);
+		OwcaValue call(const OwcaVM&, std::span<OwcaValue> args) const;
 
 		OwcaValue member(const std::string& key) const;
 		void member(const std::string& key, OwcaValue val);
@@ -209,44 +209,44 @@ namespace OwcaScript {
 		}
 	};
 
-	void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaValue);
-	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaEmpty) {}
-	inline void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaCompleted) {}		
-	template <typename T> inline void gc_mark_value(OwcaVM vm, GenerationGC gc, T) requires(std::is_arithmetic_v<T>) {}		
+	void gc_mark_value(const OwcaVM&, GenerationGC gc, OwcaValue);
+	inline void gc_mark_value(const OwcaVM&, GenerationGC gc, OwcaEmpty) {}
+	inline void gc_mark_value(const OwcaVM&, GenerationGC gc, OwcaCompleted) {}		
+	template <typename T> inline void gc_mark_value(const OwcaVM&, GenerationGC gc, T) requires(std::is_arithmetic_v<T>) {}		
 
 	namespace Internal {
 		class VM;
 
-		void throw_cant_convert_to_number(OwcaVM vm, size_t I, OwcaValue v);
+		void throw_cant_convert_to_number(const OwcaVM&, size_t I, OwcaValue v);
 		template <std::integral T>
-		static T convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
+		static T convert_impl2(const OwcaVM& vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Float) 
 				throw_cant_convert_to_number(vm, I, v);
 			return (T)v.as_float(vm);
 		}
 		template <std::floating_point T>
-		static auto convert_impl2(OwcaVM vm, size_t I, T *, OwcaValue v) {
+		static auto convert_impl2(const OwcaVM& vm, size_t I, T *, OwcaValue v) {
 			if (v.kind() != OwcaValueKind::Float) 
 				throw_cant_convert_to_number(vm, I, v);
 			return (T)v.as_float(vm);
 		}
-		bool convert_impl2(OwcaVM vm, size_t I, bool *b, OwcaValue v);
-		std::string convert_impl2(OwcaVM vm, size_t I, std::string *b, OwcaValue v);
-		std::string_view convert_impl2(OwcaVM vm, size_t I, std::string_view *b, OwcaValue v);
-		OwcaEmpty convert_impl2(OwcaVM vm, size_t I, OwcaEmpty *b, OwcaValue v);
-		OwcaRange convert_impl2(OwcaVM vm, size_t I, OwcaRange *b, OwcaValue v);
-		Number convert_impl2(OwcaVM vm, size_t I, Number *b, OwcaValue v);
-		OwcaString convert_impl2(OwcaVM vm, size_t I, OwcaString *b, OwcaValue v);
-		OwcaFunctions convert_impl2(OwcaVM vm, size_t I, OwcaFunctions *b, OwcaValue v);
-		OwcaMap convert_impl2(OwcaVM vm, size_t I, OwcaMap *b, OwcaValue v);
-		OwcaClass convert_impl2(OwcaVM vm, size_t I, OwcaClass *b, OwcaValue v);
-		OwcaObject convert_impl2(OwcaVM vm, size_t I, OwcaObject *b, OwcaValue v);
-		OwcaIterator convert_impl2(OwcaVM vm, size_t I, OwcaIterator *b, OwcaValue v);
-		OwcaArray convert_impl2(OwcaVM vm, size_t I, OwcaArray *b, OwcaValue v);
-		OwcaTuple convert_impl2(OwcaVM vm, size_t I, OwcaTuple *b, OwcaValue v);
-		OwcaSet convert_impl2(OwcaVM vm, size_t I, OwcaSet *b, OwcaValue v);
-		OwcaException convert_impl2(OwcaVM vm, size_t I, OwcaException *b, OwcaValue v);
-		OwcaValue convert_impl2(OwcaVM vm, size_t I, OwcaValue *b, OwcaValue v);
+		bool convert_impl2(const OwcaVM& vm, size_t I, bool *b, OwcaValue v);
+		std::string convert_impl2(const OwcaVM& vm, size_t I, std::string *b, OwcaValue v);
+		std::string_view convert_impl2(const OwcaVM& vm, size_t I, std::string_view *b, OwcaValue v);
+		OwcaEmpty convert_impl2(const OwcaVM& vm, size_t I, OwcaEmpty *b, OwcaValue v);
+		OwcaRange convert_impl2(const OwcaVM& vm, size_t I, OwcaRange *b, OwcaValue v);
+		Number convert_impl2(const OwcaVM& vm, size_t I, Number *b, OwcaValue v);
+		OwcaString convert_impl2(const OwcaVM& vm, size_t I, OwcaString *b, OwcaValue v);
+		OwcaFunctions convert_impl2(const OwcaVM& vm, size_t I, OwcaFunctions *b, OwcaValue v);
+		OwcaMap convert_impl2(const OwcaVM& vm, size_t I, OwcaMap *b, OwcaValue v);
+		OwcaClass convert_impl2(const OwcaVM& vm, size_t I, OwcaClass *b, OwcaValue v);
+		OwcaObject convert_impl2(const OwcaVM& vm, size_t I, OwcaObject *b, OwcaValue v);
+		OwcaIterator convert_impl2(const OwcaVM& vm, size_t I, OwcaIterator *b, OwcaValue v);
+		OwcaArray convert_impl2(const OwcaVM& vm, size_t I, OwcaArray *b, OwcaValue v);
+		OwcaTuple convert_impl2(const OwcaVM& vm, size_t I, OwcaTuple *b, OwcaValue v);
+		OwcaSet convert_impl2(const OwcaVM& vm, size_t I, OwcaSet *b, OwcaValue v);
+		OwcaException convert_impl2(const OwcaVM& vm, size_t I, OwcaException *b, OwcaValue v);
+		OwcaValue convert_impl2(const OwcaVM& vm, size_t I, OwcaValue *b, OwcaValue v);
 
 		template <typename T> struct FuncToTuple {
 		};
@@ -255,7 +255,7 @@ namespace OwcaScript {
 			static constexpr bool is_generator = false;
 		};
 
-		template <size_t I, typename ... ARGS> static auto convert_impl(OwcaVM vm, std::span<OwcaValue> args) {
+		template <size_t I, typename ... ARGS> static auto convert_impl(const OwcaVM& vm, std::span<OwcaValue> args) {
 			if constexpr(I < sizeof...(ARGS)) {
 				using T = std::remove_cvref_t<std::tuple_element_t<I, std::tuple<ARGS...>>>;
 				std::tuple<T> tmp = { convert_impl2(vm, I, (T*)nullptr, args[I]) };
@@ -267,17 +267,17 @@ namespace OwcaScript {
 				return std::tuple<>{};
 			}
 		}
-		template <typename ... ARGS> static std::tuple<OwcaVM, ARGS...> convert2(OwcaVM vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
+		template <typename ... ARGS> static std::tuple<const OwcaVM&, ARGS...> convert2(const OwcaVM& vm, std::span<OwcaValue> args, std::tuple<ARGS...> *) {
 			assert(sizeof...(ARGS) == args.size());
 			std::tuple<ARGS...> dst_args = convert_impl<0, ARGS...>(vm, args);
-			return std::tuple_cat(std::tuple<OwcaVM>(vm), std::move(dst_args));
+			return std::tuple_cat(std::tuple<const OwcaVM&>(vm), std::move(dst_args));
 		}
 
 	}
 
 	template <typename F>
 	static auto adapt(F &&f) requires (!Internal::FuncToTuple<std::remove_cvref_t<F>>::is_generator) {
-		return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+		return [f = std::forward<F>(f)](const OwcaVM &vm, std::span<OwcaValue> args) -> OwcaValue {
 			using T = typename Internal::FuncToTuple<std::remove_cvref_t<F>>::type;
 			auto dest_args = Internal::convert2(vm, args, (T*)nullptr);
 			return std::apply(f, dest_args);
