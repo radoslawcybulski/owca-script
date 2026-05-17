@@ -26,7 +26,7 @@ namespace OwcaScript {
 			std::string to_string() const;
 			
 			
-			friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const Exception &);
+			friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Exception &);
 		};
 	}
 }

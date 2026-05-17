@@ -23,7 +23,7 @@ namespace OwcaScript {
         bool completed() const;
         std::optional<OwcaValue> next() const;
 
-        friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &);
+        friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaIterator &);
 
 		class Iterator {
             OwcaIterator *iter;

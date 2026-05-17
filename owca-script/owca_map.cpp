@@ -99,7 +99,7 @@ namespace OwcaScript {
 		return dictionary->dict.set_default(key, default_value);
 	}
 
-	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaMap &map) {
+	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaMap &map) {
 		gc_mark_value(vm, gc, map.dictionary);
 
 	}

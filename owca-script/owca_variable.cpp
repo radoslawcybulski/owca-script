@@ -8,7 +8,7 @@ namespace OwcaScript {
         return *this;
     }
 
-    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaVariable &v) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaVariable &v) {
         gc_mark_value(vm, gc, static_cast<const OwcaValue&>(v));
     }
 }

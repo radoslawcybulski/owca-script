@@ -109,7 +109,7 @@ TEST_F(SimpleTest, native_class)
 			}
 			void destroy_storage(void* ptr, size_t s) override {
 			}
-			void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+			void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
 			}
 			size_t native_storage_size() override {
 				return 8;
@@ -147,7 +147,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
@@ -222,12 +222,12 @@ TEST_F(SimpleTest, native_class_with_vars)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
@@ -236,7 +236,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 					}
 					return false;
 				}
-				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
@@ -299,12 +299,12 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
@@ -313,7 +313,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					}
 					return false;
 				}
-				bool set_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
@@ -405,12 +405,12 @@ TEST_F(SimpleTest, variable_missing)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, OwcaVM, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(OwcaVM vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") return true;
 					return false;
 				}

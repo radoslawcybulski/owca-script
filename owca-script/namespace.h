@@ -25,7 +25,7 @@ namespace OwcaScript {
             std::string_view type() const override;
 			std::string to_string() const override;
 
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
             OwcaValue member(std::string_view key) const;
             std::optional<OwcaValue> try_member(std::string_view key) const;
             void set_member(std::string_view key, OwcaValue val);

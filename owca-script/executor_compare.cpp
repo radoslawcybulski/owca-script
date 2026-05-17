@@ -13,7 +13,7 @@ namespace OwcaScript::Internal {
 			False, True, NotExec
 		};
 
-        static Result compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right);
+        static Result compare(const OwcaVM &vm, CompareKind kind, OwcaValue left, OwcaValue right);
         static Result build_result(CompareKind kind, bool is_eq) {
             switch (kind) {
             case CompareKind::Eq:
@@ -52,7 +52,7 @@ namespace OwcaScript::Internal {
         static Result compare_split(OwcaVM, CompareKind kind, const OwcaEmpty& l, const OwcaEmpty& r) {
             return build_result(kind, true);
         }
-        template <typename T> static Result compare_array_iter(OwcaVM vm, CompareKind kind, const T &left, const T &right) {
+        template <typename T> static Result compare_array_iter(const OwcaVM &vm, CompareKind kind, const T &left, const T &right) {
             if (kind == CompareKind::Eq) {
                 if (left.size() != right.size()) return Result::False;
             }
@@ -116,13 +116,13 @@ namespace OwcaScript::Internal {
         static Result compare_split(OwcaVM, CompareKind kind, const OwcaObject& l, const OwcaObject& r) {
             return build_result(kind, l.internal_value() == r.internal_value());
         }
-        static Result compare_split(OwcaVM vm, CompareKind kind, const OwcaArray& l, const OwcaArray& r) {
+        static Result compare_split(const OwcaVM &vm, CompareKind kind, const OwcaArray& l, const OwcaArray& r) {
             return compare_array_iter(vm, kind, l.internal_value()->values, r.internal_value()->values);
         }
-        static Result compare_split(OwcaVM vm, CompareKind kind, const OwcaTuple& l, const OwcaTuple& r) {
+        static Result compare_split(const OwcaVM &vm, CompareKind kind, const OwcaTuple& l, const OwcaTuple& r) {
             return compare_array_iter(vm, kind, l.internal_value()->values, r.internal_value()->values);
         }
-        static Result compare_split(OwcaVM vm, CompareKind kind, const OwcaMap& l, const OwcaMap& r) {
+        static Result compare_split(const OwcaVM &vm, CompareKind kind, const OwcaMap& l, const OwcaMap& r) {
             switch (kind) {
             case CompareKind::Eq:
                 if (l.size() != r.size()) return Result::False;
@@ -150,7 +150,7 @@ namespace OwcaScript::Internal {
             }
             return kind == CompareKind::Eq ? Result::True : Result::False;
         }
-        static Result compare_split(OwcaVM vm, CompareKind kind, const OwcaSet& l, const OwcaSet& r) {
+        static Result compare_split(const OwcaVM &vm, CompareKind kind, const OwcaSet& l, const OwcaSet& r) {
             switch (kind) {
             case CompareKind::Eq:
                 if (l.size() != r.size()) return Result::False;
@@ -170,10 +170,10 @@ namespace OwcaScript::Internal {
             }
             return kind == CompareKind::Eq ? Result::True : Result::False;
         }
-        static Result compare_split(OwcaVM vm, CompareKind kind, const auto& l, const auto& r) {
+        static Result compare_split(const OwcaVM &vm, CompareKind kind, const auto& l, const auto& r) {
             return Result::NotExec;
         }
-        static Result compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right) {
+        static Result compare(const OwcaVM &vm, CompareKind kind, OwcaValue left, OwcaValue right) {
             return left.visit(
                     [&](const auto& ll) {
                         return right.visit(

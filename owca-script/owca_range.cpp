@@ -30,5 +30,5 @@ namespace OwcaScript {
         }
     }
 
-    void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaRange) {}
+    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaRange) {}
 }

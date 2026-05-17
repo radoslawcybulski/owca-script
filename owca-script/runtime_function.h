@@ -28,7 +28,7 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
 			virtual OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) = 0;
 			virtual unsigned int line(ExecuteBufferReader::Position) const;
@@ -48,7 +48,7 @@ namespace OwcaScript {
 					RuntimeFunction(std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
 			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
@@ -56,7 +56,7 @@ namespace OwcaScript {
 		};
 
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
 			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
@@ -98,7 +98,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
@@ -110,7 +110,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "bound function's self helper object"; }
 			std::string to_string() const override { return std::string{ type() }; }
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 			BoundFunctionSelfObject* is_bound_function_self_object() override { return this; }
 		};
 	}

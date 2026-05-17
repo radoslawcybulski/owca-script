@@ -19,7 +19,7 @@ namespace OwcaScript::Internal {
         return temp;
     }
 
-    void Array::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
+    void Array::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
     {
         gc_mark_value(vm, generation_gc, values);
     }

@@ -199,32 +199,32 @@ namespace OwcaScript {
 			static VM& get(const OwcaVM &v);
 		};
 
-		void gc_mark_value(OwcaVM vm, GenerationGC ggc, const AllocationBase* ptr);
-		template <std::integral T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, T) {}
-		template <std::floating_point T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, T) {}
-		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::string &) {}
-		inline void gc_mark_value(OwcaVM vm, GenerationGC ggc, std::string_view) {}
-		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, std::span<T> vct) {
+		void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const AllocationBase* ptr);
+		template <std::integral T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, T) {}
+		template <std::floating_point T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, T) {}
+		inline void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::string &) {}
+		inline void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, std::string_view) {}
+		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, std::span<T> vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::vector<T> &vct) {
+		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::vector<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::deque<T> &vct) {
+		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::deque<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::list<T> &vct) {
+		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::list<T> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q);
 			}
 		}
-		template <typename K, typename V, typename ... ARGS> void gc_mark_value(OwcaVM vm, GenerationGC ggc, const std::unordered_map<K, V, ARGS...> &vct) {
+		template <typename K, typename V, typename ... ARGS> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::unordered_map<K, V, ARGS...> &vct) {
 			for(auto &q : vct) {
 				gc_mark_value(vm, ggc, q.first);
 				gc_mark_value(vm, ggc, q.second);

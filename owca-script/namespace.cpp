@@ -10,7 +10,7 @@ namespace OwcaScript::Internal {
 	std::string Namespace::to_string() const {
 		return std::format("namespace {}", code.filename());
 	}
-	void Namespace::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
+	void Namespace::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
         gc_mark_value(vm, generation_gc, globals);
     }
     OwcaValue Namespace::member(std::string_view key) const {

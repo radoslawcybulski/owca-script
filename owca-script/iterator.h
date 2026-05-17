@@ -31,7 +31,7 @@ namespace OwcaScript {
 				return "Iterator";
 			}
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 		};
 	}
 }

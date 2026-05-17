@@ -68,7 +68,7 @@ namespace OwcaScript {
         Iterator begin() const;
 		Iterator end() const;
 
-        friend void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaNamespace);
+        friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaNamespace);
 	};
 }
 

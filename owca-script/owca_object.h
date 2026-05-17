@@ -36,7 +36,7 @@ namespace OwcaScript {
 			return *(T*)sp.data();
 		}
 
-		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaObject &);
+		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaObject &);
 	};
 }
 

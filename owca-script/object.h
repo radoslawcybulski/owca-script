@@ -40,13 +40,13 @@ namespace OwcaScript {
 
 			std::string_view type() const override { return "Class"; }
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
-			void initialize_add_base_class(OwcaVM vm, OwcaClass b);
-			void initialize_add_function(OwcaVM vm, OwcaFunctions f);
+			void initialize_add_base_class(const OwcaVM &vm, OwcaClass b);
+			void initialize_add_function(const OwcaVM &vm, OwcaFunctions f);
 			void initialize_add_variable(std::string_view name);
 			void initialize_set_all_variables();
-			void finalize_initializing(OwcaVM vm);
+			void finalize_initializing(const OwcaVM &vm);
 			char* native_storage_ptr(Object *) const;
 			const char* native_storage_ptr(const Object *) const;
 
@@ -64,7 +64,7 @@ namespace OwcaScript {
 
 			std::string_view type() const override;
 			std::string to_string() const override;
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override;
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 			std::span<char> native_storage_raw(ClassToken cls);
 			template <typename T> T* native_storage(ClassToken cls) {
 				auto sp = native_storage_raw(cls);
@@ -74,7 +74,7 @@ namespace OwcaScript {
 			}
 		};
 
-		void gc_mark_value(OwcaVM vm, GenerationGC ggc, const AllocationBase* ptr);
+		void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const AllocationBase* ptr);
 	}
 }
 

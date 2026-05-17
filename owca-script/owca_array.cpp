@@ -67,7 +67,7 @@ namespace OwcaScript {
         return &array->values[pos];
     }
 
-    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaArray &o) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &o) {
         gc_mark_value(vm, gc, o.object);
     }
 }

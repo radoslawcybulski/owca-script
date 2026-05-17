@@ -19,7 +19,7 @@ namespace OwcaScript {
         OwcaVariable &operator = (OwcaVariable &&) = delete;
         OwcaVariable &operator = (OwcaValue);
 
-        friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaVariable &);
+        friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaVariable &);
     };
 }
 

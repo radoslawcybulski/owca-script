@@ -23,7 +23,7 @@ namespace OwcaScript {
 		Number step() const;
 		Number size() const;
 
-		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaRange);
+		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaRange);
 	};
 }
 

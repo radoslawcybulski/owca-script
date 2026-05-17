@@ -27,7 +27,7 @@ namespace OwcaScript {
     OwcaIterator::Iterator::reference OwcaIterator::Iterator::operator*() const { return iter->object->last_value; }
     OwcaIterator::Iterator::pointer OwcaIterator::Iterator::operator->() const { return &iter->object->last_value; }
 
-    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaIterator &o) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaIterator &o) {
         gc_mark_value(vm, gc, o.object);
     }
 }

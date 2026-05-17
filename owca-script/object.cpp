@@ -33,7 +33,7 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Class::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
+	void Class::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
 	{
 		for (auto& it : values) {
 			visit_variant(it.second, [&](const Class* p) {
@@ -59,7 +59,7 @@ namespace OwcaScript::Internal {
 		return (const char*)o + sizeof(*o);
 	}
 
-	void Class::initialize_add_base_class(OwcaVM vm, OwcaClass b)
+	void Class::initialize_add_base_class(const OwcaVM &vm, OwcaClass b)
 	{
 		base_classes.push_back(b.internal_value());
 	}
@@ -69,7 +69,7 @@ namespace OwcaScript::Internal {
 	void Class::initialize_set_all_variables() {
 		all_variables = true;
 	}
-	void Class::initialize_add_function(OwcaVM vm, OwcaFunctions fnc)
+	void Class::initialize_add_function(const OwcaVM &vm, OwcaFunctions fnc)
 	{
 		for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
 			if (fnc.internal_value()->functions[i]) {
@@ -77,7 +77,7 @@ namespace OwcaScript::Internal {
 			}
 		}
 	}
-	void Class::finalize_initializing(OwcaVM vm)
+	void Class::finalize_initializing(const OwcaVM &vm)
 	{
 		size_t offset = 0;
 		for (auto q : base_classes) {
@@ -135,7 +135,7 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Object::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
+	void Object::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
 	{
 		gc_mark_value(vm, generation_gc, type_);
 		for (auto& it : values)

@@ -77,14 +77,14 @@ namespace OwcaScript {
     };
 
     namespace Internal {
-		template <typename ... ARGS> struct FuncToTuple<Generator(OwcaVM, ARGS...)> {
+		template <typename ... ARGS> struct FuncToTuple<Generator(const OwcaVM &, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
 			static constexpr bool is_generator = true;
 		};
 
         template <typename F>
         static auto adapt(F &&f) requires (Internal::FuncToTuple<std::remove_cvref_t<F>>::is_generator) {
-            return [f = std::forward<F>(f)](OwcaVM vm, std::span<OwcaValue> args) -> Generator {
+            return [f = std::forward<F>(f)](const OwcaVM &vm, std::span<OwcaValue> args) -> Generator {
                 using T = typename Internal::FuncToTuple<std::remove_cvref_t<F>>::type;
                 auto dest_args = Internal::convert2(vm, args, (T*)nullptr);
                 return std::apply(f, dest_args);

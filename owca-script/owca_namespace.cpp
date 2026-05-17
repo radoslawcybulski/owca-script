@@ -61,7 +61,7 @@ namespace OwcaScript {
 		auto it = object->identifier_to_global_index.end();
 		return Iterator{ object, it };
 	}    
-	void gc_mark_value(OwcaVM vm, GenerationGC gc, OwcaNamespace obj)
+	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaNamespace obj)
 	{
 		gc_mark_value(vm, gc, obj.internal_value());
 	}

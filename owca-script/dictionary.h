@@ -19,7 +19,7 @@ namespace OwcaScript {
 			OwcaVM vm;
 			const bool is_map = true;
 
-			Dictionary(OwcaVM vm, bool is_map) : vm(vm), is_map(is_map) {}
+			Dictionary(OwcaVM vm, bool is_map) : vm(std::move(vm)), is_map(is_map) {}
 
 			std::tuple<size_t, size_t, bool> find_place(OwcaValue key, size_t hash) const;
 			std::tuple<size_t, size_t, bool> find_place(OwcaValue key) const;
@@ -50,7 +50,7 @@ namespace OwcaScript {
 			std::string_view type() const;
 			std::string to_string() const;
 			
-			friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const Dictionary &);
+			friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &);
 		};
 
 		struct DictionaryShared : public AllocationBase {
@@ -58,7 +58,7 @@ namespace OwcaScript {
 
 			Dictionary dict;
 
-			DictionaryShared(OwcaVM vm) : dict(vm, true) {}
+			DictionaryShared(OwcaVM vm) : dict(std::move(vm), true) {}
 			
 			DictionaryShared *clone() const;
 			std::string_view type() const override {
@@ -67,7 +67,7 @@ namespace OwcaScript {
 			std::string to_string() const override {
 				return dict.to_string();
 			}
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
 				gc_mark_value(vm, generation_gc, dict);
 			}
 		};
@@ -77,7 +77,7 @@ namespace OwcaScript {
 
 			Dictionary dict;
 
-			SetShared(OwcaVM vm) : dict(vm, false) {}
+			SetShared(OwcaVM vm) : dict(std::move(vm), false) {}
 			
 			SetShared *clone() const;
 			std::string_view type() const override {
@@ -86,7 +86,7 @@ namespace OwcaScript {
 			std::string to_string() const override {
 				return dict.to_string();
 			}
-			void gc_mark(OwcaVM vm, GenerationGC generation_gc) const override {
+			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
 				gc_mark_value(vm, generation_gc, dict);
 			}
 		};

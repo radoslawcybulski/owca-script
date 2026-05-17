@@ -30,8 +30,6 @@ namespace OwcaScript {
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
-
-			static bool execute_compare(OwcaVM vm, CompareKind kind, OwcaValue left, OwcaValue right);
 		};
 	}
 }

@@ -24,7 +24,7 @@ namespace OwcaScript {
 		std::optional<OwcaValue> self() const;
 		OwcaValue bind(OwcaValue self) const;
 
-		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaFunctions &);
+		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaFunctions &);
 	};
 }
 

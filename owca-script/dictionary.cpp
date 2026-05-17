@@ -278,7 +278,7 @@ namespace OwcaScript::Internal {
 		return tmp.str();
 
 	}
-	void gc_mark_value(OwcaVM vm, GenerationGC gc, const Dictionary &d)
+	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &d)
 	{
 		for(auto pos = d.next(); pos < d.values.size(); pos = d.next(pos)) {
 			auto v = d.read(pos);

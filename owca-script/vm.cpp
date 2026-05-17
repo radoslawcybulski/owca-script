@@ -20,6 +20,7 @@
 #include "executor.h"
 #include "namespace.h"
 #include <memory>
+#include "executor_compare.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -1222,7 +1223,11 @@ function native time();
 
 	bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
 	{
-		return AstExprCompare::execute_compare(this, kind, left, right);
+		auto value = Internal::execute_compare(this, kind, left, right);
+		if (value == CompareResult::NotExecuted) [[unlikely]] {
+			throw_cant_compare(kind, left.type(), right.type());
+		}
+		return value == CompareResult::True;
 	}
 	
 	bool VM::calculate_if_true(OwcaValue r) {

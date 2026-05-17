@@ -471,7 +471,7 @@ namespace OwcaScript {
 
 		template <typename T> struct FuncToTuple {
 		};
-		template <typename ... ARGS> struct FuncToTuple<OwcaValue(OwcaVM, ARGS...)> {
+		template <typename ... ARGS> struct FuncToTuple<OwcaValue(const OwcaVM &, ARGS...)> {
 			using type = std::tuple<std::remove_cvref_t<ARGS>...>;
 			static constexpr bool is_generator = false;
 		};

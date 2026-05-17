@@ -30,7 +30,7 @@ namespace OwcaScript {
         return &tuple->values[pos];
     }
 
-    void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaTuple &t) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaTuple &t) {
         gc_mark_value(vm, gc, t.object);
     }
 }

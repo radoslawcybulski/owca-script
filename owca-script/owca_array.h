@@ -27,7 +27,7 @@ namespace OwcaScript {
 		OwcaValue pop_front();
         std::string to_string() const;
 
-		friend void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaArray &);
+		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &);
 
 		class Iterator {
 		public:

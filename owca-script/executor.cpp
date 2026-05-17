@@ -1572,33 +1572,33 @@ next_iteration:
 	}
 
 
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::WhileState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::WhileState &e) {
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::ClassState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::ClassState &e) {
         gc_mark_value(vm, generation_gc, e.cls);
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::ForState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::ForState &e) {
         gc_mark_value(vm, generation_gc, e.iterator);
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::TryState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::TryState &e) {
         if (e.original_exception_being_handled)
             gc_mark_value(vm, generation_gc, *e.original_exception_being_handled);
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::CatchState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::CatchState &e) {
         if (e.exception_being_handled)
             gc_mark_value(vm, generation_gc, *e.exception_being_handled);
         if (e.original_exception_being_handled)
             gc_mark_value(vm, generation_gc, *e.original_exception_being_handled);
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::WithState &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::WithState &e) {
         gc_mark_value(vm, generation_gc, e.context);
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const Executor::StatesType &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::StatesType &e) {
         visit_variant(e,
             [&](const auto &a) { gc_mark_value(vm, generation_gc, a); }
         );
     }
-    void gc_mark_value(OwcaVM vm, GenerationGC ggc, const Executor &e) {
+    void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const Executor &e) {
         for(auto it : e.namespaces) {
             gc_mark_value(vm, ggc, it.second);
         }

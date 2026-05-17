@@ -76,7 +76,7 @@ namespace OwcaScript {
 		dictionary->dict.difference_with(other.internal_value()->dict);
 	}
 
-	void gc_mark_value(OwcaVM vm, GenerationGC gc, const OwcaSet &o) {
+	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaSet &o) {
 		gc_mark_value(vm, gc, o.dictionary);
 	}
 }

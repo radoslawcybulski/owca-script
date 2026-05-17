@@ -11,7 +11,7 @@ namespace OwcaScript::Internal {
 	std::string RuntimeFunction::to_string() const {
 		return std::format("function set {}", name);
 	}
-	void RuntimeFunction::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {}
+	void RuntimeFunction::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {}
 
 	unsigned int RuntimeFunction::line(ExecuteBufferReader::Position pos) const {
 		return code.get_line_by_position(pos - 1).line;
@@ -23,18 +23,18 @@ namespace OwcaScript::Internal {
 	std::string RuntimeFunctions::to_string() const {
 		return std::format("function set {}", name);
 	}
-	void RuntimeFunctions::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
+	void RuntimeFunctions::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
 		for (auto& it : functions) {
 			if (it)
 				gc_mark_value(vm, generation_gc, it);
 		}
 	}
 
-	void BoundFunctionSelfObject::gc_mark(OwcaVM vm, GenerationGC generation_gc) const
+	void BoundFunctionSelfObject::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
 	{
 	}
 
-	void RuntimeFunctionScriptFunction::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
+	void RuntimeFunctionScriptFunction::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
 		gc_mark_value(vm, generation_gc, values_from_parents);
 	}
 
@@ -42,7 +42,7 @@ namespace OwcaScript::Internal {
 		return e.run_script_code(this, globals_ptr, temporary_ptr, states_ptr, param_count, true);
 	}
 
-	void RuntimeFunctionScriptGenerator::gc_mark(OwcaVM vm, GenerationGC generation_gc) const {
+	void RuntimeFunctionScriptGenerator::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
 		gc_mark_value(vm, generation_gc, values_from_parents);
 	}
 

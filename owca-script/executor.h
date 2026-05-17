@@ -119,7 +119,7 @@ namespace OwcaScript {
 				std::string_view name, full_name;
 				Class *cls;
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ClassState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const ClassState &e);
 			};
 			struct ForState {
 				static constexpr const std::uint8_t Kind = 1;
@@ -131,7 +131,7 @@ namespace OwcaScript {
 
 				ForState(OwcaIterator iterator) : iterator(iterator) {}
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const ForState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const ForState &e);
 			};
 			struct WhileState {
 				static constexpr const std::uint8_t Kind = 2;
@@ -140,7 +140,7 @@ namespace OwcaScript {
 				std::uint32_t loop_index = 0, value_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WhileState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const WhileState &e);
 			};
 			struct TryState {
 				static constexpr const std::uint8_t Kind = 3;
@@ -151,21 +151,21 @@ namespace OwcaScript {
 
 				TryState(TemporariesPtr temporary_ptr) : temporary_ptr(temporary_ptr) {}
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const TryState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const TryState &e);
 			};
 			struct CatchState {
 				static constexpr const std::uint8_t Kind = 4;
 				std::optional<OwcaException> exception_being_handled;
 				std::optional<OwcaException> original_exception_being_handled;
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const CatchState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const CatchState &e);
 			};
 			struct WithState {
 				static constexpr const std::uint8_t Kind = 5;
 				OwcaValue context;
 				bool entered = false;
 
-				friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const WithState &e);
+				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const WithState &e);
 			};
 			struct EmptyState {
 				static constexpr const std::uint8_t Kind = 255;
@@ -203,7 +203,7 @@ namespace OwcaScript {
 					return std::get_if<EmptyState>(states_type_ptr - 1) != nullptr;
 				}
 			};
-			friend void gc_mark_value(OwcaVM vm, GenerationGC generation_gc, const StatesType &e);
+			friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const StatesType &e);
 
 			void update_current_top_ptrs(TemporariesPtr temporary_ptr, StatesTypePtr states_ptr) {
 				temporary_ptr_current_top = temporary_ptr;
@@ -354,7 +354,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_too_many_elements(size_t expected);
 			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 
-			friend void gc_mark_value(OwcaVM vm, GenerationGC ggc, const Executor &);
+			friend void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const Executor &);
 		};
 	}
 }
