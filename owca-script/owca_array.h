@@ -32,6 +32,10 @@ namespace OwcaScript {
         std::string to_string() const;
 		bool operator == (OwcaArray other) const;
 		bool operator != (OwcaArray other) const { return !(*this == other); }
+		bool operator < (OwcaArray other) const;
+		bool operator <= (OwcaArray other) const;
+		bool operator >= (OwcaArray other) const;
+		bool operator > (OwcaArray other) const;
 		bool is(OwcaArray other) const { return object == other.object; }
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &);

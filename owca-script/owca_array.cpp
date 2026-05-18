@@ -82,6 +82,24 @@ namespace OwcaScript {
         }
         return true;
     }
+    bool OwcaArray::operator < (OwcaArray other) const {
+        size_t min_size = std::min(size(), other.size());
+        for (size_t i = 0; i < min_size; ++i) {
+            auto eq = Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Eq, internal_value()->values[i], other.internal_value()->values[i]);
+            if (eq) continue;
+            return Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Less, internal_value()->values[i], other.internal_value()->values[i]);
+        }
+        return size() < other.size();
+    }
+    bool OwcaArray::operator <= (OwcaArray other) const {
+        return !(other < *this);
+    }
+    bool OwcaArray::operator >= (OwcaArray other) const {
+        return !(*this < other);
+    }
+    bool OwcaArray::operator > (OwcaArray other) const {
+        return other < *this;
+    }
 
     void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &o) {
         gc_mark_value(vm, gc, o.object);

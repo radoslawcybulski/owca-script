@@ -137,10 +137,18 @@ namespace OwcaScript::Internal {
 
     static bool op_compare_eq_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
     static bool op_compare_ne_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() != right.as_tuple_certainly(); }
+    static bool op_compare_lt_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() < right.as_tuple_certainly(); }
+    static bool op_compare_le_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() <= right.as_tuple_certainly(); }
+    static bool op_compare_gt_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() > right.as_tuple_certainly(); }
+    static bool op_compare_ge_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() >= right.as_tuple_certainly(); }
     static bool op_compare_is_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly().is(right.as_tuple_certainly()); }
 
     static bool op_compare_eq_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() == right.as_array_certainly(); }
     static bool op_compare_ne_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() != right.as_array_certainly(); }
+    static bool op_compare_lt_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() < right.as_array_certainly(); }
+    static bool op_compare_le_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() <= right.as_array_certainly(); }
+    static bool op_compare_gt_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() > right.as_array_certainly(); }
+    static bool op_compare_ge_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() >= right.as_array_certainly(); }
     static bool op_compare_is_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
 
     static bool op_compare_eq_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
@@ -325,10 +333,18 @@ namespace OwcaScript::Internal {
 
         CMP_SET(CompareKind::Eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
         CMP_SET(CompareKind::NotEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_ne_tuple_tuple);
+        CMP_SET(CompareKind::Less, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_lt_tuple_tuple);
+        CMP_SET(CompareKind::LessEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_le_tuple_tuple);
+        CMP_SET(CompareKind::More, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_gt_tuple_tuple);
+        CMP_SET(CompareKind::MoreEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_ge_tuple_tuple);
         CMP_SET(CompareKind::Is, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_is_tuple_tuple);
 
         CMP_SET(CompareKind::Eq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_eq_array_array);
         CMP_SET(CompareKind::NotEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_ne_array_array);
+        CMP_SET(CompareKind::Less, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_lt_array_array);
+        CMP_SET(CompareKind::LessEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_le_array_array);
+        CMP_SET(CompareKind::More, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_gt_array_array);
+        CMP_SET(CompareKind::MoreEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_ge_array_array);
         CMP_SET(CompareKind::Is, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_is_array_array);
 
         CMP_SET(CompareKind::Eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);

@@ -27,6 +27,10 @@ namespace OwcaScript {
 
 		bool operator == (OwcaTuple other) const;
 		bool operator != (OwcaTuple other) const { return !(*this == other); }
+		bool operator < (OwcaTuple other) const;
+		bool operator <= (OwcaTuple other) const;
+		bool operator >= (OwcaTuple other) const;
+		bool operator > (OwcaTuple other) const;
 		bool is(OwcaTuple other) const { return object == other.object; }
 
 		class Iterator {
