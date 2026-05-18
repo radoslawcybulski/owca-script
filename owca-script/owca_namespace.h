@@ -29,6 +29,10 @@ namespace OwcaScript {
 		void member(std::string_view key, OwcaValue);
         bool try_member(std::string_view key, OwcaValue);
 
+        bool operator == (OwcaNamespace other) const { return object == other.object; }
+        bool operator != (OwcaNamespace other) const { return !(*this == other); }
+        bool is(OwcaNamespace other) const { return object == other.object; }
+
 		class Iterator {
 		public:
 			using value_type = std::pair<std::string_view, OwcaValue&>;

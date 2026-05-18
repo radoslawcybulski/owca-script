@@ -8,6 +8,7 @@
 #include "tuple.h"
 #include "dictionary.h"
 #include "owca_value.h"
+#include <cassert>
 
 namespace OwcaScript::Internal {
 	void AstExprCompare::emit(EmitInfo& ei) {
@@ -24,6 +25,7 @@ namespace OwcaScript::Internal {
 			case CompareKind::Less: ei.code_writer.append(line, ExecuteOp::ExprCompareLess); break;
 			case CompareKind::More: ei.code_writer.append(line, ExecuteOp::ExprCompareMore); break;
 			case CompareKind::Is: ei.code_writer.append(line, ExecuteOp::ExprCompareIs); break;
+			case CompareKind::_Count: assert(false);
 			}
 			jump_placeholders.emplace_back(ei.code_writer.append_jump_placeholder(line));
 			ei.code_writer.append(line, &q == &nexts_.back());

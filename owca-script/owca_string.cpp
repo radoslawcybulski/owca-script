@@ -14,6 +14,15 @@ namespace OwcaScript {
     {
         return str->vm->create_string(*this, pos, 1);
     }
+    OwcaValue OwcaString::operator + (OwcaString other) const {
+        return str->vm->create_string(*this, other);
+    }
+    OwcaValue OwcaString::operator * (Number other) const {
+        return str->vm->create_string(*this, other);
+    }
+    OwcaValue operator * (Number left, OwcaString right) {
+        return right.str->vm->create_string(right, left);
+    }
 
     size_t OwcaString::size() const
     {

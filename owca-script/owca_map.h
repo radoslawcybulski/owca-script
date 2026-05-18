@@ -33,6 +33,22 @@ namespace OwcaScript {
 		OwcaValue pop_or_default(OwcaValue key, OwcaValue default_value);
 		OwcaValue get_or_default(OwcaValue key, OwcaValue default_value);
 		OwcaValue set_default(OwcaValue key, OwcaValue default_value);
+		OwcaMap copy() const;
+		void union_with(OwcaMap other);
+		void intersection_with(OwcaMap other);
+		void difference_with(OwcaMap other);
+		bool is(OwcaMap other) const { return dictionary == other.dictionary; }
+
+		bool operator == (OwcaMap other) const;
+		bool operator != (OwcaMap other) const { return !(*this == other); }
+
+		OwcaMap operator | (OwcaMap other) const { auto v = copy(); v.union_with(other);  return v; }
+		OwcaMap operator & (OwcaMap other) const { auto v = copy(); v.intersection_with(other);  return v; }
+		OwcaMap operator - (OwcaMap other) const { auto v = copy(); v.difference_with(other);  return v; }
+
+		OwcaMap &operator |= (OwcaMap other) { union_with(other); return *this; }
+		OwcaMap &operator &= (OwcaMap other) { intersection_with(other); return *this; }
+		OwcaMap &operator -= (OwcaMap other) { difference_with(other); return *this; }
 
 		class Iterator {
 		public:

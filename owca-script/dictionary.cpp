@@ -276,8 +276,18 @@ namespace OwcaScript::Internal {
 		}
 		tmp << " }";
 		return tmp.str();
-
 	}
+	bool Dictionary::equals(const Dictionary &other) const {
+		if (elements != other.elements) return false;
+		for(auto pos = next(); pos < values.size(); pos = next(pos)) {
+			auto v = read(pos);
+			auto other_v = other.find(*v.first);
+			if (!other_v) return false;
+			if (!VM::get(vm).compare_values(CompareKind::Eq, *v.second, *other_v->second)) return false;
+		}
+		return true;
+	}
+
 	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &d)
 	{
 		for(auto pos = d.next(); pos < d.values.size(); pos = d.next(pos)) {

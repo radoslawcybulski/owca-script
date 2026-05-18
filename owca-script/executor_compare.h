@@ -11,7 +11,7 @@ namespace OwcaScript {
 	namespace Internal {
         enum class CompareKind : std::uint8_t;
 
-		enum class CompareResult {
+		enum class CompareResult : std::uint8_t {
 			False, True, NotExecuted
 		};
         CompareResult execute_compare(VM *vm, CompareKind kind, OwcaValue left, OwcaValue right);

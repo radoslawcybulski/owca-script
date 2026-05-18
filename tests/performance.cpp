@@ -7,7 +7,7 @@ class PerformanceTest : public SimpleTest {
 };
 
 TEST_F(PerformanceTest, DISABLED_simple_1)
-{ // 7.26
+{ // 5.86
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 s = 0;
@@ -25,7 +25,7 @@ print(`Final result: {s}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 19.84
+{ // 18.46
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 function foo1(s) {

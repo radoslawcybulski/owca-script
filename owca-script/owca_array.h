@@ -21,11 +21,18 @@ namespace OwcaScript {
         void resize(size_t);
         OwcaValue operator [] (size_t) const;
         OwcaValue &operator [] (size_t);
+		OwcaValue operator + (OwcaArray) const;
+		OwcaValue operator * (Number) const;
+		friend OwcaValue operator * (Number, OwcaArray);
+
 		void push_back(OwcaValue);
 		void push_front(OwcaValue);
 		OwcaValue pop_back();
 		OwcaValue pop_front();
         std::string to_string() const;
+		bool operator == (OwcaArray other) const;
+		bool operator != (OwcaArray other) const { return !(*this == other); }
+		bool is(OwcaArray other) const { return object == other.object; }
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &);
 

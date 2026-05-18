@@ -23,6 +23,10 @@ namespace OwcaScript {
 
 		OwcaValue substr(size_t start, size_t end) const;
 		OwcaValue operator [] (size_t pos) const;
+		OwcaValue operator + (OwcaString) const;
+		OwcaValue operator * (Number) const;
+		friend OwcaValue operator * (Number, OwcaString);
+
 		size_t size() const;
 		size_t hash() const;
 

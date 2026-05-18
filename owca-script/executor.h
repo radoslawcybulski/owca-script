@@ -318,6 +318,7 @@ namespace OwcaScript {
 				assert(!arguments.empty());
 				return execute_call(arguments[0], arguments.subspan(1));
 			}
+			bool execute_compare(CompareKind kind, OwcaValue left, OwcaValue right);
 
 			[[noreturn]] void throw_division_by_zero();
 			[[noreturn]] void throw_mod_division_by_zero();
@@ -340,7 +341,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_wrong_type(std::string_view type, std::string_view expected);
 			[[noreturn]] void throw_wrong_type(std::string_view msg);
 			[[noreturn]] void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
-			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view val);
+			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view type, std::string_view val);
 			[[noreturn]] void throw_missing_key(std::string_view key);
 			[[noreturn]] void throw_not_hashable(std::string_view type);
 			[[noreturn]] void throw_value_cant_have_fields(std::string_view type);

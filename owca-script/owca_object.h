@@ -27,9 +27,13 @@ namespace OwcaScript {
 
 		OwcaValue member(const std::string& key) const;
 		std::optional<OwcaValue> try_member(const std::string& key) const;
+		bool is(OwcaObject other) const { return object == other.object; }
 
 		void member(const std::string& key, OwcaValue);
 
+		bool operator == (OwcaObject other) const { return object == other.object; }
+		bool operator != (OwcaObject other) const { return !(*this == other); }
+		
 		template <typename T> T &user_data(ClassToken token) const {
 			auto sp = user_data_impl(token);
 			assert(sp.size() >= sizeof(T));

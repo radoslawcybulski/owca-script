@@ -123,7 +123,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_wrong_type(std::string_view type, std::string_view expected);
 			[[noreturn]] void throw_wrong_type(std::string_view msg);
 			[[noreturn]] void throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right);
-			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view val);
+			[[noreturn]] void throw_invalid_operand_for_mul_string(std::string_view type, std::string_view val);
 			[[noreturn]] void throw_missing_key(std::string_view key);
 			[[noreturn]] void throw_not_hashable(std::string_view type);
 			[[noreturn]] void throw_value_cant_have_fields(std::string_view type);
@@ -140,8 +140,12 @@ namespace OwcaScript {
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			std::optional<OwcaValue> resume_generator(OwcaIterator oi);
 			OwcaArray create_array(std::deque<OwcaValue> arguments);
+			OwcaArray create_array(OwcaArray, Number);
+			OwcaArray create_array(OwcaArray, OwcaArray);
 			OwcaTuple create_tuple(std::vector<OwcaValue> arguments);
 			OwcaTuple create_tuple(std::pair<OwcaValue, OwcaValue> arguments);
+			OwcaTuple create_tuple(OwcaTuple, Number);
+			OwcaTuple create_tuple(OwcaTuple, OwcaTuple);
 			OwcaException create_exception();
 			OwcaRange create_range();
 			OwcaMap create_map(const std::span<OwcaValue> &arguments = {});

@@ -98,6 +98,22 @@ namespace OwcaScript {
 	OwcaValue OwcaMap::set_default(OwcaValue key, OwcaValue default_value) {
 		return dictionary->dict.set_default(key, default_value);
 	}
+	OwcaMap OwcaMap::copy() const {
+		return OwcaMap{ dictionary->clone() };
+	}
+	void OwcaMap::union_with(OwcaMap other) {
+		dictionary->dict.union_with(other.internal_value()->dict);
+	}
+	void OwcaMap::intersection_with(OwcaMap other) {
+		dictionary->dict.intersection_with(other.internal_value()->dict);
+	}
+	void OwcaMap::difference_with(OwcaMap other) {
+		dictionary->dict.difference_with(other.internal_value()->dict);
+	}
+
+	bool OwcaMap::operator == (OwcaMap other) const {
+		return internal_value()->dict.equals(other.internal_value()->dict);
+	}
 
 	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaMap &map) {
 		gc_mark_value(vm, gc, map.dictionary);

@@ -25,6 +25,7 @@ namespace OwcaScript::Internal {
             case CompareKind::Less:
             case CompareKind::More: break;
             case CompareKind::Is: assert(false);
+            case CompareKind::_Count: assert(false);
             }
             return Result::NotExec;
         }
@@ -37,6 +38,7 @@ namespace OwcaScript::Internal {
             case CompareKind::Less: return left < right;
             case CompareKind::More: return left > right;
             case CompareKind::Is: return left == right;
+            case CompareKind::_Count: assert(false);
             }
             assert(0);
             return false;
@@ -77,6 +79,7 @@ namespace OwcaScript::Internal {
                     case CompareKind::Less:
                     case CompareKind::More: break;
                     case CompareKind::Is: assert(false);
+                    case CompareKind::_Count: assert(false);
                     }
                 }
 
@@ -92,6 +95,7 @@ namespace OwcaScript::Internal {
             case CompareKind::Less: return left.size() < right.size() ? Result::True : Result::False;
             case CompareKind::More: return left.size() > right.size() ? Result::True : Result::False;
             case CompareKind::Is: assert(false);
+            case CompareKind::_Count: assert(false);
             }
             assert(false);
             return Result::NotExec;
@@ -135,6 +139,7 @@ namespace OwcaScript::Internal {
             case CompareKind::Less:
             case CompareKind::More: return Result::NotExec;
             case CompareKind::Is: assert(false);
+            case CompareKind::_Count: assert(false);
             }
             for(auto it : l) {
                 auto rv = r.value(it.first);
@@ -163,6 +168,7 @@ namespace OwcaScript::Internal {
             case CompareKind::Less:
             case CompareKind::More: return Result::NotExec;
             case CompareKind::Is: assert(false);
+            case CompareKind::_Count: assert(false);
             }
             for(auto it : l) {
                 auto rv = r.has_value(it);
@@ -209,7 +215,7 @@ namespace OwcaScript::Internal {
 			case OwcaValueKind::Exception: return (left.as_exception_certainly().internal_owner() == right.as_exception_certainly().internal_owner()) ? CompareResult::True : CompareResult::False;
             case OwcaValueKind::Namespace: return (left.as_namespace_certainly().internal_value() == right.as_namespace_certainly().internal_value()) ? CompareResult::True : CompareResult::False;
 			case OwcaValueKind::Completed: return CompareResult::True;
-			case OwcaValueKind::_Count: break;
+			case OwcaValueKind::_Count: assert(false);
 			}
 			assert(false);
 			return CompareResult::False;

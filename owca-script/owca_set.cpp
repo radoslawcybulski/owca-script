@@ -76,7 +76,12 @@ namespace OwcaScript {
 		dictionary->dict.difference_with(other.internal_value()->dict);
 	}
 
+	bool OwcaSet::operator == (OwcaSet other) const {
+		return internal_value()->dict.equals(other.internal_value()->dict);
+	}
+
 	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaSet &o) {
 		gc_mark_value(vm, gc, o.dictionary);
 	}
+
 }

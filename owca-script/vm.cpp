@@ -1,3 +1,4 @@
+#include "owca-script/owca_tuple.h"
 #include "stdafx.h"
 #include "vm.h"
 #include "owca_value.h"
@@ -905,9 +906,9 @@ function native time();
 		executor->throw_unsupported_operation_2(oper, left, right);
 	}
 
-	void VM::throw_invalid_operand_for_mul_string(std::string_view val)
+	void VM::throw_invalid_operand_for_mul_string(std::string_view type, std::string_view val)
 	{
-		executor->throw_invalid_operand_for_mul_string(val);
+		executor->throw_invalid_operand_for_mul_string(type, val);
 	}
 
 	void VM::throw_missing_key(std::string_view key)
@@ -1116,6 +1117,22 @@ function native time();
 		auto t = allocate<Array>(0, std::move(arguments));
 		return OwcaArray{ t };
 	}
+	OwcaArray VM::create_array(OwcaArray left, OwcaArray right)
+	{
+		std::deque<OwcaValue> arguments;
+		arguments.insert(arguments.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+		arguments.insert(arguments.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+		return create_array(std::move(arguments));
+	}
+	OwcaArray VM::create_array(OwcaArray left, Number right)
+	{
+		if (right < 0) throw_invalid_operand_for_mul_string("an array", std::to_string(right));
+		std::deque<OwcaValue> arguments;
+		for (Number i = 0; i < right; ++i) {
+			arguments.insert(arguments.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+		}
+		return create_array(std::move(arguments));
+	}
 	OwcaTuple VM::create_tuple(std::pair<OwcaValue, OwcaValue> arguments)
 	{
 		auto t = allocate<Tuple>(0, std::vector<OwcaValue>{ arguments.first, arguments.second });
@@ -1126,6 +1143,24 @@ function native time();
 		if (arguments.empty() && empty_tuple != nullptr) return OwcaTuple{ empty_tuple };
 		auto t = allocate<Tuple>(0, std::move(arguments));
 		return OwcaTuple{ t };
+	}
+	OwcaTuple VM::create_tuple(OwcaTuple left, OwcaTuple right)
+	{
+		std::vector<OwcaValue> arguments;
+		arguments.reserve(left.internal_value()->values.size() + right.internal_value()->values.size());
+		arguments.insert(arguments.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+		arguments.insert(arguments.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+		return create_tuple(std::move(arguments));
+	}
+	OwcaTuple VM::create_tuple(OwcaTuple left, Number right)
+	{
+		if (right < 0) throw_invalid_operand_for_mul_string("a tuple", std::to_string(right));
+		std::vector<OwcaValue> arguments;
+		arguments.reserve(left.internal_value()->values.size() * (size_t)(std::floor(right)));
+		for (Number i = 0; i < right; ++i) {
+			arguments.insert(arguments.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+		}
+		return create_tuple(std::move(arguments));
 	}
 	OwcaRange VM::create_range()
 	{

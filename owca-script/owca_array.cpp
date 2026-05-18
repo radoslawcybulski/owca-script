@@ -26,6 +26,15 @@ namespace OwcaScript {
         assert(s < object->values.size());
         return object->values[s];
     }
+    OwcaValue OwcaArray::operator + (OwcaArray other) const {
+        return object->vm->create_array(*this, other);
+    }
+    OwcaValue OwcaArray::operator * (Number other) const {
+        return object->vm->create_array(*this, other);
+    }
+    OwcaValue operator * (Number left, OwcaArray right) {
+        return right.object->vm->create_array(right, left);
+    }
 
     std::string OwcaArray::to_string() const
     {
@@ -65,6 +74,13 @@ namespace OwcaScript {
     OwcaArray::Iterator::pointer OwcaArray::Iterator::operator->()
     {
         return &array->values[pos];
+    }
+    bool OwcaArray::operator == (OwcaArray other) const {
+        if (size() != other.size()) return false;
+        for (size_t i = 0; i < size(); ++i) {
+            if (!Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Eq, internal_value()->values[i], other.internal_value()->values[i])) return false;
+        }
+        return true;
     }
 
     void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &o) {

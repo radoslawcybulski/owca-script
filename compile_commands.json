@@ -175,12 +175,6 @@
 },
 {
   "directory": "/home/y/work/owca-script/build",
-  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/execution_frame.cpp.o -c /home/y/work/owca-script/owca-script/execution_frame.cpp",
-  "file": "/home/y/work/owca-script/owca-script/execution_frame.cpp",
-  "output": "CMakeFiles/owca-script-static.dir/owca-script/execution_frame.cpp.o"
-},
-{
-  "directory": "/home/y/work/owca-script/build",
   "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/executor.cpp.o -c /home/y/work/owca-script/owca-script/executor.cpp",
   "file": "/home/y/work/owca-script/owca-script/executor.cpp",
   "output": "CMakeFiles/owca-script-static.dir/owca-script/executor.cpp.o"
@@ -202,12 +196,6 @@
   "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/generator.cpp.o -c /home/y/work/owca-script/owca-script/generator.cpp",
   "file": "/home/y/work/owca-script/owca-script/generator.cpp",
   "output": "CMakeFiles/owca-script-static.dir/owca-script/generator.cpp.o"
-},
-{
-  "directory": "/home/y/work/owca-script/build",
-  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/impl_base.cpp.o -c /home/y/work/owca-script/owca-script/impl_base.cpp",
-  "file": "/home/y/work/owca-script/owca-script/impl_base.cpp",
-  "output": "CMakeFiles/owca-script-static.dir/owca-script/impl_base.cpp.o"
 },
 {
   "directory": "/home/y/work/owca-script/build",

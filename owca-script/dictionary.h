@@ -38,6 +38,7 @@ namespace OwcaScript {
 			Generator iter_values() const;
 			Generator iter_items() const;
 			void clone_to(Dictionary &) const;
+			bool equals(const Dictionary &other) const;
 			
 			void union_with(Dictionary &other);
 			void intersection_with(Dictionary &other);

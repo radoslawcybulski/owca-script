@@ -22,6 +22,12 @@ namespace OwcaScript {
 		Number upper() const;
 		Number step() const;
 		Number size() const;
+		bool is(OwcaRange other) const { return object == other.object; }
+
+		bool operator == (OwcaRange other) const {
+			return lower() == other.lower() && upper() == other.upper() && step() == other.step();
+		}
+		bool operator != (OwcaRange other) const { return !(*this == other); }
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaRange);
 	};

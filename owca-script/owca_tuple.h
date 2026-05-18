@@ -19,8 +19,15 @@ namespace OwcaScript {
 
         size_t size() const;
         OwcaValue operator [] (size_t) const;
+		OwcaValue operator + (OwcaTuple) const;
+		OwcaValue operator * (Number) const;
+		friend OwcaValue operator * (Number, OwcaTuple);
 
         std::string to_string() const;
+
+		bool operator == (OwcaTuple other) const;
+		bool operator != (OwcaTuple other) const { return !(*this == other); }
+		bool is(OwcaTuple other) const { return object == other.object; }
 
 		class Iterator {
 		public:

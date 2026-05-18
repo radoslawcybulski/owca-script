@@ -23,6 +23,10 @@ namespace OwcaScript {
 		std::string_view name() const;
 		std::optional<OwcaValue> self() const;
 		OwcaValue bind(OwcaValue self) const;
+		bool is(OwcaFunctions other) const { return functions == other.functions && self_object == other.self_object; }
+
+		bool operator == (OwcaFunctions other) const { return functions == other.functions && self_object == other.self_object; }
+		bool operator != (OwcaFunctions other) const { return !(*this == other); }
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaFunctions &);
 	};

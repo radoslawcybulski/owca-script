@@ -22,7 +22,10 @@ namespace OwcaScript {
 
         bool completed() const;
         std::optional<OwcaValue> next() const;
-
+        bool operator == (OwcaIterator other) const { return object == other.object; }
+        bool operator != (OwcaIterator other) const { return !(*this == other); }
+        bool is(OwcaIterator other) const { return object == other.object; }
+        
         friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaIterator &);
 
 		class Iterator {

@@ -27,6 +27,10 @@ namespace OwcaScript {
 		std::string_view type() const { return "class"; }
 		bool has_base_class(OwcaClass base) const;
 		OwcaValue operator [] (const std::string &key) const;
+		bool is(OwcaClass other) const { return object == other.object; }
+
+		bool operator == (OwcaClass other) const { return object == other.object; }
+		bool operator != (OwcaClass other) const { return !(*this == other); }
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaClass &);
 	};

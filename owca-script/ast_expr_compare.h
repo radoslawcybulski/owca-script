@@ -13,7 +13,8 @@ namespace OwcaScript {
 			MoreEq,
 			Eq,
 			NotEq,
-			Is
+			Is,
+			_Count
 		};
 		class AstExprCompare : public AstExpr {
 		private:
