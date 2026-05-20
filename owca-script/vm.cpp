@@ -1256,14 +1256,14 @@ function native time();
 		return OwcaString{ new_s };
 	}
 
-	bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
-	{
-		auto value = Internal::execute_compare(this, kind, left, right);
-		if (value == CompareResult::NotExecuted) [[unlikely]] {
-			throw_cant_compare(kind, left.type(), right.type());
-		}
-		return value == CompareResult::True;
-	}
+	// bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
+	// {
+	// 	auto value = Internal::execute_compare(this, kind, left, right);
+	// 	if (value == CompareResult::NotExecuted) [[unlikely]] {
+	// 		throw_cant_compare(kind, left.type(), right.type());
+	// 	}
+	// 	return value == CompareResult::True;
+	// }
 	
 	bool VM::calculate_if_true(OwcaValue r) {
 		return r.visit(
