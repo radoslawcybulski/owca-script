@@ -15,7 +15,7 @@ namespace OwcaScript {
 		OwcaMap(Internal::DictionaryShared* dictionary) : dictionary(dictionary) {}
 		~OwcaMap() = default;
 
-		auto internal_value() const { return dictionary; }
+		auto internal_owner() const { return dictionary; }
 
 		std::string to_string() const;
 		size_t size() const;

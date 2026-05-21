@@ -90,35 +90,27 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
 
     static bool op_compare_eq_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
-    static bool op_compare_ne_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() != right.as_bool_certainly(); }
     static bool op_compare_is_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
 
     static bool op_compare_eq_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return true; }
-    static bool op_compare_ne_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return false; }
     static bool op_compare_is_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return true; }
 
     static bool op_compare_eq_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly() == right.as_range_certainly(); }
-    static bool op_compare_ne_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly() != right.as_range_certainly(); }
     static bool op_compare_is_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly().is(right.as_range_certainly()); }
 
     static bool op_compare_eq_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly() == right.as_functions_certainly(); }
-    static bool op_compare_ne_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly() != right.as_functions_certainly(); }
     static bool op_compare_is_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly().is(right.as_functions_certainly()); }
 
     static bool op_compare_eq_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly() == right.as_map_certainly(); }
-    static bool op_compare_ne_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly() != right.as_map_certainly(); }
     static bool op_compare_is_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly().is(right.as_map_certainly()); }
 
     static bool op_compare_eq_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly() == right.as_set_certainly(); }
-    static bool op_compare_ne_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly() != right.as_set_certainly(); }
     static bool op_compare_is_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly().is(right.as_set_certainly()); }
 
     static bool op_compare_eq_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly() == right.as_class_certainly(); }
-    static bool op_compare_ne_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly() != right.as_class_certainly(); }
     static bool op_compare_is_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly().is(right.as_class_certainly()); }
 
     static bool op_compare_eq_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly() == right.as_object_certainly(); }
-    static bool op_compare_ne_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly() != right.as_object_certainly(); }
     static bool op_compare_is_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
 
     static bool op_compare_eq_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
@@ -130,15 +122,12 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
 
     static bool op_compare_eq_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
-    static bool op_compare_ne_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() != right.as_iterator_certainly(); }
     static bool op_compare_is_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly().is(right.as_iterator_certainly()); }
 
     static bool op_compare_eq_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly() == right.as_exception_certainly(); }
-    static bool op_compare_ne_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly() != right.as_exception_certainly(); }
     static bool op_compare_is_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly().is(right.as_exception_certainly()); }
 
     static bool op_compare_eq_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() == right.as_namespace_certainly(); }
-    static bool op_compare_ne_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() != right.as_namespace_certainly(); }
     static bool op_compare_is_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly().is(right.as_namespace_certainly()); }
 
     static OwcaValue op_add_string_string(Executor &e, OwcaValue left, OwcaValue right) {
@@ -195,6 +184,30 @@ namespace OwcaScript::Internal {
     static bool op_compare_lt_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.less(e, left, right); }
     static bool op_compare_is_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.is(e, left, right); }
 
+    static bool op_compare_eq_map_all(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly() == right.as_map_certainly(); }
+    static bool op_compare_is_map_all(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly().is(right.as_map_certainly()); }
+
+    Operators2::Operators2(AllocationBase::Kind kind) {
+        switch(kind) {
+        case AllocationBase::Kind::Map:
+            eq = op_compare_eq_map_all;
+            is = op_compare_is_map_all;
+            break;
+        case AllocationBase::Kind::User:
+        case AllocationBase::Kind::String:
+        case AllocationBase::Kind::RuntimeFunction:
+        case AllocationBase::Kind::RuntimeFunctions:
+        case AllocationBase::Kind::Class:
+        case AllocationBase::Kind::Tuple:
+        case AllocationBase::Kind::Array:
+        case AllocationBase::Kind::Set:
+        case AllocationBase::Kind::BoundSelfObject:
+        case AllocationBase::Kind::Iterator:
+        case AllocationBase::Kind::Range:
+        case AllocationBase::Kind::Namespace:
+            assert(false);
+        }
+    }
     constexpr const size_t OwcaValuesCount = static_cast<size_t>(OwcaValueKind::_Count);
     using Oper2TypeArray = std::array<Operators2, OwcaValuesCount * OwcaValuesCount>;
 

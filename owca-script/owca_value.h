@@ -28,7 +28,6 @@ namespace OwcaScript {
 		Float,
 		String,
 		Functions,
-		Map,
 		Set,
 		Class,
 		Object,
@@ -126,7 +125,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaRange value): OwcaValue(OwcaValueKind::Range, value.internal_object(), nullptr) {}
 		OwcaValue(OwcaString value): OwcaValue(OwcaValueKind::String, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaFunctions value): OwcaValue(OwcaValueKind::Functions, value.internal_value(), value.internal_self_object()) {}
-		OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Object, value.internal_owner(), nullptr) {}
 		OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
@@ -340,11 +339,14 @@ namespace OwcaScript {
 			if (kind() == OwcaValueKind::Functions) return OwcaFunctions{ (Internal::RuntimeFunctions*)internal_ptr1(), (Internal::AllocationBase*)internal_ptr2() };
 			return std::nullopt;
 		}
-		std::optional<OwcaMap> as_map_maybe() const
-		{
-			if (kind() == OwcaValueKind::Map) return OwcaMap{ (Internal::DictionaryShared*)internal_ptr1() };
-			return std::nullopt;
-		}
+		std::optional<OwcaMap> as_map_maybe() const;
+		// {
+		// 	if (auto o = as_object_maybe()) [[ likely ]] {
+		// 		if (o->internal_value()->)
+		// 		if (kind() == OwcaValueKind::Map) return OwcaMap{ (Internal::DictionaryShared*)internal_ptr1() };
+		// 	}
+		// 	return std::nullopt;
+		// }
 		std::optional<OwcaClass> as_class_maybe() const
 		{
 			if (kind() == OwcaValueKind::Class) return OwcaClass{ (Internal::Class*)internal_ptr1() };

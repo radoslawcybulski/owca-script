@@ -54,22 +54,22 @@ namespace OwcaScript {
 			friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &);
 		};
 
-		struct DictionaryShared : public AllocationBase {
-			Dictionary dict;
+		// struct DictionaryShared : public AllocationBase {
+		// 	Dictionary dict;
 
-			DictionaryShared(VM *vm) : AllocationBase(vm, Kind::Map), dict(vm, true) {}
+		// 	DictionaryShared(VM *vm) : AllocationBase(vm, Kind::Map), dict(vm, true) {}
 			
-			DictionaryShared *clone() const;
-			std::string_view type() const override {
-				return dict.type();
-			}
-			std::string to_string() const override {
-				return dict.to_string();
-			}
-			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
-				gc_mark_value(vm, generation_gc, dict);
-			}
-		};
+		// 	DictionaryShared *clone() const;
+		// 	std::string_view type() const override {
+		// 		return dict.type();
+		// 	}
+		// 	std::string to_string() const override {
+		// 		return dict.to_string();
+		// 	}
+		// 	void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
+		// 		gc_mark_value(vm, generation_gc, dict);
+		// 	}
+		// };
 
 		struct SetShared : public AllocationBase {
 			Dictionary dict;
