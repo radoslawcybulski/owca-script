@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
 			if (cell_hash == Empty) return {index, hash, false};
 			if (cell_hash == Deleted) continue;
 			if (cell_hash != hash) continue;
-			if (VM::get(vm).compare_values(CompareKind::Eq, std::get<1>(p), key)) return { index, hash, true };
+			if (VM::get(vm).compare_values_eq(std::get<1>(p), key)) return { index, hash, true };
 		}
 		assert(false);
 		return { 0, 0, false };
@@ -283,7 +283,7 @@ namespace OwcaScript::Internal {
 			auto v = read(pos);
 			auto other_v = other.find(*v.first);
 			if (!other_v) return false;
-			if (!VM::get(vm).compare_values(CompareKind::Eq, *v.second, *other_v->second)) return false;
+			if (!VM::get(vm).compare_values_eq(*v.second, *other_v->second)) return false;
 		}
 		return true;
 	}

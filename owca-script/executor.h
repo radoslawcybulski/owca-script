@@ -20,7 +20,25 @@ namespace OwcaScript {
 		class RuntimeFunctionScriptFunction;
         class RuntimeFunctions;
         class VM;
+		class Executor;
 
+		struct Operators2 {
+			OwcaValue (*add)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*sub)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*mul)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*div)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*mod)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_and)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_or)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_xor)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_lshift)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_rshift)(Executor &e, OwcaValue left, OwcaValue right);
+			bool (*less)(Executor &e, OwcaValue left, OwcaValue right);
+			bool (*eq)(Executor &e, OwcaValue left, OwcaValue right);
+			bool (*is)(Executor &e, OwcaValue left, OwcaValue right);
+
+			Operators2();
+		};
         class Executor {
 			friend class VM;
 
@@ -318,7 +336,10 @@ namespace OwcaScript {
 				assert(!arguments.empty());
 				return execute_call(arguments[0], arguments.subspan(1));
 			}
-			bool execute_compare(CompareKind kind, OwcaValue left, OwcaValue right);
+			bool execute_compare(OwcaValue left, OwcaValue right, CompareKind kind);
+			bool execute_compare_eq(OwcaValue left, OwcaValue right);
+			bool execute_compare_less(OwcaValue left, OwcaValue right);
+			bool execute_compare_is(OwcaValue left, OwcaValue right);
 
 			[[noreturn]] void throw_division_by_zero();
 			[[noreturn]] void throw_mod_division_by_zero();

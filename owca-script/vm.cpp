@@ -1,5 +1,5 @@
-#include "owca-script/owca_tuple.h"
 #include "stdafx.h"
+#include "owca-script/owca_tuple.h"
 #include "vm.h"
 #include "owca_value.h"
 #include "runtime_function.h"
@@ -20,8 +20,6 @@
 #include "range.h"
 #include "executor.h"
 #include "namespace.h"
-#include <memory>
-#include "executor_compare.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
@@ -405,7 +403,7 @@ namespace OwcaScript::Internal {
 		static OwcaValue array_sort(const OwcaVM &vm, OwcaArray self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
-				return VM::get(vm).compare_values(CompareKind::Less, a, b);
+				return VM::get(vm).compare_values_less(a, b);
 			});
 			return OwcaArray{ VM::get(vm).allocate<Array>(0, std::move(values)) };
 		}
@@ -461,7 +459,7 @@ namespace OwcaScript::Internal {
 		static OwcaValue tuple_sort(const OwcaVM &vm, OwcaTuple self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
-				return VM::get(vm).compare_values(CompareKind::Less, a, b);
+				return VM::get(vm).compare_values_less(a, b);
 			});
 			return OwcaTuple{ VM::get(vm).allocate<Tuple>(0, std::move(values)) };
 		}
@@ -1256,6 +1254,18 @@ function native time();
 		return OwcaString{ new_s };
 	}
 
+	bool VM::compare_values_eq(OwcaValue left, OwcaValue right) {
+		return executor->execute_compare_eq(left, right);
+	}
+	bool VM::compare_values_is(OwcaValue left, OwcaValue right) {
+		return executor->execute_compare_is(left, right);
+	}
+	bool VM::compare_values_less(OwcaValue left, OwcaValue right) {
+		return executor->execute_compare_less(left, right);
+	}
+	bool VM::compare_values(OwcaValue left, OwcaValue right, CompareKind kind) {
+		return executor->execute_compare(left, right, kind);
+	}
 	// bool VM::compare_values(CompareKind kind, OwcaValue left, OwcaValue right)
 	// {
 	// 	auto value = Internal::execute_compare(this, kind, left, right);

@@ -10,7 +10,6 @@
 #include "runtime_function.h"
 #include "iterator.h"
 #include "exec_buffer.h"
-#include "executor_compare.h"
 #include "range.h"
 #include "string.h"
 #include "array.h"
@@ -29,25 +28,6 @@
 namespace OwcaScript::Internal {
     enum class CompareResult : std::uint8_t;
 
-    enum class Oper2 {
-        Add,
-        Sub,
-        Mul,
-        Div,
-        Mod,
-        BinAnd,
-        BinOr,
-        BinXor,
-        BinLShift,
-        BinRShift,
-        CompareEq,
-        CompareNe,
-        CompareLt,
-        CompareLe,
-        CompareGt,
-        CompareGe,
-        _Count
-    };
     static OwcaValue op_add_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("+", left.type(), right.type()); }
     static OwcaValue op_sub_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("-", left.type(), right.type()); }
     static OwcaValue op_mul_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("*", left.type(), right.type()); }
@@ -59,12 +39,25 @@ namespace OwcaScript::Internal {
     static OwcaValue op_bin_lshift_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("<<", left.type(), right.type()); }
     static OwcaValue op_bin_rshift_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2(">>", left.type(), right.type()); }
     static bool op_compare_eq_default(Executor &e, OwcaValue left, OwcaValue right) { return false; }
-    static bool op_compare_ne_default(Executor &e, OwcaValue left, OwcaValue right) { return false; }
     static bool op_compare_lt_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("<", left.type(), right.type()); }
-    static bool op_compare_le_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("<=", left.type(), right.type()); }
-    static bool op_compare_gt_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2(">", left.type(), right.type()); }
-    static bool op_compare_ge_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2(">=", left.type(), right.type()); }
     static bool op_compare_is_default(Executor &e, OwcaValue left, OwcaValue right) { return false; }
+
+    Operators2::Operators2() {
+        add = op_add_cant;
+        sub = op_sub_cant;
+        mul = op_mul_cant;
+        div = op_div_cant;
+        mod = op_mod_cant;
+        bin_and = op_bin_and_cant;
+        bin_or = op_bin_or_cant;
+        bin_xor = op_bin_xor_cant;
+        bin_lshift = op_bin_lshift_cant;
+        bin_rshift = op_bin_rshift_cant;
+
+        eq = op_compare_eq_default;
+        less = op_compare_lt_cant;
+        is = op_compare_is_default;
+    }
 
     static OwcaValue op_add_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() + right.as_float_certainly(); }
     static OwcaValue op_sub_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() - right.as_float_certainly(); }
@@ -88,19 +81,11 @@ namespace OwcaScript::Internal {
     static OwcaValue op_bin_rshift_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() >> (std::int64_t)right.as_float_certainly(); }
 
     static bool op_compare_eq_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
-    static bool op_compare_ne_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() != right.as_float_certainly(); }
     static bool op_compare_lt_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() < right.as_float_certainly(); }
-    static bool op_compare_le_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() <= right.as_float_certainly(); }
-    static bool op_compare_gt_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() > right.as_float_certainly(); }
-    static bool op_compare_ge_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() >= right.as_float_certainly(); }
     static bool op_compare_is_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
 
     static bool op_compare_eq_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
-    static bool op_compare_ne_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() != right.as_string_certainly().text(); }
     static bool op_compare_lt_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() < right.as_string_certainly().text(); }
-    static bool op_compare_le_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() <= right.as_string_certainly().text(); }
-    static bool op_compare_gt_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() > right.as_string_certainly().text(); }
-    static bool op_compare_ge_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() >= right.as_string_certainly().text(); }
     static bool op_compare_is_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
 
     static bool op_compare_eq_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
@@ -136,19 +121,11 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
 
     static bool op_compare_eq_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
-    static bool op_compare_ne_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() != right.as_tuple_certainly(); }
     static bool op_compare_lt_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() < right.as_tuple_certainly(); }
-    static bool op_compare_le_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() <= right.as_tuple_certainly(); }
-    static bool op_compare_gt_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() > right.as_tuple_certainly(); }
-    static bool op_compare_ge_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() >= right.as_tuple_certainly(); }
     static bool op_compare_is_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly().is(right.as_tuple_certainly()); }
 
     static bool op_compare_eq_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() == right.as_array_certainly(); }
-    static bool op_compare_ne_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() != right.as_array_certainly(); }
     static bool op_compare_lt_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() < right.as_array_certainly(); }
-    static bool op_compare_le_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() <= right.as_array_certainly(); }
-    static bool op_compare_gt_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() > right.as_array_certainly(); }
-    static bool op_compare_ge_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() >= right.as_array_certainly(); }
     static bool op_compare_is_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
 
     static bool op_compare_eq_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
@@ -203,163 +180,82 @@ namespace OwcaScript::Internal {
         return left.as_set_certainly() - right.as_set_certainly();
     }
 
-    using Oper2Type = OwcaValue (*)(Executor &, OwcaValue, OwcaValue);
-    using Oper2TypeArray = std::array<Oper2Type, static_cast<size_t>(Oper2::_Count) * static_cast<size_t>(OwcaValueKind::_Count) * static_cast<size_t>(OwcaValueKind::_Count)>;
-    using Cmp2Type = bool (*)(Executor &, OwcaValue, OwcaValue);
-    using Cmp2TypeArray = std::array<Cmp2Type, static_cast<size_t>(CompareKind::_Count) * static_cast<size_t>(OwcaValueKind::_Count) * static_cast<size_t>(OwcaValueKind::_Count)>;
+    constexpr const size_t OwcaValuesCount = static_cast<size_t>(OwcaValueKind::_Count);
+    using Oper2TypeArray = std::array<Operators2, OwcaValuesCount * OwcaValuesCount>;
 
-    #define OPER_INDEX(oper, left_kind, right_kind) (static_cast<size_t>(Oper2::oper) * static_cast<size_t>(OwcaValueKind::_Count) * static_cast<size_t>(OwcaValueKind::_Count) + static_cast<size_t>(left_kind) * static_cast<size_t>(OwcaValueKind::_Count) + static_cast<size_t>(right_kind))
-    #define OPER_SET(oper, left_kind, right_kind, func) oper2_functions[OPER_INDEX(oper, left_kind, right_kind)] = func
-    #define CMP_INDEX(oper, left_kind, right_kind) (static_cast<size_t>(oper) * static_cast<size_t>(OwcaValueKind::_Count) * static_cast<size_t>(OwcaValueKind::_Count) + static_cast<size_t>(left_kind) * static_cast<size_t>(OwcaValueKind::_Count) + static_cast<size_t>(right_kind))
-    #define CMP_SET(oper, left_kind, right_kind, func) cmp2_functions[CMP_INDEX(oper, left_kind, right_kind)] = func
+    #define OPER2_GET(oper, left_kind, right_kind) oper2_functions[static_cast<size_t>(left_kind) * OwcaValuesCount + static_cast<size_t>(right_kind)].oper
+    #define OPER2_SET(oper, left_kind, right_kind, func) OPER2_GET(oper, left_kind, right_kind) = func
     Oper2TypeArray oper2_functions = []() {
         constexpr size_t kind_count = static_cast<size_t>(OwcaValueKind::_Count);
         Oper2TypeArray oper2_functions;
-        for(auto i = 0; i < kind_count; ++i) {
-            for(auto j = 0; j < kind_count; ++j) {
-                OPER_SET(Add, i, j, op_add_cant);
-                OPER_SET(Sub, i, j, op_sub_cant);
-                OPER_SET(Mul, i, j, op_mul_cant);
-                OPER_SET(Div, i, j, op_div_cant);
-                OPER_SET(Mod, i, j, op_mod_cant);
-                OPER_SET(BinAnd, i, j, op_bin_and_cant);
-                OPER_SET(BinOr, i, j, op_bin_or_cant);
-                OPER_SET(BinXor, i, j, op_bin_xor_cant);
-                OPER_SET(BinLShift, i, j, op_bin_lshift_cant);
-                OPER_SET(BinRShift, i, j, op_bin_rshift_cant);
-            }
-        }
-        OPER_SET(Add, OwcaValueKind::Float, OwcaValueKind::Float, op_add_number_number);
-        OPER_SET(Sub, OwcaValueKind::Float, OwcaValueKind::Float, op_sub_number_number);
-        OPER_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Float, op_mul_number_number);
-        OPER_SET(Div, OwcaValueKind::Float, OwcaValueKind::Float, op_div_number_number);
-        OPER_SET(Mod, OwcaValueKind::Float, OwcaValueKind::Float, op_mod_number_number);
-        OPER_SET(BinAnd, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_and_number_number);
-        OPER_SET(BinOr, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_or_number_number);
-        OPER_SET(BinXor, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_xor_number_number);
-        OPER_SET(BinLShift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_lshift_number_number);
-        OPER_SET(BinRShift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_rshift_number_number);
 
-        OPER_SET(Add, OwcaValueKind::String, OwcaValueKind::String, op_add_string_string);
-        OPER_SET(Mul, OwcaValueKind::String, OwcaValueKind::Float, op_mul_string_number);
-        OPER_SET(Mul, OwcaValueKind::Float, OwcaValueKind::String, op_mul_number_string);
+        OPER2_SET(add, OwcaValueKind::Float, OwcaValueKind::Float, op_add_number_number);
+        OPER2_SET(sub, OwcaValueKind::Float, OwcaValueKind::Float, op_sub_number_number);
+        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Float, op_mul_number_number);
+        OPER2_SET(div, OwcaValueKind::Float, OwcaValueKind::Float, op_div_number_number);
+        OPER2_SET(mod, OwcaValueKind::Float, OwcaValueKind::Float, op_mod_number_number);
+        OPER2_SET(bin_and, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_and_number_number);
+        OPER2_SET(bin_or, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_or_number_number);
+        OPER2_SET(bin_xor, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_xor_number_number);
+        OPER2_SET(bin_lshift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_lshift_number_number);
+        OPER2_SET(bin_rshift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_rshift_number_number);
 
-        OPER_SET(Mul, OwcaValueKind::Array, OwcaValueKind::Float, op_mul_array_number);
-        OPER_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Array, op_mul_number_array);
+        OPER2_SET(add, OwcaValueKind::String, OwcaValueKind::String, op_add_string_string);
+        OPER2_SET(mul, OwcaValueKind::String, OwcaValueKind::Float, op_mul_string_number);
+        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::String, op_mul_number_string);
 
-        OPER_SET(Mul, OwcaValueKind::Tuple, OwcaValueKind::Float, op_mul_tuple_number);
-        OPER_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Tuple, op_mul_number_tuple);
+        OPER2_SET(mul, OwcaValueKind::Array, OwcaValueKind::Float, op_mul_array_number);
+        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Array, op_mul_number_array);
 
-        OPER_SET(BinAnd, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_and_map_map);
-        OPER_SET(BinOr, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_or_map_map);
-        OPER_SET(BinXor, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_xor_map_map);
+        OPER2_SET(mul, OwcaValueKind::Tuple, OwcaValueKind::Float, op_mul_tuple_number);
+        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Tuple, op_mul_number_tuple);
 
-        OPER_SET(BinAnd, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_and_set_set);
-        OPER_SET(BinOr, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_or_set_set);
-        OPER_SET(BinXor, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_xor_set_set);
+        OPER2_SET(bin_and, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_and_map_map);
+        OPER2_SET(bin_or, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_or_map_map);
+        OPER2_SET(bin_xor, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_xor_map_map);
+
+        OPER2_SET(bin_and, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_and_set_set);
+        OPER2_SET(bin_or, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_or_set_set);
+        OPER2_SET(bin_xor, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_xor_set_set);
+
+        OPER2_SET(eq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_eq_number_number);
+        OPER2_SET(less, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_lt_number_number);
+
+        OPER2_SET(eq, OwcaValueKind::String, OwcaValueKind::String, op_compare_eq_string_string);
+        OPER2_SET(less, OwcaValueKind::String, OwcaValueKind::String, op_compare_lt_string_string);
+
+        OPER2_SET(eq, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_eq_bool_bool);
+
+        OPER2_SET(eq, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_eq_range_range);
+
+        OPER2_SET(eq, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_eq_functions_functions);
+
+        OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_eq_nul_nul);
+        OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_eq_nul_nul);
+        OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_eq_nul_nul);
+        OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_eq_nul_nul);
+
+        OPER2_SET(eq, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_eq_set_set);
+
+        OPER2_SET(eq, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_eq_map_map);
+
+        OPER2_SET(eq, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_eq_class_class);
+
+        OPER2_SET(eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
+
+        OPER2_SET(eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
+        OPER2_SET(less, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_lt_tuple_tuple);
+
+        OPER2_SET(eq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_eq_array_array);
+        OPER2_SET(less, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_lt_array_array);
+
+        OPER2_SET(eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);
+
+        OPER2_SET(eq, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_eq_exception_exception);
+
+        OPER2_SET(eq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_eq_namespace_namespace);
 
         return oper2_functions;
-    }();
-    Cmp2TypeArray cmp2_functions = []() {
-        constexpr size_t kind_count = static_cast<size_t>(OwcaValueKind::_Count);
-        Cmp2TypeArray cmp2_functions;
-        for(auto i = 0; i < kind_count; ++i) {
-            for(auto j = 0; j < kind_count; ++j) {
-                CMP_SET(CompareKind::Eq, i, j, op_compare_eq_default);
-                CMP_SET(CompareKind::NotEq, i, j, op_compare_ne_default);
-                CMP_SET(CompareKind::Less, i, j, op_compare_lt_cant);
-                CMP_SET(CompareKind::LessEq, i, j, op_compare_le_cant);
-                CMP_SET(CompareKind::More, i, j, op_compare_gt_cant);
-                CMP_SET(CompareKind::MoreEq, i, j, op_compare_ge_cant);
-                CMP_SET(CompareKind::Is, i, j, op_compare_is_default);
-            }
-        }
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_eq_number_number);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_ne_number_number);
-        CMP_SET(CompareKind::Less, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_lt_number_number);
-        CMP_SET(CompareKind::LessEq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_le_number_number);
-        CMP_SET(CompareKind::More, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_gt_number_number);
-        CMP_SET(CompareKind::MoreEq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_ge_number_number);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_is_number_number);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::String, OwcaValueKind::String, op_compare_eq_string_string);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::String, OwcaValueKind::String, op_compare_ne_string_string);
-        CMP_SET(CompareKind::Less, OwcaValueKind::String, OwcaValueKind::String, op_compare_lt_string_string);
-        CMP_SET(CompareKind::LessEq, OwcaValueKind::String, OwcaValueKind::String, op_compare_le_string_string);
-        CMP_SET(CompareKind::More, OwcaValueKind::String, OwcaValueKind::String, op_compare_gt_string_string);
-        CMP_SET(CompareKind::MoreEq, OwcaValueKind::String, OwcaValueKind::String, op_compare_ge_string_string);
-        CMP_SET(CompareKind::Is, OwcaValueKind::String, OwcaValueKind::String, op_compare_is_string_string);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_eq_bool_bool);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_ne_bool_bool);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_is_bool_bool);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_eq_range_range);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_ne_range_range);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_is_range_range);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_eq_functions_functions);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_ne_functions_functions);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_is_functions_functions);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_eq_nul_nul);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_ne_nul_nul);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_is_nul_nul);
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_eq_nul_nul);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_ne_nul_nul);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_is_nul_nul);
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_eq_nul_nul);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_ne_nul_nul);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_is_nul_nul);
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_eq_nul_nul);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_ne_nul_nul);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_is_nul_nul);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_eq_set_set);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_ne_set_set);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_is_set_set);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_eq_map_map);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_ne_map_map);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_is_map_map);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_eq_class_class);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_ne_class_class);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_is_class_class);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_ne_object_object);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_is_object_object);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_ne_tuple_tuple);
-        CMP_SET(CompareKind::Less, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_lt_tuple_tuple);
-        CMP_SET(CompareKind::LessEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_le_tuple_tuple);
-        CMP_SET(CompareKind::More, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_gt_tuple_tuple);
-        CMP_SET(CompareKind::MoreEq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_ge_tuple_tuple);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_is_tuple_tuple);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_eq_array_array);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_ne_array_array);
-        CMP_SET(CompareKind::Less, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_lt_array_array);
-        CMP_SET(CompareKind::LessEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_le_array_array);
-        CMP_SET(CompareKind::More, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_gt_array_array);
-        CMP_SET(CompareKind::MoreEq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_ge_array_array);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_is_array_array);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_ne_iterator_iterator);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_is_iterator_iterator);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_eq_exception_exception);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_ne_exception_exception);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_is_exception_exception);
-
-        CMP_SET(CompareKind::Eq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_eq_namespace_namespace);
-        CMP_SET(CompareKind::NotEq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_ne_namespace_namespace);
-        CMP_SET(CompareKind::Is, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_is_namespace_namespace);
-
-        return cmp2_functions;
     }();
 
     Executor::Executor(VM *vm) : vm(vm), values_vector(1024 * 1024), states_vector(1024 * 16), temporary_ptr_current_top(values_vector.data()), states_ptr_current_top(states_vector.data()) {
@@ -841,18 +737,21 @@ restart:
                 case ExecuteBufferReader::Op::ExprPopAndIgnore: {
                     POP_VALUES(1);
                     break; }
-#define OPER_RUN(oper) do { \
+#define OPER2_RUN(oper) do { \
         auto &left = temporary_ptr[2]; \
         auto right = temporary_ptr[1]; \
-        left = oper2_functions[OPER_INDEX(oper, left.kind(), right.kind())](*this, left, right); \
+        left = OPER2_GET(oper, left.kind(), right.kind())(*this, left, right); \
         POP_VALUES(1); \
     } while(0)
-#define CMP_RUN(oper) do { \
+#define CMP2_RUN(oper, reverse, upd) do { \
         auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);        \
         const auto last = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);      \
         auto &left = PEEK_VALUE(2);                                                                 \
         auto right = PEEK_VALUE(1);                                                                 \
-        auto res = cmp2_functions[CMP_INDEX(oper, left.kind(), right.kind())](*this, left, right);  \
+        auto res = (!reverse) ?                                                                      \
+            OPER2_GET(oper, left.kind(), right.kind())(*this, left, right) :                        \
+            OPER2_GET(oper, right.kind(), left.kind())(*this, right, left);                         \
+        res = (upd);                                                                                \
         if (res) {                                                                                  \
             left = last ? OwcaValue{ true } : right;                                                \
         }                                                                                           \
@@ -864,25 +763,25 @@ restart:
     } while(0)
 
                 case ExecuteBufferReader::Op::ExprCompareEq: {
-                    CMP_RUN(CompareKind::Eq);
+                    CMP2_RUN(eq, 0, res);
                     break; }
                 case ExecuteBufferReader::Op::ExprCompareNotEq: {
-                    CMP_RUN(CompareKind::NotEq);
-                    break; }
-                case ExecuteBufferReader::Op::ExprCompareLessEq: {
-                    CMP_RUN(CompareKind::LessEq);
-                    break; }
-                case ExecuteBufferReader::Op::ExprCompareMoreEq: {
-                    CMP_RUN(CompareKind::MoreEq);
+                    CMP2_RUN(eq, 0, !res);
                     break; }
                 case ExecuteBufferReader::Op::ExprCompareLess: {
-                    CMP_RUN(CompareKind::Less);
+                    CMP2_RUN(less, 0, res);
+                    break; }
+                case ExecuteBufferReader::Op::ExprCompareMoreEq: {
+                    CMP2_RUN(less, 0, !res);
                     break; }
                 case ExecuteBufferReader::Op::ExprCompareMore: {
-                    CMP_RUN(CompareKind::More);
+                    CMP2_RUN(less, 1, res);
+                    break; }
+                case ExecuteBufferReader::Op::ExprCompareLessEq: {
+                    CMP2_RUN(less, 1, !res);
                     break; }
                 case ExecuteBufferReader::Op::ExprCompareIs: {
-                    CMP_RUN(CompareKind::Is);
+                    CMP2_RUN(is, 0, res);
                     break; }
                 case ExecuteBufferReader::Op::ExprConstantEmpty: {
                     PUSH_VALUE(OwcaEmpty{});
@@ -1018,34 +917,34 @@ restart:
                     }
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinOr: {
-                    OPER_RUN(BinOr); 
+                    OPER2_RUN(bin_or); 
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinAnd: {
-                    OPER_RUN(BinAnd);
+                    OPER2_RUN(bin_and);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinXor: {
-                    OPER_RUN(BinXor);
+                    OPER2_RUN(bin_xor);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinLShift: {
-                    OPER_RUN(BinLShift);
+                    OPER2_RUN(bin_lshift);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2BinRShift: {
-                    OPER_RUN(BinRShift);
+                    OPER2_RUN(bin_rshift);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Add: {
-                    OPER_RUN(Add);
+                    OPER2_RUN(add);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Sub: {
-                    OPER_RUN(Sub);
+                    OPER2_RUN(sub);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Mul: {
-                    OPER_RUN(Mul);
+                    OPER2_RUN(mul);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Div: {
-                    OPER_RUN(Div);
+                    OPER2_RUN(div);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2Mod: {
-                    OPER_RUN(Mod);
+                    OPER2_RUN(mod);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper2MakeRange: {
                     auto mode = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
@@ -1922,9 +1821,30 @@ next_iteration:
         OwcaValue temp_arg = vm->create_string_from_view("container is empty");
 		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
 	}
-    bool Executor::execute_compare(CompareKind kind, OwcaValue left, OwcaValue right)
+    bool Executor::execute_compare_eq(OwcaValue left, OwcaValue right) {
+        return OPER2_GET(eq, left.kind(), right.kind())(*this, left, right);
+    }
+    bool Executor::execute_compare_less(OwcaValue left, OwcaValue right) {
+        return OPER2_GET(less, left.kind(), right.kind())(*this, left, right);
+    }
+    bool Executor::execute_compare_is(OwcaValue left, OwcaValue right) {
+        return OPER2_GET(is, left.kind(), right.kind())(*this, left, right);
+    }
+    
+    bool Executor::execute_compare(OwcaValue left, OwcaValue right, CompareKind kind)
     {
-        return cmp2_functions[CMP_INDEX(kind, left.kind(), right.kind())](*this, left, right);
+        switch(kind) {
+        case CompareKind::Eq: return execute_compare_eq(left, right);
+        case CompareKind::NotEq: return !execute_compare_eq(left, right);
+        case CompareKind::Less: return execute_compare_less(left, right);
+        case CompareKind::MoreEq: return !execute_compare_less(left, right);
+        case CompareKind::More: return execute_compare_less(right, left);
+        case CompareKind::LessEq: return !execute_compare_less(right, left);
+        case CompareKind::Is: return execute_compare_is(left, right);
+        case CompareKind::_Count: break;
+        }
+        assert(false);
+        return false;
     }
 
     void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::WhileState &e) {

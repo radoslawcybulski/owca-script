@@ -181,12 +181,6 @@
 },
 {
   "directory": "/home/y/work/owca-script/build",
-  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/executor_compare.cpp.o -c /home/y/work/owca-script/owca-script/executor_compare.cpp",
-  "file": "/home/y/work/owca-script/owca-script/executor_compare.cpp",
-  "output": "CMakeFiles/owca-script-static.dir/owca-script/executor_compare.cpp.o"
-},
-{
-  "directory": "/home/y/work/owca-script/build",
   "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/flow_control.cpp.o -c /home/y/work/owca-script/owca-script/flow_control.cpp",
   "file": "/home/y/work/owca-script/owca-script/flow_control.cpp",
   "output": "CMakeFiles/owca-script-static.dir/owca-script/flow_control.cpp.o"

@@ -164,9 +164,10 @@ namespace OwcaScript {
 			void member(OwcaValue val, std::string_view key, OwcaValue);
 			Exception *is_exception(OwcaObject obj) const;
 
-			bool compare_values(CompareKind kind, OwcaValue left, OwcaValue right) {
-				return executor->compare_values(kind, left, right);
-			}
+			bool compare_values(OwcaValue left, OwcaValue right, CompareKind kind);
+			bool compare_values_eq(OwcaValue left, OwcaValue right);
+			bool compare_values_is(OwcaValue left, OwcaValue right);
+			bool compare_values_less(OwcaValue left, OwcaValue right);
 			size_t calculate_hash(OwcaValue);
 			bool calculate_if_true(OwcaValue);
 			OwcaIterator create_iterator(OwcaValue );

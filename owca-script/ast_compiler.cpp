@@ -30,10 +30,10 @@ namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
 		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "throw", "try", "catch", "and", "or", "not", "with"
 	} };
-	static std::string_view operators_2[] = {
+	static std::string_view Operators2_2[] = {
 			">=", "<=", "=>", "==", "!="
 	};
-	static std::string_view operators_1 = {
+	static std::string_view Operators2_1 = {
 			"+-*/%&|^='\";[](){}<>:,."
 	};
 	struct CompilationError {};
@@ -115,13 +115,13 @@ namespace OwcaScript::Internal {
 		auto start = content_offset;
 		auto c = content[content_offset];
 		auto o2 = std::string_view{ content }.substr(start, 2);
-		for (auto q : operators_2) {
+		for (auto q : Operators2_2) {
 			if (q == o2) {
 				content_offset += o2.size();
 				return o2;
 			}
 		}
-		if (operators_1.find(content[content_offset]) != std::string::npos) {
+		if (Operators2_1.find(content[content_offset]) != std::string::npos) {
 			content_offset += 1;
 			return std::string_view{ content }.substr(start, 1);
 		}
@@ -226,13 +226,13 @@ namespace OwcaScript::Internal {
 	bool AstCompiler::is_operator(std::string_view txt) const
 	{
 		if (txt.size() == 2) {
-			for (auto q : operators_2) {
+			for (auto q : Operators2_2) {
 				if (q == txt) return true;
 			}
 			return false;
 		}
 		if (txt.size() == 1) {
-			return operators_1.find(txt[0]) != std::string::npos;
+			return Operators2_1.find(txt[0]) != std::string::npos;
 		}
 		return false;
 	}

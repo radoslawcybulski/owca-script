@@ -78,16 +78,17 @@ namespace OwcaScript {
     bool OwcaArray::operator == (OwcaArray other) const {
         if (size() != other.size()) return false;
         for (size_t i = 0; i < size(); ++i) {
-            if (!Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Eq, internal_value()->values[i], other.internal_value()->values[i])) return false;
+            if (!Internal::VM::get(internal_value()->vm).compare_values_eq(internal_value()->values[i], other.internal_value()->values[i])) return false;
         }
         return true;
     }
     bool OwcaArray::operator < (OwcaArray other) const {
         size_t min_size = std::min(size(), other.size());
         for (size_t i = 0; i < min_size; ++i) {
-            auto eq = Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Eq, internal_value()->values[i], other.internal_value()->values[i]);
-            if (eq) continue;
-            return Internal::VM::get(internal_value()->vm).compare_values(Internal::CompareKind::Less, internal_value()->values[i], other.internal_value()->values[i]);
+            auto eq = Internal::VM::get(internal_value()->vm).compare_values_eq(internal_value()->values[i], other.internal_value()->values[i]);
+            if (!eq) {
+                return Internal::VM::get(internal_value()->vm).compare_values_less(internal_value()->values[i], other.internal_value()->values[i]);
+            }
         }
         return size() < other.size();
     }
