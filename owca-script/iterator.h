@@ -15,8 +15,6 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Iterator : public AllocationBase {
-            static constexpr const Kind object_kind = Kind::Iterator;
-
 			std::optional<Generator> generator;
 			RuntimeFunction *function;
 			std::span<OwcaValue> values;
@@ -24,7 +22,7 @@ namespace OwcaScript {
 			OwcaValue last_value;
 			bool first_time = true;
 
-            Iterator(RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states);
+            Iterator(VM *vm, RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states);
 			~Iterator();
 
 			std::string_view type() const override{

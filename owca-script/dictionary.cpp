@@ -180,12 +180,12 @@ namespace OwcaScript::Internal {
 		dest.version = version;
 	}
 	DictionaryShared *DictionaryShared::clone() const {
-		auto new_shared = Internal::VM::get(vm).allocate<DictionaryShared>(0, vm);
+		auto new_shared = Internal::VM::get(vm).allocate<DictionaryShared>(0);
 		dict.clone_to(new_shared->dict);
 		return new_shared;
 	}
 	SetShared *SetShared::clone() const {
-		auto new_shared = Internal::VM::get(vm).allocate<SetShared>(0, vm);
+		auto new_shared = Internal::VM::get(vm).allocate<SetShared>(0);
 		dict.clone_to(new_shared->dict);
 		return new_shared;
 	}

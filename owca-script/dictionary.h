@@ -55,11 +55,9 @@ namespace OwcaScript {
 		};
 
 		struct DictionaryShared : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Map;
-
 			Dictionary dict;
 
-			DictionaryShared(OwcaVM vm) : dict(std::move(vm), true) {}
+			DictionaryShared(VM *vm) : AllocationBase(vm, Kind::Map), dict(vm, true) {}
 			
 			DictionaryShared *clone() const;
 			std::string_view type() const override {
@@ -74,11 +72,9 @@ namespace OwcaScript {
 		};
 
 		struct SetShared : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Set;
-
 			Dictionary dict;
 
-			SetShared(OwcaVM vm) : dict(std::move(vm), false) {}
+			SetShared(VM *vm) : AllocationBase(vm, Kind::Set), dict(vm, false) {}
 			
 			SetShared *clone() const;
 			std::string_view type() const override {

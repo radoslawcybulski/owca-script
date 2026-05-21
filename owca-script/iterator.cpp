@@ -5,7 +5,8 @@
 #include "executor.h"
 
 namespace OwcaScript::Internal {
-    Iterator::Iterator(RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states) : function(function), values(values), states(states) {}
+    Iterator::Iterator(VM *vm, RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states) : 
+            AllocationBase(vm, Kind::Iterator), function(function), values(values), states(states) {}
     Iterator::~Iterator() = default;
 
     std::string Iterator::to_string() const {

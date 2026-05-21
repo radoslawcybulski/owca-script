@@ -10,8 +10,6 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct String : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::String;
-
             mutable size_t hash_value = 0;
 			const std::uint32_t size_ : 31 = 0;
 			mutable std::uint32_t hash_calculated : 1 = 0;
@@ -20,7 +18,7 @@ namespace OwcaScript {
 			std::string to_string() const override { return std::string{ text() }; }
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {}
 			
-			String(std::uint32_t size) : size_(size) {}
+			String(VM *vm, std::uint32_t size) : AllocationBase(vm, Kind::String), size_(size) {}
 
             std::string_view text() const { return { pointer(), size_ };}
 			size_t size() const { return size_; }

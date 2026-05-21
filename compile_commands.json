@@ -223,6 +223,12 @@
 },
 {
   "directory": "/home/y/work/owca-script/build",
+  "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/operators.cpp.o -c /home/y/work/owca-script/owca-script/operators.cpp",
+  "file": "/home/y/work/owca-script/owca-script/operators.cpp",
+  "output": "CMakeFiles/owca-script-static.dir/owca-script/operators.cpp.o"
+},
+{
+  "directory": "/home/y/work/owca-script/build",
   "command": "/usr/lib64/ccache/clang++ -I/home/y/work/owca-script  -g -gdwarf-5 -O3 -DNDEBUG -std=gnu++23 -o CMakeFiles/owca-script-static.dir/owca-script/owca_array.cpp.o -c /home/y/work/owca-script/owca-script/owca_array.cpp",
   "file": "/home/y/work/owca-script/owca-script/owca_array.cpp",
   "output": "CMakeFiles/owca-script-static.dir/owca-script/owca_array.cpp.o"

@@ -5,9 +5,10 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	Class::Class(Line line, std::string_view name, std::string_view full_name, OwcaCode code) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
+	Class::Class(VM *vm, Line line, std::string_view name, std::string_view full_name, OwcaCode code) : AllocationBase(vm, Kind::Class), fileline(line), name(name), full_name(full_name), code(std::move(code)) {
+		
 	}
-	Object::Object(Class* type) : type_(type) {
+	Object::Object(VM *vm, Class* type) : AllocationBase(vm, Kind::User), type_(type) {
 		for (auto it : type_->native_storage_pointers) {
 			auto p = type_->native_storage_ptr(this) + it.second.first;
 			auto size = it.second.second;

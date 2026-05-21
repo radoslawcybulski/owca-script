@@ -31,7 +31,7 @@ namespace OwcaScript {
 			AllocationBase();
 			virtual ~AllocationBase();
 #else
-			AllocationBase() = default;
+			AllocationBase(VM *vm, Kind kind) : vm(vm), kind(kind) {}
 			virtual ~AllocationBase() = default;
 #endif
 			AllocationBase(const AllocationBase&) = delete;
@@ -41,9 +41,9 @@ namespace OwcaScript {
 			AllocationBase &operator = (AllocationBase&&) = delete;
 
 			AllocationBase* prev = nullptr, * next = nullptr;
-			VM *vm = nullptr;
+			VM * const vm = nullptr;
 			mutable GenerationGC last_gc_mark = GenerationGC{ 0 };
-			Kind kind;
+			const Kind kind;
 
 			virtual std::string_view type() const = 0;
 			virtual std::string to_string() const = 0;
@@ -54,13 +54,12 @@ namespace OwcaScript {
 		};
 
 		struct AllocationEmpty : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::User;
-
 			friend class VM;
 
 			std::string_view type() const override { return ""; }
 			std::string to_string() const override { return ""; }
-
+			
+			AllocationEmpty(VM *vm) : AllocationBase(vm, Kind::User) {}
 		private:
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {}
 		};

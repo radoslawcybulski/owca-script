@@ -10,10 +10,6 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Range : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Range;
-
-            using AllocationBase::AllocationBase;
-
             Number from = 0, to = 0, step = 1;
             
 			std::string_view type() const override {
@@ -23,6 +19,8 @@ namespace OwcaScript {
             Generator iter(const OwcaVM &vm) const;
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {}
             size_t hash() const;
+
+            Range(VM *vm) : AllocationBase(vm, Kind::Range) {}
 		};
         struct RangeIterator {
             Number lower, upper, step;

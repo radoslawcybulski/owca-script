@@ -5,6 +5,7 @@
 #include "allocation_base.h"
 #include "owca_code.h"
 #include "line.h"
+#include "operators.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -18,11 +19,11 @@ namespace OwcaScript {
 		struct Object;
 
 		struct Class : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Class;
-
+			Operators2 operators_2;
 			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>, StringHash, StringCmp> values;
 			const std::string_view name, full_name;
 			OwcaCode code;
+			
 			Line fileline;
 			std::unordered_set<Class*> all_base_classes;
 			std::vector<Class*> base_classes;
@@ -50,16 +51,14 @@ namespace OwcaScript {
 			char* native_storage_ptr(Object *) const;
 			const char* native_storage_ptr(const Object *) const;
 
-			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code);
+			Class(VM *vm, Line line, std::string_view type, std::string_view full_name, OwcaCode code);
 		};
 
 		struct Object : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::User;
-
 			std::unordered_map<std::string, OwcaValue, StringHash, StringCmp> values;
 			Class* type_;
 
-			Object(Class* type);
+			Object(VM *vm, Class* type);
 			~Object();
 
 			std::string_view type() const override;

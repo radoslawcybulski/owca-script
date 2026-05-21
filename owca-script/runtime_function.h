@@ -14,8 +14,6 @@
 namespace OwcaScript {
 	namespace Internal {
 		struct RuntimeFunction : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::RuntimeFunction;
-
 			OwcaCode code;
 			std::string_view name, full_name;
 			std::uint16_t param_count = 0;
@@ -33,8 +31,8 @@ namespace OwcaScript {
 			virtual OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) = 0;
 			virtual unsigned int line(ExecuteBufferReader::Position) const;
 		protected:
-			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
-				code(std::move(code)), name(name), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
+			RuntimeFunction(VM *vm, OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
+				AllocationBase(vm, Kind::RuntimeFunction), code(std::move(code)), name(name), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
 		};
 
 		struct RuntimeFunctionScript : public RuntimeFunction {
@@ -44,13 +42,14 @@ namespace OwcaScript {
 			ExecuteBufferReader::Position entry_point{ 0 };
 			Executor::GlobalsPtr globals_ptr;
 		protected:
-			RuntimeFunctionScript(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, ExecuteBufferReader::Position entry_point, Executor::GlobalsPtr globals_ptr) : 
-					RuntimeFunction(std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr) {}
+			RuntimeFunctionScript(VM *vm, OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, ExecuteBufferReader::Position entry_point, Executor::GlobalsPtr globals_ptr) : 
+					RuntimeFunction(vm, std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptFunction(VM *vm, OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : 
+					RuntimeFunctionScript(vm, code, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
 		};
@@ -58,7 +57,8 @@ namespace OwcaScript {
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptGenerator(VM *vm, OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : 
+					RuntimeFunctionScript(vm, code, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
 		};
@@ -68,7 +68,8 @@ namespace OwcaScript {
 			NativeCodeProvider::Function function;
 			unsigned int line_;
 
-			RuntimeFunctionNativeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, name, full_name, is_method, false), line_(line) {}
+			RuntimeFunctionNativeFunction(VM *vm, OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) :
+					RuntimeFunction(vm, code, name, full_name, is_method, false), line_(line) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
 			unsigned int line(ExecuteBufferReader::Position) const override { return line_; }
@@ -79,7 +80,8 @@ namespace OwcaScript {
 			NativeCodeProvider::GeneratorFunction generator;
 			unsigned int line_;
 
-			RuntimeFunctionNativeGenerator(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, name, full_name, is_method, true), line_(line) {}
+			RuntimeFunctionNativeGenerator(VM *vm, OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) :
+					RuntimeFunction(vm, code, name, full_name, is_method, true), line_(line) {}
 
 			Generator run_native_generator(Executor &e, Iterator *iter_object, Generator generator_object);
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
@@ -87,12 +89,10 @@ namespace OwcaScript {
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::RuntimeFunctions;
-
 			std::array<RuntimeFunction*, 16> functions;
 			std::string_view name, full_name;
 
-			RuntimeFunctions(std::string_view name, std::string_view full_name) : name(name), full_name(full_name) {
+			RuntimeFunctions(VM *vm, std::string_view name, std::string_view full_name) : AllocationBase(vm, Kind::RuntimeFunctions), name(name), full_name(full_name) {
 				for(auto &f : functions) f = nullptr;
 			}
 
@@ -102,11 +102,9 @@ namespace OwcaScript {
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::BoundSelfObject;
-
 			OwcaValue self;
 
-			BoundFunctionSelfObject(OwcaValue self) : self(std::move(self)) {}
+			BoundFunctionSelfObject(VM *vm, OwcaValue self) : AllocationBase(vm, Kind::BoundSelfObject), self(std::move(self)) {}
 
 			std::string_view type() const override { return "bound function's self helper object"; }
 			std::string to_string() const override { return std::string{ type() }; }

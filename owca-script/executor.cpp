@@ -18,6 +18,7 @@
 #include "ast_function.h"
 #include "exception.h"
 #include "namespace.h"
+#include "operators.h"
 
 #ifdef DEBUG
 #define OWCA_SCRIPT_EXEC_LOG
@@ -180,6 +181,20 @@ namespace OwcaScript::Internal {
         return left.as_set_certainly() - right.as_set_certainly();
     }
 
+    static OwcaValue op_add_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.add(e, left, right); }
+    static OwcaValue op_sub_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.sub(e, left, right); }
+    static OwcaValue op_mul_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.mul(e, left, right); }
+    static OwcaValue op_div_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.div(e, left, right); }
+    static OwcaValue op_mod_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.mod(e, left, right); }
+    static OwcaValue op_bin_and_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.bin_and(e, left, right); }
+    static OwcaValue op_bin_or_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.bin_or(e, left, right); }
+    static OwcaValue op_bin_xor_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.bin_xor(e, left, right); }
+    static OwcaValue op_bin_lshift_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.bin_lshift(e, left, right); }
+    static OwcaValue op_bin_rshift_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.bin_rshift(e, left, right); }
+    static bool op_compare_eq_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.eq(e, left, right); }
+    static bool op_compare_lt_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.less(e, left, right); }
+    static bool op_compare_is_object_on_left(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().internal_value()->type_->operators_2.is(e, left, right); }
+
     constexpr const size_t OwcaValuesCount = static_cast<size_t>(OwcaValueKind::_Count);
     using Oper2TypeArray = std::array<Operators2, OwcaValuesCount * OwcaValuesCount>;
 
@@ -188,6 +203,22 @@ namespace OwcaScript::Internal {
     Oper2TypeArray oper2_functions = []() {
         constexpr size_t kind_count = static_cast<size_t>(OwcaValueKind::_Count);
         Oper2TypeArray oper2_functions;
+
+        for(auto i = 0u; i < kind_count; ++i) {
+            OPER2_SET(add, OwcaValueKind::Object, i, op_add_object_on_left);
+            OPER2_SET(sub, OwcaValueKind::Object, i, op_sub_object_on_left);
+            OPER2_SET(mul, OwcaValueKind::Object, i, op_mul_object_on_left);
+            OPER2_SET(div, OwcaValueKind::Object, i, op_div_object_on_left);
+            OPER2_SET(mod, OwcaValueKind::Object, i, op_mod_object_on_left);
+            OPER2_SET(bin_and, OwcaValueKind::Object, i, op_bin_and_object_on_left);
+            OPER2_SET(bin_or, OwcaValueKind::Object, i, op_bin_or_object_on_left);
+            OPER2_SET(bin_xor, OwcaValueKind::Object, i, op_bin_xor_object_on_left);
+            OPER2_SET(bin_lshift, OwcaValueKind::Object, i, op_bin_lshift_object_on_left);
+            OPER2_SET(bin_rshift, OwcaValueKind::Object, i, op_bin_rshift_object_on_left);
+            OPER2_SET(eq, OwcaValueKind::Object, i, op_compare_eq_object_on_left);
+            OPER2_SET(less, OwcaValueKind::Object, i, op_compare_lt_object_on_left);
+            OPER2_SET(is, OwcaValueKind::Object, i, op_compare_is_object_on_left);
+        }
 
         OPER2_SET(add, OwcaValueKind::Float, OwcaValueKind::Float, op_add_number_number);
         OPER2_SET(sub, OwcaValueKind::Float, OwcaValueKind::Float, op_sub_number_number);
@@ -220,40 +251,56 @@ namespace OwcaScript::Internal {
 
         OPER2_SET(eq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_eq_number_number);
         OPER2_SET(less, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_lt_number_number);
+        OPER2_SET(is, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_is_number_number);
 
         OPER2_SET(eq, OwcaValueKind::String, OwcaValueKind::String, op_compare_eq_string_string);
         OPER2_SET(less, OwcaValueKind::String, OwcaValueKind::String, op_compare_lt_string_string);
+        OPER2_SET(is, OwcaValueKind::String, OwcaValueKind::String, op_compare_is_string_string);
 
         OPER2_SET(eq, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_eq_bool_bool);
+        OPER2_SET(is, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_is_bool_bool);
 
         OPER2_SET(eq, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_eq_range_range);
+        OPER2_SET(is, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_is_range_range);
 
         OPER2_SET(eq, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_eq_functions_functions);
+        OPER2_SET(is, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_is_functions_functions);
 
         OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_eq_nul_nul);
+        OPER2_SET(is, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_is_nul_nul);
+        OPER2_SET(is, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_is_nul_nul);
 
         OPER2_SET(eq, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_eq_set_set);
+        OPER2_SET(is, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_is_set_set);
 
         OPER2_SET(eq, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_eq_map_map);
+        OPER2_SET(is, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_is_map_map);
 
         OPER2_SET(eq, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_eq_class_class);
-
-        OPER2_SET(eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
+        OPER2_SET(is, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_is_class_class);
 
         OPER2_SET(eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
         OPER2_SET(less, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_lt_tuple_tuple);
+        OPER2_SET(is, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_is_tuple_tuple);
 
         OPER2_SET(eq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_eq_array_array);
         OPER2_SET(less, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_lt_array_array);
+        OPER2_SET(is, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_is_array_array);
 
         OPER2_SET(eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);
+        OPER2_SET(is, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_is_iterator_iterator);
 
         OPER2_SET(eq, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_eq_exception_exception);
+        OPER2_SET(is, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_is_exception_exception);
 
         OPER2_SET(eq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_eq_namespace_namespace);
+        OPER2_SET(is, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_is_namespace_namespace);
+
+        OPER2_SET(eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
+        OPER2_SET(is, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_is_object_object);
 
         return oper2_functions;
     }();

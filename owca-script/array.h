@@ -9,14 +9,10 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Array : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Array;
-
-            using AllocationBase::AllocationBase;
-
             std::deque<OwcaValue> values;
             const bool is_tuple = false;
 			
-            Array(std::deque<OwcaValue> values) : values(std::move(values)) {}
+            Array(VM *vm, std::deque<OwcaValue> values = {}) : AllocationBase(vm, Kind::Array), values(std::move(values)) {}
 
 			std::string_view type() const override {
 				return "Array";

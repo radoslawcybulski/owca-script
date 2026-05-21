@@ -10,15 +10,11 @@ namespace OwcaScript {
 
 	namespace Internal {
 		struct Tuple : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Tuple;
-
-            using AllocationBase::AllocationBase;
-
             std::vector<OwcaValue> values;
 			mutable size_t hash_value = 0;
 			mutable bool hash_value_calculated = false;
 			
-            Tuple(std::vector<OwcaValue> values) : values(std::move(values)) {}
+            Tuple(VM *vm, std::vector<OwcaValue> values = {}) : AllocationBase(vm, Kind::Tuple), values(std::move(values)) {}
 
 			std::string_view type() const override {
 				return "Tuple";

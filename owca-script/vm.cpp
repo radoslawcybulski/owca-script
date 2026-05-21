@@ -22,9 +22,9 @@
 #include "namespace.h"
 
 namespace OwcaScript::Internal {
-	VM::VM() {
-		executor = std::make_unique<Executor>(this);
+	VM::VM() : root_allocated_memory(this) {
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
+		executor = std::make_unique<Executor>(this);
 		initialize_builtins();
 		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
@@ -1168,7 +1168,7 @@ function native time();
 	OwcaMap VM::create_map(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(arguments[i], arguments[i + 1]);
 		}
@@ -1177,7 +1177,7 @@ function native time();
 	OwcaMap VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for(auto q : arguments) {
 			ds->dict.write(q.first, q.second);
 		}
@@ -1186,7 +1186,7 @@ function native time();
 	OwcaMap VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for(auto q : arguments) {
 			ds->dict.write(create_string_from_view(q.first), q.second);
 		}
@@ -1195,7 +1195,7 @@ function native time();
 	OwcaSet VM::create_set(const std::span<OwcaValue> &arguments)
 	{
 		auto vm = OwcaVM{ this };
-		auto ds = allocate<SetShared>(0, vm);
+		auto ds = allocate<SetShared>(0);
 		for (auto i = 0u; i < arguments.size(); ++i) {
 			ds->dict.write(arguments[i], OwcaEmpty{});
 		}

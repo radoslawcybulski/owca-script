@@ -194,12 +194,10 @@ namespace OwcaScript {
 				auto align = std::max(alignof(T), size_t(16));
 				auto s = (sizeof(T) + oversize + align - 1) & ~(align - 1);
 				auto p = std::aligned_alloc(align, s);
-				auto p2 = new (p) T{ std::forward<ARGS>(args)... };
+				auto p2 = new (p) T{ this, std::forward<ARGS>(args)... };
 				p2->prev = &root_allocated_memory;
 				p2->next = root_allocated_memory.next;
 				p2->prev->next = p2->next->prev = p2;
-				p2->vm = this;
-				p2->kind = T::object_kind;
 				return p2;
 			}
 

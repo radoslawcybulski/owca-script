@@ -16,8 +16,6 @@
 namespace OwcaScript {
 	namespace Internal {
 		struct Namespace : public AllocationBase {
-			static constexpr const Kind object_kind = Kind::Namespace;
-
 			OwcaCode code;
             std::vector<OwcaValue> globals;
             std::unordered_map<std::string_view, size_t> identifier_to_global_index;
@@ -31,8 +29,8 @@ namespace OwcaScript {
             void set_member(std::string_view key, OwcaValue val);
             bool try_set_member(std::string_view key, OwcaValue val);
 
-			Namespace(OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index) :
-				code(std::move(code)), identifier_to_global_index(std::move(identifier_to_global_index)) {
+			Namespace(VM *vm, OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index) :
+				AllocationBase(vm, Kind::Namespace), code(std::move(code)), identifier_to_global_index(std::move(identifier_to_global_index)) {
                     globals.resize(this->identifier_to_global_index.size());
                 }
 		};
