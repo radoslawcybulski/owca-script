@@ -35,7 +35,6 @@ namespace OwcaScript {
 		Tuple,
 		Array,
 		Iterator,
-		Exception,
 		Namespace,
 		_Count,
 	};
@@ -132,7 +131,7 @@ namespace OwcaScript {
 		OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaArray value): OwcaValue(OwcaValueKind::Array, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
-		OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Exception, value.internal_owner(), value.internal_value()) {}	
+		OwcaValue(OwcaException value): OwcaValue(OwcaValueKind::Object, value.internal_owner(), nullptr) {}	
 		OwcaValue(OwcaIterator value): OwcaValue(OwcaValueKind::Iterator, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaNamespace value): OwcaValue(OwcaValueKind::Namespace, value.internal_value(), nullptr) {}
 
@@ -375,11 +374,7 @@ namespace OwcaScript {
 			if (kind() == OwcaValueKind::Namespace) return OwcaNamespace{ (Internal::Namespace*)internal_ptr1() };
 			return std::nullopt;
 		}
-		std::optional<OwcaException> as_exception_maybe() const
-		{
-			if (kind() == OwcaValueKind::Exception) return OwcaException{ (Internal::Object*)internal_ptr1(), (Internal::Exception*)internal_ptr2() };
-			return std::nullopt;
-		}
+		std::optional<OwcaException> as_exception_maybe() const;
 		std::optional<OwcaIterator> as_iterator_maybe() const
 		{
 			if (kind() == OwcaValueKind::Iterator) return OwcaIterator{ (Internal::Iterator*)internal_ptr1() };
@@ -420,7 +415,6 @@ namespace OwcaScript {
 			case OwcaValueKind::Tuple: return tmp(as_tuple_certainly());
 			case OwcaValueKind::Array: return tmp(as_array_certainly());
 			case OwcaValueKind::Set: return tmp(as_set_certainly());
-			case OwcaValueKind::Exception: return tmp(as_exception_certainly());
 			case OwcaValueKind::Iterator: return tmp(as_iterator_certainly());
 			case OwcaValueKind::Namespace: return tmp(as_namespace_certainly());
 			case OwcaValueKind::_Count: break;

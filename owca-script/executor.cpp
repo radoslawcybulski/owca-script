@@ -251,8 +251,6 @@ namespace OwcaScript::Internal {
 
         OPER2_SET(eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);
 
-        OPER2_SET(eq, OwcaValueKind::Exception, OwcaValueKind::Exception, op_compare_eq_exception_exception);
-
         OPER2_SET(eq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_eq_namespace_namespace);
 
         return oper2_functions;

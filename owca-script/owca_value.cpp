@@ -160,6 +160,16 @@ namespace OwcaScript {
 			);
 	}
 
+	std::optional<OwcaException> OwcaValue::as_exception_maybe() const
+	{
+		if (auto v = as_object_maybe()) {
+			if (auto o =  v->user_data_maybe<Internal::Exception>()) {
+				return OwcaException{ v->internal_value(), o };
+			}
+		}
+		return std::nullopt;
+	}
+
 	static void gc_mark_value_call(const OwcaVM& vm, GenerationGC gc, auto o) {
 		gc_mark_value(vm, gc, o);
 	}
@@ -176,84 +186,100 @@ namespace OwcaScript {
 		}
 
 		OwcaIterator convert_impl2(const OwcaVM& vm, size_t I, OwcaIterator *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Iterator) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an iterator", I + 1, v.type()));
-			return v.as_iterator_certainly();
+			if (auto q = v.as_iterator_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an iterator", I + 1, v.type()));
 		}
 		bool convert_impl2(const OwcaVM& vm, size_t I, bool *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Bool) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
-			return v.as_bool_certainly();
+			if (auto q = v.as_bool_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
 		}
 		std::string convert_impl2(const OwcaVM& vm, size_t I, std::string *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return std::string{ v.as_string_certainly().text() };
+			if (auto q = v.as_string_maybe()) {
+				return std::string{ q->text() };
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
 		std::string_view convert_impl2(const OwcaVM& vm, size_t I, std::string_view *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string_certainly().text();
+			if (auto q = v.as_string_maybe()) {
+				return q->text();
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
 		OwcaEmpty convert_impl2(const OwcaVM& vm, size_t I, OwcaEmpty *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Empty) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
-			return {};
+			if (auto q = v.as_nul_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
 		}
 		OwcaRange convert_impl2(const OwcaVM& vm, size_t I, OwcaRange *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Range) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
-			return v.as_range_certainly();
+			if (auto q = v.as_range_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
 		}
 		Number convert_impl2(const OwcaVM& vm, size_t I, Number *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Float) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
-			return v.as_float_certainly();
+			if (auto q = v.as_float_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
 		}
 		OwcaString convert_impl2(const OwcaVM& vm, size_t I, OwcaString *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::String) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
-			return v.as_string_certainly();
+			if (auto q = v.as_string_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
 		OwcaFunctions convert_impl2(const OwcaVM& vm, size_t I, OwcaFunctions *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Functions) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
-			return v.as_functions_certainly();
+			if (auto q = v.as_functions_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
 		}
 		OwcaMap convert_impl2(const OwcaVM& vm, size_t I, OwcaMap *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Map) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
-			return v.as_map_certainly();
+			if (auto q = v.as_map_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
 		}
 		OwcaClass convert_impl2(const OwcaVM& vm, size_t I, OwcaClass *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Class) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
-			return v.as_class_certainly();
+			if (auto q = v.as_class_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
 		}
 		OwcaObject convert_impl2(const OwcaVM& vm, size_t I, OwcaObject *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Object) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
-			return v.as_object_certainly();
+			if (auto q = v.as_object_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
 		}
 		OwcaArray convert_impl2(const OwcaVM& vm, size_t I, OwcaArray *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Array) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
-			return v.as_array_certainly();
+			if (auto q = v.as_array_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
 		}
 		OwcaTuple convert_impl2(const OwcaVM& vm, size_t I, OwcaTuple *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Tuple) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
-			return v.as_tuple_certainly();
+			if (auto q = v.as_tuple_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
 		}
 		OwcaSet convert_impl2(const OwcaVM& vm, size_t I, OwcaSet *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Set) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
-			return v.as_set_certainly();
+			if (auto q = v.as_set_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
 		}
 		OwcaException convert_impl2(const OwcaVM& vm, size_t I, OwcaException *b, OwcaValue v) {
-			if (v.kind() != OwcaValueKind::Exception) 
-				VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
-			return v.as_exception_certainly();
+			if (auto q = v.as_exception_maybe()) {
+				return *q;
+			}
+			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
 		}
 		OwcaValue convert_impl2(const OwcaVM& vm, size_t I, OwcaValue *b, OwcaValue v) {
 			return v;
