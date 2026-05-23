@@ -50,8 +50,8 @@ TEST_F(SimpleTest, native_func)
 {
 	OwcaVM vm;
 	struct Provider : public NativeCodeProvider {
-		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
-			if (full_name == "foo" && !cls && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
+		std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
+			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
 				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 2);
 					return args[0].as_float(vm) + args[1].as_float(vm);
@@ -103,7 +103,7 @@ TEST_F(SimpleTest, native_class)
 {
 	OwcaVM vm;
 	struct Provider : public NativeCodeProvider {
-		struct NCI : public NativeClassInterface {
+		struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
 			void initialize_storage(void* ptr, size_t s) override {
 				*(std::uint64_t*)ptr = 1234;
 			}
@@ -115,7 +115,7 @@ TEST_F(SimpleTest, native_class)
 				return 8;
 			}
 		};
-		std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+		std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
 			if (name == "A")
 				return std::make_shared<NCI>();
 			return nullptr;
@@ -141,7 +141,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 	OwcaVM vm;
 	try {
 		struct Provider : public NativeCodeProvider {
-			struct NCI : public NativeClassInterface {
+			struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
 				void initialize_storage(void* ptr, size_t s) override {
 					*(std::uint64_t*)ptr = 1234;
 				}
@@ -153,26 +153,26 @@ TEST_F(SimpleTest, native_class_with_funcs)
 					return sizeof(std::uint64_t);
 				}
 			};
-			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
 				if (name == "A")
 					return std::make_shared<NCI>();
 				return nullptr;
 			}
-			std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
-				if (full_name == "A.set_value" && cls && param_names.size() == 2) {
-					return [cls = *cls](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+			std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
+				if (full_name == "A.set_value" && param_names.size() == 2) {
+					return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 						assert(args.size() == 2);
 						auto self = args[0];
 						auto v = args[1].as_int(vm);
-						self.as_object(vm).user_data<std::uint64_t>(cls) = v;
+						self.as_object(vm).user_data_certainly<std::uint64_t>() = v;
 						return {};
 					};
 				}
-				if (full_name == "A.get_value" && cls && param_names.size() == 1) {
-					return [cls = *cls](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+				if (full_name == "A.get_value" && param_names.size() == 1) {
+					return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
 						assert(args.size() == 1);
 						auto self = args[0];
-						auto v = self.as_object(vm).user_data<std::uint64_t>(cls);
+						auto v = self.as_object(vm).user_data_certainly<std::uint64_t>();
 						return v;
 					};
 				}
@@ -213,7 +213,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 			unsigned int &reads, &writes;
 			Provider(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
 
-			struct NCI : public NativeClassInterface {
+			struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
 				unsigned int &reads, &writes;
 				NCI(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
 
@@ -245,7 +245,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 					return false;
 				}
 			};
-			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
 				if (name == "A")
 					return std::make_shared<NCI>(reads, writes);
 				return nullptr;
@@ -290,7 +290,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 			unsigned int &reads, &writes;
 			Provider(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
 
-			struct NCI : public NativeClassInterface {
+			struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
 				unsigned int &reads, &writes;
 				NCI(unsigned int &reads, unsigned int &writes) : reads(reads), writes(writes) {}
 
@@ -322,7 +322,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					return false;
 				}
 			};
-			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
 				if (name == "A")
 					return std::make_shared<NCI>(reads, writes);
 				return nullptr;
@@ -399,7 +399,7 @@ TEST_F(SimpleTest, variable_missing)
 	OwcaValue object;
 	try {
 		struct Provider : public NativeCodeProvider {
-			struct NCI : public NativeClassInterface {
+			struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
 				void initialize_storage(void* ptr, size_t s) override {
 					*(std::uint64_t*)ptr = 1234;
 				}
@@ -415,7 +415,7 @@ TEST_F(SimpleTest, variable_missing)
 					return false;
 				}
 			};
-			std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+			std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
 				if (name == "A")
 					return std::make_shared<NCI>();
 				return nullptr;

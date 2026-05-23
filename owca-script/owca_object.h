@@ -3,12 +3,13 @@
 
 #include "stdafx.h"
 #include "tokens.h"
+#include "object.h"
+#include "garbage.h"
+#include "native_class_interface.h"
 
 namespace OwcaScript {
 	class OwcaValue;
 	class OwcaVM;
-	class ClassToken;
-	class FunctionToken;
 
 	namespace Internal {
 		struct Object;
@@ -16,7 +17,7 @@ namespace OwcaScript {
 	class OwcaObject {
 		Internal::Object* object;
 
-		std::span<char> user_data_impl(ClassToken) const;
+		std::span<char> user_data_impl(Internal::UserClassTokenPtr) const;
 	public:
 		explicit OwcaObject(Internal::Object* object) : object(object) {}
 
@@ -34,10 +35,18 @@ namespace OwcaScript {
 		bool operator == (OwcaObject other) const { return object == other.object; }
 		bool operator != (OwcaObject other) const { return !(*this == other); }
 		
-		template <typename T> T &user_data(ClassToken token) const {
-			auto sp = user_data_impl(token);
+		template <typename T> T &user_data_certainly() const {
+			auto tok = NativeClassInterfaceImplementation<T>::token();
+			auto sp = user_data_impl(tok);
 			assert(sp.size() >= sizeof(T));
+			assert(sp.data() != nullptr);
 			return *(T*)sp.data();
+		}
+		template <typename T> T *user_data_maybe() const {
+			auto tok = NativeClassInterfaceImplementation<T>::token();
+			auto sp = user_data_impl(tok);
+			assert(sp.size() >= sizeof(T));
+			return (T*)sp.data();
 		}
 
 		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaObject &);

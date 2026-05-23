@@ -1,12 +1,11 @@
 #ifndef RC_OWCA_SCRIPT_VM_H
 #define RC_OWCA_SCRIPT_VM_H
 
-#include "owca-script/owca_namespace.h"
 #include "stdafx.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
 #include "owca_value.h"
-#include "owca_variable.h"
+#include "owca_namespace.h"
 #include "owca_code.h"
 #include <unordered_map>
 #include <vector>
@@ -20,6 +19,7 @@ namespace OwcaScript {
 		struct Object;
 		struct Class;
 		struct Array;
+		struct Tuple;
 		struct RuntimeFunction;
 		struct Exception;
 		class Executor;
@@ -56,12 +56,8 @@ namespace OwcaScript {
 			String *empty_string = nullptr;
 			unsigned int generation_gc = 0;
 
-			std::optional<OwcaException> exception_being_handled;
-			std::optional<OwcaValue> value_to_yield;
-			std::optional<ClassToken> currently_building_class;
 			std::list<OwcaValue> temp_gc_protect_list;
 			std::vector<std::string_view> builtin_identifiers;
-
 			void initialize_builtins();
 
 			struct BuiltinProvider;
@@ -86,18 +82,6 @@ namespace OwcaScript {
 			void initialize_exception_object(Exception &);
 			[[noreturn]] void throw_exception(Class *exc, std::string_view msg);
 
-			struct ExceptionHandlingSentinel {
-				VM &vm;
-				std::optional<OwcaException> previous;
-
-				ExceptionHandlingSentinel(VM &vm, OwcaException oe) : vm(vm) {
-					previous = vm.exception_being_handled;
-					vm.exception_being_handled = oe;
-				}
-				~ExceptionHandlingSentinel() {
-					vm.exception_being_handled = previous;
-				}
-			};
 
 			// math exception
 			[[noreturn]] void throw_division_by_zero();
@@ -171,21 +155,6 @@ namespace OwcaScript {
 			size_t calculate_hash(OwcaValue);
 			bool calculate_if_true(OwcaValue);
 			OwcaIterator create_iterator(OwcaValue );
-
-			struct CurrentlyBuildingClassGuard {
-				VM &vm;
-				std::optional<ClassToken> previous;
-
-				CurrentlyBuildingClassGuard(VM &vm, std::optional<ClassToken> token) : vm(vm) {
-					previous = vm.currently_building_class;
-					vm.currently_building_class = token;
-				}
-				~CurrentlyBuildingClassGuard() {
-					vm.currently_building_class = previous;
-				}
-			};
-			CurrentlyBuildingClassGuard set_currently_building_class(std::optional<ClassToken> token) { return CurrentlyBuildingClassGuard{ *this, token }; }
-			auto get_currently_building_class() const { return currently_building_class; }
 
 			OwcaCode currently_running_code() const;
 			void run_gc();

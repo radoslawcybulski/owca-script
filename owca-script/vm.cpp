@@ -13,7 +13,6 @@
 #include "object.h"
 #include "owca_iterator.h"
 #include "string.h"
-#include "owca_variable.h"
 #include "exception.h"
 #include "owca_exception.h"
 #include "iterator.h"
@@ -508,7 +507,7 @@ namespace OwcaScript::Internal {
 			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1'000'000'000.0;
 		}
 
-		std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__init__") {
 				if (param_names.size() == 2) return adapt(range_init1);
 				if (param_names.size() == 3) return adapt(range_init2);
@@ -564,7 +563,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Exception.function") return adapt(exception_function);
 			return std::nullopt;
 		}
-		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const override {
+		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::span<const std::string_view> param_names) const override {
 			if (full_name == "Range.__iter__") return adapt(range_iter);
 			if (full_name == "String.__iter__") return adapt(string_iter);
 			if (full_name == "Map.__iter__") return adapt(map_iter);
@@ -576,8 +575,8 @@ namespace OwcaScript::Internal {
 			if (full_name == "Tuple.__iter__") return adapt(tuple_iter);
 			return std::nullopt;
 		}
-		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const override {
-			if (full_name == "Exception") return std::make_shared<NativeClassInterfaceSimpleImplementation<Exception>>();
+		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name) const override {
+			if (full_name == "Exception") return std::make_shared<NativeClassInterfaceImplementation<Exception>>();
 			return nullptr;
 		}
 	};
@@ -778,7 +777,7 @@ function native time();
 	}
 	Exception *VM::is_exception(OwcaObject obj) const
 	{
-		return obj.internal_value()->native_storage<Exception>(ClassToken{ c_exception });
+		return obj.user_data_maybe<Exception>();
 	}	
 	VM& VM::get(const OwcaVM &v)
 	{
@@ -1016,7 +1015,8 @@ function native time();
 					},
 					[&](Class* var) -> OwcaValue * {
 						assert(obj);
-						auto native_storage = obj->native_storage_raw(ClassToken{ var });
+						assert(var->native_token);
+						auto native_storage = obj->native_storage_raw(*var->native_token);
 						auto got = var->native->get_member(this, key, native_storage, tmp);
 						return got ? &tmp : nullptr;
 					});
@@ -1080,7 +1080,8 @@ function native time();
 					auto succ = visit_variant(it2->second,
 						[&](RuntimeFunctions *rf) -> bool { return false; },
 						[&](Class* var) -> bool {
-							auto native_storage = o.internal_value()->native_storage_raw(ClassToken{ var });
+							assert(var->native_token);
+							auto native_storage = o.internal_value()->native_storage_raw(*var->native_token);
 							return var->native->set_member(this, key, native_storage, value);
 						});
 					if (succ) return;

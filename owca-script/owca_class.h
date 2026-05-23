@@ -2,9 +2,8 @@
 #define RC_OWCA_SCRIPT_OWCA_CLASS_H
 
 #include "stdafx.h"
-#include <new>
-#include "owca_vm.h"
 #include "native_class_interface.h"
+#include "garbage.h"
 
 namespace OwcaScript {
 	class OwcaValue;

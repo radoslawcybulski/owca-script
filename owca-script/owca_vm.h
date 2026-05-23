@@ -1,10 +1,12 @@
 #ifndef RC_OWCA_SCRIPT_OWCA_VM_H
 #define RC_OWCA_SCRIPT_OWCA_VM_H
 
-#include "owca-script/owca_namespace.h"
+#include "owca_class.h"
+#include "owca_namespace.h"
 #include "stdafx.h"
 #include "owca_error_message.h"
 #include "tokens.h"
+#include "garbage.h"
 
 namespace OwcaScript {
 	class OwcaVM;
@@ -24,24 +26,14 @@ namespace OwcaScript {
 		class VM;
 	}
 	
-	class GenerationGC {
-		unsigned int value;
-
-	public:
-		explicit GenerationGC(unsigned int value) : value(value) {}
-
-		bool operator == (GenerationGC other) const { return value == other.value; }
-		bool operator != (GenerationGC other) const { return !(*this == other); }
-	};
-
 	struct NativeCodeProvider {
 		virtual ~NativeCodeProvider() = default;
 
 		using Function = std::function<OwcaValue(OwcaVM, std::span<OwcaValue>)>;
 		using GeneratorFunction = std::function<Generator(OwcaVM, std::span<OwcaValue>)>;
-		virtual std::optional<Function> native_function(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const { return std::nullopt; }
-		virtual std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::optional<ClassToken> cls, FunctionToken token, std::span<const std::string_view> param_names) const { return std::nullopt; }
-		virtual std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name, ClassToken token) const { return nullptr; }
+		virtual std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const { return std::nullopt; }
+		virtual std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::span<const std::string_view> param_names) const { return std::nullopt; }
+		virtual std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name) const { return nullptr; }
 	};
 
 	class OwcaVM {

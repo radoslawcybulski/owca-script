@@ -541,19 +541,13 @@ namespace OwcaScript::Internal {
         RuntimeFunction *fnc = nullptr;
         if (is_native) {
             auto &native_provider = code_object.native_code_provider();
-            std::optional<ClassToken> class_;
-            if (HAS_STATE()) {
-                if (auto state = TRY_STATE(ClassState)) {
-                    class_ = ClassToken{ state->cls };
-                }
-            }
             auto line = code_object.get_line_by_position(code_pos).line;
             if (is_generator) {
                 auto f = vm->allocate<RuntimeFunctionNativeGenerator>(0, code_object, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
-                    if (auto impl = native_provider->native_generator(full_name, class_, FunctionToken{ fnc }, f->parameter_names)) {
+                    if (auto impl = native_provider->native_generator(full_name, f->parameter_names)) {
                         f->generator = std::move(*impl);
                     }
                 }
@@ -566,7 +560,7 @@ namespace OwcaScript::Internal {
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
-                    if (auto impl = native_provider->native_function(full_name, class_, FunctionToken{ fnc }, f->parameter_names)) {
+                    if (auto impl = native_provider->native_function(full_name, f->parameter_names)) {
                         f->function = std::move(*impl);
                     }
                 }
@@ -697,6 +691,21 @@ restart:
                     auto all_variable_names = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
                     auto variable_name_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
 
+                    if (native) {
+                        auto &native_provider = cls->code.native_code_provider();
+                        if (native_provider) {
+                            if (auto impl = native_provider->native_class(cls->full_name)) {
+                                auto size = impl->native_storage_size();
+                                cls->initialize_set_native_class_info(impl->get_token(), size);
+                                cls->native = std::move(impl);
+                            }
+                        }
+                        if (!cls->native) {
+                            throw_missing_native(std::format("missing native class {}", cls->full_name));
+                        }
+                    }
+
+
                     auto base_classes = PEEK_VALUES(base_class_count, base_class_count);
                     auto members = PEEK_VALUES(member_count + base_class_count, member_count);
                     for(auto b : base_classes) {
@@ -717,20 +726,6 @@ restart:
 
                     cls->finalize_initializing(vm);
 
-                    if (native) {
-                        auto &native_provider = cls->code.native_code_provider();
-                        if (native_provider) {
-                            if (auto impl = native_provider->native_class(cls->full_name, ClassToken{ cls })) {
-                                auto size = impl->native_storage_size();
-                                cls->native_storage_pointers[cls] = { cls->native_storage_total, size };
-                                cls->native_storage_total = (cls->native_storage_total + size + 15) & ~15;
-                                cls->native = std::move(impl);
-                            }
-                        }
-                        if (!cls->native) {
-                            throw_missing_native(std::format("missing native class {}", cls->full_name));
-                        }
-                    }
                     POP_VALUES(base_class_count + member_count);
                     PUSH_VALUE(OwcaClass{ cls });
                     break; }

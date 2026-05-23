@@ -6,7 +6,6 @@
 #include "allocation_base.h"
 #include "owca_iterator.h"
 #include "owca_value.h"
-#include "owca_variable.h"
 #include "generator.h"
 #include "executor.h"
 

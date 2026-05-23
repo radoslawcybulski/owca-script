@@ -7,8 +7,6 @@
 namespace OwcaScript {
 	class OwcaValue;
 	class OwcaVM;
-	class ClassToken;
-	class FunctionToken;
 
 	namespace Internal {
 		struct Namespace;

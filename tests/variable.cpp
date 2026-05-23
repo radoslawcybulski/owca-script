@@ -12,7 +12,7 @@ namespace {
 
         Provider(int &counter) : counter(counter) {}
 
-        struct NCI : public NativeClassInterface {
+        struct NCI : public NativeClassInterfaceImplementation<std::uint64_t> {
             int &counter;
             NCI(int &counter) : counter(counter) {}
 
@@ -30,7 +30,7 @@ namespace {
                 return 8;
             }
         };
-        std::shared_ptr<NativeClassInterface> native_class(std::string_view name, ClassToken) const override {
+        std::shared_ptr<NativeClassInterface> native_class(std::string_view name) const override {
             if (name == "A")
                 return std::make_shared<NCI>(counter);
             return nullptr;

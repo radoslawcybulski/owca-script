@@ -30,8 +30,9 @@ namespace OwcaScript {
 			std::vector<RuntimeFunction*> runtime_functions;
 			std::vector<std::string_view> runtime_variables;
 			std::unordered_map<std::string_view, Class*> member_names;
-			std::unordered_map<Class*, std::pair<size_t, size_t>> native_storage_pointers;
+			std::vector<std::tuple<UserClassTokenPtr, Class*, size_t, size_t>> native_storage_pointers;
 			std::shared_ptr<NativeClassInterface> native;
+			std::optional<UserClassTokenPtr> native_token;
 			size_t native_storage = 0;
 			size_t native_storage_total = 0;
 			std::function<OwcaValue()> allocator_override;
@@ -42,6 +43,7 @@ namespace OwcaScript {
 			std::string to_string() const override;
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
+			void initialize_set_native_class_info(UserClassTokenPtr token, size_t sz);
 			void initialize_add_base_class(const OwcaVM &vm, OwcaClass b);
 			void initialize_add_function(const OwcaVM &vm, OwcaFunctions f);
 			void initialize_add_variable(std::string_view name);
@@ -65,12 +67,13 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
-			std::span<char> native_storage_raw(ClassToken cls);
-			template <typename T> T* native_storage(ClassToken cls) {
-				auto sp = native_storage_raw(cls);
-				if (sp.empty()) return nullptr;
-				assert(sp.size() >= sizeof(T));
-				return reinterpret_cast<T*>(sp.data());
+			std::span<char> native_storage_raw(UserClassTokenPtr token) {
+				for(auto &p : type_->native_storage_pointers) {
+					if (std::get<0>(p) == token) {
+						return { type_->native_storage_ptr(this) + std::get<2>(p), std::get<3>(p) };
+					}
+				}
+				return { (char*)nullptr, 0 };
 			}
 		};
 

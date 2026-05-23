@@ -27,14 +27,9 @@ namespace OwcaScript {
 		object->vm->member(*this, key, std::move(val));
 	}
 
-	std::span<char> OwcaObject::user_data_impl(ClassToken token) const
+	std::span<char> OwcaObject::user_data_impl(Internal::UserClassTokenPtr token) const
 	{
-		auto sp = object->native_storage_raw(token);
-		if (sp.empty()) {
-			auto cls = (Internal::Class*)token.value();
-			object->vm->throw_wrong_type(object->type(), cls->full_name);
-		}
-		return sp;
+		return object->native_storage_raw(token);
 	}
 	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaObject &obj)
 	{

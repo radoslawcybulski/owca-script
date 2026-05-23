@@ -8,19 +8,21 @@ namespace OwcaScript::Internal {
 	Class::Class(Line line, std::string_view name, std::string_view full_name, OwcaCode code) : fileline(line), name(name), full_name(full_name), code(std::move(code)) {
 	}
 	Object::Object(Class* type) : type_(type) {
+		auto ptr = type_->native_storage_ptr(this);
 		for (auto it : type_->native_storage_pointers) {
-			auto p = type_->native_storage_ptr(this) + it.second.first;
-			auto size = it.second.second;
-			auto cls = it.first;
+			auto p = ptr + std::get<2>(it);
+			auto size = std::get<3>(it);
+			auto cls = std::get<1>(it);;
 			assert(cls->native);
 			cls->native->initialize_storage(p, size);
 		}
 	}
 	Object::~Object() {
+		auto ptr = type_->native_storage_ptr(this);
 		for (auto it : type_->native_storage_pointers) {
-			auto p = type_->native_storage_ptr(this) + it.second.first;
-			auto size = it.second.second;
-			auto cls = it.first;
+			auto p = ptr + std::get<2>(it);
+			auto size = std::get<3>(it);
+			auto cls = std::get<1>(it);
 			assert(cls->native);
 			cls->native->destroy_storage(p, size);
 		}
@@ -77,13 +79,31 @@ namespace OwcaScript::Internal {
 			}
 		}
 	}
+	void Class::initialize_set_native_class_info(UserClassTokenPtr token, size_t sz) {
+		assert(native_storage_pointers.empty());
+		native_storage_pointers.push_back({ token, this, 0, sz });
+		native_token = token;
+	}
 	void Class::finalize_initializing(const OwcaVM &vm)
 	{
 		size_t offset = 0;
 		for (auto q : base_classes) {
 			for (auto it : q->native_storage_pointers) {
-				native_storage_pointers.insert({ it.first, { offset, it.second.second } });
-				offset += it.second.second;
+				bool found = false;
+				for(auto &it2 : native_storage_pointers) {
+					if (std::get<0>(it) == std::get<0>(it2)) {
+						found = true;
+						break;
+					}
+				}
+				if (found) continue;
+				native_storage_pointers.push_back({
+					std::get<0>(it),
+					std::get<1>(it),
+					offset,
+					std::get<3>(it)
+				});
+				offset += std::get<3>(it);
 				offset = (offset + 15) & ~15;
 			}
 		}
@@ -115,14 +135,6 @@ namespace OwcaScript::Internal {
 		for(auto q : lookup_order) all_base_classes.insert(q);
 	}
 
-	std::span<char> Object::native_storage_raw(ClassToken cls)
-	{
-		auto c = (Class*)cls.value();
-		auto it = type_->native_storage_pointers.find(c);
-		if (it == type_->native_storage_pointers.end()) return {};
-		return { (char*)this + sizeof(*this) + it->second.first, it->second.second };
-	}
-
 	std::string_view Object::type() const
 	{
 		return type_->full_name;
@@ -140,10 +152,11 @@ namespace OwcaScript::Internal {
 		gc_mark_value(vm, generation_gc, type_);
 		for (auto& it : values)
 			gc_mark_value(vm, generation_gc, it.second);
-		for(auto& it : type_->native_storage_pointers) {
-			auto p = type_->native_storage_ptr(this) + it.second.first;
-			auto size = it.second.second;
-			auto cls = it.first;
+		auto ptr = type_->native_storage_ptr(this);
+		for(auto it : type_->native_storage_pointers) {
+			auto p = ptr + std::get<2>(it);
+			auto size = std::get<3>(it);
+			auto cls = std::get<1>(it);
 			assert(cls->native);
 			cls->native->gc_mark_members(p, size, vm, generation_gc);
 		}

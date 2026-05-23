@@ -6,29 +6,15 @@
 
 namespace OwcaScript {
 	namespace Internal {
-		struct Class;
-		struct RuntimeFunction;
+		class UserClassToken { };
+		class UserClassTokenPtr {
+			const UserClassToken *tok = nullptr;
+		public:
+			UserClassTokenPtr(const UserClassToken &tok) : tok(&tok) {}
+			bool operator == (UserClassTokenPtr other) const { return tok == other.tok; }
+			bool operator != (UserClassTokenPtr other) const { return !(*this == other); }
+		};
 	}
-	class FunctionToken {
-		const void* tok = nullptr;
-	public:
-		explicit FunctionToken(const Internal::RuntimeFunction* tok) : tok(tok) {}
-
-		auto value() const { return tok; }
-
-		bool operator == (FunctionToken o) const { return tok == o.tok; }
-		bool operator != (FunctionToken o) const { return tok != o.tok; }
-	};
-	class ClassToken {
-		const void* tok = nullptr;
-	public:
-		explicit ClassToken(const Internal::Class* tok) : tok(tok) {}
-
-		auto value() const { return tok; }
-
-		bool operator == (ClassToken o) const { return tok == o.tok; }
-		bool operator != (ClassToken o) const { return tok != o.tok; }
-	};
 }
 
 #endif
