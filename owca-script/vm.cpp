@@ -768,10 +768,10 @@ function native time();
 	}
 	void VM::initialize_exception_object(Exception &exc)
 	{
-		for(auto &s : executor->stacktrace) {
-			auto rf = s.runtime_function;
+        for(auto sc = executor->stacktrace_vector.data() + 1; sc <= executor->stacktrace_current; ++sc) {
+			auto rf = sc->runtime_function;
 			exc.frames.push_back({ .code = rf->code });
-			exc.frames.back().line = rf->line(s.code_position);
+			exc.frames.back().line = rf->line(sc->code_position);
 			exc.frames.back().function = rf->full_name;
 		}
 	}

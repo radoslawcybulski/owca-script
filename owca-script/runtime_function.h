@@ -30,7 +30,7 @@ namespace OwcaScript {
 
 			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override;
 
-			virtual OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) = 0;
+			virtual OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) = 0;
 			virtual unsigned int line(ExecuteBufferReader::Position) const;
 		protected:
 			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
@@ -52,7 +52,7 @@ namespace OwcaScript {
 
 			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
-			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
+			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 		};
 
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
@@ -60,7 +60,7 @@ namespace OwcaScript {
 
 			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
-			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
+			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 		};
 
 		struct RuntimeFunctionNativeFunction : public RuntimeFunction {
@@ -70,7 +70,7 @@ namespace OwcaScript {
 
 			RuntimeFunctionNativeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, name, full_name, is_method, false), line_(line) {}
 
-			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
+			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 			unsigned int line(ExecuteBufferReader::Position) const override { return line_; }
 		};
 
@@ -82,7 +82,7 @@ namespace OwcaScript {
 			RuntimeFunctionNativeGenerator(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, name, full_name, is_method, true), line_(line) {}
 
 			Generator run_native_generator(Executor &e, Iterator *iter_object, Generator generator_object);
-			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) override;
+			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 			unsigned int line(ExecuteBufferReader::Position) const override { return line_; }
 		};
 

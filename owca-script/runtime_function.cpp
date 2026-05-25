@@ -38,15 +38,15 @@ namespace OwcaScript::Internal {
 		gc_mark_value(vm, generation_gc, values_from_parents);
 	}
 
-	OwcaValue RuntimeFunctionScriptFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) {
-		return e.run_script_code(this, globals_ptr, temporary_ptr, states_ptr, param_count, true);
+	OwcaValue RuntimeFunctionScriptFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
+		return e.run_script_code(this, globals_ptr, temporary_ptr, param_count, true);
 	}
 
 	void RuntimeFunctionScriptGenerator::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
 		gc_mark_value(vm, generation_gc, values_from_parents);
 	}
 
-	OwcaValue RuntimeFunctionScriptGenerator::call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) {
+	OwcaValue RuntimeFunctionScriptGenerator::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
         auto locals_ptr = temporary_ptr.locals(param_count);
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
 
@@ -69,13 +69,13 @@ namespace OwcaScript::Internal {
         return OwcaIterator{ iter };
 	}
 
-	OwcaValue RuntimeFunctionNativeFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) {
+	OwcaValue RuntimeFunctionNativeFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
         auto locals_ptr = temporary_ptr.locals(param_count);
         temporary_ptr = temporary_ptr + max_values - param_count;
 
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
         auto est = Executor::StackTraceState{ e, this, {} };
-        e.update_current_top_ptrs(temporary_ptr + max_temporaries, states_ptr);
+        e.update_current_top_ptrs(temporary_ptr + max_temporaries);
         return function(vm, std::span{ locals_ptr.local_values_ptr, param_count });
 	}
 
@@ -96,7 +96,7 @@ namespace OwcaScript::Internal {
         }
     }
 
-	OwcaValue RuntimeFunctionNativeGenerator::call(Executor &e, Executor::TemporariesPtr temporary_ptr, Executor::StatesTypePtr states_ptr) {
+	OwcaValue RuntimeFunctionNativeGenerator::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
         auto locals_ptr = temporary_ptr.locals(param_count);
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
 		Generator generator_object = this->generator(vm, std::span{ locals_ptr.local_values_ptr, param_count });
