@@ -328,6 +328,8 @@ namespace OwcaScript {
 			std::tuple<Number, Number, Number> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
 			size_t verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
 			std::pair<size_t, size_t> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
+			void complete(WithState, TemporariesPtr temporary_ptr);
+			void complete_all(TemporariesPtr temporary_ptr);
         public:
             Executor(VM *vm);
 

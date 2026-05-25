@@ -1121,14 +1121,17 @@ restart:
                     }
                     break; }
                 case ExecuteBufferReader::Op::ReturnCloseIterator: {
+                    complete_all(temporary_ptr);
                     return { OwcaCompleted{}, temporary_ptr, code_pos };
                     }
                 case ExecuteBufferReader::Op::Return: {
+                    complete_all(temporary_ptr);
                     return { OwcaEmpty{}, temporary_ptr, code_pos };
                     }
                 case ExecuteBufferReader::Op::ReturnValue: {
                     auto val = PEEK_VALUE(1);
                     POP_VALUES(1);
+                    complete_all(temporary_ptr);
                     return { val, temporary_ptr, code_pos };
                     }
                 case ExecuteBufferReader::Op::Throw: {
@@ -1247,12 +1250,7 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::WithCompleted: {
                     auto &state = STATE(WithState);
-                    if (state.entered) {
-                        auto mbm = vm->member(state.context, "__exit__");
-                        PUSH_VALUE(mbm);
-                        execute_call_from_values(temporary_ptr, 1);
-                        POP_VALUES(1);
-                    }
+                    complete(state, temporary_ptr);
                     POP_STATE();
                     break; }
                 case ExecuteBufferReader::Op::Yield: {
@@ -1292,7 +1290,24 @@ next_iteration:
         }
 #endif
     }
-
+    void Executor::complete_all(TemporariesPtr temporary_ptr) {
+        auto sc = stacktrace_current;
+        while(HAS_STATE()) {
+            if (auto s = TRY_STATE(WithState)) {
+                complete(*s, temporary_ptr);
+            }
+            POP_STATE();
+        }
+    }
+    void Executor::complete(WithState state, TemporariesPtr temporary_ptr) {
+        if (state.entered) {
+            state.entered = false;
+            auto mbm = vm->member(state.context, "__exit__");
+            PUSH_VALUE(mbm);
+            execute_call_from_values(temporary_ptr, 1);
+            POP_VALUES(1);
+        }
+    }
     template <typename Tag> std::string_view tag_name = "unknown";
     template <> std::string_view tag_name<Executor::TagAdd> = "addition";
     template <> std::string_view tag_name<Executor::TagSub> = "subtraction";
