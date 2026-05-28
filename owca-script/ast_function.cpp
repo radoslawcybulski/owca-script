@@ -22,11 +22,13 @@ namespace OwcaScript::Internal {
 		ei.code_writer.append(line, generator_ == Generator::Yes);
 		ei.code_writer.append(line, param_count_ > 0 && identifier_names_[0] == "self");
 		ei.code_writer.append(line, (std::uint16_t)param_count_);
-		ei.code_writer.append(line, (std::uint16_t)identifier_names_.size());
+		ei.code_writer.append(line, (std::uint16_t)(identifier_names_[0] == "" ? identifier_names_.size() - 1 : identifier_names_.size()));
+
 		auto temporaries_count = ei.code_writer.append_placeholder<std::uint16_t>(line);
 		auto states_count = ei.code_writer.append_placeholder<std::uint16_t>(line);
 
 		for(auto &id : identifier_names_) {
+			if (id == "") continue;
 			ei.code_writer.append(line, id);
 		}
 		if (native_ == Native::Yes) {

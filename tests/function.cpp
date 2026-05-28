@@ -22,7 +22,7 @@ function r() {
 
 	a = A(4);
 	b = a.foo;
-	c = bound_value(b).v;
+	c = b.bound_value().v;
 	return c;
 }
 )");

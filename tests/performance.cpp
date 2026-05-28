@@ -13,7 +13,7 @@ TEST_F(PerformanceTest, DISABLED_simple_1)
 s = 0;
 start = time();
 i = 0;
-while (i < 100000000) {
+while (i < 100000) {
     s = (s * 11035 + 12345) & 0xffff;
     i = i + 1;
 }
@@ -25,7 +25,7 @@ print(`Final result: {s}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 17.56
+{ // 17.56 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 function foo1(s) {
@@ -47,6 +47,39 @@ s = 0;
 start = time();
 i = 0;
 while (i < 100000000) {
+    s = foo5((s * 11035 + 12345) & 0xffff);
+    i = i + 1;
+}
+end = time();
+print(`Time taken: {end - start} seconds`);
+print(`Final result: {s}`);
+)");
+	auto val = vm.execute(code);
+}
+
+TEST_F(PerformanceTest, DISABLED_simple_3)
+{ // 17.56 // 100000000
+	OwcaVM vm;
+	auto code = compile(__LINE__, vm, "test.os", R"(
+function foo1(s) {
+    return s + 1;
+}
+function foo2(s) {
+    return foo1(s);
+}
+function foo3(s) {
+    return foo2(s);
+}
+function foo4(s) {
+    return foo3(s);
+}
+function foo5(s) {
+    return foo4(s);
+}
+s = 0;
+start = time();
+i = 0;
+while (i < 100000) {
     s = foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }

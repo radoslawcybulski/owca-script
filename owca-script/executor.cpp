@@ -597,6 +597,10 @@ namespace OwcaScript::Internal {
                 f->values_from_parents.push_back(LOCAL_VAR(c.index_in_parent));
             }
         }
+        if (is_method) {
+            assert(param_count > 0);
+            --param_count;
+        }
         fnc->param_count = param_count;
         fnc->max_temporaries = temporaries_count;
         fnc->max_states = state_count;
@@ -608,15 +612,10 @@ namespace OwcaScript::Internal {
 
     std::tuple<OwcaValue, Executor::TemporariesPtr, ExecuteBufferReader::Position> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
     {
-        assert(!stacktrace.empty());
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace_current->runtime_function->code;
         auto temporary_ptr_start = temporary_ptr;
-        auto states_ptr_start = states_ptr;
-        while(!states_ptr_start.empty()) {
-            --states_ptr_start;
-        }
         const auto &data_kinds = code_object.data_kinds();
 #else
         const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds = {};
@@ -647,9 +646,8 @@ restart:
                 // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 std::string states_debug;
-                for(auto s = states_ptr_start.states_type_ptr; s < states_ptr.states_type_ptr; ++s) {
-                    visit_variant(*s,
-                        [&](const EmptyState&) { states_debug += "E"; },
+                for(auto &s : stacktrace_current->states) {
+                    visit_variant(s,
                         [&](const ClassState& c) { states_debug += "S"; },
                         [&](const ForState& c) { states_debug += "F"; },
                         [&](const WhileState& c) { states_debug += "W"; },
@@ -658,9 +656,9 @@ restart:
                         [&](const WithState& t) { states_debug += "H"; }
                     );
                 }
-                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace.back().runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
+                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
                     " states " << std::setw(6) << states_debug <<
-                    " stack " << std::setw(2) << stacktrace.size() <<
+                    " stack " << std::setw(2) << (stacktrace_current - stacktrace_vector.data()) <<
                     " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";
                 if (exception_being_handled) std::cout << " (exception being handled)";
@@ -1425,14 +1423,13 @@ next_iteration:
     }
 
     OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals) {
-        auto locals_ptr = temporary_ptr.locals(arg_count);
+        auto locals_ptr = temporary_ptr.locals(arg_count + 1);
         const auto max_values = function->max_values;
         temporary_ptr = temporary_ptr + max_values - arg_count;
 
         assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
-        assert(states_ptr.states_type_ptr + function->max_states <= states_vector.data() + states_vector.size());
         if (clear_locals) [[likely]] {
-            for(auto i = arg_count; i < max_values; ++i) {
+            for(auto i = arg_count + 1; i < max_values; ++i) {
                 LOCAL_VAR(i) = OwcaEmpty{};
             }
         }
@@ -1516,8 +1513,8 @@ next_iteration:
             return obj;
 		}
         if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
-            LOCAL_VAR(0) = obj;
-            auto retval = execute_function_call_from_values(*state, temporary_ptr, true, arg_count);
+            PEEK_VALUE(arg_count) = obj;
+            auto retval = execute_function_call_from_values(*state, temporary_ptr, arg_count);
             if (!cls->reload_self) [[likely]] {
                 retval = obj;
             }
@@ -1528,12 +1525,11 @@ next_iteration:
     OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
         auto func = PEEK_VALUE(argument_count);
         if (func.kind() == OwcaValueKind::Functions) [[likely]] {
-            auto f = func.as_functions(vm);
+            auto f = func.as_functions_certainly();
             auto runtime_functions = f.internal_value();
-            bool has_self = f.internal_self_object() != nullptr;
-            PEEK_VALUE(argument_count) = has_self ? *f.self() : OwcaEmpty{};
+            PEEK_VALUE(argument_count) = f.self().value_or(OwcaValue{});
             
-            return execute_function_call_from_values(runtime_functions, temporary_ptr, has_self, argument_count - (has_self ? 0 : 1));
+            return execute_function_call_from_values(runtime_functions, temporary_ptr, argument_count);
         }
         else {
             if (func.kind() == OwcaValueKind::Class) [[likely]] {
@@ -1542,16 +1538,13 @@ next_iteration:
             throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
         }
     }
-    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, bool has_self, unsigned int arg_count) {
-        auto runtime_function = runtime_functions->functions[arg_count];
-        if (!runtime_function && has_self) [[unlikely]] {
-            runtime_function = runtime_functions->functions[arg_count - 1];
-            --arg_count;
-        }
+    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count) {
+        assert(arg_count > 0);
+        auto runtime_function = runtime_functions->functions[arg_count - 1];
         if (!runtime_function) [[unlikely]] {
             auto tmp = std::string{ "function " };
             tmp += runtime_functions->name;
-            throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count + (has_self ? 1 : 0));
+            throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count - 1);
         }
         return runtime_function->call(*this, temporary_ptr);
     }

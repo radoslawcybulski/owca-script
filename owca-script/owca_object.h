@@ -45,7 +45,7 @@ namespace OwcaScript {
 		template <typename T> T *user_data_maybe() const {
 			auto tok = NativeClassInterfaceImplementation<T>::token();
 			auto sp = user_data_impl(tok);
-			assert(sp.size() >= sizeof(T));
+			assert(sp.size() >= sizeof(T) || sp.data() == nullptr);
 			return (T*)sp.data();
 		}
 

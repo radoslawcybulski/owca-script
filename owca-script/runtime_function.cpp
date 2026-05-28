@@ -70,13 +70,13 @@ namespace OwcaScript::Internal {
 	}
 
 	OwcaValue RuntimeFunctionNativeFunction::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
-        auto locals_ptr = temporary_ptr.locals(param_count);
+        auto locals_ptr = temporary_ptr.locals(param_count + 1);
         temporary_ptr = temporary_ptr + max_values - param_count;
 
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
         auto est = Executor::StackTraceState{ e, this, {} };
         e.update_current_top_ptrs(temporary_ptr + max_temporaries);
-        return function(vm, std::span{ locals_ptr.local_values_ptr, param_count });
+        return function(vm, std::span{ locals_ptr.local_values_ptr, param_count + 1u});
 	}
 
     Generator RuntimeFunctionNativeGenerator::run_native_generator(Executor &e, Iterator *iter_object, Generator generator_object) {
@@ -97,9 +97,9 @@ namespace OwcaScript::Internal {
     }
 
 	OwcaValue RuntimeFunctionNativeGenerator::call(Executor &e, Executor::TemporariesPtr temporary_ptr) {
-        auto locals_ptr = temporary_ptr.locals(param_count);
+        auto locals_ptr = temporary_ptr.locals(param_count + 1);
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
-		Generator generator_object = this->generator(vm, std::span{ locals_ptr.local_values_ptr, param_count });
+		Generator generator_object = this->generator(vm, std::span{ locals_ptr.local_values_ptr, param_count + 1u });
         auto iter = vm->allocate<Iterator>(0, this, std::span<OwcaValue>{}, std::span<Executor::StatesType>{});
         iter->generator = run_native_generator(e, iter, std::move(generator_object));
         return OwcaIterator{ iter };

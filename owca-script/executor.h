@@ -285,7 +285,7 @@ namespace OwcaScript {
 
 			OwcaValue execute_function(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
 			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count);
-			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, bool has_self, unsigned int arg_count);
+			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count);
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
 			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
 

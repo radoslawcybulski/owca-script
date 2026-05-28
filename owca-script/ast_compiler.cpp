@@ -1368,6 +1368,9 @@ namespace OwcaScript::Internal {
 
 			if (first_run) {
 				assert(current_stack->next_index == 0);
+				if (o.identifier_names().empty() || o.identifier_names()[0] != "self") {
+					current_stack->define_identifier("", true);
+				}
 				for (auto& p : o.identifier_names()) {
 					current_stack->define_identifier(p, true);
 				}
@@ -1376,9 +1379,10 @@ namespace OwcaScript::Internal {
 			apply(static_cast<AstExpr&>(o));
 			
 			if (!first_run) {
+				auto offset = !o.identifier_names().empty() && o.identifier_names()[0] == "self" ? 0 : 1;
 				for(auto i = 0u; i < o.param_count(); ++i) {
-					assert(i < st.identifier_names.size());
-					assert(st.identifier_names[i] == o.identifier_names()[i]);
+					assert(offset + i < st.identifier_names.size());
+					assert(st.identifier_names[offset + i] == o.identifier_names()[i]);
 				}
 				o.update_copy_from_parents(std::move(st.copy_from_parents));
 				o.update_identifier_names(std::move(st.identifier_names));

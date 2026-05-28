@@ -29,6 +29,12 @@ namespace OwcaScript {
 			[&](bool) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaRange) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaException oe) -> Internal::AllocationBase * { return oe.internal_owner(); },
+			[&](OwcaFunctions oe) -> Internal::AllocationBase * {
+				if (oe.internal_self_object()) {
+					return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self);
+				}
+				return oe.internal_value();
+			},
 			[&](auto v) -> Internal::AllocationBase * {
 				return v.internal_value();
 			}
