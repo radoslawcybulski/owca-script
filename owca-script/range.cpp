@@ -15,10 +15,10 @@ namespace OwcaScript::Internal {
         return std::hash<Number>{}(from) * 3 + std::hash<Number>{}(to) * 5 + std::hash<Number>{}(step) * 7;
     }
 
-    Generator Range::iter(const OwcaVM &vm) const {
+    Generator Range::iter() const {
         auto index = from;
         if (step == 0) {
-            VM::get(vm).throw_range_step_is_zero();
+            Internal::current_vm().throw_range_step_is_zero();
         }
         if (step > 0) {
             while(index < to) {

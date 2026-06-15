@@ -13,7 +13,7 @@ namespace OwcaScript::Internal {
 
 	std::tuple<size_t, size_t, bool> Dictionary::find_place(OwcaValue key) const
 	{
-		auto hash = VM::get(vm).calculate_hash(key);
+		auto hash = current_vm().calculate_hash(key);
 		if (hash == Deleted || hash == Empty) hash += 2;
 		return find_place(key, hash);
 	}
@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
 			if (cell_hash == Empty) return {index, hash, false};
 			if (cell_hash == Deleted) continue;
 			if (cell_hash != hash) continue;
-			if (VM::get(vm).compare_values_eq(std::get<1>(p), key)) return { index, hash, true };
+			if (current_vm().compare_values_eq(std::get<1>(p), key)) return { index, hash, true };
 		}
 		assert(false);
 		return { 0, 0, false };
@@ -90,7 +90,7 @@ namespace OwcaScript::Internal {
 	{
 		auto [index, hash, exists] = find_place(key);
 		if (!exists) {
-			VM::get(vm).throw_missing_key(key.to_string());
+			current_vm().throw_missing_key(key.to_string());
 		}
 		return std::get<2>(values[index]);
 	}
@@ -114,7 +114,7 @@ namespace OwcaScript::Internal {
 			if (default_value.has_value()) {
 				return *default_value;
 			}
-			VM::get(vm).throw_missing_key(key.to_string());
+			current_vm().throw_missing_key(key.to_string());
 		}
 		auto v = std::get<2>(values[index]);
 		delete_pos(index);
@@ -151,7 +151,7 @@ namespace OwcaScript::Internal {
 	Generator Dictionary::iter_keys() const { // AllocatedMin
 		size_t ver = version;
 		for(auto &q : values) {
-			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (ver != version) current_vm().throw_dictionary_changed(is_map);
 			if (std::get<0>(q) < AllocatedMin) continue;
 			co_yield std::get<1>(q);
 		}
@@ -159,7 +159,7 @@ namespace OwcaScript::Internal {
 	Generator Dictionary::iter_values() const {
 		size_t ver = version;
 		for(auto &q : values) {
-			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (ver != version) current_vm().throw_dictionary_changed(is_map);
 			if (std::get<0>(q) < AllocatedMin) continue;
 			co_yield std::get<2>(q);
 		}
@@ -167,9 +167,9 @@ namespace OwcaScript::Internal {
 	Generator Dictionary::iter_items() const {
 		size_t ver = version;
 		for(auto &q : values) {
-			if (ver != version) Internal::VM::get(vm).throw_dictionary_changed(is_map);
+			if (ver != version) current_vm().throw_dictionary_changed(is_map);
 			if (std::get<0>(q) < AllocatedMin) continue;
-			auto t = Internal::VM::get(vm).create_tuple(std::pair{ std::get<1>(q), std::get<2>(q) });
+			auto t = current_vm().create_tuple(std::pair{ std::get<1>(q), std::get<2>(q) });
 			co_yield t;
 		}
 	}
@@ -180,12 +180,12 @@ namespace OwcaScript::Internal {
 		dest.version = version;
 	}
 	DictionaryShared *DictionaryShared::clone() const {
-		auto new_shared = Internal::VM::get(vm).allocate<DictionaryShared>(0, vm);
+		auto new_shared = current_vm().allocate<DictionaryShared>(0);
 		dict.clone_to(new_shared->dict);
 		return new_shared;
 	}
 	SetShared *SetShared::clone() const {
-		auto new_shared = Internal::VM::get(vm).allocate<SetShared>(0, vm);
+		auto new_shared = current_vm().allocate<SetShared>(0);
 		dict.clone_to(new_shared->dict);
 		return new_shared;
 	}
@@ -283,17 +283,17 @@ namespace OwcaScript::Internal {
 			auto v = read(pos);
 			auto other_v = other.find(*v.first);
 			if (!other_v) return false;
-			if (!VM::get(vm).compare_values_eq(*v.second, *other_v->second)) return false;
+			if (!current_vm().compare_values_eq(*v.second, *other_v->second)) return false;
 		}
 		return true;
 	}
 
-	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &d)
+	void gc_mark_value(GenerationGC gc, const Dictionary &d)
 	{
 		for(auto pos = d.next(); pos < d.values.size(); pos = d.next(pos)) {
 			auto v = d.read(pos);
-			gc_mark_value(vm, gc, *v.first);
-			gc_mark_value(vm, gc, *v.second);
+			gc_mark_value(gc, *v.first);
+			gc_mark_value(gc, *v.second);
 		}
 	}
 }

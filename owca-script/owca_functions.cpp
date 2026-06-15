@@ -24,14 +24,14 @@ namespace OwcaScript {
 	{
 		auto s = self.visit(
 			[](OwcaEmpty) -> Internal::AllocationBase * { return nullptr; },
-			[&](OwcaCompleted) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](Number) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](bool) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](OwcaRange) -> Internal::AllocationBase * { return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self); },
+			[&](OwcaCompleted) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
+			[&](Number) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
+			[&](bool) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
+			[&](OwcaRange) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
 			[&](OwcaException oe) -> Internal::AllocationBase * { return oe.internal_owner(); },
 			[&](OwcaFunctions oe) -> Internal::AllocationBase * {
 				if (oe.internal_self_object()) {
-					return functions->vm->allocate<Internal::BoundFunctionSelfObject>(0, self);
+					return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self);
 				}
 				return oe.internal_value();
 			},
@@ -64,9 +64,9 @@ namespace OwcaScript {
 		return {};
 	}
 
-	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaFunctions &f) {
-		gc_mark_value(vm, gc, f.functions);
+	void gc_mark_value(GenerationGC gc, const OwcaFunctions &f) {
+		gc_mark_value(gc, f.functions);
 		if (f.self_object)
-			gc_mark_value(vm, gc, f.self_object);
+			gc_mark_value(gc, f.self_object);
 	}
 }

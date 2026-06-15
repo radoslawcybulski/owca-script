@@ -16,7 +16,7 @@ TEST_F(ClassTest, name)
 	function r() { return A.name(); }
 	)");
 		auto val = vm.execute(code).member("r").call();
-		ASSERT_EQ(val.as_string(vm).text(), "A");
+		ASSERT_EQ(val.as_string().text(), "A");
 	}
 	catch(OwcaVM::CompilationFailed &e) {
 		FAIL() << e.what();
@@ -32,6 +32,6 @@ class A {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_string(vm).text(), "A");
+	ASSERT_EQ(val.as_string().text(), "A");
 }
 

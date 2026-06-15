@@ -33,7 +33,7 @@ function r(b) {{
 )", is_tuple ? "(" : "[", is_tuple ? ")" : "]"));
         auto b_val = is_tuple ? OwcaValue{ vm.create_tuple(std::move(pp)) } : OwcaValue{ vm.create_array(std::span{ pp.begin(), pp.end() }) };
         auto val = vm.execute(code).member("r").call(b_val);
-        ASSERT_EQ(val.as_float(vm), expected) << val.to_string();
+        ASSERT_EQ(val.as_float(), expected) << val.to_string();
     }
     void run_basic_test(int mode) {
         OwcaVM vm;
@@ -150,7 +150,7 @@ function r(b) {{
     }
     )");
         auto val = vm.execute(code).member("r").call(mode);
-        ASSERT_EQ(val.as_float(vm), 0) << val.to_string();
+        ASSERT_EQ(val.as_float(), 0) << val.to_string();
     }
 };
 

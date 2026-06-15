@@ -26,7 +26,7 @@ namespace OwcaScript {
         bool operator != (OwcaIterator other) const { return !(*this == other); }
         bool is(OwcaIterator other) const { return object == other.object; }
         
-        friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaIterator &);
+        friend void gc_mark_value(GenerationGC gc, const OwcaIterator &);
 
 		class Iterator {
             OwcaIterator *iter;

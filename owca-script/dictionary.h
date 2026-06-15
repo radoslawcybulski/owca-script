@@ -6,8 +6,6 @@
 #include "owca_value.h"
 
 namespace OwcaScript {
-	class OwcaVM;
-
 	namespace Internal {
 		struct DictionaryShared;
 
@@ -16,10 +14,9 @@ namespace OwcaScript {
 			size_t elements = 0;
 			size_t mask = 0;
 			size_t version = 0;
-			OwcaVM vm;
 			const bool is_map = true;
 
-			Dictionary(OwcaVM vm, bool is_map) : vm(std::move(vm)), is_map(is_map) {}
+			Dictionary(bool is_map) : is_map(is_map) {}
 
 			std::tuple<size_t, size_t, bool> find_place(OwcaValue key, size_t hash) const;
 			std::tuple<size_t, size_t, bool> find_place(OwcaValue key) const;
@@ -51,7 +48,7 @@ namespace OwcaScript {
 			std::string_view type() const;
 			std::string to_string() const;
 			
-			friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const Dictionary &);
+			friend void gc_mark_value(GenerationGC gc, const Dictionary &);
 		};
 
 		struct DictionaryShared : public AllocationBase {
@@ -59,7 +56,7 @@ namespace OwcaScript {
 
 			Dictionary dict;
 
-			DictionaryShared(OwcaVM vm) : dict(std::move(vm), true) {}
+			DictionaryShared() : dict(true) {}
 			
 			DictionaryShared *clone() const;
 			std::string_view type() const override {
@@ -68,8 +65,8 @@ namespace OwcaScript {
 			std::string to_string() const override {
 				return dict.to_string();
 			}
-			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
-				gc_mark_value(vm, generation_gc, dict);
+			void gc_mark(GenerationGC generation_gc) const override {
+				gc_mark_value(generation_gc, dict);
 			}
 		};
 
@@ -78,7 +75,7 @@ namespace OwcaScript {
 
 			Dictionary dict;
 
-			SetShared(OwcaVM vm) : dict(std::move(vm), false) {}
+			SetShared() : dict(false) {}
 			
 			SetShared *clone() const;
 			std::string_view type() const override {
@@ -87,8 +84,8 @@ namespace OwcaScript {
 			std::string to_string() const override {
 				return dict.to_string();
 			}
-			void gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const override {
-				gc_mark_value(vm, generation_gc, dict);
+			void gc_mark(GenerationGC generation_gc) const override {
+				gc_mark_value(generation_gc, dict);
 			}
 		};
 	}

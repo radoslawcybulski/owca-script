@@ -16,42 +16,23 @@
 
 namespace OwcaScript {
 
-	long long int OwcaValue::as_int(const OwcaVM& vm) const
+	long long int OwcaValue::as_int() const
 	{
 		if (auto f = as_float_maybe()) {
 			if (std::isnan(*f) || std::isinf(*f))
-				Internal::VM::get(vm).throw_cant_convert_to_integer(*f);
+				Internal::current_vm().throw_cant_convert_to_integer(*f);
 			return (long long int)*f;
 		}
-		Internal::VM::get(vm).throw_cant_convert_to_integer(type());
+		Internal::current_vm().throw_cant_convert_to_integer(type());
 	}
 
 	bool OwcaValue::is_true() const
 	{
-		return visit(
-			[](OwcaEmpty) { return false; },
-			[](OwcaCompleted) { return false; },
-			[](OwcaRange) { return true; },
-			[](Number o) { return o != 0; },
-			[](bool o) { return o; },
-			[](OwcaString o) { return o.internal_value()->size() != 0; },
-			[](OwcaFunctions) { return true; },
-			[](OwcaMap o) { return o.size() != 0; },
-			[](OwcaClass o) { return true; },
-			[&](OwcaObject o) {
-				return o.internal_value()->vm->calculate_if_true(*this);
-			},
-			[](OwcaArray o) { return !o.internal_value()->values.empty(); },
-			[](OwcaTuple o) { return !o.internal_value()->values.empty(); },
-			[](OwcaSet o) { return o.size() != 0; },
-			[](OwcaIterator o) { return !o.completed(); },
-			[](OwcaException o) { return true; },
-			[](OwcaNamespace o) { return true; }
-		);
+		return Internal::current_vm().calculate_if_true(*this);
 	}
 
-	void OwcaValue::throw_wrong_type(const OwcaVM &vm, std::string_view expected) const {
-		Internal::VM::get(vm).throw_wrong_type(type(), expected);
+	[[noreturn]] void OwcaValue::throw_wrong_type(std::string_view expected) const {
+		Internal::current_vm().throw_wrong_type(type(), expected);
 	}
 	std::string_view OwcaValue::type() const
 	{
@@ -97,67 +78,22 @@ namespace OwcaScript {
 			);
 	}
 
-	OwcaValue OwcaValue::call(const OwcaVM& vm, std::span<OwcaValue> args) const {
-		return Internal::VM::get(vm).execute_call(*this, args);
-	}
-
-	OwcaValue OwcaValue::member(const OwcaVM& vm, const std::string& key) const
-	{
-		return Internal::VM::get(vm).member(*this, key);
-	}
-
-	void OwcaValue::member(const OwcaVM& vm, const std::string& key, OwcaValue val)
-	{
-		return Internal::VM::get(vm).member(*this, key, std::move(val));
-	}
-
-	OwcaValue OwcaValue::call_with_args(std::span<OwcaValue> args) const {
-		return visit(
-			[&](OwcaFunctions o) -> OwcaValue {
-				return o.internal_value()->vm->execute_call(*this, args);
-			},
-			[&](OwcaClass o) -> OwcaValue {
-				return o.internal_value()->vm->execute_call(*this, args);
-			},
-			[&](OwcaObject o) -> OwcaValue {				
-				return o.internal_value()->vm->execute_call(*this, args);
-			},
-			[&](auto) -> OwcaValue { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
-			);
+	OwcaValue OwcaValue::call(std::span<OwcaValue> args) const {
+		return Internal::current_vm().execute_call(*this, args);
 	}
 
 	OwcaValue OwcaValue::member(const std::string& key) const
 	{
-		return visit(
-			[&](OwcaString o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaFunctions o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaMap o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaClass o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaObject o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaArray o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaTuple o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaSet o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaIterator o) -> OwcaValue { return o.internal_value()->vm->member(*this, key); },
-			[&](OwcaNamespace o) -> OwcaValue { return o.member(key); },
-			[&](auto) -> OwcaValue { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
-			);
+		return Internal::current_vm().member(*this, key);
 	}
 
 	void OwcaValue::member(const std::string& key, OwcaValue val)
 	{
-		visit(
-			[&](OwcaString o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaFunctions o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaMap o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaClass o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaObject o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaArray o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaTuple o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaSet o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaIterator o) -> void { o.internal_value()->vm->member(*this, key, val); },
-			[&](OwcaNamespace o) -> void { o.member(key, std::move(val)); },
-			[&](auto) -> void { throw std::runtime_error(std::format("Value of type {} is not callable", type())); }
-			);
+		return Internal::current_vm().member(*this, key, std::move(val));
+	}
+
+	OwcaValue OwcaValue::call_with_args(std::span<OwcaValue> args) const {
+		return Internal::current_vm().execute_call(*this, args);
 	}
 
 	std::optional<OwcaException> OwcaValue::as_exception_maybe() const
@@ -170,118 +106,118 @@ namespace OwcaScript {
 		return std::nullopt;
 	}
 
-	static void gc_mark_value_call(const OwcaVM& vm, GenerationGC gc, auto o) {
-		gc_mark_value(vm, gc, o);
+	static void gc_mark_value_call(GenerationGC gc, auto o) {
+		gc_mark_value(gc, o);
 	}
 
-	void gc_mark_value(const OwcaVM& vm, GenerationGC gc, OwcaValue o) {
+	void gc_mark_value(GenerationGC gc, OwcaValue o) {
 		o.visit([&](auto o) -> void {
-				gc_mark_value_call(vm, gc, o);
+				gc_mark_value_call(gc, o);
 			});
 	}
 
 	namespace Internal {
-		void throw_cant_convert_to_number(const OwcaVM& vm, size_t I, OwcaValue v) {
-			Internal::VM::get(vm).throw_cant_convert_to_float_message(std::format("{} argument ({}) can't be converted to a number value", I + 1, v.type()));
+		void throw_cant_convert_to_number(size_t I, OwcaValue v) {
+			Internal::current_vm().throw_cant_convert_to_float_message(std::format("{} argument ({}) can't be converted to a number value", I + 1, v.type()));
 		}
 
-		OwcaIterator convert_impl2(const OwcaVM& vm, size_t I, OwcaIterator *b, OwcaValue v) {
+		OwcaIterator convert_impl2(size_t I, OwcaIterator *b, OwcaValue v) {
 			if (auto q = v.as_iterator_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an iterator", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not an iterator", I + 1, v.type()));
 		}
-		bool convert_impl2(const OwcaVM& vm, size_t I, bool *b, OwcaValue v) {
+		bool convert_impl2(size_t I, bool *b, OwcaValue v) {
 			if (auto q = v.as_bool_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) can't be converted to bool", I + 1, v.type()));
 		}
-		std::string convert_impl2(const OwcaVM& vm, size_t I, std::string *b, OwcaValue v) {
+		std::string convert_impl2(size_t I, std::string *b, OwcaValue v) {
 			if (auto q = v.as_string_maybe()) {
 				return std::string{ q->text() };
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
-		std::string_view convert_impl2(const OwcaVM& vm, size_t I, std::string_view *b, OwcaValue v) {
+		std::string_view convert_impl2(size_t I, std::string_view *b, OwcaValue v) {
 			if (auto q = v.as_string_maybe()) {
 				return q->text();
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
-		OwcaEmpty convert_impl2(const OwcaVM& vm, size_t I, OwcaEmpty *b, OwcaValue v) {
+		OwcaEmpty convert_impl2(size_t I, OwcaEmpty *b, OwcaValue v) {
 			if (auto q = v.as_nul_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a nul value", I + 1, v.type()));
 		}
-		OwcaRange convert_impl2(const OwcaVM& vm, size_t I, OwcaRange *b, OwcaValue v) {
+		OwcaRange convert_impl2(size_t I, OwcaRange *b, OwcaValue v) {
 			if (auto q = v.as_range_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a range", I + 1, v.type()));
 		}
-		Number convert_impl2(const OwcaVM& vm, size_t I, Number *b, OwcaValue v) {
+		Number convert_impl2(size_t I, Number *b, OwcaValue v) {
 			if (auto q = v.as_float_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a floating point value", I + 1, v.type()));
 		}
-		OwcaString convert_impl2(const OwcaVM& vm, size_t I, OwcaString *b, OwcaValue v) {
+		OwcaString convert_impl2(size_t I, OwcaString *b, OwcaValue v) {
 			if (auto q = v.as_string_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a string", I + 1, v.type()));
 		}
-		OwcaFunctions convert_impl2(const OwcaVM& vm, size_t I, OwcaFunctions *b, OwcaValue v) {
+		OwcaFunctions convert_impl2(size_t I, OwcaFunctions *b, OwcaValue v) {
 			if (auto q = v.as_functions_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a function set", I + 1, v.type()));
 		}
-		OwcaMap convert_impl2(const OwcaVM& vm, size_t I, OwcaMap *b, OwcaValue v) {
+		OwcaMap convert_impl2(size_t I, OwcaMap *b, OwcaValue v) {
 			if (auto q = v.as_map_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a dictionary", I + 1, v.type()));
 		}
-		OwcaClass convert_impl2(const OwcaVM& vm, size_t I, OwcaClass *b, OwcaValue v) {
+		OwcaClass convert_impl2(size_t I, OwcaClass *b, OwcaValue v) {
 			if (auto q = v.as_class_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a type", I + 1, v.type()));
 		}
-		OwcaObject convert_impl2(const OwcaVM& vm, size_t I, OwcaObject *b, OwcaValue v) {
+		OwcaObject convert_impl2(size_t I, OwcaObject *b, OwcaValue v) {
 			if (auto q = v.as_object_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
 		}
-		OwcaArray convert_impl2(const OwcaVM& vm, size_t I, OwcaArray *b, OwcaValue v) {
+		OwcaArray convert_impl2(size_t I, OwcaArray *b, OwcaValue v) {
 			if (auto q = v.as_array_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not an array", I + 1, v.type()));
 		}
-		OwcaTuple convert_impl2(const OwcaVM& vm, size_t I, OwcaTuple *b, OwcaValue v) {
+		OwcaTuple convert_impl2(size_t I, OwcaTuple *b, OwcaValue v) {
 			if (auto q = v.as_tuple_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a tuple", I + 1, v.type()));
 		}
-		OwcaSet convert_impl2(const OwcaVM& vm, size_t I, OwcaSet *b, OwcaValue v) {
+		OwcaSet convert_impl2(size_t I, OwcaSet *b, OwcaValue v) {
 			if (auto q = v.as_set_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a set", I + 1, v.type()));
 		}
-		OwcaException convert_impl2(const OwcaVM& vm, size_t I, OwcaException *b, OwcaValue v) {
+		OwcaException convert_impl2(size_t I, OwcaException *b, OwcaValue v) {
 			if (auto q = v.as_exception_maybe()) {
 				return *q;
 			}
-			VM::get(vm).throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not an exception object", I + 1, v.type()));
 		}
-		OwcaValue convert_impl2(const OwcaVM& vm, size_t I, OwcaValue *b, OwcaValue v) {
+		OwcaValue convert_impl2(size_t I, OwcaValue *b, OwcaValue v) {
 			return v;
 		}
 	}

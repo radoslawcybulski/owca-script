@@ -38,7 +38,7 @@ namespace OwcaScript {
 		bool operator > (OwcaArray other) const;
 		bool is(OwcaArray other) const { return object == other.object; }
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaArray &);
+		friend void gc_mark_value(GenerationGC gc, const OwcaArray &);
 
 		class Iterator {
 		public:

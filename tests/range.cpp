@@ -19,7 +19,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 165);
+	ASSERT_EQ(val.as_float(), 165);
 }
 
 TEST_F(RangeTest, simple_2)
@@ -35,7 +35,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 0);
+	ASSERT_EQ(val.as_float(), 0);
 }
 
 TEST_F(RangeTest, simple_3)
@@ -51,7 +51,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 0);
+	ASSERT_EQ(val.as_float(), 0);
 }
 
 TEST_F(RangeTest, simple_4)
@@ -67,7 +67,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 166);
+	ASSERT_EQ(val.as_float(), 166);
 }
 
 TEST_F(RangeTest, simple_5)
@@ -83,7 +83,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 165);
+	ASSERT_EQ(val.as_float(), 165);
 }
 
 TEST_F(RangeTest, size_1)
@@ -95,7 +95,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 5);
+	ASSERT_EQ(val.as_float(), 5);
 }
 
 TEST_F(RangeTest, size_2)
@@ -107,7 +107,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 0);
+	ASSERT_EQ(val.as_float(), 0);
 }
 
 TEST_F(RangeTest, array_1)
@@ -124,7 +124,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 285);
+	ASSERT_EQ(val.as_float(), 285);
 }
 
 TEST_F(RangeTest, array_2)
@@ -141,7 +141,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 165);
+	ASSERT_EQ(val.as_float(), 165);
 }
 
 TEST_F(RangeTest, array_3)
@@ -158,7 +158,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 285);
+	ASSERT_EQ(val.as_float(), 285);
 }
 
 TEST_F(RangeTest, array_4)
@@ -175,7 +175,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 280);
+	ASSERT_EQ(val.as_float(), 280);
 }
 
 TEST_F(RangeTest, array_5)
@@ -192,6 +192,6 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 164);
+	ASSERT_EQ(val.as_float(), 164);
 }
 

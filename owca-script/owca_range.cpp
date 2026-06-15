@@ -20,7 +20,7 @@ namespace OwcaScript {
 
     Number OwcaRange::size() const {
         if (object->step == 0) {
-            Internal::VM::get(object->vm).throw_range_step_is_zero();
+            Internal::current_vm().throw_range_step_is_zero();
         }
         if (object->step > 0) {
             return std::max(Number{ 0 }, std::floor((object->to + object->step * 0.5 - object->from) / object->step));
@@ -30,5 +30,5 @@ namespace OwcaScript {
         }
     }
 
-    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaRange) {}
+    void gc_mark_value(GenerationGC gc, OwcaRange) {}
 }

@@ -5,6 +5,20 @@
 #include "ast_compiler.h"
 
 namespace OwcaScript {
+	static thread_local Internal::VM *current_vm_ptr = nullptr;
+
+	void Internal::set_current_vm(Internal::VM *vm) {
+		current_vm_ptr = vm;
+	}
+
+	Internal::VM &Internal::current_vm() {
+#ifdef DEBUG
+		if (!current_vm_ptr) [[unlikely]] {
+			throw std::runtime_error("no VM is active in this thread");
+		}
+#endif
+		return *current_vm_ptr;
+	}
 	OwcaVM::CompilationFailed::CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_) : filename_(std::move(filename_)), error_messages_(std::move(error_messages_)) {
 		err_msg = "compilation of file `" + this->filename_ + "` failed:";
 		for(auto &m : this->error_messages_) {
@@ -13,23 +27,42 @@ namespace OwcaScript {
 		}
 	}
 
-	OwcaVM::OwcaVM() : vm_owner(std::make_shared<Internal::VM>())
+	OwcaVM::OwcaVM() : vm(std::make_unique<Internal::VM>())
 	{
-		vm = vm_owner.get();
 	}
 
-	OwcaVM::~OwcaVM() = default;
+	OwcaVM::~OwcaVM() {
+		deactivate();
+	}
+
+	void OwcaVM::activate() {
+		if (current_vm_ptr) {
+			throw std::runtime_error("another VM is already active in this thread");
+		}
+		Internal::set_current_vm(vm.get());
+	}
+
+	void OwcaVM::deactivate() {
+		if (current_vm_ptr != vm.get()) {
+			throw std::runtime_error("this VM is not active in this thread");
+		}
+		Internal::set_current_vm(nullptr);
+	}
 
 	OwcaNamespace OwcaVM::execute(const OwcaCode &oc) {
+		assert(current_vm_ptr == vm.get());
 		return vm->execute_code_block(oc);
 	}
 	OwcaValue OwcaVM::get_member(OwcaValue self, std::string_view key) {
+		assert(current_vm_ptr == vm.get());
 		return vm->member(self, key);
 	}
 	void OwcaVM::set_member(OwcaValue self, std::string_view key, OwcaValue value) {
+		assert(current_vm_ptr == vm.get());
 		vm->member(self, key, value);
 	}
 	OwcaValue OwcaVM::call(OwcaValue func, std::span<OwcaValue> values) {
+		assert(current_vm_ptr == vm.get());
 		return vm->execute_call(func, values);
 	}
 
@@ -39,59 +72,67 @@ namespace OwcaScript {
 	}
 	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
 	{
-		auto compiler = Internal::AstCompiler{ *vm, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
-		auto v = compiler.compile();
-		if (!v)
-			throw CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
-
-		return std::move(*v);
+		assert(current_vm_ptr == vm.get());
+		return vm->compile(filename, content, std::move(native_code_provider), first_line);
 	}
 
 	OwcaArray OwcaVM::create_array() const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_array(std::deque<OwcaValue>{});
 	}
 	OwcaArray OwcaVM::create_array(std::span<OwcaValue> values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_array({ values.begin(), values.end() });
 	}
 	OwcaArray OwcaVM::create_array(std::deque<OwcaValue> values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_array(std::move(values));
 	}
 	OwcaTuple OwcaVM::create_tuple(std::pair<OwcaValue, OwcaValue> values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_tuple(values);
 	}
 	OwcaTuple OwcaVM::create_tuple(std::vector<OwcaValue> values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_tuple(std::move(values));
 	}
 	OwcaMap OwcaVM::create_map() const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_map(std::span<OwcaValue>{});
 	}
 	OwcaMap OwcaVM::create_map(const std::span<OwcaValue> &values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_map(values);
 	}
 	OwcaMap OwcaVM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_map(values);
 	}
 	OwcaMap OwcaVM::create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_map(values);
 	}
 	OwcaSet OwcaVM::create_set(const std::span<OwcaValue> &values) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_set(values);
 	}
 	OwcaString OwcaVM::create_string(std::string_view txt) const
 	{
+		assert(current_vm_ptr == vm.get());
 		return vm->create_string_from_view(txt);
 	}
 	void OwcaVM::run_gc() {
+		assert(current_vm_ptr == vm.get());
 		vm->run_gc();
 	}
 }

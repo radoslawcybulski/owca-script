@@ -12,7 +12,7 @@ namespace OwcaScript {
 
 	OwcaValue OwcaClass::operator [] (const std::string &key) const
 	{
-		return object->vm->member(*this, key);
+		return Internal::current_vm().member(*this, key);
 	}
 
 	bool OwcaClass::has_base_class(OwcaClass base) const
@@ -21,7 +21,7 @@ namespace OwcaScript {
 		return it != object->all_base_classes.end();
 	}
 
-	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaClass &c) {
-		gc_mark_value(vm, gc, c.object);
+	void gc_mark_value(GenerationGC gc, const OwcaClass &c) {
+		gc_mark_value(gc, c.object);
 	}
 }

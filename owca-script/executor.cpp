@@ -29,19 +29,19 @@
 namespace OwcaScript::Internal {
     enum class CompareResult : std::uint8_t;
 
-    static OwcaValue op_add_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("+", left.type(), right.type()); }
-    static OwcaValue op_sub_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("-", left.type(), right.type()); }
-    static OwcaValue op_mul_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("*", left.type(), right.type()); }
-    static OwcaValue op_div_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("/", left.type(), right.type()); }
-    static OwcaValue op_mod_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("%", left.type(), right.type()); }
-    static OwcaValue op_bin_and_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("&", left.type(), right.type()); }
-    static OwcaValue op_bin_or_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("|", left.type(), right.type()); }
-    static OwcaValue op_bin_xor_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("^", left.type(), right.type()); }
-    static OwcaValue op_bin_lshift_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("<<", left.type(), right.type()); }
-    static OwcaValue op_bin_rshift_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2(">>", left.type(), right.type()); }
-    static bool op_compare_eq_default(Executor &e, OwcaValue left, OwcaValue right) { return false; }
-    static bool op_compare_lt_cant(Executor &e, OwcaValue left, OwcaValue right) { e.throw_unsupported_operation_2("<", left.type(), right.type()); }
-    static bool op_compare_is_default(Executor &e, OwcaValue left, OwcaValue right) { return false; }
+    static OwcaValue op_add_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("+", left.type(), right.type()); }
+    static OwcaValue op_sub_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("-", left.type(), right.type()); }
+    static OwcaValue op_mul_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("*", left.type(), right.type()); }
+    static OwcaValue op_div_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("/", left.type(), right.type()); }
+    static OwcaValue op_mod_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("%", left.type(), right.type()); }
+    static OwcaValue op_bin_and_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("&", left.type(), right.type()); }
+    static OwcaValue op_bin_or_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("|", left.type(), right.type()); }
+    static OwcaValue op_bin_xor_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("^", left.type(), right.type()); }
+    static OwcaValue op_bin_lshift_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("<<", left.type(), right.type()); }
+    static OwcaValue op_bin_rshift_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2(">>", left.type(), right.type()); }
+    static bool op_compare_eq_default(OwcaValue left, OwcaValue right) { return false; }
+    static bool op_compare_lt_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("<", left.type(), right.type()); }
+    static bool op_compare_is_default(OwcaValue left, OwcaValue right) { return false; }
 
     Operators2::Operators2() {
         add = op_add_cant;
@@ -60,124 +60,124 @@ namespace OwcaScript::Internal {
         is = op_compare_is_default;
     }
 
-    static OwcaValue op_add_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() + right.as_float_certainly(); }
-    static OwcaValue op_sub_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() - right.as_float_certainly(); }
-    static OwcaValue op_mul_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() * right.as_float_certainly(); }
-    static OwcaValue op_div_number_number(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_add_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() + right.as_float_certainly(); }
+    static OwcaValue op_sub_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() - right.as_float_certainly(); }
+    static OwcaValue op_mul_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() * right.as_float_certainly(); }
+    static OwcaValue op_div_number_number(OwcaValue left, OwcaValue right) {
         if (right.as_float_certainly() == 0) {
-            e.throw_division_by_zero();
+            current_vm().throw_division_by_zero();
         }
         return left.as_float_certainly() / right.as_float_certainly();
     }
-    static OwcaValue op_mod_number_number(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mod_number_number(OwcaValue left, OwcaValue right) {
         if (right.as_float_certainly() == 0) {
-            e.throw_division_by_zero();
+            current_vm().throw_division_by_zero();
         }
         return (std::int64_t)left.as_float_certainly() % (std::int64_t)right.as_float_certainly();
     }
-    static OwcaValue op_bin_and_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() & (std::int64_t)right.as_float_certainly(); }
-    static OwcaValue op_bin_or_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() | (std::int64_t)right.as_float_certainly(); }
-    static OwcaValue op_bin_xor_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() ^ (std::int64_t)right.as_float_certainly(); }
-    static OwcaValue op_bin_lshift_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() << (std::int64_t)right.as_float_certainly(); }
-    static OwcaValue op_bin_rshift_number_number(Executor &e, OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() >> (std::int64_t)right.as_float_certainly(); }
+    static OwcaValue op_bin_and_number_number(OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() & (std::int64_t)right.as_float_certainly(); }
+    static OwcaValue op_bin_or_number_number(OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() | (std::int64_t)right.as_float_certainly(); }
+    static OwcaValue op_bin_xor_number_number(OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() ^ (std::int64_t)right.as_float_certainly(); }
+    static OwcaValue op_bin_lshift_number_number(OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() << (std::int64_t)right.as_float_certainly(); }
+    static OwcaValue op_bin_rshift_number_number(OwcaValue left, OwcaValue right) { return (std::int64_t)left.as_float_certainly() >> (std::int64_t)right.as_float_certainly(); }
 
-    static bool op_compare_eq_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
-    static bool op_compare_lt_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() < right.as_float_certainly(); }
-    static bool op_compare_is_number_number(Executor &e, OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
+    static bool op_compare_eq_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
+    static bool op_compare_lt_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() < right.as_float_certainly(); }
+    static bool op_compare_is_number_number(OwcaValue left, OwcaValue right) { return left.as_float_certainly() == right.as_float_certainly(); }
 
-    static bool op_compare_eq_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
-    static bool op_compare_lt_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() < right.as_string_certainly().text(); }
-    static bool op_compare_is_string_string(Executor &e, OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
+    static bool op_compare_eq_string_string(OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
+    static bool op_compare_lt_string_string(OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() < right.as_string_certainly().text(); }
+    static bool op_compare_is_string_string(OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
 
-    static bool op_compare_eq_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
-    static bool op_compare_ne_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() != right.as_bool_certainly(); }
-    static bool op_compare_is_bool_bool(Executor &e, OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
+    static bool op_compare_eq_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
+    static bool op_compare_ne_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() != right.as_bool_certainly(); }
+    static bool op_compare_is_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
 
-    static bool op_compare_eq_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return true; }
-    static bool op_compare_ne_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return false; }
-    static bool op_compare_is_nul_nul(Executor &e, OwcaValue left, OwcaValue right) { return true; }
+    static bool op_compare_eq_nul_nul(OwcaValue left, OwcaValue right) { return true; }
+    static bool op_compare_ne_nul_nul(OwcaValue left, OwcaValue right) { return false; }
+    static bool op_compare_is_nul_nul(OwcaValue left, OwcaValue right) { return true; }
 
-    static bool op_compare_eq_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly() == right.as_range_certainly(); }
-    static bool op_compare_ne_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly() != right.as_range_certainly(); }
-    static bool op_compare_is_range_range(Executor &e, OwcaValue left, OwcaValue right) { return left.as_range_certainly().is(right.as_range_certainly()); }
+    static bool op_compare_eq_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly() == right.as_range_certainly(); }
+    static bool op_compare_ne_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly() != right.as_range_certainly(); }
+    static bool op_compare_is_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly().is(right.as_range_certainly()); }
 
-    static bool op_compare_eq_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly() == right.as_functions_certainly(); }
-    static bool op_compare_ne_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly() != right.as_functions_certainly(); }
-    static bool op_compare_is_functions_functions(Executor &e, OwcaValue left, OwcaValue right) { return left.as_functions_certainly().is(right.as_functions_certainly()); }
+    static bool op_compare_eq_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly() == right.as_functions_certainly(); }
+    static bool op_compare_ne_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly() != right.as_functions_certainly(); }
+    static bool op_compare_is_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly().is(right.as_functions_certainly()); }
 
-    static bool op_compare_eq_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly() == right.as_map_certainly(); }
-    static bool op_compare_ne_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly() != right.as_map_certainly(); }
-    static bool op_compare_is_map_map(Executor &e, OwcaValue left, OwcaValue right) { return left.as_map_certainly().is(right.as_map_certainly()); }
+    static bool op_compare_eq_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly() == right.as_map_certainly(); }
+    static bool op_compare_ne_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly() != right.as_map_certainly(); }
+    static bool op_compare_is_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly().is(right.as_map_certainly()); }
 
-    static bool op_compare_eq_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly() == right.as_set_certainly(); }
-    static bool op_compare_ne_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly() != right.as_set_certainly(); }
-    static bool op_compare_is_set_set(Executor &e, OwcaValue left, OwcaValue right) { return left.as_set_certainly().is(right.as_set_certainly()); }
+    static bool op_compare_eq_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly() == right.as_set_certainly(); }
+    static bool op_compare_ne_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly() != right.as_set_certainly(); }
+    static bool op_compare_is_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly().is(right.as_set_certainly()); }
 
-    static bool op_compare_eq_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly() == right.as_class_certainly(); }
-    static bool op_compare_ne_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly() != right.as_class_certainly(); }
-    static bool op_compare_is_class_class(Executor &e, OwcaValue left, OwcaValue right) { return left.as_class_certainly().is(right.as_class_certainly()); }
+    static bool op_compare_eq_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly() == right.as_class_certainly(); }
+    static bool op_compare_ne_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly() != right.as_class_certainly(); }
+    static bool op_compare_is_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly().is(right.as_class_certainly()); }
 
-    static bool op_compare_eq_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly() == right.as_object_certainly(); }
-    static bool op_compare_ne_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly() != right.as_object_certainly(); }
-    static bool op_compare_is_object_object(Executor &e, OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
+    static bool op_compare_eq_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly() == right.as_object_certainly(); }
+    static bool op_compare_ne_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly() != right.as_object_certainly(); }
+    static bool op_compare_is_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
 
-    static bool op_compare_eq_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
-    static bool op_compare_lt_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() < right.as_tuple_certainly(); }
-    static bool op_compare_is_tuple_tuple(Executor &e, OwcaValue left, OwcaValue right) { return left.as_tuple_certainly().is(right.as_tuple_certainly()); }
+    static bool op_compare_eq_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
+    static bool op_compare_lt_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() < right.as_tuple_certainly(); }
+    static bool op_compare_is_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly().is(right.as_tuple_certainly()); }
 
-    static bool op_compare_eq_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() == right.as_array_certainly(); }
-    static bool op_compare_lt_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly() < right.as_array_certainly(); }
-    static bool op_compare_is_array_array(Executor &e, OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
+    static bool op_compare_eq_array_array(OwcaValue left, OwcaValue right) { return left.as_array_certainly() == right.as_array_certainly(); }
+    static bool op_compare_lt_array_array(OwcaValue left, OwcaValue right) { return left.as_array_certainly() < right.as_array_certainly(); }
+    static bool op_compare_is_array_array(OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
 
-    static bool op_compare_eq_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
-    static bool op_compare_ne_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() != right.as_iterator_certainly(); }
-    static bool op_compare_is_iterator_iterator(Executor &e, OwcaValue left, OwcaValue right) { return left.as_iterator_certainly().is(right.as_iterator_certainly()); }
+    static bool op_compare_eq_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
+    static bool op_compare_ne_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() != right.as_iterator_certainly(); }
+    static bool op_compare_is_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly().is(right.as_iterator_certainly()); }
 
-    static bool op_compare_eq_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly() == right.as_exception_certainly(); }
-    static bool op_compare_ne_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly() != right.as_exception_certainly(); }
-    static bool op_compare_is_exception_exception(Executor &e, OwcaValue left, OwcaValue right) { return left.as_exception_certainly().is(right.as_exception_certainly()); }
+    static bool op_compare_eq_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly() == right.as_exception_certainly(); }
+    static bool op_compare_ne_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly() != right.as_exception_certainly(); }
+    static bool op_compare_is_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly().is(right.as_exception_certainly()); }
 
-    static bool op_compare_eq_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() == right.as_namespace_certainly(); }
-    static bool op_compare_ne_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() != right.as_namespace_certainly(); }
-    static bool op_compare_is_namespace_namespace(Executor &e, OwcaValue left, OwcaValue right) { return left.as_namespace_certainly().is(right.as_namespace_certainly()); }
+    static bool op_compare_eq_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() == right.as_namespace_certainly(); }
+    static bool op_compare_ne_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() != right.as_namespace_certainly(); }
+    static bool op_compare_is_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly().is(right.as_namespace_certainly()); }
 
-    static OwcaValue op_add_string_string(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_add_string_string(OwcaValue left, OwcaValue right) {
         return left.as_string_certainly() + right.as_string_certainly();
     }
-    static OwcaValue op_mul_string_number(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_string_number(OwcaValue left, OwcaValue right) {
         return left.as_string_certainly() * right.as_float_certainly();
     }
-    static OwcaValue op_mul_number_string(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_number_string(OwcaValue left, OwcaValue right) {
         return left.as_float_certainly() * right.as_string_certainly();
     }
-    static OwcaValue op_mul_array_number(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_array_number(OwcaValue left, OwcaValue right) {
         return left.as_array_certainly() * right.as_float_certainly();
     }
-    static OwcaValue op_mul_number_array(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_number_array(OwcaValue left, OwcaValue right) {
         return left.as_float_certainly() * right.as_array_certainly();
     }
-    static OwcaValue op_mul_tuple_number(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_tuple_number(OwcaValue left, OwcaValue right) {
         return left.as_tuple_certainly() * right.as_float_certainly();
     }
-    static OwcaValue op_mul_number_tuple(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_mul_number_tuple(OwcaValue left, OwcaValue right) {
         return left.as_float_certainly() * right.as_tuple_certainly();
     }
-    static OwcaValue op_bin_and_map_map(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_and_map_map(OwcaValue left, OwcaValue right) {
         return left.as_map_certainly() & right.as_map_certainly();
     }
-    static OwcaValue op_bin_or_map_map(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_or_map_map(OwcaValue left, OwcaValue right) {
         return left.as_map_certainly() | right.as_map_certainly();
     }
-    static OwcaValue op_bin_xor_map_map(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_xor_map_map(OwcaValue left, OwcaValue right) {
         return left.as_map_certainly() - right.as_map_certainly();
     }
-    static OwcaValue op_bin_and_set_set(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_and_set_set(OwcaValue left, OwcaValue right) {
         return left.as_set_certainly() & right.as_set_certainly();
     }
-    static OwcaValue op_bin_or_set_set(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_or_set_set(OwcaValue left, OwcaValue right) {
         return left.as_set_certainly() | right.as_set_certainly();
     }
-    static OwcaValue op_bin_xor_set_set(Executor &e, OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_xor_set_set(OwcaValue left, OwcaValue right) {
         return left.as_set_certainly() - right.as_set_certainly();
     }
 
@@ -257,7 +257,7 @@ namespace OwcaScript::Internal {
         return oper2_functions;
     }();
 
-    Executor::Executor(VM *vm) : vm(vm), stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
+    Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
         stacktrace_current = stacktrace_vector.data();
     }
 
@@ -288,10 +288,10 @@ namespace OwcaScript::Internal {
         throw exception;
     }
     
-	std::tuple<Number, Number, Number> Executor::parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size) {
+	std::tuple<Number, Number, Number> Executor::parse_key(OwcaValue v, OwcaValue key, Number size) {
 		return key.visit(
 			[&](Number o) -> std::tuple<Number, Number, Number> {
-				auto v = key.as_int(vm);
+				auto v = key.as_int();
 				if (v < 0) v += size;
 				if (v < 0 || v >= size) {
 					throw_index_out_of_range(std::format("index value {} is out of range for object of size {}", key, size));
@@ -336,7 +336,7 @@ namespace OwcaScript::Internal {
 			}
 		);
 	}
-	size_t Executor::verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name) {
+	size_t Executor::verify_key(Number v, size_t size, OwcaValue orig_key, std::string_view name) {
 		if (v < 0 || v >= (Number)size) {
 			throw_index_out_of_range(std::format("index value {} is out of range for {} of size {}", orig_key, name, size));
 		}
@@ -346,7 +346,7 @@ namespace OwcaScript::Internal {
 		}
 		return v2;
 	}
-	std::pair<size_t, size_t> Executor::verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name) {
+	std::pair<size_t, size_t> Executor::verify_key(OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name) {
 		auto v1 = k.lower();
 		auto v2 = k.upper();
 		if (v2 <= v1)
@@ -408,7 +408,7 @@ namespace OwcaScript::Internal {
                 if (size != o.internal_value()->values.size()) {
                     throw_index_out_of_range(std::format("array size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
                 }
-                auto [ lower, upper, step ] = parse_key(vm, key, key, size);
+                auto [ lower, upper, step ] = parse_key(key, key, size);
                 if (step == 0) {
                     o[lower] = value;
                     return value;
@@ -417,7 +417,7 @@ namespace OwcaScript::Internal {
                     throw_range_step_must_be_one_in_left_side_of_write_assign();
                 }
 
-                auto iter = vm->create_iterator(value);
+                auto iter = current_vm().create_iterator(value);
                 auto write = lower;
                 auto &values = o.internal_value()->values;
                 std::vector<OwcaValue> temp;
@@ -469,7 +469,7 @@ namespace OwcaScript::Internal {
                 if (size != o.internal_value()->size()) {
                     throw_index_out_of_range(std::format("string size {} is too large for Number size to properly handle indexing", o.internal_value()->size()));
                 }
-                auto [ lower, upper, step ] = parse_key(vm, key, key, size);
+                auto [ lower, upper, step ] = parse_key(key, key, size);
                 if (step == 0) return o.substr(lower, lower + 1);
                 if (step == 1) return o.substr(lower, upper);
                 std::string result;
@@ -478,7 +478,7 @@ namespace OwcaScript::Internal {
                 for(RangeIterator iter(lower, upper, step); !iter.done(); iter.next()) {
                     result += o.text()[iter.get()];
                 }
-                return vm->create_string_from_view(result);
+                return current_vm().create_string_from_view(result);
             },
             [&](const OwcaArray& o) -> OwcaValue {
                 const auto size = (Number)o.internal_value()->values.size();
@@ -486,15 +486,15 @@ namespace OwcaScript::Internal {
                     throw_index_out_of_range(std::format("array size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
                 }
 
-                auto [ lower, upper, step ] = parse_key(vm, key, key, size);
+                auto [ lower, upper, step ] = parse_key(key, key, size);
                 if (step == 0) return o[lower];
-                if (step == 1) return vm->create_array(o.internal_value()->sub_deque(lower, upper));
+                if (step == 1) return current_vm().create_array(o.internal_value()->sub_deque(lower, upper));
                 std::deque<OwcaValue> result;
                 RangeIterator iter(lower, upper, step);
                 for(RangeIterator iter(lower, upper, step); !iter.done(); iter.next()) {
                     result.push_back(o[iter.get()]);
                 }
-                return vm->create_array(std::move(result));
+                return current_vm().create_array(std::move(result));
             },
             [&](const OwcaTuple& o) -> OwcaValue {
                 const auto size = (Number)o.internal_value()->values.size();
@@ -502,16 +502,16 @@ namespace OwcaScript::Internal {
                     throw_index_out_of_range(std::format("tuple size {} is too large for Number size to properly handle indexing", o.internal_value()->values.size()));
                 }
 
-                auto [ lower, upper, step ] = parse_key(vm, key, key, size);
+                auto [ lower, upper, step ] = parse_key(key, key, size);
                 if (step == 0) return o[lower];
-                if (step == 1) return vm->create_tuple(o.internal_value()->sub_array(lower, upper));
+                if (step == 1) return current_vm().create_tuple(o.internal_value()->sub_array(lower, upper));
                 std::vector<OwcaValue> result;
                 result.reserve((size_t)std::abs(std::ceil((upper - lower + step) / step)));
                 RangeIterator iter(lower, upper, step);
                 for(RangeIterator iter(lower, upper, step); !iter.done(); iter.next()) {
                     result.push_back(o[iter.get()]);
                 }
-                return vm->create_tuple(std::move(result));
+                return current_vm().create_tuple(std::move(result));
             },
             [&](const OwcaMap& o) -> OwcaValue {
                 return o.internal_value()->dict.read(key);
@@ -543,7 +543,7 @@ namespace OwcaScript::Internal {
             auto &native_provider = code_object.native_code_provider();
             auto line = code_object.get_line_by_position(code_pos).line;
             if (is_generator) {
-                auto f = vm->allocate<RuntimeFunctionNativeGenerator>(0, code_object, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeGenerator>(0, code_object, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -556,7 +556,7 @@ namespace OwcaScript::Internal {
                 }
             }
             else {
-                auto f = vm->allocate<RuntimeFunctionNativeFunction>(0, code_object, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeFunction>(0, code_object, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -584,10 +584,10 @@ namespace OwcaScript::Internal {
 
             RuntimeFunctionScript *f;
             if (is_generator) {
-                f = vm->allocate<RuntimeFunctionScriptGenerator>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
             }
             else {
-                f = vm->allocate<RuntimeFunctionScriptFunction>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
             }
             fnc = f;
             f->identifier_names = std::move(identifier_names);
@@ -605,7 +605,7 @@ namespace OwcaScript::Internal {
         fnc->max_temporaries = temporaries_count;
         fnc->max_states = state_count;
         fnc->max_values = value_count;
-        auto rfs = VM::get(vm).allocate<RuntimeFunctions>(0, name, full_name);
+        auto rfs = current_vm().allocate<RuntimeFunctions>(0, name, full_name);
         rfs->functions[fnc->param_count] = fnc;
         return OwcaFunctions{ rfs };
     }
@@ -675,7 +675,7 @@ restart:
                     auto line = code_object.get_line_by_position(code_pos - 1);
                     auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
                     auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    auto cls = vm->allocate<Class>(0, line, name, full_name, code_object);
+                    auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
                     PUSH_STATE(ClassState{});
                     STATE(ClassState).cls = cls;
                     break; }
@@ -707,10 +707,10 @@ restart:
                     auto base_classes = PEEK_VALUES(base_class_count, base_class_count);
                     auto members = PEEK_VALUES(member_count + base_class_count, member_count);
                     for(auto b : base_classes) {
-                        cls->initialize_add_base_class(vm, b.as_class(vm));
+                        cls->initialize_add_base_class(b.as_class());
                     }
                     for(auto f : members) {
-                        cls->initialize_add_function(vm, f.as_functions(vm));
+                        cls->initialize_add_function(f.as_functions());
                     }
                     if (all_variable_names) {
                         cls->initialize_set_all_variables();
@@ -722,7 +722,7 @@ restart:
                         }
                     }
 
-                    cls->finalize_initializing(vm);
+                    cls->finalize_initializing();
 
                     POP_VALUES(base_class_count + member_count);
                     PUSH_VALUE(OwcaClass{ cls });
@@ -733,7 +733,7 @@ restart:
 #define OPER2_RUN(oper) do { \
         auto &left = temporary_ptr[2]; \
         auto right = temporary_ptr[1]; \
-        left = OPER2_GET(oper, left.kind(), right.kind())(*this, left, right); \
+        left = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
         POP_VALUES(1); \
     } while(0)
 #define CMP2_RUN(oper, reverse, upd) do { \
@@ -742,8 +742,8 @@ restart:
         auto &left = PEEK_VALUE(2);                                                                 \
         auto right = PEEK_VALUE(1);                                                                 \
         auto res = (!reverse) ?                                                                      \
-            OPER2_GET(oper, left.kind(), right.kind())(*this, left, right) :                        \
-            OPER2_GET(oper, right.kind(), left.kind())(*this, right, left);                         \
+            OPER2_GET(oper, left.kind(), right.kind())(left, right) :                        \
+            OPER2_GET(oper, right.kind(), left.kind())(right, left);                         \
         res = (upd);                                                                                \
         if (res) {                                                                                  \
             left = last ? OwcaValue{ true } : right;                                                \
@@ -789,7 +789,7 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::ExprConstantString: {
                     auto value = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    PUSH_VALUE(vm->create_string_from_view(value));
+                    PUSH_VALUE(current_vm().create_string_from_view(value));
                     break; }
                 case ExecuteBufferReader::Op::ExprConstantStringInterpolated: {
                     auto strings = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
@@ -799,7 +799,7 @@ restart:
                     for(auto i = 0u; i < expr_count; ++i) {
                         size += values[i].as_string_certainly().size();
                     }
-                    auto new_str = vm->precreate_string(size);
+                    auto new_str = current_vm().precreate_string(size);
                     auto new_str_pt = new_str->pointer();
                     const char *strings_ptr = strings.data();
                     for(auto i = 0u; i < expr_count; ++i) {
@@ -851,19 +851,19 @@ restart:
                 case ExecuteBufferReader::Op::ExprMemberRead: {
                     auto self = PEEK_VALUE(1);
                     auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    PEEK_VALUE(1) = vm->member(self, member);
+                    PEEK_VALUE(1) = current_vm().member(self, member);
                     break; }
                 case ExecuteBufferReader::Op::ExprMemberWrite: {
                     auto val_to_write = PEEK_VALUE(1);
                     auto self = PEEK_VALUE(2);
                     auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    vm->member(self, member, val_to_write);
+                    current_vm().member(self, member, val_to_write);
                     PEEK_VALUE(2) = val_to_write;
                     POP_VALUES(1);
                     break; }
                 case ExecuteBufferReader::Op::ExprOper1BinNeg: {
                     auto &left = PEEK_VALUE(1);
-                    left = -(std::int64_t)left.as_float(vm);
+                    left = -(std::int64_t)left.as_float();
                     break; }
                 case ExecuteBufferReader::Op::ExprOper1LogNot: {
                     auto &left = PEEK_VALUE(1);
@@ -871,7 +871,7 @@ restart:
                     break; }
                 case ExecuteBufferReader::Op::ExprOper1Negate: {
                     auto &left = PEEK_VALUE(1);
-                    left = -left.as_float(vm);
+                    left = -left.as_float();
                     break; }
                 case ExecuteBufferReader::Op::ExprRetTrueAndJumpIfTrue: {
                     auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
@@ -896,12 +896,12 @@ restart:
                     if (v.kind() == OwcaValueKind::String) {
                         break;
                     }
-                    PEEK_VALUE(1) = vm->create_string_from_view(v.to_string());
+                    PEEK_VALUE(1) = current_vm().create_string_from_view(v.to_string());
                     break; }
                 case ExecuteBufferReader::Op::ExprToIterator: {
                     auto &val = PEEK_VALUE(1);
                     if (val.kind() != OwcaValueKind::Iterator) {
-                        auto func = vm->try_member(val, "__iter__");
+                        auto func = current_vm().try_member(val, "__iter__");
                         if (!func) {
                             throw_not_iterable(val.type());
                         }
@@ -943,21 +943,21 @@ restart:
                     auto mode = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
                     Number first, second, third;
                     if (mode & 4) {
-                        third = PEEK_VALUE(1).as_float(vm);
+                        third = PEEK_VALUE(1).as_float();
                         POP_VALUES(1);
                     }
                     else {
                         third = 1;
                     }
                     if (mode & 2) {
-                        second = PEEK_VALUE(1).as_float(vm);
+                        second = PEEK_VALUE(1).as_float();
                         POP_VALUES(1);
                     }
                     else {
                         second = std::numeric_limits<Number>::max();
                     }
                     if (mode & 1) {   
-                        first = PEEK_VALUE(1).as_float(vm);
+                        first = PEEK_VALUE(1).as_float();
                         POP_VALUES(1);
                     }
                     else {
@@ -966,7 +966,7 @@ restart:
                     if (third == 0) {
                         throw_range_step_is_zero();
                     }
-                    auto ret = vm->allocate<Range>(0);
+                    auto ret = current_vm().allocate<Range>(0);
                     ret->from = first;
                     ret->to = second;
                     ret->step = third;
@@ -996,29 +996,29 @@ restart:
                     auto args = PEEK_VALUES(size, size);
                     auto arguments = std::deque<OwcaValue>{ args.begin(), args.end() };
                     POP_VALUES(size);
-                    PUSH_VALUE(vm->create_array(std::move(arguments)));
+                    PUSH_VALUE(current_vm().create_array(std::move(arguments)));
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateTuple: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     auto args = PEEK_VALUES(size, size);
                     auto arguments = std::vector<OwcaValue>{ args.begin(), args.end() };
                     POP_VALUES(size);
-                    PUSH_VALUE(vm->create_tuple(std::move(arguments)));
+                    PUSH_VALUE(current_vm().create_tuple(std::move(arguments)));
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateSet: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     auto args = PEEK_VALUES(size, size);
                     POP_VALUES(size);
-                    PUSH_VALUE(vm->create_set(args));
+                    PUSH_VALUE(current_vm().create_set(args));
                     break; }
                 case ExecuteBufferReader::Op::ExprOperXCreateMap: {
                     auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
                     auto args = PEEK_VALUES(size, size);
                     POP_VALUES(size);
-                    PUSH_VALUE(vm->create_map(args));
+                    PUSH_VALUE(current_vm().create_map(args));
                     break; }
                 case ExecuteBufferReader::Op::ForInit: {
-                    auto iterator = PEEK_VALUE(1).as_iterator(vm);
+                    auto iterator = PEEK_VALUE(1).as_iterator();
                     POP_VALUES(1);
                     PUSH_STATE(ForState{ iterator });
                     auto &state = STATE(ForState);
@@ -1135,7 +1135,7 @@ restart:
                 case ExecuteBufferReader::Op::Throw: {
                     auto exception = PEEK_VALUE(1);
                     POP_VALUES(1);
-                    throw exception.as_exception(vm);
+                    throw exception.as_exception();
                     }
                 case ExecuteBufferReader::Op::TryInit: {
                     PUSH_STATE(TryState{temporary_ptr});
@@ -1170,7 +1170,7 @@ restart:
 
                     bool found = false;
                     for(auto e : exc_types) {
-                        auto exc_type = e.as_class(vm);
+                        auto exc_type = e.as_class();
                         if (exception_being_thrown->type().has_base_class(exc_type)) {
                             found = true;
                             break;
@@ -1223,7 +1223,7 @@ restart:
                 case ExecuteBufferReader::Op::WhileNext: {
                     auto &state = STATE(WhileState);
 
-                    auto value = PEEK_VALUE(1).as_bool(vm);
+                    auto value = PEEK_VALUE(1).as_bool();
                     POP_VALUES(1);
                     if (!value) {
                         code_pos = ExecuteBufferReader::Position{ state.end_position };
@@ -1237,7 +1237,7 @@ restart:
                     auto &state = STATE(WithState);
                     auto &obj = PEEK_VALUE(1);
                     state.context = obj;
-                    obj = vm->member(obj, "__enter__");
+                    obj = current_vm().member(obj, "__enter__");
                     obj = execute_call_from_values(temporary_ptr, 1);
                     state.entered = true;
                     auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
@@ -1300,127 +1300,127 @@ next_iteration:
     void Executor::complete(WithState state, TemporariesPtr temporary_ptr) {
         if (state.entered) {
             state.entered = false;
-            auto mbm = vm->member(state.context, "__exit__");
+            auto mbm = current_vm().member(state.context, "__exit__");
             PUSH_VALUE(mbm);
             execute_call_from_values(temporary_ptr, 1);
             POP_VALUES(1);
         }
     }
-    template <typename Tag> std::string_view tag_name = "unknown";
-    template <> std::string_view tag_name<Executor::TagAdd> = "addition";
-    template <> std::string_view tag_name<Executor::TagSub> = "subtraction";
-    template <> std::string_view tag_name<Executor::TagMul> = "multiplication";
-    template <> std::string_view tag_name<Executor::TagDiv> = "division";
-    template <> std::string_view tag_name<Executor::TagMod> = "modulus";
+    // template <typename Tag> std::string_view tag_name = "unknown";
+    // template <> std::string_view tag_name<Executor::TagAdd> = "addition";
+    // template <> std::string_view tag_name<Executor::TagSub> = "subtraction";
+    // template <> std::string_view tag_name<Executor::TagMul> = "multiplication";
+    // template <> std::string_view tag_name<Executor::TagDiv> = "division";
+    // template <> std::string_view tag_name<Executor::TagMod> = "modulus";
 
-    Number Executor::expr_oper_2(Executor::TagAdd, Number left, Number right) {
-        return left + right;
-    }
-    OwcaArray Executor::expr_oper_2(TagAdd, OwcaArray left, OwcaArray right) {
-        auto ret = vm->allocate<Array>(0);
-        ret->values = left.internal_value()->values;
-        for(auto &q : right.internal_value()->values) {
-            ret->values.push_back(q);
-        }
-        return OwcaArray{ ret };
-    }
-    OwcaTuple Executor::expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right) {
-        auto ret = vm->allocate<Tuple>(0);
-        ret->values.reserve(left.internal_value()->values.size() + right.internal_value()->values.size());
-        for(auto &q : left.internal_value()->values) {
-            ret->values.push_back(q);
-        }
-        for(auto &q : right.internal_value()->values) {
-            ret->values.push_back(q);
-        }
-        return OwcaTuple{ ret };
-    }
+    // Number Executor::expr_oper_2(Executor::TagAdd, Number left, Number right) {
+    //     return left + right;
+    // }
+    // OwcaArray Executor::expr_oper_2(TagAdd, OwcaArray left, OwcaArray right) {
+    //     auto ret = current_vm().allocate<Array>(0);
+    //     ret->values = left.internal_value()->values;
+    //     for(auto &q : right.internal_value()->values) {
+    //         ret->values.push_back(q);
+    //     }
+    //     return OwcaArray{ ret };
+    // }
+    // OwcaTuple Executor::expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right) {
+    //     auto ret = current_vm().allocate<Tuple>(0);
+    //     ret->values.reserve(left.internal_value()->values.size() + right.internal_value()->values.size());
+    //     for(auto &q : left.internal_value()->values) {
+    //         ret->values.push_back(q);
+    //     }
+    //     for(auto &q : right.internal_value()->values) {
+    //         ret->values.push_back(q);
+    //     }
+    //     return OwcaTuple{ ret };
+    // }
 
-    OwcaString Executor::expr_oper_2(Executor::TagAdd, OwcaString left, OwcaString right) {
-        return vm->create_string(left, right);
-    }
-    Number Executor::expr_oper_2(Executor::TagSub, Number left, Number right) {
-        return left - right;
-    }
-    Number Executor::expr_oper_2(Executor::TagMul, Number left, Number right) {
-        return left * right;
-    }
-    Number Executor::expr_oper_2(Executor::TagDiv, Number left, Number right) {
-        if (right == 0) 
-            throw_division_by_zero();
-        return left / right;
-    }
-    Number Executor::expr_oper_2(Executor::TagMod, Number left, Number right) {
-        if (right == 0)
-            throw_division_by_zero();
-        return (std::int64_t)left % (std::int64_t)right;
-    }
-    OwcaString Executor::expr_oper_2(Executor::TagMul, OwcaString left, Number right) {
-        return vm->create_string(left, right);
-    }
-    OwcaString Executor::expr_oper_2(Executor::TagMul, Number left, OwcaString right) {
-        return vm->create_string(right, left);
-    }
-    OwcaArray Executor::expr_oper_2(TagMul, OwcaArray left, Number right) {
-        auto ret = vm->allocate<Array>(0);
-        for(auto i = 0u; i < right; ++i) {
-            ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
-        }
-        return OwcaArray{ ret };
-    }
-    OwcaArray Executor::expr_oper_2(TagMul, Number left, OwcaArray right) {
-            auto ret = vm->allocate<Array>(0);
-            for(auto i = 0u; i < left; ++i) {
-                ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
-            }
-            return OwcaArray{ ret };
-    }
-    OwcaTuple Executor::expr_oper_2(TagMul, OwcaTuple left, Number right) {
-            auto ret = vm->allocate<Tuple>(0);
-            ret->values.reserve((size_t)(right * left.internal_value()->values.size()));
-            for(auto i = 0u; i < right; ++i) {
-                ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
-            }
-            return OwcaTuple{ ret };
-    }
-    OwcaTuple Executor::expr_oper_2(TagMul, Number left, OwcaTuple right) {
-            auto ret = vm->allocate<Tuple>(0);
-            ret->values.reserve((size_t)(left * right.internal_value()->values.size()));
-            for(auto i = 0u; i < left; ++i) {
-                ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
-            }
-            return OwcaTuple{ ret };
-    }
-    Number Executor::expr_oper_2(TagBinOr, Number left, Number right) {
-        return (std::uint64_t)left | (std::uint64_t)right;
-    }
-    Number Executor::expr_oper_2(TagBinAnd, Number left, Number right) {
-        return (std::uint64_t)left & (std::uint64_t)right;
-    }
-    Number Executor::expr_oper_2(TagBinXor, Number left, Number right) {
-        return (std::uint64_t)left ^ (std::uint64_t)right;
-    }
-    Number Executor::expr_oper_2(TagBinLShift, Number left, Number right) {
-        return (std::uint64_t)left << (std::uint64_t)right;
-    }
-    Number Executor::expr_oper_2(TagBinRShift, Number left, Number right) {
-        return (std::uint64_t)left >> (std::uint64_t)right;
-    }
+    // OwcaString Executor::expr_oper_2(Executor::TagAdd, OwcaString left, OwcaString right) {
+    //     return current_vm().create_string(left, right);
+    // }
+    // Number Executor::expr_oper_2(Executor::TagSub, Number left, Number right) {
+    //     return left - right;
+    // }
+    // Number Executor::expr_oper_2(Executor::TagMul, Number left, Number right) {
+    //     return left * right;
+    // }
+    // Number Executor::expr_oper_2(Executor::TagDiv, Number left, Number right) {
+    //     if (right == 0) 
+    //         throw_division_by_zero();
+    //     return left / right;
+    // }
+    // Number Executor::expr_oper_2(Executor::TagMod, Number left, Number right) {
+    //     if (right == 0)
+    //         throw_division_by_zero();
+    //     return (std::int64_t)left % (std::int64_t)right;
+    // }
+    // OwcaString Executor::expr_oper_2(Executor::TagMul, OwcaString left, Number right) {
+    //     return current_vm().create_string(left, right);
+    // }
+    // OwcaString Executor::expr_oper_2(Executor::TagMul, Number left, OwcaString right) {
+    //     return current_vm().create_string(right, left);
+    // }
+    // OwcaArray Executor::expr_oper_2(TagMul, OwcaArray left, Number right) {
+    //     auto ret = current_vm().allocate<Array>(0);
+    //     for(auto i = 0u; i < right; ++i) {
+    //         ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+    //     }
+    //     return OwcaArray{ ret };
+    // }
+    // OwcaArray Executor::expr_oper_2(TagMul, Number left, OwcaArray right) {
+    //         auto ret = current_vm().allocate<Array>(0);
+    //         for(auto i = 0u; i < left; ++i) {
+    //             ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+    //         }
+    //         return OwcaArray{ ret };
+    // }
+    // OwcaTuple Executor::expr_oper_2(TagMul, OwcaTuple left, Number right) {
+    //         auto ret = current_vm().allocate<Tuple>(0);
+    //         ret->values.reserve((size_t)(right * left.internal_value()->values.size()));
+    //         for(auto i = 0u; i < right; ++i) {
+    //             ret->values.insert(ret->values.end(), left.internal_value()->values.begin(), left.internal_value()->values.end());
+    //         }
+    //         return OwcaTuple{ ret };
+    // }
+    // OwcaTuple Executor::expr_oper_2(TagMul, Number left, OwcaTuple right) {
+    //         auto ret = current_vm().allocate<Tuple>(0);
+    //         ret->values.reserve((size_t)(left * right.internal_value()->values.size()));
+    //         for(auto i = 0u; i < left; ++i) {
+    //             ret->values.insert(ret->values.end(), right.internal_value()->values.begin(), right.internal_value()->values.end());
+    //         }
+    //         return OwcaTuple{ ret };
+    // }
+    // Number Executor::expr_oper_2(TagBinOr, Number left, Number right) {
+    //     return (std::uint64_t)left | (std::uint64_t)right;
+    // }
+    // Number Executor::expr_oper_2(TagBinAnd, Number left, Number right) {
+    //     return (std::uint64_t)left & (std::uint64_t)right;
+    // }
+    // Number Executor::expr_oper_2(TagBinXor, Number left, Number right) {
+    //     return (std::uint64_t)left ^ (std::uint64_t)right;
+    // }
+    // Number Executor::expr_oper_2(TagBinLShift, Number left, Number right) {
+    //     return (std::uint64_t)left << (std::uint64_t)right;
+    // }
+    // Number Executor::expr_oper_2(TagBinRShift, Number left, Number right) {
+    //     return (std::uint64_t)left >> (std::uint64_t)right;
+    // }
 
-    template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
-        throw_unsupported_operation_2(tag_name<A>, OwcaValue{ b }.type(), OwcaValue{ c }.type());
-    }
-    template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(TemporariesPtr &temporary_ptr) {
-        auto right = PEEK_VALUE(1);
-        auto left = PEEK_VALUE(2);
-        auto &ret = PEEK_VALUE(2);
-        ret = left.visit([&](auto left_val) -> OwcaValue {
-            return right.visit([&](auto right_val) -> OwcaValue {
-                return expr_oper_2(Tag{}, left_val, right_val);
-            });
-        });
-        POP_VALUES(1);
-    }
+    // template <typename A, typename B, typename C> OwcaEmpty Executor::expr_oper_2(A, B b, C c) {
+    //     throw_unsupported_operation_2(tag_name<A>, OwcaValue{ b }.type(), OwcaValue{ c }.type());
+    // }
+    // template <typename Tag> void Executor::run_impl_opcodes_execute_expr_oper2(TemporariesPtr &temporary_ptr) {
+    //     auto right = PEEK_VALUE(1);
+    //     auto left = PEEK_VALUE(2);
+    //     auto &ret = PEEK_VALUE(2);
+    //     ret = left.visit([&](auto left_val) -> OwcaValue {
+    //         return right.visit([&](auto right_val) -> OwcaValue {
+    //             return expr_oper_2(Tag{}, left_val, right_val);
+    //         });
+    //     });
+    //     POP_VALUES(1);
+    // }
 
     OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals) {
         auto locals_ptr = temporary_ptr.locals(arg_count + 1);
@@ -1499,8 +1499,8 @@ next_iteration:
 			obj = {};
 		}
 		else {
-			obj = OwcaObject{ vm->allocate<Object>(cls->native_storage_total, cls) };
-            if (auto exc = vm->is_exception(obj.as_object_certainly())) {
+			obj = OwcaObject{ current_vm().allocate<Object>(cls->native_storage_total, cls) };
+            if (auto exc = current_vm().is_exception(obj.as_object_certainly())) {
                 obj = OwcaException{ obj.as_object_certainly().internal_value(), exc };
             }
 		}
@@ -1571,10 +1571,10 @@ next_iteration:
             auto ident = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
             identifier_to_global_index[ident] = i;
         }
-        auto ns = vm->create_namespace(std::move(oc), std::move(identifier_to_global_index));
+        auto ns = current_vm().create_namespace(std::move(oc), std::move(identifier_to_global_index));
         namespaces.insert({ ns.internal_value()->code.filename(), ns});
         if (namespaces.size() > 1) {
-            auto ns_it = namespaces.at(vm->builtin_filename);
+            auto ns_it = namespaces.at(current_vm().builtin_filename);
             for(auto it : ns_it.internal_value()->identifier_to_global_index) {
                 auto val = ns_it.internal_value()->globals[it.second];
                 ns.try_member(it.first, val);
@@ -1585,7 +1585,7 @@ next_iteration:
         auto locals_ptr = temporary_ptr.locals(0);
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
 
-        auto function = vm->allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, CodePosition{ ns.internal_value()->code.code().data()});
+        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, CodePosition{ ns.internal_value()->code.code().data()});
         auto est = StackTraceState{ *this, function, function->entry_point };
         run_opcodes(globals_ptr, locals_ptr, temporary_ptr, StartOfCode{}, code_pos);
         return ns;
@@ -1616,80 +1616,80 @@ next_iteration:
     }
 	void Executor::throw_too_many_elements(size_t expected)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("too many values to unpack (expected {})", expected));
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("too many values to unpack (expected {})", expected));
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_not_enough_elements(size_t expected, size_t got)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("not enough values to unpack (expected {}, got {})", expected, got));
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("not enough values to unpack (expected {}, got {})", expected, got));
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_dictionary_changed(bool is_dict)
 	{
-        OwcaValue temp_arg = is_dict ? vm->create_string_from_view("dictionary changed during iteration") : vm->create_string_from_view("set changed during iteration");
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = is_dict ? current_vm().create_string_from_view("dictionary changed during iteration") : current_vm().create_string_from_view("set changed during iteration");
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_not_implemented(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_range_step_is_zero()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("range step is zero");
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("range step is zero");
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_division_by_zero()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("division by zero");
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("division by zero");
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_mod_division_by_zero()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("modulo by zero");
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("modulo by zero");
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_convert_to_float_message(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_convert_to_float(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert value of type `{}` to floating point", type));
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't convert value of type `{}` to floating point", type));
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_convert_to_integer(Number val)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert {} to integer", val));
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't convert {} to integer", val));
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_convert_to_integer(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't convert {} to integer", type));
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't convert {} to integer", type));
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_not_a_number(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not a number", type));
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not a number", type));
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_overflow(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-        throw allocate_user_class(vm->c_math_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+        throw allocate_user_class(current_vm().c_math_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_range_step_must_be_one_in_left_side_of_write_assign()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("step of a range must be 1 in left side of write assignment");
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("step of a range must be 1 in left side of write assignment");
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_compare(CompareKind kind, std::string_view left, std::string_view right)
@@ -1705,130 +1705,130 @@ next_iteration:
 		case CompareKind::More: oper = ">"; break;
         case CompareKind::_Count: assert(false);
 		}
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_string_too_large(size_t size)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("string is too large ({} bytes)", size));
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("string is too large ({} bytes)", size));
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	void Executor::throw_index_out_of_range(std::string msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-        throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+        throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_value_not_indexable(std::string_view type, std::string_view key_type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not indexable with key {}", type, key_type));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not indexable with key {}", type, key_type));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_missing_member(std::string_view type, std::string_view ident)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} doesn't have a member {}", type, ident));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} doesn't have a member {}", type, ident));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_call(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_not_callable(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not callable", type));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not callable", type));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 	
 	void Executor::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not callable - wrong number of parameters ({})", type, params));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not callable - wrong number of parameters ({})", type, params));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_wrong_type(std::string_view type, std::string_view expected)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("wrong type {} - expected {}", type, expected));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("wrong type {} - expected {}", type, expected));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_wrong_type(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_unsupported_operation_2(std::string_view oper, std::string_view left, std::string_view right)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't execute {} {} {}", left, oper, right));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_invalid_operand_for_mul_string(std::string_view type, std::string_view val)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("can't multiply {} by {}", type, val));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("can't multiply {} by {}", type, val));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_missing_key(std::string_view key)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("missing key {}", key));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("missing key {}", key));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_not_hashable(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} is not hashable", type));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not hashable", type));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_value_cant_have_fields(std::string_view type)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(std::format("{} can't have fields", type));
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} can't have fields", type));
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_missing_native(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_not_iterable(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_readonly(std::string_view msg)
 	{
-        OwcaValue temp_arg = vm->create_string_from_view(msg);
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view(msg);
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_cant_return_value_from_generator()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("can't return value from generator");
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("can't return value from generator");
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
 
 	void Executor::throw_container_is_empty()
 	{
-        OwcaValue temp_arg = vm->create_string_from_view("container is empty");
-		throw allocate_user_class(vm->c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception(vm);
+        OwcaValue temp_arg = current_vm().create_string_from_view("container is empty");
+		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
     bool Executor::execute_compare_eq(OwcaValue left, OwcaValue right) {
-        return OPER2_GET(eq, left.kind(), right.kind())(*this, left, right);
+        return OPER2_GET(eq, left.kind(), right.kind())(left, right);
     }
     bool Executor::execute_compare_less(OwcaValue left, OwcaValue right) {
-        return OPER2_GET(less, left.kind(), right.kind())(*this, left, right);
+        return OPER2_GET(less, left.kind(), right.kind())(left, right);
     }
     bool Executor::execute_compare_is(OwcaValue left, OwcaValue right) {
-        return OPER2_GET(is, left.kind(), right.kind())(*this, left, right);
+        return OPER2_GET(is, left.kind(), right.kind())(left, right);
     }
     
     bool Executor::execute_compare(OwcaValue left, OwcaValue right, CompareKind kind)
@@ -1847,48 +1847,48 @@ next_iteration:
         return false;
     }
 
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::WhileState &e) {
+    void gc_mark_value(GenerationGC generation_gc, const Executor::WhileState &e) {
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::ClassState &e) {
-        gc_mark_value(vm, generation_gc, e.cls);
+    void gc_mark_value(GenerationGC generation_gc, const Executor::ClassState &e) {
+        gc_mark_value(generation_gc, e.cls);
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::ForState &e) {
-        gc_mark_value(vm, generation_gc, e.iterator);
+    void gc_mark_value(GenerationGC generation_gc, const Executor::ForState &e) {
+        gc_mark_value(generation_gc, e.iterator);
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::TryState &e) {
+    void gc_mark_value(GenerationGC generation_gc, const Executor::TryState &e) {
         if (e.original_exception_being_handled)
-            gc_mark_value(vm, generation_gc, *e.original_exception_being_handled);
+            gc_mark_value(generation_gc, *e.original_exception_being_handled);
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::CatchState &e) {
+    void gc_mark_value(GenerationGC generation_gc, const Executor::CatchState &e) {
         if (e.exception_being_handled)
-            gc_mark_value(vm, generation_gc, *e.exception_being_handled);
+            gc_mark_value(generation_gc, *e.exception_being_handled);
         if (e.original_exception_being_handled)
-            gc_mark_value(vm, generation_gc, *e.original_exception_being_handled);
+            gc_mark_value(generation_gc, *e.original_exception_being_handled);
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::WithState &e) {
-        gc_mark_value(vm, generation_gc, e.context);
+    void gc_mark_value(GenerationGC generation_gc, const Executor::WithState &e) {
+        gc_mark_value(generation_gc, e.context);
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const Executor::StatesType &e) {
+    void gc_mark_value(GenerationGC generation_gc, const Executor::StatesType &e) {
         visit_variant(e,
-            [&](const auto &a) { gc_mark_value(vm, generation_gc, a); }
+            [&](const auto &a) { gc_mark_value(generation_gc, a); }
         );
     }
-    void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const Executor &e) {
+    void gc_mark_value(GenerationGC ggc, const Executor &e) {
         for(auto it : e.namespaces) {
-            gc_mark_value(vm, ggc, it.second);
+            gc_mark_value(ggc, it.second);
         }
         for(auto v = e.values_vector.data(); v < e.temporary_ptr_current_top.temporaries_ptr; ++v) {
-            gc_mark_value(vm, ggc, *v);
+            gc_mark_value(ggc, *v);
         }
         for(auto sc = e.stacktrace_vector.data() + 1; sc <= e.stacktrace_current; ++sc) {
-            gc_mark_value(vm, ggc, sc->runtime_function);
-            gc_mark_value(vm, ggc, sc->states);
+            gc_mark_value(ggc, sc->runtime_function);
+            gc_mark_value(ggc, sc->states);
         }
         if (e.exception_being_thrown) {
-            gc_mark_value(vm, ggc, *e.exception_being_thrown);
+            gc_mark_value(ggc, *e.exception_being_thrown);
         }
         if (e.exception_being_handled) {
-            gc_mark_value(vm, ggc, *e.exception_being_handled);
+            gc_mark_value(ggc, *e.exception_being_handled);
         }
     }
 }

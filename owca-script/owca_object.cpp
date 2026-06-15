@@ -16,23 +16,23 @@ namespace OwcaScript {
 	
 	OwcaValue OwcaObject::member(const std::string& key) const
 	{
-		return object->vm->member(*this, key);
+		return Internal::current_vm().member(*this, key);
 	}
 	std::optional<OwcaValue> OwcaObject::try_member(const std::string& key) const
 	{
-		return object->vm->try_member(*this, key);
+		return Internal::current_vm().try_member(*this, key);
 	}
 	void OwcaObject::member(const std::string& key, OwcaValue val)
 	{
-		object->vm->member(*this, key, std::move(val));
+		Internal::current_vm().member(*this, key, std::move(val));
 	}
 
 	std::span<char> OwcaObject::user_data_impl(Internal::UserClassTokenPtr token) const
 	{
 		return object->native_storage_raw(token);
 	}
-	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaObject &obj)
+	void gc_mark_value(GenerationGC gc, const OwcaObject &obj)
 	{
-		gc_mark_value(vm, gc, obj.internal_value());
+		gc_mark_value(gc, obj.internal_value());
 	}
 }

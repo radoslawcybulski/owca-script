@@ -33,7 +33,7 @@ namespace OwcaScript {
 	OwcaSet::Iterator& OwcaSet::Iterator::operator++()
 	{
 		if (dictionary->dict.version != version) {
-			dictionary->vm->throw_dictionary_changed(false);
+			Internal::current_vm().throw_dictionary_changed(false);
 		}
 		auto p = dictionary->dict.next(pos);
 		pos = std::min(p, dictionary->dict.values.size());
@@ -80,8 +80,8 @@ namespace OwcaScript {
 		return internal_value()->dict.equals(other.internal_value()->dict);
 	}
 
-	void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaSet &o) {
-		gc_mark_value(vm, gc, o.dictionary);
+	void gc_mark_value(GenerationGC gc, const OwcaSet &o) {
+		gc_mark_value(gc, o.dictionary);
 	}
 
 }

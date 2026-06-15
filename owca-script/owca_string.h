@@ -30,7 +30,7 @@ namespace OwcaScript {
 		size_t size() const;
 		size_t hash() const;
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaString &);
+		friend void gc_mark_value(GenerationGC gc, const OwcaString &);
 	};
 }
 

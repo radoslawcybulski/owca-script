@@ -20,7 +20,7 @@ a = {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 3);
+	ASSERT_EQ(val.as_float(), 3);
 }
 
 TEST_F(MapTest, simple)
@@ -45,7 +45,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 4 * (3 + 4) + 4 * (1 + 2) + 4 * (5 + 6) + 4 * (7 + 9));
+	ASSERT_EQ(val.as_float(), 4 * (3 + 4) + 4 * (1 + 2) + 4 * (5 + 6) + 4 * (7 + 9));
 }
 
 TEST_F(MapTest, with_default)
@@ -68,7 +68,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 0);
+	ASSERT_EQ(val.as_float(), 0);
 }
 
 TEST_F(MapTest, iters)
@@ -88,7 +88,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 0);
+	ASSERT_EQ(val.as_float(), 0);
 }
 
 TEST_F(MapTest, iters_mod)
@@ -118,7 +118,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 1 + 2 + 3 + 4 + 5 + 6);
+	ASSERT_EQ(val.as_float(), 1 + 2 + 3 + 4 + 5 + 6);
 }
 
 TEST_F(MapTest, pop)
@@ -150,6 +150,6 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 1 * 2 + 5 * 6);
+	ASSERT_EQ(val.as_float(), 1 * 2 + 5 * 6);
 }
 

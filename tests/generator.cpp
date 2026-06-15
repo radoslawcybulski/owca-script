@@ -9,7 +9,7 @@ protected:
         OwcaVM vm;
         auto code = compile(line, vm, "test.os", std::move(code_text));
         auto val = vm.execute(code).member("r").call(add_val);
-        return (int)val.as_int(vm);
+        return (int)val.as_int();
     }
 
     static int run_try(unsigned int line, int v)

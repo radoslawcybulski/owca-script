@@ -19,9 +19,9 @@ namespace OwcaScript::Internal {
         return temp;
     }
 
-    void Tuple::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
+    void Tuple::gc_mark(GenerationGC generation_gc) const
     {
-        gc_mark_value(vm, generation_gc, values);
+        gc_mark_value(generation_gc, values);
     }
 
     size_t Tuple::hash() const
@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
             size_t h = 13;
 
             for(auto q : values) {
-                auto v = vm->calculate_hash(q);
+                auto v = Internal::current_vm().calculate_hash(q);
                 h = h * 1299709 + v;
             }
             hash_value = h;

@@ -13,7 +13,7 @@ TEST_F(ArrayTest, simple1)
 function r() { return [ 1, 2, 3, 4 ][1]; }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 2);
+	ASSERT_EQ(val.as_float(), 2);
 }
 
 TEST_F(ArrayTest, simple2)
@@ -23,7 +23,7 @@ TEST_F(ArrayTest, simple2)
 function r() { return [ 1, 2, 3, 4 ][3]; }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 4);
+	ASSERT_EQ(val.as_float(), 4);
 }
 
 TEST_F(ArrayTest, simple3)
@@ -36,7 +36,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple4)
@@ -49,7 +49,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple5)
@@ -62,7 +62,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple6)
@@ -75,7 +75,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple7)
@@ -88,7 +88,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple8)
@@ -101,7 +101,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, simple9)
@@ -114,7 +114,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, update)
@@ -128,7 +128,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 5);
+	ASSERT_EQ(val.as_float(), 5);
 }
 
 TEST_F(ArrayTest, from_iter)
@@ -147,7 +147,7 @@ function generator foo() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_TRUE(val.as_bool(vm));
+	ASSERT_TRUE(val.as_bool());
 }
 
 TEST_F(ArrayTest, owca_iter)
@@ -156,7 +156,7 @@ TEST_F(ArrayTest, owca_iter)
 	auto t = vm.create_array({1, 2, 3, 4});
 	std::vector<double> values;
 	for(auto q : t) {
-		values.push_back(q.as_float(vm));
+		values.push_back(q.as_float());
 	}
 	ASSERT_EQ(values, std::vector<double>({1, 2, 3, 4}));
 }

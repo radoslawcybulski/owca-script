@@ -24,19 +24,19 @@ namespace OwcaScript {
 		class Executor;
 
 		struct Operators2 {
-			OwcaValue (*add)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*sub)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*mul)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*div)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*mod)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_and)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_or)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_xor)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_lshift)(Executor &e, OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_rshift)(Executor &e, OwcaValue left, OwcaValue right);
-			bool (*less)(Executor &e, OwcaValue left, OwcaValue right);
-			bool (*eq)(Executor &e, OwcaValue left, OwcaValue right);
-			bool (*is)(Executor &e, OwcaValue left, OwcaValue right);
+			OwcaValue (*add)(OwcaValue left, OwcaValue right);
+			OwcaValue (*sub)(OwcaValue left, OwcaValue right);
+			OwcaValue (*mul)(OwcaValue left, OwcaValue right);
+			OwcaValue (*div)(OwcaValue left, OwcaValue right);
+			OwcaValue (*mod)(OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_and)(OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_or)(OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_xor)(OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_lshift)(OwcaValue left, OwcaValue right);
+			OwcaValue (*bin_rshift)(OwcaValue left, OwcaValue right);
+			bool (*less)(OwcaValue left, OwcaValue right);
+			bool (*eq)(OwcaValue left, OwcaValue right);
+			bool (*is)(OwcaValue left, OwcaValue right);
 
 			Operators2();
 		};
@@ -138,7 +138,7 @@ namespace OwcaScript {
 				std::string_view name, full_name;
 				Class *cls;
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const ClassState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const ClassState &e);
 			};
 			struct ForState {
 				static constexpr const std::uint8_t Kind = 1;
@@ -150,7 +150,7 @@ namespace OwcaScript {
 
 				ForState(OwcaIterator iterator) : iterator(iterator) {}
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const ForState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const ForState &e);
 			};
 			struct WhileState {
 				static constexpr const std::uint8_t Kind = 2;
@@ -159,7 +159,7 @@ namespace OwcaScript {
 				std::uint32_t loop_index = 0, value_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const WhileState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const WhileState &e);
 			};
 			struct TryState {
 				static constexpr const std::uint8_t Kind = 3;
@@ -170,21 +170,21 @@ namespace OwcaScript {
 
 				TryState(TemporariesPtr temporary_ptr) : temporary_ptr(temporary_ptr) {}
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const TryState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const TryState &e);
 			};
 			struct CatchState {
 				static constexpr const std::uint8_t Kind = 4;
 				std::optional<OwcaException> exception_being_handled;
 				std::optional<OwcaException> original_exception_being_handled;
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const CatchState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const CatchState &e);
 			};
 			struct WithState {
 				static constexpr const std::uint8_t Kind = 5;
 				OwcaValue context;
 				bool entered = false;
 
-				friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const WithState &e);
+				friend void gc_mark_value(GenerationGC generation_gc, const WithState &e);
 			};
 			using StatesType = std::variant<ClassState, ForState, WhileState, TryState, CatchState, WithState>;
 			struct StatesTypePtr {
@@ -216,14 +216,13 @@ namespace OwcaScript {
 					return tmp;
 				}
 			};
-			friend void gc_mark_value(const OwcaVM &vm, GenerationGC generation_gc, const StatesType &e);
+			friend void gc_mark_value(GenerationGC generation_gc, const StatesType &e);
 
 			void update_current_top_ptrs(TemporariesPtr temporary_ptr) {
 				temporary_ptr_current_top = temporary_ptr;
 			}
 
 		private:
-            VM *vm;
 			struct Frame {
 				RuntimeFunction* runtime_function = nullptr;
 				ExecuteBufferReader::Position code_position{ 0 };
@@ -325,13 +324,13 @@ namespace OwcaScript {
 			Number expr_oper_2(TagBinRShift, Number left, Number right);
 			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
 
-			std::tuple<Number, Number, Number> parse_key(VM *vm, OwcaValue v, OwcaValue key, Number size);
-			size_t verify_key(VM *vm, Number v, size_t size, OwcaValue orig_key, std::string_view name);
-			std::pair<size_t, size_t> verify_key(VM *vm, OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
+			std::tuple<Number, Number, Number> parse_key(OwcaValue v, OwcaValue key, Number size);
+			size_t verify_key(Number v, size_t size, OwcaValue orig_key, std::string_view name);
+			std::pair<size_t, size_t> verify_key(OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
 			void complete(WithState, TemporariesPtr temporary_ptr);
 			void complete_all(TemporariesPtr temporary_ptr);
         public:
-            Executor(VM *vm);
+            Executor();
 
 			void clear();
 
@@ -386,7 +385,7 @@ namespace OwcaScript {
 			[[noreturn]] void throw_too_many_elements(size_t expected);
 			[[noreturn]] void throw_not_enough_elements(size_t expected, size_t got);
 
-			friend void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const Executor &);
+			friend void gc_mark_value(GenerationGC ggc, const Executor &);
 		};
 	}
 }

@@ -29,7 +29,7 @@ namespace OwcaScript {
 		}
 		bool operator != (OwcaRange other) const { return !(*this == other); }
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, OwcaRange);
+		friend void gc_mark_value(GenerationGC gc, OwcaRange);
 	};
 }
 

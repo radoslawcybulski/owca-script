@@ -16,13 +16,13 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 4);
+	ASSERT_EQ(val.as_float(), 4);
 }
 
-static std::vector<double> to_sorted_vector(OwcaValue v, OwcaVM vm) {
+static std::vector<double> to_sorted_vector(OwcaValue v) {
     std::vector<double> res;
-    for (auto item : v.as_set(vm)) {
-        res.push_back(item.as_float(vm));
+    for (auto item : v.as_set()) {
+        res.push_back(item.as_float());
     }
     std::sort(res.begin(), res.end());
     return res;
@@ -40,7 +40,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-    auto data = to_sorted_vector(val, vm);
+    auto data = to_sorted_vector(val);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2, 4, 5 }));
 }
 
@@ -56,7 +56,7 @@ a = { 1, 2, 3, 4 };
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-    auto data = to_sorted_vector(val, vm);
+    auto data = to_sorted_vector(val);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2, 3, 4, 5, 6 }));
 }
 
@@ -72,7 +72,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-    auto data = to_sorted_vector(val, vm);
+    auto data = to_sorted_vector(val);
 	ASSERT_EQ(data, std::vector<double>({ 3, 4 }));
 }
 
@@ -88,6 +88,6 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-    auto data = to_sorted_vector(val, vm);
+    auto data = to_sorted_vector(val);
 	ASSERT_EQ(data, std::vector<double>({ 1, 2 }));
 }

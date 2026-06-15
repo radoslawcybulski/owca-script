@@ -29,8 +29,8 @@ namespace OwcaScript {
 	struct NativeCodeProvider {
 		virtual ~NativeCodeProvider() = default;
 
-		using Function = std::function<OwcaValue(OwcaVM, std::span<OwcaValue>)>;
-		using GeneratorFunction = std::function<Generator(OwcaVM, std::span<OwcaValue>)>;
+		using Function = std::function<OwcaValue(std::span<OwcaValue>)>;
+		using GeneratorFunction = std::function<Generator(std::span<OwcaValue>)>;
 		virtual std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const { return std::nullopt; }
 		virtual std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::span<const std::string_view> param_names) const { return std::nullopt; }
 		virtual std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name) const { return nullptr; }
@@ -40,14 +40,28 @@ namespace OwcaScript {
 		friend class Internal::VM;
 		friend class OwcaVariable;
 
-		std::shared_ptr<Internal::VM> vm_owner;
-		Internal::VM *vm;
+		std::unique_ptr<Internal::VM> vm;
 
 	public:
 		OwcaVM();
-		OwcaVM(Internal::VM *vm) : vm(std::move(vm)) {}
 		~OwcaVM();
 
+		void activate();
+		void deactivate();
+
+		class Activation {
+			Internal::VM *previous = nullptr;
+		public:
+			Activation(OwcaVM &vm);
+			~Activation();
+
+			Activation(const Activation &) = delete;
+			Activation &operator=(const Activation &) = delete;
+
+			Activation(Activation &&) = delete;
+			Activation &operator=(Activation &&) = delete;
+		};
+		
 		class SerializationFailed : public std::exception {
 			std::string msg;
 		public:

@@ -31,7 +31,7 @@ namespace OwcaScript {
 		bool operator == (OwcaClass other) const { return object == other.object; }
 		bool operator != (OwcaClass other) const { return !(*this == other); }
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaClass &);
+		friend void gc_mark_value(GenerationGC gc, const OwcaClass &);
 	};
 }
 

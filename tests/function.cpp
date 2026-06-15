@@ -27,7 +27,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 4);
+	ASSERT_EQ(val.as_float(), 4);
 }
 
 TEST_F(FunctionTest, bind)
@@ -53,7 +53,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), 5);
+	ASSERT_EQ(val.as_float(), 5);
 }
 
 TEST_F(FunctionTest, overload_based_on_arg_number)
@@ -77,5 +77,5 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(vm), -1);
+	ASSERT_EQ(val.as_float(), -1);
 }

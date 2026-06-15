@@ -12,7 +12,7 @@ TEST_F(SimpleTest, simple)
 	OwcaVM vm;
 	auto code = vm.compile("test.os", "function r() { return 14; }");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 14);
+	ASSERT_EQ(val.as_float(), 14);
 }
 
 TEST_F(SimpleTest, string)
@@ -20,7 +20,7 @@ TEST_F(SimpleTest, string)
 	OwcaVM vm;
 	auto code = vm.compile("test.os", "function r() { return 'qwe' + 'rty'; }");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_string(vm).text(), "qwerty");
+	ASSERT_EQ(val.as_string().text(), "qwerty");
 }
 
 TEST_F(SimpleTest, range)
@@ -32,7 +32,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_string(vm).text(), "er");
+	ASSERT_EQ(val.as_string().text(), "er");
 }
 TEST_F(SimpleTest, dict)
 {
@@ -44,7 +44,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 3);
+	ASSERT_EQ(val.as_float(), 3);
 }
 TEST_F(SimpleTest, native_func)
 {
@@ -52,9 +52,9 @@ TEST_F(SimpleTest, native_func)
 	struct Provider : public NativeCodeProvider {
 		std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
 			if (full_name == "foo" && param_names.size() == 2 && param_names[0] == "a" && param_names[1] == "b") {
-				return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+				return [](std::span<OwcaValue> args) -> OwcaValue {
 					assert(args.size() == 3);
-					return args[1].as_float(vm) + args[2].as_float(vm);
+					return args[1].as_float() + args[2].as_float();
 					};
 			}
 			return std::nullopt;
@@ -67,7 +67,7 @@ function r() {
 }
 )", std::make_shared<Provider>());
 	auto val = vm.execute(code).member("r").call();;
-	ASSERT_EQ(val.as_float(vm), 3);
+	ASSERT_EQ(val.as_float(), 3);
 }
 TEST_F(SimpleTest, external_vars)
 {
@@ -79,7 +79,7 @@ function r(q, b, c) {
 )");
 	auto val = vm.execute(code).member("r").call(1, 2, 3);
 
-	ASSERT_EQ(val.as_float(vm), 6);
+	ASSERT_EQ(val.as_float(), 6);
 }
 TEST_F(SimpleTest, class_)
 {
@@ -95,8 +95,8 @@ function r(q, b, c) {
 }
 )");
 	auto val = vm.execute(code).member("r").call(1, 2, 3);
-	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.as_float(vm), 6);
+	auto val2 = val.member("value");
+	ASSERT_EQ(val2.as_float(), 6);
 }
 
 TEST_F(SimpleTest, native_class)
@@ -109,7 +109,7 @@ TEST_F(SimpleTest, native_class)
 			}
 			void destroy_storage(void* ptr, size_t s) override {
 			}
-			void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+			void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
 			}
 			size_t native_storage_size() override {
 				return 8;
@@ -132,8 +132,8 @@ function r(q, b, c) {
 }
 )", std::make_shared<Provider>());
 	auto val = vm.execute(code).member("r").call(1, 2, 3);
-	auto val2 = val.member(vm, "value");
-	ASSERT_EQ(val2.as_float(vm), 6);
+	auto val2 = val.member("value");
+	ASSERT_EQ(val2.as_float(), 6);
 }
 
 TEST_F(SimpleTest, native_class_with_funcs)
@@ -147,7 +147,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
@@ -160,19 +160,19 @@ TEST_F(SimpleTest, native_class_with_funcs)
 			}
 			std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
 				if (full_name == "A.set_value" && param_names.size() == 2) {
-					return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+					return [](std::span<OwcaValue> args) -> OwcaValue {
 						assert(args.size() == 2);
 						auto self = args[0];
-						auto v = args[1].as_int(vm);
-						self.as_object(vm).user_data_certainly<std::uint64_t>() = v;
+						auto v = args[1].as_int();
+						self.as_object().user_data_certainly<std::uint64_t>() = v;
 						return {};
 					};
 				}
 				if (full_name == "A.get_value" && param_names.size() == 1) {
-					return [](OwcaVM vm, std::span<OwcaValue> args) -> OwcaValue {
+					return [](std::span<OwcaValue> args) -> OwcaValue {
 						assert(args.size() == 1);
 						auto self = args[0];
-						auto v = self.as_object(vm).user_data_certainly<std::uint64_t>();
+						auto v = self.as_object().user_data_certainly<std::uint64_t>();
 						return v;
 					};
 				}
@@ -192,8 +192,8 @@ TEST_F(SimpleTest, native_class_with_funcs)
 	}
 	)", std::make_shared<Provider>());
 		auto val = vm.execute(code).member("r").call(1, 2, 3);
-		auto val2 = val.member(vm, "get_value").call();
-		ASSERT_EQ(val2.as_float(vm), 6);
+		auto val2 = val.member("get_value").call();
+		ASSERT_EQ(val2.as_float(), 6);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";
@@ -222,12 +222,12 @@ TEST_F(SimpleTest, native_class_with_vars)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
@@ -236,10 +236,10 @@ TEST_F(SimpleTest, native_class_with_vars)
 					}
 					return false;
 				}
-				bool set_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int();
 						return true;
 					}
 					return false;
@@ -267,8 +267,8 @@ TEST_F(SimpleTest, native_class_with_vars)
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
 
-		auto val2 = val.member(vm, "value");
-		ASSERT_EQ(val2.as_float(vm), 6);
+		auto val2 = val.member("value");
+		ASSERT_EQ(val2.as_float(), 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
 	}
@@ -299,12 +299,12 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
@@ -313,10 +313,10 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					}
 					return false;
 				}
-				bool set_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
+				bool set_member(std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
 					if (name == "value") {
 						++writes;
-						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int(vm);
+						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int();
 						return true;
 					}
 					return false;
@@ -352,20 +352,20 @@ function r() {
 		auto val = vm.get_member(object, "value");
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 1);
-		ASSERT_EQ(val.as_float(vm), 6);
+		ASSERT_EQ(val.as_float(), 6);
 
 		auto fnc = vm.get_member(object, "get");
 		val = vm.call(fnc, {});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 2);
-		ASSERT_EQ(val.as_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(), 6 + 100);
 
-		val = fnc.call(vm, {});
+		val = fnc.call({});
 
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 3);
-		ASSERT_EQ(val.as_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(), 6 + 100);
 
 		object.member("value", 6);
 		ASSERT_EQ(writes, 2);
@@ -374,14 +374,14 @@ function r() {
 		val = object.member("value");
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 4);
-		ASSERT_EQ(val.as_float(vm), 6);
+		ASSERT_EQ(val.as_float(), 6);
 
 		fnc = object.member("get");
 		val = fnc.call();
 
 		ASSERT_EQ(writes, 2);
 		ASSERT_EQ(reads, 5);
-		ASSERT_EQ(val.as_float(vm), 6 + 100);
+		ASSERT_EQ(val.as_float(), 6 + 100);
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";
@@ -405,12 +405,12 @@ TEST_F(SimpleTest, variable_missing)
 				}
 				void destroy_storage(void* ptr, size_t s) override {
 				}
-				void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+				void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
 				}
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(const OwcaVM &vm, std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
+				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
 					if (name == "value") return true;
 					return false;
 				}
@@ -443,9 +443,9 @@ TEST_F(SimpleTest, variable_missing)
 		throw;
 	}
 
-	object.member(vm, "value");
+	object.member("value");
 	try {
-		object.member(vm, "value2");
+		object.member("value2");
 		FAIL() << "no exception";
 	}
 	catch(OwcaException oe) {

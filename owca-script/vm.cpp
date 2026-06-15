@@ -19,13 +19,14 @@
 #include "range.h"
 #include "executor.h"
 #include "namespace.h"
+#include "ast_compiler.h"
 
 namespace OwcaScript::Internal {
 	VM::VM() {
-		executor = std::make_unique<Executor>(this);
+		set_current_vm(this);
+		executor = std::make_unique<Executor>();
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
 		initialize_builtins();
-		auto vm = OwcaVM{ this };
 		empty_tuple = create_tuple(std::vector<OwcaValue>{}).internal_value();
 		empty_string = allocate<String>(0, 0u);
 	}
@@ -44,52 +45,52 @@ namespace OwcaScript::Internal {
 	}
 
 	struct VM::BuiltinProvider : public NativeCodeProvider {
-		static OwcaValue range_init1(const OwcaVM &vm, OwcaRange self, Number upper) {
+		static OwcaValue range_init1(OwcaRange self, Number upper) {
 			self.internal_object()->from = 0;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = 1;
 			return self;
 		}
-		static OwcaValue range_init2(const OwcaVM &vm, OwcaRange self, Number lower, Number upper) {
+		static OwcaValue range_init2(OwcaRange self, Number lower, Number upper) {
 			self.internal_object()->from = lower;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = 1;
 			return self;
 		}
-		static OwcaValue range_init3(const OwcaVM &vm, OwcaRange self, Number lower, Number upper, Number step) {
+		static OwcaValue range_init3(OwcaRange self, Number lower, Number upper, Number step) {
 			self.internal_object()->from = lower;
 			self.internal_object()->to = upper;
 			self.internal_object()->step = step;
 			if (step == 0) {
-				VM::get(vm).throw_range_step_is_zero();
+				Internal::current_vm().throw_range_step_is_zero();
 			}
 			return self;
 		}
-		static OwcaValue range_lower(const OwcaVM &vm, OwcaRange self) {
+		static OwcaValue range_lower(OwcaRange self) {
 			return self.lower();
 		}
-		static OwcaValue range_upper(const OwcaVM &vm, OwcaRange self) {
+		static OwcaValue range_upper(OwcaRange self) {
 			return self.upper();
 		}
-		static OwcaValue range_size(const OwcaVM &vm, OwcaRange self) {
+		static OwcaValue range_size(OwcaRange self) {
 			return self.size();
 		}
-		static OwcaValue range_step(const OwcaVM &vm, OwcaRange self) {
+		static OwcaValue range_step(OwcaRange self) {
 			return self.step();
 		}
-		static Generator range_iter(const OwcaVM &vm, OwcaRange self) {
-			return self.internal_object()->iter(vm);
+		static Generator range_iter(OwcaRange self) {
+			return self.internal_object()->iter();
 		}
-		static OwcaValue iterator_completed(const OwcaVM &vm, OwcaIterator self) {
+		static OwcaValue iterator_completed(OwcaIterator self) {
 			return self.completed();
 		}
-		static OwcaValue iterator_next(const OwcaVM &vm, OwcaIterator self) {
-			return VM::get(vm).resume_generator(self).value_or(OwcaEmpty{});
+		static OwcaValue iterator_next(OwcaIterator self) {
+			return Internal::current_vm().resume_generator(self).value_or(OwcaEmpty{});
 		}
-		static OwcaValue bool_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
-			return VM::get(vm).calculate_if_true(r);
+		static OwcaValue bool_init(OwcaValue, OwcaValue r) {
+			return Internal::current_vm().calculate_if_true(r);
 		}
-		static OwcaValue float_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
+		static OwcaValue float_init(OwcaValue, OwcaValue r) {
 			return r.visit(
 				[&](bool value) -> Number {
 					return value ? 1.0f : 0.0f;
@@ -124,10 +125,10 @@ namespace OwcaScript::Internal {
 							return (Number)value;
 						}
 						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
-							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+							Internal::current_vm().throw_overflow(std::format("`{}` is not a valid number", source.text()));
 						}
 						else if (ec == std::errc::result_out_of_range) {
-							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for used integer (long long int) type",
+							Internal::current_vm().throw_overflow(std::format("`{}` doesn't fit in range of allowed values ({} -> {}) for used integer (long long int) type",
 								source.text(), std::numeric_limits<long long int>::min(), std::numeric_limits<long long int>::max()));
 						}
 						else {
@@ -142,10 +143,10 @@ namespace OwcaScript::Internal {
 							return value;
 						}
 						else if (ec == std::errc() || ec == std::errc::invalid_argument) {
-							VM::get(vm).throw_overflow(std::format("`{}` is not a valid number", source.text()));
+							Internal::current_vm().throw_overflow(std::format("`{}` is not a valid number", source.text()));
 						}
 						else if (ec == std::errc::result_out_of_range) {
-							VM::get(vm).throw_overflow(std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", source.text()));
+							Internal::current_vm().throw_overflow(std::format("`{}` doesn't fit in range of allowed values for given OwcaFloatInternal type", source.text()));
 						}
 						else {
 							assert(false);
@@ -154,82 +155,82 @@ namespace OwcaScript::Internal {
 					return {};
 				},
 				[&](const auto &) -> Number {
-					VM::get(vm).throw_cant_convert_to_float(r.type());
+					Internal::current_vm().throw_cant_convert_to_float(r.type());
 				}
 			);
 		}
-		static OwcaValue string_init(const OwcaVM &vm, OwcaValue, OwcaValue r) {
+		static OwcaValue string_init(OwcaValue, OwcaValue r) {
 			return r.visit(
-				[&](OwcaEmpty o) -> OwcaValue { return vm.create_string("nul"); },
-				[&](OwcaCompleted o) -> OwcaValue { return vm.create_string("completed"); },
-				[&](OwcaRange o) -> OwcaValue { return vm.create_string(o.to_string()); },
-				[&](Number o) -> OwcaValue { return vm.create_string(std::format("{}", o)); },
-				[&](bool o) -> OwcaValue { return vm.create_string(o ? "true" : "false"); },
+				[&](OwcaEmpty o) -> OwcaValue { return current_vm().create_string_from_view("nul"); },
+				[&](OwcaCompleted o) -> OwcaValue { return current_vm().create_string_from_view("completed"); },
+				[&](OwcaRange o) -> OwcaValue { return current_vm().create_string_from_view(o.to_string()); },
+				[&](Number o) -> OwcaValue { return current_vm().create_string_from_view(std::format("{}", o)); },
+				[&](bool o) -> OwcaValue { return current_vm().create_string_from_view(o ? "true" : "false"); },
 				[&](OwcaString o) -> OwcaValue { return o; },
-				[&](OwcaFunctions s) -> OwcaValue { return vm.create_string(std::format("function {}", s.internal_value()->full_name)); },
-				[&](OwcaMap s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaClass s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaObject s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaArray s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaTuple s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaSet s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaException s) -> OwcaValue { return vm.create_string(s.to_string()); },
-				[&](OwcaIterator s) -> OwcaValue { return vm.create_string("iterator"); },
-				[&](OwcaNamespace s) -> OwcaValue { return vm.create_string(s.to_string()); }
+				[&](OwcaFunctions s) -> OwcaValue { return current_vm().create_string_from_view(std::format("function {}", s.internal_value()->full_name)); },
+				[&](OwcaMap s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaClass s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaObject s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaArray s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaTuple s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaSet s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaException s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaIterator s) -> OwcaValue { return current_vm().create_string_from_view("iterator"); },
+				[&](OwcaNamespace s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); }
 				);
 		}
-		static OwcaValue string_size(const OwcaVM &vm, OwcaString self) {
+		static OwcaValue string_size(OwcaString self) {
 			return self.internal_value()->size();
 		}
-		static Generator string_iter(const OwcaVM &vm, OwcaString self) {
+		static Generator string_iter(OwcaString self) {
 			for(auto i = 0u; i < self.size(); ++i) {
 				co_yield self.substr(i, 1);
 			}
 		}
-		static OwcaValue function_bind(const OwcaVM &vm, OwcaFunctions self, OwcaValue bind) {
+		static OwcaValue function_bind(OwcaFunctions self, OwcaValue bind) {
 			return self.bind(bind);
 		}
-		static OwcaValue function_bound_value(const OwcaVM &vm, OwcaFunctions self) {
+		static OwcaValue function_bound_value(OwcaFunctions self) {
 			return self.self().value_or(OwcaValue{});
 		}
-		static OwcaValue map_has_key(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_has_key(OwcaMap self, OwcaValue key) {
 			return self.has_key(key);
 		}
-		static OwcaValue map_pop(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_pop(OwcaMap self, OwcaValue key) {
 			return self.pop(key);
 		}
-		static OwcaValue map_pop_or_default_2(const OwcaVM &vm, OwcaMap self, OwcaValue key) {
+		static OwcaValue map_pop_or_default_2(OwcaMap self, OwcaValue key) {
 			return self.pop_or_default(key, {});
 		}
-		static OwcaValue map_pop_or_default_3(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_pop_or_default_3(OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.pop_or_default(key, default_value);
 		}
-		static OwcaValue map_get_or_default(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_get_or_default(OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.get_or_default(key, default_value);
 		}
-		static OwcaValue map_set_default(const OwcaVM &vm, OwcaMap self, OwcaValue key, OwcaValue default_value) {
+		static OwcaValue map_set_default(OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.set_default(key, default_value);
 		}		
-		static Generator map_keys(const OwcaVM &vm, OwcaMap self) {
+		static Generator map_keys(OwcaMap self) {
 			return self.keys();
 		}
-		static Generator map_values(const OwcaVM &vm, OwcaMap self) {
+		static Generator map_values(OwcaMap self) {
 			return self.values();
 		}
-		static Generator map_items(const OwcaVM &vm, OwcaMap self) {
+		static Generator map_items(OwcaMap self) {
 			return self.items();
 		}
-		static OwcaValue map_init(const OwcaVM &vm, OwcaMap self, OwcaValue r) {
+		static OwcaValue map_init(OwcaMap self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					for(auto v : o.internal_value()->values) {
-						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						auto pair = Internal::current_vm().unpack_two_elements_or_raise(v);
 						self[pair.first] = pair.second;
 					}
 				},
 				[&](OwcaTuple o) {
 					for(auto v : o.internal_value()->values) {
-						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						auto pair = Internal::current_vm().unpack_two_elements_or_raise(v);
 						self[pair.first] = pair.second;
 					}
 				},
@@ -238,32 +239,32 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaIterator o) {
 					for(auto v : o) {
-						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(v);
+						auto pair = Internal::current_vm().unpack_two_elements_or_raise(v);
 						self[pair.first] = pair.second;
 					}
 				},
 				[&](OwcaObject o) {
-					auto iter = VM::get(vm).create_iterator(o);
+					auto iter = Internal::current_vm().create_iterator(o);
 					while(auto v = iter.next()) {
-						auto pair = Internal::VM::get(vm).unpack_two_elements_or_raise(*v);
+						auto pair = Internal::current_vm().unpack_two_elements_or_raise(*v);
 						self[pair.first] = pair.second;
 					}
 				},
 				[&](const auto &) {
-					VM::get(vm).throw_wrong_type(std::format("can't create a map from {}", r.type()));
+					Internal::current_vm().throw_wrong_type(std::format("can't create a map from {}", r.type()));
 				}
 			);
 			return {};
 		}
-		static OwcaValue map_size(const OwcaVM &vm, OwcaMap self) {
+		static OwcaValue map_size(OwcaMap self) {
 			return self.size();
 		}
-		static Generator map_iter(const OwcaVM &vm, OwcaMap self) {
+		static Generator map_iter(OwcaMap self) {
 			for(auto v : self) {
 				co_yield v.first;
 			}
 		}
-		static OwcaValue set_init(const OwcaVM &vm, OwcaSet self, OwcaValue r) {
+		static OwcaValue set_init(OwcaSet self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					for(auto v : o) {
@@ -289,7 +290,7 @@ namespace OwcaScript::Internal {
 					}
 				},
 				[&](OwcaObject o) {
-					auto iter = VM::get(vm).create_iterator(o);
+					auto iter = Internal::current_vm().create_iterator(o);
 					while(auto v = iter.next()) {
 						self.add(*v);
 					}
@@ -300,43 +301,43 @@ namespace OwcaScript::Internal {
 					}
 				},
 				[&](const auto &) {
-					VM::get(vm).throw_wrong_type(std::format("can't create a set from {}", r.type()));
+					Internal::current_vm().throw_wrong_type(std::format("can't create a set from {}", r.type()));
 				}
 			);
 			return {};
 		}
-		static OwcaValue set_union_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_union_with(OwcaSet self, OwcaSet other) {
 			return self | other;
 		}
-		static OwcaValue set_intersection_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_intersection_with(OwcaSet self, OwcaSet other) {
 			return self & other;
 		}
-		static OwcaValue set_difference_with(const OwcaVM &vm, OwcaSet self, OwcaSet other) {
+		static OwcaValue set_difference_with(OwcaSet self, OwcaSet other) {
 			return self - other;
 		}
-		static OwcaValue set_add(const OwcaVM &vm, OwcaSet self, OwcaValue v) {
+		static OwcaValue set_add(OwcaSet self, OwcaValue v) {
 			self.add(v);
 			return {};
 		}
-		static OwcaValue set_remove(const OwcaVM &vm, OwcaSet self, OwcaValue v) {
+		static OwcaValue set_remove(OwcaSet self, OwcaValue v) {
 			self.remove(v);
 			return {};
 		}
-		static OwcaValue set_size(const OwcaVM &vm, const OwcaSet &self) {
+		static OwcaValue set_size(const OwcaSet &self) {
 			return self.size();
 		}
-		static Generator set_iter(const OwcaVM &vm, OwcaSet self) {
+		static Generator set_iter(OwcaSet self) {
 			for(auto v : self) {
 				co_yield v;
 			}
 		}
-		static OwcaValue class_name(const OwcaVM &vm, OwcaClass self) {
-			return vm.create_string(self.internal_value()->name);
+		static OwcaValue class_name(OwcaClass self) {
+			return current_vm().create_string_from_view(self.internal_value()->name);
 		}
-		static OwcaValue class_full_name(const OwcaVM &vm, OwcaClass self) {
-			return vm.create_string(self.internal_value()->full_name);
+		static OwcaValue class_full_name(OwcaClass self) {
+			return current_vm().create_string_from_view(self.internal_value()->full_name);
 		}
-		static OwcaValue array_init(const OwcaVM &vm, OwcaArray self, OwcaValue r) {
+		static OwcaValue array_init(OwcaArray self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = o.internal_value()->values;
@@ -356,11 +357,11 @@ namespace OwcaScript::Internal {
 				},
 				[&](OwcaString o) {
 					for(auto i = 0u; i < o.size(); ++i) {
-						self.internal_value()->values.push_back(vm.create_string(o.text().substr(i, 1)));
+						self.internal_value()->values.push_back(current_vm().create_string_from_view(o.text().substr(i, 1)));
 					}
 				},
 				[&](OwcaObject o) {
-					auto iter = VM::get(vm).create_iterator(o);
+					auto iter = Internal::current_vm().create_iterator(o);
 					while(auto v = iter.next()) {
 						self.internal_value()->values.push_back(*v);
 					}
@@ -371,42 +372,42 @@ namespace OwcaScript::Internal {
 					}
 				},
 				[&](const auto &) {
-					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
+					Internal::current_vm().throw_wrong_type(std::format("can't create an array from {}", r.type()));
 				}
 			);
 			return {};
 		}
-		static OwcaValue array_size(const OwcaVM &vm, OwcaArray self) {
+		static OwcaValue array_size(OwcaArray self) {
 			return self.internal_value()->values.size();
 		}
-		static Generator array_iter(const OwcaVM &vm, OwcaArray self) {
+		static Generator array_iter(OwcaArray self) {
 			for(auto i = 0u; i < self.size(); ++i) {
 				co_yield self[i];
 			}
 		}
 		
-		static OwcaValue array_push_back(const OwcaVM &vm, OwcaArray self, OwcaValue v) {
+		static OwcaValue array_push_back(OwcaArray self, OwcaValue v) {
 			self.push_back(v);
 			return {};
 		}
-		static OwcaValue array_push_front(const OwcaVM &vm, OwcaArray self, OwcaValue v) {
+		static OwcaValue array_push_front(OwcaArray self, OwcaValue v) {
 			self.push_front(v);
 			return {};
 		}
-		static OwcaValue array_pop_back(const OwcaVM &vm, OwcaArray self) {
+		static OwcaValue array_pop_back(OwcaArray self) {
 			return self.pop_back();
 		}
-		static OwcaValue array_pop_front(const OwcaVM &vm, OwcaArray self) {
+		static OwcaValue array_pop_front(OwcaArray self) {
 			return self.pop_front();
 		}
-		static OwcaValue array_sort(const OwcaVM &vm, OwcaArray self) {
+		static OwcaValue array_sort(OwcaArray self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
-				return VM::get(vm).compare_values_less(a, b);
+				return Internal::current_vm().compare_values_less(a, b);
 			});
-			return OwcaArray{ VM::get(vm).allocate<Array>(0, std::move(values)) };
+			return OwcaArray{ Internal::current_vm().allocate<Array>(0, std::move(values)) };
 		}
-		static OwcaValue tuple_init(const OwcaVM &vm, OwcaTuple self, OwcaValue r) {
+		static OwcaValue tuple_init(OwcaTuple self, OwcaValue r) {
 			r.visit(
 				[&](OwcaArray o) {
 					self.internal_value()->values = { o.internal_value()->values.begin(), o.internal_value()->values.end() };
@@ -427,11 +428,11 @@ namespace OwcaScript::Internal {
 				[&](OwcaString o) {
 					self.internal_value()->values.reserve(o.size());
 					for(auto i = 0u; i < o.size(); ++i) {
-						self.internal_value()->values.push_back(vm.create_string(o.text().substr(i, 1)));
+						self.internal_value()->values.push_back(current_vm().create_string_from_view(o.text().substr(i, 1)));
 					}
 				},
 				[&](OwcaObject o) {
-					auto iter = VM::get(vm).create_iterator(o);
+					auto iter = Internal::current_vm().create_iterator(o);
 					while(auto v = iter.next()) {
 						self.internal_value()->values.push_back(*v);
 					}
@@ -442,68 +443,68 @@ namespace OwcaScript::Internal {
 					}
 				},
 				[&](const auto &) {
-					VM::get(vm).throw_wrong_type(std::format("can't create an array from {}", r.type()));
+					Internal::current_vm().throw_wrong_type(std::format("can't create an array from {}", r.type()));
 				}
 			);
 			return {};
 		}
-		static OwcaValue tuple_size(const OwcaVM &vm, OwcaTuple self) {
+		static OwcaValue tuple_size(OwcaTuple self) {
 			return self.internal_value()->values.size();
 		}
-		static Generator tuple_iter(const OwcaVM &vm, OwcaTuple self) {
+		static Generator tuple_iter(OwcaTuple self) {
 			for(auto i = 0u; i < self.size(); ++i) {
 				co_yield self[i];
 			}
 		}
-		static OwcaValue tuple_sort(const OwcaVM &vm, OwcaTuple self) {
+		static OwcaValue tuple_sort(OwcaTuple self) {
 			auto values = self.internal_value()->values;
 			std::sort(values.begin(), values.end(), [&](auto a, auto b) {
-				return VM::get(vm).compare_values_less(a, b);
+				return Internal::current_vm().compare_values_less(a, b);
 			});
-			return OwcaTuple{ VM::get(vm).allocate<Tuple>(0, std::move(values)) };
+			return OwcaTuple{ Internal::current_vm().allocate<Tuple>(0, std::move(values)) };
 		}
-		static OwcaValue exception_init(const OwcaVM &vm, OwcaException self, OwcaString msg) {
-			VM::get(vm).initialize_exception_object(*self.internal_value());
+		static OwcaValue exception_init(OwcaException self, OwcaString msg) {
+			Internal::current_vm().initialize_exception_object(*self.internal_value());
 			self.internal_value()->message = std::string{ msg.text() };
 			return {};
 		}
-		static OwcaValue exception_count(const OwcaVM &vm, OwcaException self) {
+		static OwcaValue exception_count(OwcaException self) {
 			return self.count();
 		}
-		static OwcaValue exception_message(const OwcaVM &vm, OwcaException self) {
-			return vm.create_string(self.message());
+		static OwcaValue exception_message(OwcaException self) {
+			return current_vm().create_string_from_view(self.message());
 		}
-		static OwcaValue exception_line(const OwcaVM &vm, OwcaException self, Number index) {
+		static OwcaValue exception_line(OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
-				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
+				Internal::current_vm().throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
 			return self.frame(ind).line;
 			
 		}
-		static OwcaValue exception_filename(const OwcaVM &vm, OwcaException self, Number index) {
+		static OwcaValue exception_filename(OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
-				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
-			return vm.create_string(self.frame(ind).filename);
+				Internal::current_vm().throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
+			return current_vm().create_string_from_view(self.frame(ind).filename);
 		}
-		static OwcaValue exception_function(const OwcaVM &vm, OwcaException self, Number index) {
+		static OwcaValue exception_function(OwcaException self, Number index) {
 			assert(self.count() > 0);
 			auto ind = std::floor(index);
 			if (ind < 0 || ind >= self.count())
-				VM::get(vm).throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
-			return vm.create_string(self.frame(ind).function);
+				Internal::current_vm().throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
+			return current_vm().create_string_from_view(self.frame(ind).function);
 		}
 
-		static OwcaValue hash(const OwcaVM &vm, OwcaValue, OwcaValue val) {
-			return VM::get(vm).calculate_hash(val);
+		static OwcaValue hash(OwcaValue, OwcaValue val) {
+			return Internal::current_vm().calculate_hash(val);
 		}
-		static OwcaValue print(const OwcaVM &vm, OwcaValue, OwcaValue msg) {
+		static OwcaValue print(OwcaValue, OwcaValue msg) {
 			std::cout << msg.to_string() << "\n";
 			return {};
 		}
-		static OwcaValue time(const OwcaVM &vm, OwcaValue) {
+		static OwcaValue time(OwcaValue) {
 			return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count() / 1'000'000'000.0;
 		}
 
@@ -675,12 +676,11 @@ function native hash(value);
 function native print(msg);
 function native time();
 )" };
-		auto vm = OwcaVM{ this };
-		auto code_compiled = vm.compile(builtin_filename, std::move(code), std::make_shared<BuiltinProvider>());
+		auto code_compiled = compile(builtin_filename, std::move(code), std::make_shared<BuiltinProvider>());
 		auto builtins = executor->execute_code_block(code_compiled);
 
 		auto read = [&](OwcaValue val) -> Class*{
-			return val.as_class(vm).internal_value();
+			return val.as_class().internal_value();
 		};
 		for(auto [key, value] : builtins) {
 			builtin_identifiers.push_back(key);
@@ -784,12 +784,22 @@ function native time();
 		return *v.vm;
 	}
 
+	OwcaCode VM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line) {
+		auto compiler = Internal::AstCompiler{ *this, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
+		auto v = compiler.compile();
+		if (!v)
+			throw OwcaVM::CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
+
+		return std::move(*v);
+
+	}
+
 	void VM::throw_exception(Class *exc, std::string_view msg)
 	{
 		auto tmp = std::vector<OwcaValue>{};
 		tmp.push_back(create_string_from_view(msg));
 		auto res = execute_call(OwcaClass{ exc }, tmp);
-		throw res.as_exception(this);
+		throw res.as_exception();
 	}
 
 	void VM::throw_dictionary_changed(bool is_dict)
@@ -991,7 +1001,6 @@ function native time();
 
 	std::optional<OwcaValue> VM::try_member(OwcaValue val, std::string_view key)
 	{
-		auto vm = OwcaVM{ this };
 		OwcaValue tmp;
 		auto read_member = [&](Class *cls) -> OwcaValue * {
 			auto it = cls->values.find(key);
@@ -1017,7 +1026,7 @@ function native time();
 						assert(obj);
 						assert(var->native_token);
 						auto native_storage = obj->native_storage_raw(*var->native_token);
-						auto got = var->native->get_member(this, key, native_storage, tmp);
+						auto got = var->native->get_member(key, native_storage, tmp);
 						return got ? &tmp : nullptr;
 					});
 			}
@@ -1082,7 +1091,7 @@ function native time();
 						[&](Class* var) -> bool {
 							assert(var->native_token);
 							auto native_storage = o.internal_value()->native_storage_raw(*var->native_token);
-							return var->native->set_member(this, key, native_storage, value);
+							return var->native->set_member(key, native_storage, value);
 						});
 					if (succ) return;
 				}
@@ -1168,8 +1177,7 @@ function native time();
 	}
 	OwcaMap VM::create_map(const std::span<OwcaValue> &arguments)
 	{
-		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for (auto i = 0u; i < arguments.size(); i += 2) {
 			ds->dict.write(arguments[i], arguments[i + 1]);
 		}
@@ -1177,8 +1185,7 @@ function native time();
 	}
 	OwcaMap VM::create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &arguments)
 	{
-		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for(auto q : arguments) {
 			ds->dict.write(q.first, q.second);
 		}
@@ -1186,8 +1193,7 @@ function native time();
 	}
 	OwcaMap VM::create_map(const std::span<std::pair<std::string, OwcaValue>> &arguments)
 	{
-		auto vm = OwcaVM{ this };
-		auto ds = allocate<DictionaryShared>(0, vm);
+		auto ds = allocate<DictionaryShared>(0);
 		for(auto q : arguments) {
 			ds->dict.write(create_string_from_view(q.first), q.second);
 		}
@@ -1195,8 +1201,7 @@ function native time();
 	}
 	OwcaSet VM::create_set(const std::span<OwcaValue> &arguments)
 	{
-		auto vm = OwcaVM{ this };
-		auto ds = allocate<SetShared>(0, vm);
+		auto ds = allocate<SetShared>(0);
 		for (auto i = 0u; i < arguments.size(); ++i) {
 			ds->dict.write(arguments[i], OwcaEmpty{});
 		}
@@ -1214,7 +1219,6 @@ function native time();
 	}
 	String *VM::precreate_string(size_t size) {
 		if (size == 0) return empty_string;
-		auto vm = OwcaVM{ this };
 		if (size >= (size_t(1) << 32)) {
 			throw_string_too_large(size);
 		}
@@ -1329,7 +1333,6 @@ function native time();
 		);
 	}
 	size_t VM::calculate_hash(OwcaValue value) {
-		auto vm = OwcaVM{ this };
 		static auto calc_hash = [](const auto& q) {
 			return std::hash<std::remove_cvref_t<decltype(q)>>()(q);
 			};
@@ -1377,18 +1380,18 @@ function native time();
 		if (!func)
 			throw_not_iterable(r.type());
 		auto val = execute_call(*func, {});
-		return val.as_iterator(this);
+		return val.as_iterator();
 	}
 
 	void VM::run_gc() {
 		auto ggc = GenerationGC{ ++generation_gc };
 
 		// mark
-		gc_mark_value(this, ggc, empty_tuple);
-		gc_mark_value(this, ggc, empty_string);
-		gc_mark_value(this, ggc, *executor);
+		gc_mark_value(ggc, empty_tuple);
+		gc_mark_value(ggc, empty_string);
+		gc_mark_value(ggc, *executor);
 
-		gc_mark_value(this, ggc, temp_gc_protect_list);
+		gc_mark_value(ggc, temp_gc_protect_list);
 
 		// sweep
 		AllocationBase *valid = &root_allocated_memory;
@@ -1406,10 +1409,10 @@ function native time();
 		}
 	}
 
-	void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const AllocationBase* ptr) {
+	void gc_mark_value(GenerationGC ggc, const AllocationBase* ptr) {
 		if (ptr->last_gc_mark != ggc) {
 			ptr->last_gc_mark = ggc;
-			ptr->gc_mark(vm, ggc);
+			ptr->gc_mark(ggc);
 		}
 	}
 }

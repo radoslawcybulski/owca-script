@@ -11,7 +11,7 @@ namespace OwcaScript {
     }
     std::optional<OwcaValue> OwcaIterator::next() const
     {
-        return object->vm->resume_generator(*this);
+        return Internal::current_vm().resume_generator(*this);
     }
     OwcaIterator::Iterator& OwcaIterator::Iterator::operator++() {
         auto v= iter->next();
@@ -20,14 +20,14 @@ namespace OwcaScript {
     }
     OwcaIterator::Iterator::Iterator(OwcaIterator *iter) : iter(iter) {
         if (iter && iter->object->first_time) {
-            iter->object->last_value = iter->object->vm->resume_generator(*iter).value_or(OwcaEmpty{});;
+            iter->object->last_value = Internal::current_vm().resume_generator(*iter).value_or(OwcaEmpty{});;
         }
     }
 
     OwcaIterator::Iterator::reference OwcaIterator::Iterator::operator*() const { return iter->object->last_value; }
     OwcaIterator::Iterator::pointer OwcaIterator::Iterator::operator->() const { return &iter->object->last_value; }
 
-    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaIterator &o) {
-        gc_mark_value(vm, gc, o.object);
+    void gc_mark_value(GenerationGC gc, const OwcaIterator &o) {
+        gc_mark_value(gc, o.object);
     }
 }

@@ -7,21 +7,21 @@
 namespace OwcaScript {
     OwcaValue OwcaString::substr(size_t start, size_t end) const
     {
-        return str->vm->create_string(*this, start, end);
+        return Internal::current_vm().create_string(*this, start, end);
     }
 
     OwcaValue OwcaString::operator [] (size_t pos) const
     {
-        return str->vm->create_string(*this, pos, 1);
+        return Internal::current_vm().create_string(*this, pos, 1);
     }
     OwcaValue OwcaString::operator + (OwcaString other) const {
-        return str->vm->create_string(*this, other);
+        return Internal::current_vm().create_string(*this, other);
     }
     OwcaValue OwcaString::operator * (Number other) const {
-        return str->vm->create_string(*this, other);
+        return Internal::current_vm().create_string(*this, other);
     }
     OwcaValue operator * (Number left, OwcaString right) {
-        return right.str->vm->create_string(right, left);
+        return Internal::current_vm().create_string(right, left);
     }
 
     size_t OwcaString::size() const
@@ -39,5 +39,5 @@ namespace OwcaScript {
         return str->text();
     }
 
-    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaString &) {}
+    void gc_mark_value(GenerationGC gc, const OwcaString &) {}
 }

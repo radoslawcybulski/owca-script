@@ -23,7 +23,7 @@ namespace {
             void destroy_storage(void* ptr, size_t s) override {
                 counter += 1000;
             }
-            void gc_mark_members(const void* ptr, size_t s, const OwcaVM &, GenerationGC generation_gc) override {
+            void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) override {
                 counter += 1000000;
             }
             size_t native_storage_size() override {
@@ -51,7 +51,7 @@ function r() {
     auto provider = Provider{ counter };
 
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_object(vm).type(), "A");
+	ASSERT_EQ(val.member("r").call().as_object().type(), "A");
     ASSERT_EQ(counter, 1);
     vm.run_gc();
     ASSERT_EQ(counter, 1001);

@@ -11,13 +11,13 @@ namespace OwcaScript::Internal {
     std::string Iterator::to_string() const {
         return "generator " + std::string{ function->full_name };
     }
-    void Iterator::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const {
-        gc_mark_value(vm, generation_gc, function);
+    void Iterator::gc_mark(GenerationGC generation_gc) const {
+        gc_mark_value(generation_gc, function);
         for(auto &v : values) {
-            gc_mark_value(vm, generation_gc, v);
+            gc_mark_value(generation_gc, v);
         }
         for(auto &s : states) {
-            gc_mark_value(vm, generation_gc, s);
+            gc_mark_value(generation_gc, s);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace OwcaScript {
 		bool operator == (OwcaFunctions other) const { return functions == other.functions && self_object == other.self_object; }
 		bool operator != (OwcaFunctions other) const { return !(*this == other); }
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaFunctions &);
+		friend void gc_mark_value(GenerationGC gc, const OwcaFunctions &);
 	};
 }
 

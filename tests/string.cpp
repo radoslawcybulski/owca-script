@@ -13,7 +13,7 @@ TEST_F(StringTest, f_string_simple_1)
 function r() { return `qwe{1}rty`; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwe1rty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwe1rty");
 }
 
 TEST_F(StringTest, f_string_simple_2)
@@ -23,7 +23,7 @@ TEST_F(StringTest, f_string_simple_2)
 function r() { return `{1}rty`; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "1rty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "1rty");
 }
 
 TEST_F(StringTest, f_string_simple_3)
@@ -33,7 +33,7 @@ TEST_F(StringTest, f_string_simple_3)
 function r() { return `qwe{1}`; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwe1");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwe1");
 }
 
 TEST_F(StringTest, f_string_simple_4)
@@ -43,7 +43,7 @@ TEST_F(StringTest, f_string_simple_4)
 function r() { return `qwe{1}rty{2}Z`; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwe1rty2Z");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwe1rty2Z");
 }
 
 TEST_F(StringTest, size)
@@ -53,7 +53,7 @@ TEST_F(StringTest, size)
 function r() { return 'qwerty'.size(); }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_float(vm), 6);
+	ASSERT_EQ(val.member("r").call().as_float(), 6);
 }
 
 TEST_F(StringTest, add_add_add)
@@ -63,7 +63,7 @@ TEST_F(StringTest, add_add_add)
 function r() { return ('qwe' + 'rty') + '123' + '456'; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwerty123456");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwerty123456");
 }
 
 TEST_F(StringTest, add_add_mul)
@@ -73,7 +73,7 @@ TEST_F(StringTest, add_add_mul)
 function r() { return ('qwe' + 'rty' + '123') * 2; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwerty123qwerty123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwerty123qwerty123");
 }
 
 TEST_F(StringTest, add_add_sub_1)
@@ -83,7 +83,7 @@ TEST_F(StringTest, add_add_sub_1)
 function r() { return ('qwe' + 'rty' + '123') [4:6]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "ty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "ty");
 }
 
 TEST_F(StringTest, add_add_sub_2)
@@ -93,7 +93,7 @@ TEST_F(StringTest, add_add_sub_2)
 function r() { return ('qwe' + 'rty' + '123') [4:8]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "ty12");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "ty12");
 }
 
 TEST_F(StringTest, add_add_sub_3)
@@ -103,7 +103,7 @@ TEST_F(StringTest, add_add_sub_3)
 function r() { return ('qwe' + 'rty' + '123') [4:9]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "ty123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "ty123");
 }
 
 TEST_F(StringTest, add_add_sub_4)
@@ -113,7 +113,7 @@ TEST_F(StringTest, add_add_sub_4)
 function r() { return ('qwe' + 'rty' + '123') [3:6]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "rty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "rty");
 }
 
 TEST_F(StringTest, add_mul_add)
@@ -123,7 +123,7 @@ TEST_F(StringTest, add_mul_add)
 function r() { return (('qwe' + 'rty') * 2) + '123'; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwertyqwerty123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwertyqwerty123");
 }
 
 TEST_F(StringTest, add_mul_mul)
@@ -133,7 +133,7 @@ TEST_F(StringTest, add_mul_mul)
 function r() { return (('qwe' + 'rty') * 2 ) * 2; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qwertyqwertyqwertyqwerty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qwertyqwertyqwertyqwerty");
 }
 
 TEST_F(StringTest, add_mul_sub_1)
@@ -143,7 +143,7 @@ TEST_F(StringTest, add_mul_sub_1)
 function r() { return (('qwe' + 'rty') * 2)[2:6]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "erty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "erty");
 }
 
 TEST_F(StringTest, add_mul_sub_2)
@@ -153,7 +153,7 @@ TEST_F(StringTest, add_mul_sub_2)
 function r() { return (('qwe' + 'rty') * 2)[2:5]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "ert");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "ert");
 }
 
 TEST_F(StringTest, add_mul_sub_3)
@@ -163,7 +163,7 @@ TEST_F(StringTest, add_mul_sub_3)
 function r() { return (('qwe' + 'rty') * 2)[2:7]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "ertyq");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "ertyq");
 }
 
 TEST_F(StringTest, add_mul_sub_4)
@@ -173,7 +173,7 @@ TEST_F(StringTest, add_mul_sub_4)
 function r() { return (('qwe' + 'rty') * 2)[3:6]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "rty");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "rty");
 }
 
 TEST_F(StringTest, add_sub_add)
@@ -183,7 +183,7 @@ TEST_F(StringTest, add_sub_add)
 function r() { return (('qwe' + 'rty')[2:4]) + '123'; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "er123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "er123");
 }
 
 TEST_F(StringTest, add_sub_mul)
@@ -193,7 +193,7 @@ TEST_F(StringTest, add_sub_mul)
 function r() { return 4 * (('qwe' + 'rty')[2:4]); }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "erererer");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "erererer");
 }
 
 TEST_F(StringTest, add_sub_sub)
@@ -203,7 +203,7 @@ TEST_F(StringTest, add_sub_sub)
 function r() { return (('qwe' + 'rty')[2:5])[1:2]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "r");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "r");
 }
 
 TEST_F(StringTest, mul_add_add)
@@ -213,7 +213,7 @@ TEST_F(StringTest, mul_add_add)
 function r() { return (('qwe' * 3) + '123') + '456'; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qweqweqwe123456");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qweqweqwe123456");
 }
 
 TEST_F(StringTest, mul_add_mul)
@@ -223,7 +223,7 @@ TEST_F(StringTest, mul_add_mul)
 function r() { return (('qwe' * 3) + '123') * 2; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qweqweqwe123qweqweqwe123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qweqweqwe123qweqweqwe123");
 }
 
 TEST_F(StringTest, mul_add_sub)
@@ -233,7 +233,7 @@ TEST_F(StringTest, mul_add_sub)
 function r() { return (('qwe' * 3) + '123')[7:11]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "we12");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "we12");
 }
 
 TEST_F(StringTest, mul_mul_add)
@@ -243,7 +243,7 @@ TEST_F(StringTest, mul_mul_add)
 function r() { return (('qwe' * 3) * 2) + '123'; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qweqweqweqweqweqwe123");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qweqweqweqweqweqwe123");
 }
 
 TEST_F(StringTest, mul_mul_mul)
@@ -253,7 +253,7 @@ TEST_F(StringTest, mul_mul_mul)
 function r() { return (('qwe' * 3) * 2) * 1; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "qweqweqweqweqweqwe");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "qweqweqweqweqweqwe");
 }
 
 TEST_F(StringTest, mul_mul_sub)
@@ -263,6 +263,6 @@ TEST_F(StringTest, mul_mul_sub)
 function r() { return (('qwe' * 3) * 2)[8:14]; }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_string(vm).text(), "eqweqw");
+	ASSERT_EQ(val.member("r").call().as_string().text(), "eqweqw");
 }
 

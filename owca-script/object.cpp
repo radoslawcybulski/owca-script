@@ -35,20 +35,20 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Class::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
+	void Class::gc_mark(GenerationGC generation_gc) const
 	{
 		for (auto& it : values) {
 			visit_variant(it.second, [&](const Class* p) {
-				gc_mark_value(vm, generation_gc, p);
+				gc_mark_value(generation_gc, p);
 			}, [&](const RuntimeFunctions* f) {
-				gc_mark_value(vm, generation_gc, f);
+				gc_mark_value(generation_gc, f);
 			});
 		}
 		for (auto c : base_classes) {
-			gc_mark_value(vm, generation_gc, c);
+			gc_mark_value(generation_gc, c);
 		}
 		for (auto c : runtime_functions) {
-			gc_mark_value(vm, generation_gc, c);
+			gc_mark_value(generation_gc, c);
 		}
 	}
 
@@ -61,7 +61,7 @@ namespace OwcaScript::Internal {
 		return (const char*)o + sizeof(*o);
 	}
 
-	void Class::initialize_add_base_class(const OwcaVM &vm, OwcaClass b)
+	void Class::initialize_add_base_class(OwcaClass b)
 	{
 		base_classes.push_back(b.internal_value());
 	}
@@ -71,7 +71,7 @@ namespace OwcaScript::Internal {
 	void Class::initialize_set_all_variables() {
 		all_variables = true;
 	}
-	void Class::initialize_add_function(const OwcaVM &vm, OwcaFunctions fnc)
+	void Class::initialize_add_function(OwcaFunctions fnc)
 	{
 		for(auto i = 0u; i < fnc.internal_value()->functions.size(); ++i) {
 			if (fnc.internal_value()->functions[i]) {
@@ -84,7 +84,7 @@ namespace OwcaScript::Internal {
 		native_storage_pointers.push_back({ token, this, 0, sz });
 		native_token = token;
 	}
-	void Class::finalize_initializing(const OwcaVM &vm)
+	void Class::finalize_initializing()
 	{
 		size_t offset = 0;
 		for (auto q : base_classes) {
@@ -121,7 +121,7 @@ namespace OwcaScript::Internal {
 
 				auto it = values.insert({ std::string{ name }, {} });
 				if (it.second || std::get_if<RuntimeFunctions*>(&it.first->second) == nullptr) {
-					auto rf = VM::get(vm).allocate<RuntimeFunctions>(0, name, f->full_name);
+					auto rf = Internal::current_vm().allocate<RuntimeFunctions>(0, name, f->full_name);
 					it.first->second = rf;
 				}
 				auto &dst_fnc = std::get<RuntimeFunctions*>(it.first->second);
@@ -147,18 +147,18 @@ namespace OwcaScript::Internal {
 		return tmp;
 	}
 
-	void Object::gc_mark(const OwcaVM &vm, GenerationGC generation_gc) const
+	void Object::gc_mark(GenerationGC generation_gc) const
 	{
-		gc_mark_value(vm, generation_gc, type_);
+		gc_mark_value(generation_gc, type_);
 		for (auto& it : values)
-			gc_mark_value(vm, generation_gc, it.second);
+			gc_mark_value(generation_gc, it.second);
 		auto ptr = type_->native_storage_ptr(this);
 		for(auto it : type_->native_storage_pointers) {
 			auto p = ptr + std::get<2>(it);
 			auto size = std::get<3>(it);
 			auto cls = std::get<1>(it);
 			assert(cls->native);
-			cls->native->gc_mark_members(p, size, vm, generation_gc);
+			cls->native->gc_mark_members(p, size, generation_gc);
 		}
 	}
 }

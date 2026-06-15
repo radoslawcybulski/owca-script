@@ -26,7 +26,7 @@ function r(a) {
 )");
         try {
             auto val = vm.execute(code);
-            return (int)val.member("r").call(mode).as_int(vm);
+            return (int)val.member("r").call(mode).as_int();
         }
         catch(OwcaException oe) {
             return -1;

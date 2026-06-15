@@ -65,7 +65,7 @@ namespace OwcaScript {
 		Iterator begin() { return Iterator(object, 0); }
 		Iterator end() { return Iterator(object, size()); }
 
-		friend void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaTuple &);
+		friend void gc_mark_value(GenerationGC gc, const OwcaTuple &);
 	};
 }
 

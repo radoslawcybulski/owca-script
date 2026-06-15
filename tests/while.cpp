@@ -11,7 +11,7 @@ static int run_while(std::string code_text, OwcaValue add_val)
     OwcaVM vm;
     auto code = vm.compile("test.os", std::move(code_text));
     auto val = vm.execute(code);
-    return (int)val.member("r").call(add_val).as_int(vm);
+    return (int)val.member("r").call(add_val).as_int();
 }
 TEST_F(WhileTest, simple1)
 {

@@ -15,7 +15,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_float(vm), 2);
+	ASSERT_EQ(val.member("r").call().as_float(), 2);
 }
 
 TEST_F(TupleTest, simple2)
@@ -27,7 +27,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code);
-	ASSERT_EQ(val.member("r").call().as_float(vm), 4);
+	ASSERT_EQ(val.member("r").call().as_float(), 4);
 }
 
 TEST_F(TupleTest, from_iter)
@@ -45,7 +45,7 @@ function r() {
 }
 )");
 	auto val = vm.execute(code);
-	ASSERT_TRUE(val.member("r").call().as_bool(vm));
+	ASSERT_TRUE(val.member("r").call().as_bool());
 }
 
 TEST_F(TupleTest, owca_iter)
@@ -54,7 +54,7 @@ TEST_F(TupleTest, owca_iter)
 	auto t = vm.create_tuple({1, 2, 3, 4});
 	std::vector<double> values;
 	for(auto q : t) {
-		values.push_back(q.as_float(vm));
+		values.push_back(q.as_float());
 	}
 	ASSERT_EQ(values, std::vector<double>({1, 2, 3, 4}));
 }

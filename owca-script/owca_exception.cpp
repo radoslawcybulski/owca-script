@@ -28,7 +28,7 @@ namespace OwcaScript {
         };
     }
 
-    void gc_mark_value(const OwcaVM &vm, GenerationGC gc, const OwcaException &e) {
-        gc_mark_value(vm, gc, e.owner);
+    void gc_mark_value(GenerationGC gc, const OwcaException &e) {
+        gc_mark_value(gc, e.owner);
     }
 }

@@ -26,6 +26,9 @@ namespace OwcaScript {
 
 		enum class CompareKind : std::uint8_t;
 
+		VM &current_vm();
+		void set_current_vm(VM *vm);
+
 		class VM {
 			friend class Executor;
 			
@@ -119,6 +122,8 @@ namespace OwcaScript {
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
 
+			OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
+
 			auto get_builtin_identifiers() const { return builtin_identifiers; }
 			OwcaNamespace execute_code_block(const OwcaCode&);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
@@ -167,7 +172,6 @@ namespace OwcaScript {
 				p2->prev = &root_allocated_memory;
 				p2->next = root_allocated_memory.next;
 				p2->prev->next = p2->next->prev = p2;
-				p2->vm = this;
 				p2->kind = T::object_kind;
 				return p2;
 			}
@@ -175,35 +179,35 @@ namespace OwcaScript {
 			static VM& get(const OwcaVM &v);
 		};
 
-		void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const AllocationBase* ptr);
-		template <std::integral T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, T) {}
-		template <std::floating_point T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, T) {}
-		inline void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::string &) {}
-		inline void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, std::string_view) {}
-		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, std::span<T> vct) {
+		void gc_mark_value(GenerationGC ggc, const AllocationBase* ptr);
+		template <std::integral T> void gc_mark_value(GenerationGC ggc, T) {}
+		template <std::floating_point T> void gc_mark_value(GenerationGC ggc, T) {}
+		inline void gc_mark_value(GenerationGC ggc, const std::string &) {}
+		inline void gc_mark_value(GenerationGC ggc, std::string_view) {}
+		template <typename T> void gc_mark_value(GenerationGC ggc, std::span<T> vct) {
 			for(auto &q : vct) {
-				gc_mark_value(vm, ggc, q);
+				gc_mark_value(ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::vector<T> &vct) {
+		template <typename T> void gc_mark_value(GenerationGC ggc, const std::vector<T> &vct) {
 			for(auto &q : vct) {
-				gc_mark_value(vm, ggc, q);
+				gc_mark_value(ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::deque<T> &vct) {
+		template <typename T> void gc_mark_value(GenerationGC ggc, const std::deque<T> &vct) {
 			for(auto &q : vct) {
-				gc_mark_value(vm, ggc, q);
+				gc_mark_value(ggc, q);
 			}
 		}
-		template <typename T> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::list<T> &vct) {
+		template <typename T> void gc_mark_value(GenerationGC ggc, const std::list<T> &vct) {
 			for(auto &q : vct) {
-				gc_mark_value(vm, ggc, q);
+				gc_mark_value(ggc, q);
 			}
 		}
-		template <typename K, typename V, typename ... ARGS> void gc_mark_value(const OwcaVM &vm, GenerationGC ggc, const std::unordered_map<K, V, ARGS...> &vct) {
+		template <typename K, typename V, typename ... ARGS> void gc_mark_value(GenerationGC ggc, const std::unordered_map<K, V, ARGS...> &vct) {
 			for(auto &q : vct) {
-				gc_mark_value(vm, ggc, q.first);
-				gc_mark_value(vm, ggc, q.second);
+				gc_mark_value(ggc, q.first);
+				gc_mark_value(ggc, q.second);
 			}
 		}
 	}
