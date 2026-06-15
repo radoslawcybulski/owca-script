@@ -166,7 +166,8 @@ namespace OwcaScript {
 
 			template <typename T, typename ... ARGS> T* allocate(size_t oversize, ARGS && ... args) {
 				auto align = std::max(alignof(T), size_t(16));
-				auto s = (sizeof(T) + oversize + align - 1) & ~(align - 1);
+				auto s = (sizeof(T) + align - 1) & ~(align - 1);
+				s = (s + oversize + align - 1) & ~(align - 1);
 				auto p = std::aligned_alloc(align, s);
 				auto p2 = new (p) T{ std::forward<ARGS>(args)... };
 				p2->prev = &root_allocated_memory;

@@ -7,13 +7,13 @@ class PerformanceTest : public SimpleTest {
 };
 
 TEST_F(PerformanceTest, DISABLED_simple_1)
-{ // 5.81
+{ // 5.74
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 s = 0;
 start = time();
 i = 0;
-while (i < 100000) {
+while (i < 100000000) {
     s = (s * 11035 + 12345) & 0xffff;
     i = i + 1;
 }
@@ -25,7 +25,7 @@ print(`Final result: {s}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 17.56 // 100000000
+{ // 18.31 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 function foo1(s) {

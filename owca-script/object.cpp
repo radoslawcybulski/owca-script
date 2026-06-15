@@ -54,11 +54,15 @@ namespace OwcaScript::Internal {
 
 	char* Class::native_storage_ptr(Object *o) const
 	{
-		return (char*)o + sizeof(*o);
+		auto p = reinterpret_cast<std::uintptr_t>(o) + sizeof(*o);
+		p = (p + 15) & ~15;
+		return reinterpret_cast<char*>(p);
 	}
 	const char* Class::native_storage_ptr(const Object *o) const
 	{
-		return (const char*)o + sizeof(*o);
+		auto p = reinterpret_cast<std::uintptr_t>(o) + sizeof(*o);
+		p = (p + 15) & ~15;
+		return reinterpret_cast<const char*>(p);
 	}
 
 	void Class::initialize_add_base_class(OwcaClass b)
@@ -87,6 +91,11 @@ namespace OwcaScript::Internal {
 	void Class::finalize_initializing()
 	{
 		size_t offset = 0;
+		if (!native_storage_pointers.empty()) {
+			assert(native_storage_pointers.size() == 1);
+			offset = std::get<3>(native_storage_pointers[0]);
+			offset = (offset + 15) & ~15;
+		}
 		for (auto q : base_classes) {
 			for (auto it : q->native_storage_pointers) {
 				bool found = false;
