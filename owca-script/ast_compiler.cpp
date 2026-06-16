@@ -1451,7 +1451,7 @@ namespace OwcaScript::Internal {
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
 		auto buffer_span = std::span{ buffer.data(), buffer.size() };
-		std::shared_ptr<ExecuteBufferReader::DataKindsType> data_kinds_ = std::make_shared<ExecuteBufferReader::DataKindsType>(std::move(data_kinds));
+		std::shared_ptr<DataKindsType> data_kinds_ = std::make_shared<DataKindsType>(std::move(data_kinds));
 		auto data_kinds_span_ptr = data_kinds_.get();
 		auto lines_span = std::span{ lines.data(), lines.size() };
 		auto fname = std::vector<char>(filename_.begin(), filename_.end());

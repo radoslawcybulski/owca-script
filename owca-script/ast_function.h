@@ -8,7 +8,6 @@
 namespace OwcaScript {
 	namespace Internal {
 		class ExecuteBufferWriter;
-		class ExecuteBufferReader;
 
 		class AstFunction : public AstExpr {
 		public:

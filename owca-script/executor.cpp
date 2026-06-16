@@ -272,7 +272,7 @@ namespace OwcaScript::Internal {
 #define PUSH_VALUE(val) do { temporary_ptr[0] = (val); ++temporary_ptr; } while(0)
 #define LOCAL_VAR(index) (locals_ptr[index])
 
-    void Executor::process_thrown_exception(ExecuteBufferReader::Position *code_pos, OwcaException exception)
+    void Executor::process_thrown_exception(CodePosition *code_pos, OwcaException exception)
     {
         while(HAS_STATE()) {
             if (auto state = TRY_STATE(TryState)) {
@@ -359,28 +359,6 @@ namespace OwcaScript::Internal {
 		}
 		return std::pair<size_t, size_t>{ v3, v4 };
 	}
-
-    // ExecuteBufferReader::Position Executor::run_impl_opcodes_execute_compare(TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos, CompareKind kind, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds) {
-    //     auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
-    //     const auto last = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-    //     auto &left = PEEK_VALUE(2);
-    //     auto right = PEEK_VALUE(1);
-    //     auto res = execute_compare(vm, kind, left, right);
-    //     switch(res) {
-    //     case CompareResult::True:
-    //         left = last ? OwcaValue{ true } : right;
-    //         return code_pos;
-    //     case CompareResult::False:
-    //         left = false;
-    //         code_pos = ExecuteBufferReader::Position{ jump_dest };
-    //         return code_pos;
-    //     case CompareResult::NotExecuted:
-    //         throw_cant_compare(kind, left.type(), right.type());
-    //         assert(false);
-    //     }
-    //     assert(false);
-    //     return code_pos;
-    // }
 
     OwcaValue Executor::set_identifier_function(OwcaValue target, OwcaValue value) {
         assert(value.kind() == OwcaValueKind::Functions);
@@ -522,21 +500,21 @@ namespace OwcaScript::Internal {
         );
     }
 
-    OwcaValue Executor::create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds)
+    OwcaValue Executor::create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr)
     {
         auto &code_object = stacktrace_current->runtime_function->code;
-        auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-        auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-        auto is_native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-        auto is_generator = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-        auto is_method = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-        auto param_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
-        auto value_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
-        auto temporaries_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
-        auto state_count = ExecuteBufferReader::decode<std::uint16_t>(start_code, code_pos, data_kinds);
+        auto name = code_pos.decode<std::string_view>();
+        auto full_name = code_pos.decode<std::string_view>();
+        auto is_native = code_pos.decode<bool>();
+        auto is_generator = code_pos.decode<bool>();
+        auto is_method = code_pos.decode<bool>();
+        auto param_count = code_pos.decode<std::uint16_t>();
+        auto value_count = code_pos.decode<std::uint16_t>();
+        auto temporaries_count = code_pos.decode<std::uint16_t>();
+        auto state_count = code_pos.decode<std::uint16_t>();
         std::vector<std::string_view> identifier_names;
         identifier_names.resize(value_count);
-        for(auto &n : identifier_names) n = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+        for(auto &n : identifier_names) n = code_pos.decode<std::string_view>();
 
         RuntimeFunction *fnc = nullptr;
         if (is_native) {
@@ -571,14 +549,14 @@ namespace OwcaScript::Internal {
         }
         else {
             std::vector<AstFunction::CopyFromParent> copy_from_parents;
-            auto copy_from_parent_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+            auto copy_from_parent_count = code_pos.decode<std::uint32_t>();
             copy_from_parents.reserve(copy_from_parent_count);
             for(auto i = 0u; i < copy_from_parent_count; ++i) {
-                auto index_in_parent = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                auto identifier_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                auto index_in_parent = code_pos.decode<std::uint32_t>();
+                auto identifier_index = code_pos.decode<std::uint32_t>();
                 copy_from_parents.push_back({ index_in_parent, identifier_index });
             }
-            auto z = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+            auto z = code_pos.decode_jump();
             auto entry_point = code_pos;
             code_pos = z;
 
@@ -610,15 +588,12 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, Executor::TemporariesPtr, ExecuteBufferReader::Position> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos)
+    std::tuple<OwcaValue, Executor::TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
     {
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace_current->runtime_function->code;
         auto temporary_ptr_start = temporary_ptr;
-        const auto &data_kinds = code_object.data_kinds();
-#else
-        const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds = {};
 #endif        
 #ifdef MEASURE        
         std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
@@ -638,7 +613,7 @@ restart:
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 auto line = code_object.get_line_by_position(code_pos);
 #endif
-                auto opcode = ExecuteBufferReader::decode<ExecuteBufferReader::Op>(start_code, code_pos, data_kinds);
+                auto opcode = code_pos.decode<ExecuteOp>();
                 // static std::chrono::high_resolution_clock::time_point last_time = std::chrono::high_resolution_clock::now();
                 // auto now = std::chrono::high_resolution_clock::now();
                 // auto df = now - last_time;
@@ -667,27 +642,27 @@ restart:
 
                 //last_time = std::chrono::high_resolution_clock::now();
                 switch(opcode) {
-                case ExecuteBufferReader::Op::_Count:
+                case ExecuteOp::_Count:
                     assert(false);
                     break;
-                case ExecuteBufferReader::Op::ClassInit: {
+                case ExecuteOp::ClassInit: {
                     auto &code_object = stacktrace_current->runtime_function->code;
                     auto line = code_object.get_line_by_position(code_pos - 1);
-                    auto name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    auto full_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                    auto name = code_pos.decode<std::string_view>();
+                    auto full_name = code_pos.decode<std::string_view>();
                     auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
                     PUSH_STATE(ClassState{});
                     STATE(ClassState).cls = cls;
                     break; }
-                case ExecuteBufferReader::Op::ClassCreate: {
+                case ExecuteOp::ClassCreate: {
                     auto cls = STATE(ClassState).cls;
                     POP_STATE();
 
-                    auto native = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-                    auto base_class_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    auto member_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    auto all_variable_names = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
-                    auto variable_name_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    auto native = code_pos.decode<bool>();
+                    auto base_class_count = code_pos.decode<std::uint32_t>();
+                    auto member_count = code_pos.decode<std::uint32_t>();
+                    auto all_variable_names = code_pos.decode<bool>();
+                    auto variable_name_count = code_pos.decode<std::uint32_t>();
 
                     if (native) {
                         auto &native_provider = cls->code.native_code_provider();
@@ -717,7 +692,7 @@ restart:
                     }
                     else {
                         for(auto i = 0u; i < variable_name_count; ++i) {
-                            auto var_name = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                            auto var_name = code_pos.decode<std::string_view>();
                             cls->initialize_add_variable(var_name);
                         }
                     }
@@ -727,7 +702,7 @@ restart:
                     POP_VALUES(base_class_count + member_count);
                     PUSH_VALUE(OwcaClass{ cls });
                     break; }
-                case ExecuteBufferReader::Op::ExprPopAndIgnore: {
+                case ExecuteOp::ExprPopAndIgnore: {
                     POP_VALUES(1);
                     break; }
 #define OPER2_RUN(oper) do { \
@@ -737,8 +712,8 @@ restart:
         POP_VALUES(1); \
     } while(0)
 #define CMP2_RUN(oper, reverse, upd) do { \
-        auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);        \
-        const auto last = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);      \
+        auto jump_dest = code_pos.decode_jump();        \
+        const auto last = code_pos.decode<bool>();      \
         auto &left = PEEK_VALUE(2);                                                                 \
         auto right = PEEK_VALUE(1);                                                                 \
         auto res = (!reverse) ?                                                                      \
@@ -750,50 +725,50 @@ restart:
         }                                                                                           \
         else {                                                                                      \
             left = false;                                                                           \
-            code_pos = ExecuteBufferReader::Position{ jump_dest };                                  \
+            code_pos = jump_dest;                                                                   \
         }                                                                                           \
         POP_VALUES(1);                                                                              \
     } while(0)
 
-                case ExecuteBufferReader::Op::ExprCompareEq: {
+                case ExecuteOp::ExprCompareEq: {
                     CMP2_RUN(eq, 0, res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareNotEq: {
+                case ExecuteOp::ExprCompareNotEq: {
                     CMP2_RUN(eq, 0, !res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareLess: {
+                case ExecuteOp::ExprCompareLess: {
                     CMP2_RUN(less, 0, res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareMoreEq: {
+                case ExecuteOp::ExprCompareMoreEq: {
                     CMP2_RUN(less, 0, !res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareMore: {
+                case ExecuteOp::ExprCompareMore: {
                     CMP2_RUN(less, 1, res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareLessEq: {
+                case ExecuteOp::ExprCompareLessEq: {
                     CMP2_RUN(less, 1, !res);
                     break; }
-                case ExecuteBufferReader::Op::ExprCompareIs: {
+                case ExecuteOp::ExprCompareIs: {
                     CMP2_RUN(is, 0, res);
                     break; }
-                case ExecuteBufferReader::Op::ExprConstantEmpty: {
+                case ExecuteOp::ExprConstantEmpty: {
                     PUSH_VALUE(OwcaEmpty{});
                     break; }
-                case ExecuteBufferReader::Op::ExprConstantBool: {
-                    auto value = ExecuteBufferReader::decode<bool>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprConstantBool: {
+                    auto value = code_pos.decode<bool>();
                     PUSH_VALUE(value);
                     break; }
-                case ExecuteBufferReader::Op::ExprConstantFloat: {
-                    auto value = ExecuteBufferReader::decode<Number>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprConstantFloat: {
+                    auto value = code_pos.decode<Number>();
                     PUSH_VALUE(value);
                     break; }
-                case ExecuteBufferReader::Op::ExprConstantString: {
-                    auto value = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprConstantString: {
+                    auto value = code_pos.decode<std::string_view>();
                     PUSH_VALUE(current_vm().create_string_from_view(value));
                     break; }
-                case ExecuteBufferReader::Op::ExprConstantStringInterpolated: {
-                    auto strings = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
-                    auto expr_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprConstantStringInterpolated: {
+                    auto strings = code_pos.decode<std::string_view>();
+                    auto expr_count = code_pos.decode<std::uint32_t>();
                     size_t size = strings.size();
                     auto values = PEEK_VALUES(expr_count, expr_count);
                     for(auto i = 0u; i < expr_count; ++i) {
@@ -803,7 +778,7 @@ restart:
                     auto new_str_pt = new_str->pointer();
                     const char *strings_ptr = strings.data();
                     for(auto i = 0u; i < expr_count; ++i) {
-                        auto sz = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                        auto sz = code_pos.decode<std::uint32_t>();
                         std::memcpy(new_str_pt, strings_ptr, sz);
                         new_str_pt += sz;
                         strings_ptr += sz;
@@ -818,63 +793,63 @@ restart:
                     POP_VALUES(expr_count);
                     PUSH_VALUE(OwcaString{ new_str });
                     break; }
-                case ExecuteBufferReader::Op::ExprIdentifierRead: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprIdentifierRead: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     PUSH_VALUE(LOCAL_VAR(index));
                     break; }
-                case ExecuteBufferReader::Op::ExprIdentifierWrite: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprIdentifierWrite: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     LOCAL_VAR(index) = PEEK_VALUE(1);
                     break; }
-                case ExecuteBufferReader::Op::ExprIdentifierFunctionWrite: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprIdentifierFunctionWrite: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     auto &val = PEEK_VALUE(1);
                     auto &tgt = LOCAL_VAR(index);
                     tgt = set_identifier_function(tgt, val);
                     val = tgt;
                     break; }
-                case ExecuteBufferReader::Op::ExprGlobalRead: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprGlobalRead: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     PUSH_VALUE(globals_ptr[index]);
                     break; }
-                case ExecuteBufferReader::Op::ExprGlobalWrite: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprGlobalWrite: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     globals_ptr[index] = PEEK_VALUE(1);
                     break; }
-                case ExecuteBufferReader::Op::ExprGlobalFunctionWrite: {
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprGlobalFunctionWrite: {
+                    auto index = code_pos.decode<std::uint32_t>();
                     auto &val = PEEK_VALUE(1);
                     auto &tgt = globals_ptr[index];
                     tgt = set_identifier_function(tgt, val);
                     val = tgt;
                     break; }
-                case ExecuteBufferReader::Op::ExprMemberRead: {
+                case ExecuteOp::ExprMemberRead: {
                     auto self = PEEK_VALUE(1);
-                    auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                    auto member = code_pos.decode<std::string_view>();
                     PEEK_VALUE(1) = current_vm().member(self, member);
                     break; }
-                case ExecuteBufferReader::Op::ExprMemberWrite: {
+                case ExecuteOp::ExprMemberWrite: {
                     auto val_to_write = PEEK_VALUE(1);
                     auto self = PEEK_VALUE(2);
-                    auto member = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+                    auto member = code_pos.decode<std::string_view>();
                     current_vm().member(self, member, val_to_write);
                     PEEK_VALUE(2) = val_to_write;
                     POP_VALUES(1);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper1BinNeg: {
+                case ExecuteOp::ExprOper1BinNeg: {
                     auto &left = PEEK_VALUE(1);
                     left = -(std::int64_t)left.as_float();
                     break; }
-                case ExecuteBufferReader::Op::ExprOper1LogNot: {
+                case ExecuteOp::ExprOper1LogNot: {
                     auto &left = PEEK_VALUE(1);
                     left = !left.is_true();
                     break; }
-                case ExecuteBufferReader::Op::ExprOper1Negate: {
+                case ExecuteOp::ExprOper1Negate: {
                     auto &left = PEEK_VALUE(1);
                     left = -left.as_float();
                     break; }
-                case ExecuteBufferReader::Op::ExprRetTrueAndJumpIfTrue: {
-                    auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprRetTrueAndJumpIfTrue: {
+                    auto jump_dest = code_pos.decode_jump();
                     if (PEEK_VALUE(1).is_true()) {
                         code_pos = jump_dest;
                     }
@@ -882,8 +857,8 @@ restart:
                         POP_VALUES(1);
                     }
                     break; }
-                case ExecuteBufferReader::Op::ExprRetFalseAndJumpIfFalse: {
-                    auto jump_dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprRetFalseAndJumpIfFalse: {
+                    auto jump_dest = code_pos.decode_jump();
                     if (!PEEK_VALUE(1).is_true()) {
                         code_pos = jump_dest;
                     }
@@ -891,14 +866,14 @@ restart:
                         POP_VALUES(1);
                     }
                     break; }
-                case ExecuteBufferReader::Op::ExprToString: {
+                case ExecuteOp::ExprToString: {
                     auto v = PEEK_VALUE(1);
                     if (v.kind() == OwcaValueKind::String) {
                         break;
                     }
                     PEEK_VALUE(1) = current_vm().create_string_from_view(v.to_string());
                     break; }
-                case ExecuteBufferReader::Op::ExprToIterator: {
+                case ExecuteOp::ExprToIterator: {
                     auto &val = PEEK_VALUE(1);
                     if (val.kind() != OwcaValueKind::Iterator) {
                         auto func = current_vm().try_member(val, "__iter__");
@@ -909,38 +884,38 @@ restart:
                         val = execute_call_from_values(temporary_ptr, 1);
                     }
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2BinOr: {
+                case ExecuteOp::ExprOper2BinOr: {
                     OPER2_RUN(bin_or); 
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2BinAnd: {
+                case ExecuteOp::ExprOper2BinAnd: {
                     OPER2_RUN(bin_and);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2BinXor: {
+                case ExecuteOp::ExprOper2BinXor: {
                     OPER2_RUN(bin_xor);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2BinLShift: {
+                case ExecuteOp::ExprOper2BinLShift: {
                     OPER2_RUN(bin_lshift);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2BinRShift: {
+                case ExecuteOp::ExprOper2BinRShift: {
                     OPER2_RUN(bin_rshift);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2Add: {
+                case ExecuteOp::ExprOper2Add: {
                     OPER2_RUN(add);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2Sub: {
+                case ExecuteOp::ExprOper2Sub: {
                     OPER2_RUN(sub);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2Mul: {
+                case ExecuteOp::ExprOper2Mul: {
                     OPER2_RUN(mul);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2Div: {
+                case ExecuteOp::ExprOper2Div: {
                     OPER2_RUN(div);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2Mod: {
+                case ExecuteOp::ExprOper2Mod: {
                     OPER2_RUN(mod);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2MakeRange: {
-                    auto mode = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOper2MakeRange: {
+                    auto mode = code_pos.decode<std::uint8_t>();
                     Number first, second, third;
                     if (mode & 4) {
                         third = PEEK_VALUE(1).as_float();
@@ -972,65 +947,65 @@ restart:
                     ret->step = third;
                     PUSH_VALUE(OwcaRange{ ret });
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2IndexRead: {
+                case ExecuteOp::ExprOper2IndexRead: {
                     auto key = PEEK_VALUE(1);
                     auto self = PEEK_VALUE(2);
                     auto &ret = PEEK_VALUE(2);
                     POP_VALUES(1);
                     ret = index_read(self, key);
                     break; }
-                case ExecuteBufferReader::Op::ExprOper2IndexWrite: {
+                case ExecuteOp::ExprOper2IndexWrite: {
                     auto value = PEEK_VALUE(1);
                     auto key = PEEK_VALUE(2);
                     auto &self = PEEK_VALUE(3);
                     POP_VALUES(2);
                     self = index_write(self, key, value);
                     break; }
-                case ExecuteBufferReader::Op::ExprOperXCall: {
-                    auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOperXCall: {
+                    auto size = code_pos.decode<std::uint32_t>();
                     PEEK_VALUE(size) = execute_call_from_values(temporary_ptr, size);
                     POP_VALUES(size - 1);
                     break; }
-                case ExecuteBufferReader::Op::ExprOperXCreateArray: {
-                    auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOperXCreateArray: {
+                    auto size = code_pos.decode<std::uint32_t>();
                     auto args = PEEK_VALUES(size, size);
                     auto arguments = std::deque<OwcaValue>{ args.begin(), args.end() };
                     POP_VALUES(size);
                     PUSH_VALUE(current_vm().create_array(std::move(arguments)));
                     break; }
-                case ExecuteBufferReader::Op::ExprOperXCreateTuple: {
-                    auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOperXCreateTuple: {
+                    auto size = code_pos.decode<std::uint32_t>();
                     auto args = PEEK_VALUES(size, size);
                     auto arguments = std::vector<OwcaValue>{ args.begin(), args.end() };
                     POP_VALUES(size);
                     PUSH_VALUE(current_vm().create_tuple(std::move(arguments)));
                     break; }
-                case ExecuteBufferReader::Op::ExprOperXCreateSet: {
-                    auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOperXCreateSet: {
+                    auto size = code_pos.decode<std::uint32_t>();
                     auto args = PEEK_VALUES(size, size);
                     POP_VALUES(size);
                     PUSH_VALUE(current_vm().create_set(args));
                     break; }
-                case ExecuteBufferReader::Op::ExprOperXCreateMap: {
-                    auto size = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::ExprOperXCreateMap: {
+                    auto size = code_pos.decode<std::uint32_t>();
                     auto args = PEEK_VALUES(size, size);
                     POP_VALUES(size);
                     PUSH_VALUE(current_vm().create_map(args));
                     break; }
-                case ExecuteBufferReader::Op::ForInit: {
+                case ExecuteOp::ForInit: {
                     auto iterator = PEEK_VALUE(1).as_iterator();
                     POP_VALUES(1);
                     PUSH_STATE(ForState{ iterator });
                     auto &state = STATE(ForState);
-                    state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
-                    state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                    state.end_position = code_pos.decode_jump();
+                    state.loop_index = code_pos.decode<std::uint32_t>();
+                    state.loop_control_depth = code_pos.decode<std::uint8_t>();
                     state.continue_position = code_pos;
                     break; }
-                case ExecuteBufferReader::Op::ForCondition: {
+                case ExecuteOp::ForCondition: {
                     auto &state = STATE(ForState);
                     if (state.iterator.completed()) [[unlikely]] {
-                        code_pos = ExecuteBufferReader::Position{ state.end_position };
+                        code_pos = state.end_position;
                         break;
                     }
                     state.index++;
@@ -1039,47 +1014,47 @@ restart:
                     }
                     auto val = continue_iterator(state.iterator);
                     if (!val) [[unlikely]] {
-                        code_pos = ExecuteBufferReader::Position{ state.end_position };
+                        code_pos = state.end_position;
                         break;
                     }
                     PUSH_VALUE(*val);
                     break; }
-                case ExecuteBufferReader::Op::ForNext: {
+                case ExecuteOp::ForNext: {
                     auto val = PEEK_VALUE(1);
                     if (val.kind() == OwcaValueKind::Completed) {
                         auto &state = STATE(ForState);
-                        code_pos = ExecuteBufferReader::Position{ state.end_position };
+                        code_pos = state.end_position;
                         POP_VALUES(1);
                     }
                     break; }
-                case ExecuteBufferReader::Op::ForCompleted: {
+                case ExecuteOp::ForCompleted: {
                     auto &state = STATE(ForState);
                     POP_STATE();
                     break; }
-                case ExecuteBufferReader::Op::Function: {
-                    PUSH_VALUE(create_function(start_code, code_pos, globals_ptr, locals_ptr, data_kinds));
+                case ExecuteOp::Function: {
+                    PUSH_VALUE(create_function(code_pos, globals_ptr, locals_ptr));
                     break; }
-                case ExecuteBufferReader::Op::If: {
+                case ExecuteOp::If: {
                     auto val = PEEK_VALUE(1).is_true();
                     POP_VALUES(1);
-                    auto else_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                    auto else_position = code_pos.decode_jump();
                     if (!val) {
                         code_pos = else_position;
                     }
                     break; }
-                case ExecuteBufferReader::Op::LoopControlBreak: {
-                    auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::LoopControlBreak: {
+                    auto depth = code_pos.decode<std::uint8_t>();
                     while(true) {
                         assert(HAS_STATE());
                         if (auto s = TRY_STATE(ForState)) {
                             if (s->loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s->end_position };
+                                code_pos = s->end_position;
                                 break;
                             }
                         }
                         else if (auto s = TRY_STATE(WhileState)) {
                             if (s->loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s->end_position };
+                                code_pos = s->end_position;
                                 break;
                             }
                         }
@@ -1092,19 +1067,19 @@ restart:
                         POP_STATE();
                     }
                     break; }
-                case ExecuteBufferReader::Op::LoopControlContinue: {
-                    auto depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                case ExecuteOp::LoopControlContinue: {
+                    auto depth = code_pos.decode<std::uint8_t>();
                     while(true) {
                         assert(HAS_STATE());
                         if (auto s = TRY_STATE(ForState)) {
                             if (s->loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s->continue_position };
+                                code_pos = s->continue_position;
                                 break;
                             }
                         }
                         else if (auto s = TRY_STATE(WhileState)) {
                         if (s->loop_control_depth == depth) {
-                                code_pos = ExecuteBufferReader::Position{ s->continue_position };
+                                code_pos = s->continue_position;
                                 break;
                             }
                         }
@@ -1118,36 +1093,36 @@ restart:
                         POP_STATE();
                     }
                     break; }
-                case ExecuteBufferReader::Op::ReturnCloseIterator: {
+                case ExecuteOp::ReturnCloseIterator: {
                     complete_all(temporary_ptr);
                     return { OwcaCompleted{}, temporary_ptr, code_pos };
                     }
-                case ExecuteBufferReader::Op::Return: {
+                case ExecuteOp::Return: {
                     complete_all(temporary_ptr);
                     return { OwcaEmpty{}, temporary_ptr, code_pos };
                     }
-                case ExecuteBufferReader::Op::ReturnValue: {
+                case ExecuteOp::ReturnValue: {
                     auto val = PEEK_VALUE(1);
                     POP_VALUES(1);
                     complete_all(temporary_ptr);
                     return { val, temporary_ptr, code_pos };
                     }
-                case ExecuteBufferReader::Op::Throw: {
+                case ExecuteOp::Throw: {
                     auto exception = PEEK_VALUE(1);
                     POP_VALUES(1);
                     throw exception.as_exception();
                     }
-                case ExecuteBufferReader::Op::TryInit: {
+                case ExecuteOp::TryInit: {
                     PUSH_STATE(TryState{temporary_ptr});
                     auto &state = STATE(TryState);
-                    state.begin_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
-                    state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                    state.begin_position = code_pos.decode_jump();
+                    state.end_position = code_pos.decode_jump();
                     state.catches_pos = code_pos;
-                    code_pos = ExecuteBufferReader::Position{ state.begin_position };
+                    code_pos = state.begin_position;
                     state.temporary_ptr = temporary_ptr;
                     state.original_exception_being_handled = exception_being_handled;
                     break; }
-                case ExecuteBufferReader::Op::TryCompleted: {
+                case ExecuteOp::TryCompleted: {
                     if (auto state = TRY_STATE(TryState)) {
                         assert(exception_being_handled == state->original_exception_being_handled);
                     }
@@ -1159,10 +1134,10 @@ restart:
                     }
                     POP_STATE();
                     break; }
-                case ExecuteBufferReader::Op::TryCatchType: {
-                    auto values = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    auto ident = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    auto skip_jump = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                case ExecuteOp::TryCatchType: {
+                    auto values = code_pos.decode<std::uint32_t>();
+                    auto ident = code_pos.decode<std::uint32_t>();
+                    auto skip_jump = code_pos.decode_jump();
 
                     auto exc_types = PEEK_VALUES(values, values);
                     POP_VALUES(values);
@@ -1189,50 +1164,50 @@ restart:
                         state2.original_exception_being_handled = original_exception_being_handled;
                     }
                     else {
-                        code_pos = ExecuteBufferReader::Position{ skip_jump };
+                        code_pos = skip_jump;
                     }
                     break; }
-                case ExecuteBufferReader::Op::TryCatchTypeCompleted: {
+                case ExecuteOp::TryCatchTypeCompleted: {
                     auto &state = STATE(TryState);
                     POP_STATE();
                     throw *exception_being_thrown;
                     }
-                case ExecuteBufferReader::Op::TryBlockCompleted: {
+                case ExecuteOp::TryBlockCompleted: {
                     auto &state = STATE(CatchState);
                     assert(exception_being_thrown);
                     assert(exception_being_handled);
                     exception_being_thrown = std::nullopt;
                     exception_being_handled = std::nullopt;
-                    code_pos = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                    code_pos = code_pos.decode_jump();
                     break; }
-                case ExecuteBufferReader::Op::WhileInit: {
+                case ExecuteOp::WhileInit: {
                     PUSH_STATE(WhileState{});
                     auto &state = STATE(WhileState);
-                    state.end_position = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
-                    state.loop_index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
-                    state.loop_control_depth = ExecuteBufferReader::decode<std::uint8_t>(start_code, code_pos, data_kinds);
+                    state.end_position = code_pos.decode_jump();
+                    state.loop_index = code_pos.decode<std::uint32_t>();
+                    state.loop_control_depth = code_pos.decode<std::uint8_t>();
                     state.continue_position = code_pos;
                     break; }
-                case ExecuteBufferReader::Op::WhileCondition: {
+                case ExecuteOp::WhileCondition: {
                     auto &state = STATE(WhileState);
                     state.index++;
                     if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
                         LOCAL_VAR(state.loop_index) = state.index;
                     }
                     break; }
-                case ExecuteBufferReader::Op::WhileNext: {
+                case ExecuteOp::WhileNext: {
                     auto &state = STATE(WhileState);
 
                     auto value = PEEK_VALUE(1).as_bool();
                     POP_VALUES(1);
                     if (!value) {
-                        code_pos = ExecuteBufferReader::Position{ state.end_position };
+                        code_pos = state.end_position;
                     }
                     break; }
-                case ExecuteBufferReader::Op::WhileCompleted: {
+                case ExecuteOp::WhileCompleted: {
                     POP_STATE();
                     break; }
-                case ExecuteBufferReader::Op::WithInit: {
+                case ExecuteOp::WithInit: {
                     PUSH_STATE(WithState{});
                     auto &state = STATE(WithState);
                     auto &obj = PEEK_VALUE(1);
@@ -1240,24 +1215,24 @@ restart:
                     obj = current_vm().member(obj, "__enter__");
                     obj = execute_call_from_values(temporary_ptr, 1);
                     state.entered = true;
-                    auto index = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+                    auto index = code_pos.decode<std::uint32_t>();
                     if (index != std::numeric_limits<std::uint32_t>::max()) {
                         LOCAL_VAR(index) = obj;
                     }
                     POP_VALUES(1);
                     break; }
-                case ExecuteBufferReader::Op::WithCompleted: {
+                case ExecuteOp::WithCompleted: {
                     auto &state = STATE(WithState);
                     complete(state, temporary_ptr);
                     POP_STATE();
                     break; }
-                case ExecuteBufferReader::Op::Yield: {
+                case ExecuteOp::Yield: {
                     auto val = PEEK_VALUE(1);
                     POP_VALUES(1);
                     return { val, temporary_ptr, code_pos };
                     }
-                case ExecuteBufferReader::Op::Jump: {
-                    auto dest = ExecuteBufferReader::decode_jump(start_code, code_pos, data_kinds);
+                case ExecuteOp::Jump: {
+                    auto dest = code_pos.decode_jump();
                     code_pos = dest;
                     break; }
                 }
@@ -1279,7 +1254,7 @@ next_iteration:
 
 #ifdef MEASURE
         std::cout << "\n\n";
-        for(auto i = 0u; i < (size_t)ExecuteBufferReader::Op::_Count; ++i) {
+        for(auto i = 0u; i < (size_t)ExecuteOp::_Count; ++i) {
             auto t = times[i];
             auto c = counts[i];
             if (t > 0) {
@@ -1441,10 +1416,10 @@ next_iteration:
         }
 
         auto est = StackTraceState{ *this, function, function->entry_point };
-        auto [ retval, new_values_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, StartOfCode{}, function->entry_point);
+        auto [ retval, new_values_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, function->entry_point);
         return retval;
     }
-    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos)
+    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, CodePosition code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
         const auto temporary_ptr = temporary_ptr_current_top;
@@ -1454,7 +1429,7 @@ next_iteration:
                 auto est = StackTraceState{ *this, function, code_pos };
                 auto sc = stacktrace_current;
                 std::swap(sc->states, states_vec);
-                auto [ retval, new_temporary_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, StartOfCode{}, code_pos);
+                auto [ retval, new_temporary_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, code_pos);
                 assert(sc == stacktrace_current);
                 std::swap(sc->states, states_vec);
                 assert(new_temporary_ptr.temporaries_ptr == temporary_ptr.temporaries_ptr);
@@ -1561,14 +1536,12 @@ next_iteration:
         std::cout << "Executing code block from file " << oc.filename() << std::endl;
 #endif        
         auto tpk = TopPtrsKeeper{ *this };
-        auto code_pos = CodePosition{ oc.code().data()};
-        auto start_code = StartOfCode{};
-        auto &data_kinds = oc.data_kinds();
+        auto code_pos = oc.code_position();
 
-        auto global_count = ExecuteBufferReader::decode<std::uint32_t>(start_code, code_pos, data_kinds);
+        auto global_count = code_pos.decode<std::uint32_t>();
         std::unordered_map<std::string_view, size_t> identifier_to_global_index;
         for(auto i = 0u; i < global_count; ++i) {
-            auto ident = ExecuteBufferReader::decode<std::string_view>(start_code, code_pos, data_kinds);
+            auto ident = code_pos.decode<std::string_view>();
             identifier_to_global_index[ident] = i;
         }
         auto ns = current_vm().create_namespace(std::move(oc), std::move(identifier_to_global_index));
@@ -1585,9 +1558,9 @@ next_iteration:
         auto locals_ptr = temporary_ptr.locals(0);
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
 
-        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, CodePosition{ ns.internal_value()->code.code().data()});
+        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, code_pos);
         auto est = StackTraceState{ *this, function, function->entry_point };
-        run_opcodes(globals_ptr, locals_ptr, temporary_ptr, StartOfCode{}, code_pos);
+        run_opcodes(globals_ptr, locals_ptr, temporary_ptr, code_pos);
         return ns;
     }
 

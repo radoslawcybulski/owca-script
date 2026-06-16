@@ -22,6 +22,7 @@ namespace OwcaScript {
         class RuntimeFunctions;
         class VM;
 		class Executor;
+		class CodePosition;
 
 		struct Operators2 {
 			OwcaValue (*add)(OwcaValue left, OwcaValue right);
@@ -144,7 +145,7 @@ namespace OwcaScript {
 				static constexpr const std::uint8_t Kind = 1;
 				std::uint64_t index = (std::uint64_t)-1;
 				OwcaIterator iterator;
-				ExecuteBufferReader::Position continue_position, end_position;
+				CodePosition continue_position = CodePosition{}, end_position = CodePosition{};
 				std::uint32_t loop_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
@@ -155,7 +156,7 @@ namespace OwcaScript {
 			struct WhileState {
 				static constexpr const std::uint8_t Kind = 2;
 				std::uint64_t index = (std::uint64_t)-1;
-				ExecuteBufferReader::Position end_position, continue_position;
+				CodePosition end_position = CodePosition{}, continue_position = CodePosition{};
 				std::uint32_t loop_index = 0, value_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
@@ -163,8 +164,8 @@ namespace OwcaScript {
 			};
 			struct TryState {
 				static constexpr const std::uint8_t Kind = 3;
-				ExecuteBufferReader::Position begin_position, end_position;
-				ExecuteBufferReader::Position catches_pos;
+				CodePosition begin_position = CodePosition{}, end_position = CodePosition{};
+				CodePosition catches_pos = CodePosition{};
 				TemporariesPtr temporary_ptr;
 				std::optional<OwcaException> original_exception_being_handled;
 
@@ -225,13 +226,13 @@ namespace OwcaScript {
 		private:
 			struct Frame {
 				RuntimeFunction* runtime_function = nullptr;
-				ExecuteBufferReader::Position code_position{ 0 };
+				CodePosition code_position = CodePosition{};
 				std::vector<StatesType> states;
 
 				Frame() {
 					states.reserve(8);
 				}
-				void init(RuntimeFunction* runtime_function, ExecuteBufferReader::Position code_position) {
+				void init(RuntimeFunction* runtime_function, CodePosition code_position) {
 					this->runtime_function = runtime_function;
 					this->code_position = code_position;
 					assert(states.empty());
@@ -262,7 +263,7 @@ namespace OwcaScript {
 			struct StackTraceState {
 				Executor &e;
 
-				StackTraceState(Executor &e, RuntimeFunction* runtime_function, ExecuteBufferReader::Position code_position) : e(e) {
+				StackTraceState(Executor &e, RuntimeFunction* runtime_function, CodePosition code_position) : e(e) {
 					++e.stacktrace_current;
 					if (e.stacktrace_current < e.stacktrace_vector.data() + e.stacktrace_vector.size()) [[likely]] {
 						e.stacktrace_current->init(runtime_function, code_position);
@@ -277,7 +278,7 @@ namespace OwcaScript {
 				}
 			};
 		private:
-			std::tuple<OwcaValue, TemporariesPtr, ExecuteBufferReader::Position> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position code_pos);
+			std::tuple<OwcaValue, TemporariesPtr, CodePosition> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
 			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
@@ -288,9 +289,8 @@ namespace OwcaScript {
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
 			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
 
-			ExecuteBufferReader::Position run_impl_opcodes_execute_compare(TemporariesPtr temporary_ptr, StartOfCode start_code, ExecuteBufferReader::Position pos, CompareKind kind, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
-			OwcaValue create_function(StartOfCode start_code, ExecuteBufferReader::Position &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, const std::unordered_map<const unsigned char *, Internal::DataKind> &data_kinds);
-			void process_thrown_exception(ExecuteBufferReader::Position *pos, OwcaException exc);
+			OwcaValue create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr);
+			void process_thrown_exception(CodePosition *pos, OwcaException exc);
 
 			struct TagBinOr {};
 			struct TagBinAnd {};
@@ -337,7 +337,7 @@ namespace OwcaScript {
 			std::span<const OwcaValue> values_vector_span() const { return std::span{ values_vector.data(), values_vector.size() }; };
 
 			OwcaNamespace execute_code_block(OwcaCode oc);
-			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, ExecuteBufferReader::Position code_pos);
+			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, CodePosition code_pos);
 			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);

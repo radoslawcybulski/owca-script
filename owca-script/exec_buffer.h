@@ -226,132 +226,140 @@ namespace OwcaScript {
                 return code_pos < other.code_pos;
             }
         };
+        using DataKindsType = std::unordered_map<const unsigned char *, DataKind>;
 
         class CodePosition {
             const unsigned char *pos = nullptr;
-        public:
+#ifdef DEBUG
+            static const DataKindsType &empty() {
+                static const DataKindsType empty_instance;
+                return empty_instance;
+            }
+            const DataKindsType *data_kinds;
+#endif
 
-            CodePosition() = default;
-            explicit CodePosition(const unsigned char *pos) : pos(pos) {}
-
-            auto value() const { return pos; }
-            CodePosition operator + (std::int32_t offset) const {
-                return CodePosition(pos + offset);
-            }
-            CodePosition operator - (std::int32_t offset) const {
-                return CodePosition(pos - offset);
-            }
-        };
-        class StartOfCode {
-        public:
-            const unsigned char *operator +(CodePosition pos) const {
-                return pos.value();
-            }
-        };
-        class ExecuteBufferReader {
-        public:
-            using Position = CodePosition;
-            using DataKindsType = std::unordered_map<const unsigned char *, DataKind>;
-            using Op = ExecuteOp;
-
-            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_same_v<T, std::string_view>) {
-                auto size = decode_size(code, pos, data_kinds);
-                auto p = align_pos(pos, alignof(char), sizeof(char) * size);
-#ifdef DEBUG                
-                if (size > 0) ensure_data_kind(data_kinds, DataKind::Blob, p);
-#endif
-                return std::string_view((const char*)(code + p), size);
-            }
-            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_enum_v<T>) {
-                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
-                auto p = align_pos(pos, alignof(std::underlying_type_t<T>), sizeof(std::underlying_type_t<T>));
-#ifdef DEBUG                
-                ensure_data_kind(data_kinds, std::is_same_v<T, Op> ? DataKind::Op : DataKind::Enum, p);
-#endif
-                T t;
-                std::memcpy(&t, code + p, sizeof(T));
-                return static_cast<T>(t);
-            }
-            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
-                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
-                auto p = align_pos(pos, alignof(T), sizeof(T));
+            size_t decode_size() {
 #ifdef DEBUG
-                if constexpr (std::is_same_v<T, bool>) {
-                    ensure_data_kind(data_kinds, DataKind::Bool, p);
-                } else if constexpr (sizeof(T) == 1) {
-                    ensure_data_kind(data_kinds, DataKind::Int8, p);
-                } else if constexpr (sizeof(T) == 2) {
-                    ensure_data_kind(data_kinds, DataKind::Int16, p);
-                } else if constexpr (sizeof(T) == 4) {
-                    ensure_data_kind(data_kinds, DataKind::Int32, p);
-                } else if constexpr (sizeof(T) == 8) {
-                    ensure_data_kind(data_kinds, DataKind::Int64, p);
-                } else {
-                    static_assert(sizeof(T) == 0, "Unsupported integral type");
-                }
-#endif
-                T t;
-                std::memcpy(&t, code + p, sizeof(T));
-                return static_cast<T>(t);
-            }
-            template <typename T> static T decode(StartOfCode code, Position &pos, const DataKindsType & data_kinds) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
-                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
-                auto p = align_pos(pos, alignof(T), sizeof(T));
-#ifdef DEBUG
-                if constexpr (sizeof(T) == 4) {
-                    ensure_data_kind(data_kinds, DataKind::Float32, p);
-                } else if constexpr (sizeof(T) == 8) {
-                    ensure_data_kind(data_kinds, DataKind::Float64, p);
-                } else {
-                    static_assert(sizeof(T) == 0, "Unsupported floating point type");
-                }
-#endif
-                T t;
-                std::memcpy(&t, code + p, sizeof(T));
-                return static_cast<T>(t);
-            }
-            static Position decode_jump(StartOfCode code, Position &pos, const DataKindsType & data_kinds) {
-                auto p = align_pos(pos, alignof(std::int32_t), sizeof(std::int32_t));
-#ifdef DEBUG
-                ensure_data_kind(data_kinds, DataKind::JumpOffset, p);
-#endif
-                std::int32_t offset;
-                std::memcpy(&offset, code + p, sizeof(offset));
-                return pos + offset;
-            }
-        private:
-            static size_t decode_size(StartOfCode code, Position &pos, const DataKindsType & data_kinds) {
-                auto p = align_pos(pos, alignof(std::uint32_t), sizeof(std::uint32_t));
-#ifdef DEBUG
-                ensure_data_kind(data_kinds, DataKind::Size, p);
+                ensure_data_kind(DataKind::Size);
 #endif
                 std::uint32_t size;
-                std::memcpy(&size, code + p, sizeof(size));
+                std::memcpy(&size, pos, sizeof(size));
+                pos += sizeof(size);
                 return size;
             }
 #ifdef DEBUG
-            static void ensure_data_kind(const DataKindsType & data_kinds, DataKind expected, Position p) {
-                if (!data_kinds.empty()) {
-                    auto it = data_kinds.find(p.value());
-                    if (it == data_kinds.end() || it->second != expected) {
-                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", (void*)p.value(), to_string(expected), it == data_kinds.end() ? "Unknown" : to_string(it->second));
+            void ensure_data_kind(DataKind expected) {
+                if (data_kinds && !data_kinds->empty()) {
+                    auto it = data_kinds->find(pos);
+                    if (it == data_kinds->end() || it->second != expected) {
+                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", (void*)pos, to_string(expected), it == data_kinds->end() ? "Unknown" : to_string(it->second));
                         std::cout << msg << std::endl;
                         throw std::runtime_error(msg);
                     }
                 }
             }
 #endif
-            static Position align_pos(Position &pos, size_t align, size_t size) {
-                auto p = pos;
-                pos = pos + size;
-                return p;
+        public:
+
+#ifdef DEBUG
+            CodePosition(const unsigned char *pos, const DataKindsType &data_kinds) : pos(pos), data_kinds(&data_kinds) {}
+            CodePosition(const CodePosition &cp, const unsigned char *pos) : pos(pos), data_kinds(cp.data_kinds) {}
+            explicit CodePosition() : data_kinds(&empty()) {}
+#else
+            explicit CodePosition(const unsigned char *pos) : pos(pos) {}
+            CodePosition(const CodePosition &, const unsigned char *pos) : pos(pos) {}
+            explicit CodePosition() = default;
+#endif
+
+            template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
+                auto size = decode_size();
+                auto ptr = pos;
+#ifdef DEBUG                
+                if (size > 0) ensure_data_kind(DataKind::Blob);
+#endif
+                pos += size;
+                return std::string_view((const char*)ptr, size);
+            }
+            template <typename T> T decode() requires(std::is_enum_v<T>) {
+                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
+#ifdef DEBUG                
+                ensure_data_kind(std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum);
+#endif
+                T t;
+                std::memcpy(&t, pos, sizeof(T));
+                pos += sizeof(T);
+                return static_cast<T>(t);
+            }
+            template <typename T> T decode() requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
+                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
+#ifdef DEBUG
+                if constexpr (std::is_same_v<T, bool>) {
+                    ensure_data_kind(DataKind::Bool);
+                } else if constexpr (sizeof(T) == 1) {
+                    ensure_data_kind(DataKind::Int8);
+                } else if constexpr (sizeof(T) == 2) {
+                    ensure_data_kind(DataKind::Int16);
+                } else if constexpr (sizeof(T) == 4) {
+                    ensure_data_kind(DataKind::Int32);
+                } else if constexpr (sizeof(T) == 8) {
+                    ensure_data_kind(DataKind::Int64);
+                } else {
+                    static_assert(sizeof(T) == 0, "Unsupported integral type");
+                }
+#endif
+                T t;
+                std::memcpy(&t, pos, sizeof(T));
+                pos += sizeof(T);
+                return static_cast<T>(t);
+            }
+            template <typename T> T decode() requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
+                static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
+#ifdef DEBUG
+                if constexpr (sizeof(T) == 4) {
+                    ensure_data_kind(DataKind::Float32);
+                } else if constexpr (sizeof(T) == 8) {
+                    ensure_data_kind(DataKind::Float64);
+                } else {
+                    static_assert(sizeof(T) == 0, "Unsupported floating point type");
+                }
+#endif
+                T t;
+                std::memcpy(&t, pos, sizeof(T));
+                pos += sizeof(T);
+                return static_cast<T>(t);
+            }
+            CodePosition decode_jump() {
+#ifdef DEBUG
+                ensure_data_kind(DataKind::JumpOffset);
+#endif
+                std::int32_t offset;
+                std::memcpy(&offset, pos, sizeof(offset));
+                pos += sizeof(offset);
+                return CodePosition{ *this, pos + offset };
+            }
+                        
+            auto value() const { return pos; }
+            CodePosition operator + (std::int32_t offset) const {
+                return CodePosition(*this, pos + offset);
+            }
+            CodePosition operator - (std::int32_t offset) const {
+                return CodePosition(*this, pos - offset);
+            }
+            CodePosition operator += (std::int32_t offset) {
+                pos += offset;
+                return *this;
+            }
+            CodePosition operator -= (std::int32_t offset) {
+                pos -= offset;
+                return *this;
             }
         };
 
         class ExecuteBufferWriter {
+            using WriteDataKindsType = std::unordered_map<size_t, DataKind>;
+
             std::vector<unsigned char> buffer;
-            using DataKindsType = std::unordered_map<size_t, DataKind>;
-            DataKindsType data_kinds;
+            WriteDataKindsType data_kinds;
             std::vector<LineEntry> lines;
 
             template <typename T> std::uint32_t prepare(const T *data, size_t sz, DataKind kind) {
@@ -397,7 +405,7 @@ namespace OwcaScript {
                 return Line{ lines.back().line };
             }
             auto take() && {
-                ExecuteBufferReader::DataKindsType data_kinds_converted;
+                DataKindsType data_kinds_converted;
 #ifdef DEBUG
                 for(auto &entry : data_kinds) {
                     data_kinds_converted[buffer.data() + entry.first] = entry.second;
@@ -410,7 +418,7 @@ namespace OwcaScript {
                 update_jump_placeholder(jump_pos, target_pos);
             }
             template <typename T> void append(Line line, T value) requires(std::is_enum_v<T>) {
-                append_impl(line, value, std::is_same_v<T, ExecuteBufferReader::Op> ? DataKind::Op : DataKind::Enum);
+                append_impl(line, value, std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum);
             }
             template <typename T> void append(Line line, T value) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 DataKind kind;

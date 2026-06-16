@@ -47,6 +47,7 @@ namespace OwcaScript {
         const auto &data_kinds() const { return *code_->data_kinds; }
         const auto lines() const { return code_->lines; }
         const auto &native_code_provider() const { return code_->native_code_provider; }
+        Internal::CodePosition code_position() const;
 		Internal::Line first_line() const;
         Internal::Line get_line_by_position(Internal::CodePosition pos) const;
 	};

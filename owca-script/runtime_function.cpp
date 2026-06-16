@@ -13,7 +13,7 @@ namespace OwcaScript::Internal {
 	}
 	void RuntimeFunction::gc_mark(GenerationGC generation_gc) const {}
 
-	unsigned int RuntimeFunction::line(ExecuteBufferReader::Position pos) const {
+	unsigned int RuntimeFunction::line(CodePosition pos) const {
 		return code.get_line_by_position(pos - 1).line;
 	}
 
@@ -74,7 +74,7 @@ namespace OwcaScript::Internal {
         temporary_ptr = temporary_ptr + max_values - param_count;
 
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
-        auto est = Executor::StackTraceState{ e, this, {} };
+        auto est = Executor::StackTraceState{ e, this, CodePosition{} };
         e.update_current_top_ptrs(temporary_ptr + max_temporaries);
         return function(std::span{ locals_ptr.local_values_ptr, param_count + 1u});
 	}
@@ -83,7 +83,7 @@ namespace OwcaScript::Internal {
         while(true) {
             std::optional<OwcaValue> val;
             {
-                auto est = Executor::StackTraceState{ e, this, {} };
+                auto est = Executor::StackTraceState{ e, this, CodePosition{} };
                 val = generator_object.next();
             }
             iter_object->first_time = false;

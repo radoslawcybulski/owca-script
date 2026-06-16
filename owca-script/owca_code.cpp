@@ -21,4 +21,11 @@ namespace OwcaScript {
         --it;
         return Internal::Line{ it->line };
     }
+    Internal::CodePosition OwcaCode::code_position() const {
+#ifdef DEBUG
+        return Internal::CodePosition{ code().data(), data_kinds() };
+#else
+        return Internal::CodePosition{ code().data() };
+#endif
+    }
 }

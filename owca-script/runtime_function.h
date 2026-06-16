@@ -31,7 +31,7 @@ namespace OwcaScript {
 			void gc_mark(GenerationGC generation_gc) const override;
 
 			virtual OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) = 0;
-			virtual unsigned int line(ExecuteBufferReader::Position) const;
+			virtual unsigned int line(CodePosition) const;
 		protected:
 			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
 				code(std::move(code)), name(name), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
@@ -41,16 +41,16 @@ namespace OwcaScript {
 			std::vector<OwcaValue> values_from_parents;
 			std::vector<AstFunction::CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
-			ExecuteBufferReader::Position entry_point{ 0 };
+			CodePosition entry_point = CodePosition{};
 			Executor::GlobalsPtr globals_ptr;
 		protected:
-			RuntimeFunctionScript(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, ExecuteBufferReader::Position entry_point, Executor::GlobalsPtr globals_ptr) : 
+			RuntimeFunctionScript(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, CodePosition entry_point, Executor::GlobalsPtr globals_ptr) : 
 					RuntimeFunction(std::move(code), name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
 			void gc_mark(GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptFunction(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 		};
@@ -58,7 +58,7 @@ namespace OwcaScript {
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
 			void gc_mark(GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, ExecuteBufferReader::Position entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptGenerator(OwcaCode code, Executor::GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(code, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
 		};
@@ -71,7 +71,7 @@ namespace OwcaScript {
 			RuntimeFunctionNativeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, name, full_name, is_method, false), line_(line) {}
 
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
-			unsigned int line(ExecuteBufferReader::Position) const override { return line_; }
+			unsigned int line(CodePosition) const override { return line_; }
 		};
 
 		struct RuntimeFunctionNativeGenerator : public RuntimeFunction {
@@ -83,7 +83,7 @@ namespace OwcaScript {
 
 			Generator run_native_generator(Executor &e, Iterator *iter_object, Generator generator_object);
 			OwcaValue call(Executor &e, Executor::TemporariesPtr temporary_ptr) override;
-			unsigned int line(ExecuteBufferReader::Position) const override { return line_; }
+			unsigned int line(CodePosition) const override { return line_; }
 		};
 
 		struct RuntimeFunctions : public AllocationBase {
