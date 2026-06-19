@@ -90,6 +90,39 @@ print(`Final result: {s}`);
 	auto val = vm.execute(code);
 }
 
+TEST_F(PerformanceTest, DISABLED_simple_4)
+{ // 17.56 // 100000000
+	OwcaVM vm;
+	auto code = compile(__LINE__, vm, "test.os", R"(
+function foo1(s) {
+    return s;
+}
+function foo2(s) {
+    return foo1(s);
+}
+function foo3(s) {
+    return foo2(s);
+}
+function foo4(s) {
+    return foo3(s);
+}
+function foo5(s) {
+    return foo4(s);
+}
+s = 0;
+start = time();
+i = 0;
+while (i < 100000) {
+    foo5(0);
+    i = i + 1;
+}
+end = time();
+print(`Time taken: {end - start} seconds`);
+print(`Final result: {s}`);
+)");
+	auto val = vm.execute(code);
+}
+
 TEST_F(PerformanceTest, DISABLED_book_building)
 {
     // GTEST_SKIP();
