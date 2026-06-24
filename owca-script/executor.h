@@ -292,38 +292,6 @@ namespace OwcaScript {
 			OwcaValue create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr);
 			void process_thrown_exception(CodePosition *pos, OwcaException exc);
 
-			struct TagBinOr {};
-			struct TagBinAnd {};
-			struct TagBinXor {};
-			struct TagBinLShift {};
-			struct TagBinRShift {};
-			struct TagAdd {};
-			struct TagSub {};
-			struct TagMul {};
-			struct TagDiv {};
-			struct TagMod {};
-			template <typename Tag> void run_impl_opcodes_execute_expr_oper2(TemporariesPtr &temporary_ptr);
-			Number expr_oper_2(TagAdd, Number left, Number right);
-			OwcaArray expr_oper_2(TagAdd, OwcaArray left, OwcaArray right);
-			OwcaTuple expr_oper_2(TagAdd, OwcaTuple left, OwcaTuple right);
-			OwcaString expr_oper_2(TagAdd, OwcaString left, OwcaString right);
-			Number expr_oper_2(TagSub, Number left, Number right);
-			Number expr_oper_2(TagMul, Number left, Number right);
-			OwcaString expr_oper_2(TagMul, OwcaString left, Number right);
-			OwcaString expr_oper_2(TagMul, Number left, OwcaString right);
-			OwcaArray expr_oper_2(TagMul, OwcaArray left, Number right);
-			OwcaArray expr_oper_2(TagMul, Number left, OwcaArray right);
-			OwcaTuple expr_oper_2(TagMul, OwcaTuple left, Number right);
-			OwcaTuple expr_oper_2(TagMul, Number left, OwcaTuple right);
-			Number expr_oper_2(TagDiv, Number left, Number right);
-			Number expr_oper_2(TagMod, Number left, Number right);
-			Number expr_oper_2(TagBinOr, Number left, Number right);
-			Number expr_oper_2(TagBinAnd, Number left, Number right);
-			Number expr_oper_2(TagBinXor, Number left, Number right);
-			Number expr_oper_2(TagBinLShift, Number left, Number right);
-			Number expr_oper_2(TagBinRShift, Number left, Number right);
-			template <typename A, typename B, typename C> OwcaEmpty expr_oper_2(A, B, C);
-
 			std::tuple<Number, Number, Number> parse_key(OwcaValue v, OwcaValue key, Number size);
 			size_t verify_key(Number v, size_t size, OwcaValue orig_key, std::string_view name);
 			std::pair<size_t, size_t> verify_key(OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
