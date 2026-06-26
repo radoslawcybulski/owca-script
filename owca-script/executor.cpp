@@ -998,7 +998,6 @@ restart:
                     PUSH_STATE(ForState{ iterator });
                     auto &state = STATE(ForState);
                     state.end_position = code_pos.decode_jump();
-                    state.loop_index = code_pos.decode<std::uint32_t>();
                     state.loop_control_depth = code_pos.decode<std::uint8_t>();
                     state.continue_position = code_pos;
                     break; }
@@ -1007,10 +1006,6 @@ restart:
                     if (state.iterator.completed()) [[unlikely]] {
                         code_pos = state.end_position;
                         break;
-                    }
-                    state.index++;
-                    if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                        LOCAL_VAR(state.loop_index) = state.index;
                     }
                     auto val = continue_iterator(state.iterator);
                     if (!val) [[unlikely]] {

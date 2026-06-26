@@ -998,7 +998,7 @@ namespace OwcaScript::Internal {
 		auto control_depth = loop_control_depth;
 		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
 		auto body = compile_stat();
-		return std::make_unique<AstFor>(line, control_depth, loop_ident, std::move(iterator), std::move(write_ident), std::move(body));
+		return std::make_unique<AstFor>(line, control_depth, std::move(iterator), std::move(write_ident), std::move(body));
 	}
 
 	std::unique_ptr<AstStat> AstCompiler::compile_with()
@@ -1264,20 +1264,6 @@ namespace OwcaScript::Internal {
 			o.visit_children(*this);
 		}
 		void apply(AstWhile &o) override {
-			if (first_run) {
-				if (!o.loop_identifier().empty()) {
-					current_stack->define_identifier(o.loop_identifier());
-				}
-			}
-			else {
-				if (!o.loop_identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.loop_identifier());
-					o.update_loop_ident_index(index);
-				}
-			}
-			apply(static_cast<AstStat&>(o));
-		}
-		void apply(AstFor &o) override {
 			if (first_run) {
 				if (!o.loop_identifier().empty()) {
 					current_stack->define_identifier(o.loop_identifier());

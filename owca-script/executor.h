@@ -143,10 +143,8 @@ namespace OwcaScript {
 			};
 			struct ForState {
 				static constexpr const std::uint8_t Kind = 1;
-				std::uint64_t index = (std::uint64_t)-1;
 				OwcaIterator iterator;
 				CodePosition continue_position = CodePosition{}, end_position = CodePosition{};
-				std::uint32_t loop_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
 				ForState(OwcaIterator iterator) : iterator(iterator) {}

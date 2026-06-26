@@ -104,11 +104,13 @@ function r() {
 
 	sum = 0;
 	try {
-		counter: for(kv = a.items()) {
-				sum = sum + kv[0] + kv[1];
-				if (counter == 2) {
-					a[7] = 9;
-				}
+		counter = 0;
+		for(kv = a.items()) {
+			sum = sum + kv[0] + kv[1];
+			if (counter == 2) {
+				a[7] = 9;
+			}
+			counter = counter + 1;
 		}
 		return -1;
 	}
