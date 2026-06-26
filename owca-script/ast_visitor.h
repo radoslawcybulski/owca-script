@@ -17,6 +17,7 @@ namespace OwcaScript {
 		class AstExprOper1;
 		class AstExprOper2;
 		class AstExprOperX;
+		class AstExprNoop;
 		class AstFunction;
 		class AstClass;
 		class AstReturn;
@@ -44,6 +45,7 @@ namespace OwcaScript {
 			virtual void apply(AstExprOper1 &o);
 			virtual void apply(AstExprOper2 &o);
 			virtual void apply(AstExprOperX &o);
+			virtual void apply(AstExprNoop &o);
 			virtual void apply(AstFunction& o);
 			virtual void apply(AstClass& o);
 			virtual void apply(AstReturn& o);

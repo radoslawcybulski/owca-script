@@ -114,7 +114,6 @@ namespace OwcaScript {
             ExprToString,
             ExprToIterator,
             ForInit,
-            ForNext,
             ForCondition,
             ForCompleted,
             Function,
@@ -191,7 +190,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprToString: return "ExprToString";
             case ExecuteOp::ExprToIterator: return "ExprToIterator";
             case ExecuteOp::ForInit: return "ForInit";
-            case ExecuteOp::ForNext: return "ForNext";
             case ExecuteOp::ForCondition: return "ForCondition";
             case ExecuteOp::ForCompleted: return "ForCompleted";
             case ExecuteOp::Function: return "Function";

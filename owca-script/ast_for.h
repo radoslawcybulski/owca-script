@@ -9,18 +9,17 @@ namespace OwcaScript {
 		class AstFor : public AstStat {
 		private:
             std::string_view loop_identifier_;
-			std::vector<std::string_view> values_;
 			std::unique_ptr<AstExpr> iterator_;
+			std::unique_ptr<AstExpr> write_idents_;
             std::unique_ptr<AstStat> body_;
             std::optional<std::uint32_t> loop_ident_index_;
-			std::vector<std::uint32_t> value_indexes;
 			std::uint8_t loop_control_depth_;
 
 		public:
-            AstFor(Line line, std::uint8_t loop_control_depth, std::string_view loop_identifier, std::vector<std::string_view> values, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), 
-				values_(std::move(values)), iterator_(std::move(iterator)), body_(std::move(body)), loop_control_depth_(loop_control_depth) {}
+            AstFor(Line line, std::uint8_t loop_control_depth, std::string_view loop_identifier, std::unique_ptr<AstExpr> iterator, std::unique_ptr<AstExpr> write_idents, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), 
+				iterator_(std::move(iterator)), write_idents_(std::move(write_idents)), body_(std::move(body)), loop_control_depth_(loop_control_depth) {}
 
-			const auto &values() const { return values_; }
+			auto &write_idents() { return *write_idents_; }
 			auto loop_control_depth() const { return loop_control_depth_; }
 			auto &iterator() { return *iterator_; }
 			auto &body() { return *body_; }
@@ -28,9 +27,6 @@ namespace OwcaScript {
             void update_loop_ident_index(std::uint32_t index) {
                 loop_ident_index_ = index;
             }
-			void update_value_indexes(std::vector<std::uint32_t> v) {
-				value_indexes = std::move(v);
-			}
 			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;

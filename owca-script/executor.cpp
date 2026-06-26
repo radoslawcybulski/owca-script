@@ -1019,14 +1019,6 @@ restart:
                     }
                     PUSH_VALUE(*val);
                     break; }
-                case ExecuteOp::ForNext: {
-                    auto val = PEEK_VALUE(1);
-                    if (val.kind() == OwcaValueKind::Completed) {
-                        auto &state = STATE(ForState);
-                        code_pos = state.end_position;
-                        POP_VALUES(1);
-                    }
-                    break; }
                 case ExecuteOp::ForCompleted: {
                     auto &state = STATE(ForState);
                     POP_STATE();

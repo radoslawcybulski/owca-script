@@ -10,6 +10,7 @@
 #include "ast_expr_oper_2.h"
 #include "ast_expr_oper_x.h"
 #include "ast_expr_interpreted_string.h"
+#include "ast_expr_noop.h"
 #include "ast_function.h"
 #include "ast_class.h"
 #include "ast_return.h"
@@ -74,6 +75,11 @@ namespace OwcaScript::Internal {
 	}
 
 	void AstVisitor::apply(AstExprOperX &o)
+	{
+		apply(static_cast<AstExpr&>(o));
+	}
+
+	void AstVisitor::apply(AstExprNoop &o)
 	{
 		apply(static_cast<AstExpr&>(o));
 	}
