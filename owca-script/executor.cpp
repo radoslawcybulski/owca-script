@@ -706,25 +706,25 @@ restart:
                     POP_VALUES(1);
                     break; }
 #define OPER2_RUN(oper) do { \
-        auto &left = temporary_ptr[2]; \
+        auto left = temporary_ptr[2]; \
         auto right = temporary_ptr[1]; \
-        left = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
+        temporary_ptr[2] = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
         POP_VALUES(1); \
     } while(0)
 #define CMP2_RUN(oper, reverse, upd) do { \
         auto jump_dest = code_pos.decode_jump();        \
         const auto last = code_pos.decode<bool>();      \
-        auto &left = PEEK_VALUE(2);                                                                 \
+        auto left = PEEK_VALUE(2);                                                                 \
         auto right = PEEK_VALUE(1);                                                                 \
         auto res = (!reverse) ?                                                                      \
             OPER2_GET(oper, left.kind(), right.kind())(left, right) :                        \
             OPER2_GET(oper, right.kind(), left.kind())(right, left);                         \
         res = (upd);                                                                                \
         if (res) {                                                                                  \
-            left = last ? OwcaValue{ true } : right;                                                \
+            PEEK_VALUE(2) = last ? OwcaValue{ true } : right;                                                \
         }                                                                                           \
         else {                                                                                      \
-            left = false;                                                                           \
+            PEEK_VALUE(2) = false;                                                                           \
             code_pos = jump_dest;                                                                   \
         }                                                                                           \
         POP_VALUES(1);                                                                              \
