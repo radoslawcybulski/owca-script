@@ -31,8 +31,14 @@ namespace OwcaScript {
 					auto maximum() const { return max; }
 					bool empty() const { return current == 0; }
 				};
+				struct BreakLoopPositions {
+					std::vector<ExecuteBufferWriter::JumpPlaceholder> break_positions;
+					std::vector<ExecuteBufferWriter::JumpPlaceholder> continue_positions;
+					std::uint8_t depth;
+				};
 				ExecuteBufferWriter code_writer;
 				MaxCounter stack, states;
+				std::vector<BreakLoopPositions> break_loops;
 				AstCompiler &compiler;
 				bool generator = false;
 			};

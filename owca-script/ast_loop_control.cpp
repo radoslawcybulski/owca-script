@@ -6,17 +6,25 @@
 
 namespace OwcaScript::Internal {
 	void AstLoopControl::emit(EmitInfo& ei) {
+		ei.code_writer.append(line, ExecuteOp::Jump);
+		auto pos = ei.code_writer.append_jump_placeholder(line);
 		assert(ei.stack.empty());
-        switch(mode_) {
-        case Mode::Break:
-			ei.code_writer.append(line, ExecuteOp::LoopControlBreak);
-			ei.code_writer.append(line, depth_);
-			break;
-        case Mode::Continue:
-			ei.code_writer.append(line, ExecuteOp::LoopControlContinue);
-			ei.code_writer.append(line, depth_);
-			break;
-        }
+		bool found = false;
+		for(auto &le : ei.break_loops) {
+			if (le.depth == depth_) {
+				switch(mode_) {
+				case Mode::Break:
+					le.break_positions.push_back(pos);
+					break;
+				case Mode::Continue:
+					le.continue_positions.push_back(pos);
+					break;
+				}
+				found = true;
+				break;
+			}
+		}
+		assert(found);
 	}
 
 	void AstLoopControl::visit(AstVisitor& vis) { vis.apply(*this); }
