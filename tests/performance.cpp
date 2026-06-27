@@ -19,7 +19,7 @@ while (i < 100000000) {
 }
 end = time();
 print(`Time taken: {end - start} seconds`);
-print(`Final result: {s}`);
+print(`Final result: {s} expected (46592) {s == 46592}`);
 )");
 	auto val = vm.execute(code);
 }
@@ -52,7 +52,7 @@ while (i < 100000000) {
 }
 end = time();
 print(`Time taken: {end - start} seconds`);
-print(`Final result: {s}`);
+print(`Final result: {s} expected (7168) {s == 7168}`);
 )");
 	auto val = vm.execute(code);
 }
