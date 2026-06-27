@@ -295,6 +295,7 @@ namespace OwcaScript {
 			void complete_all(TemporariesPtr temporary_ptr);
         public:
             Executor();
+			~Executor();
 
 			void clear();
 

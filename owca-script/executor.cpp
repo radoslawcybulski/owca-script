@@ -257,8 +257,30 @@ namespace OwcaScript::Internal {
         return oper2_functions;
     }();
 
+#ifdef MEASURE        
+    static std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
+    static std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;
+#endif
+
     Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
         stacktrace_current = stacktrace_vector.data();
+#ifdef MEASURE        
+        for(auto &t : times) t = 0;
+        for(auto &c : counts) c = 0;
+#endif
+    }
+
+    Executor::~Executor() {
+#ifdef MEASURE
+        std::cout << "\n\n";
+        for(auto i = 0u; i < (size_t)ExecuteOp::_Count; ++i) {
+            auto t = times[i];
+            auto c = counts[i];
+            if (t > 0) {
+                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << " (count " << c << ")\n";
+            }
+        }
+#endif
     }
 
 #define POP_STATE() stacktrace_current->states.pop_back();
@@ -595,13 +617,6 @@ namespace OwcaScript::Internal {
         auto &code_object = stacktrace_current->runtime_function->code;
         auto temporary_ptr_start = temporary_ptr;
 #endif        
-#ifdef MEASURE        
-        std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
-        std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;
-
-        for(auto &t : times) t = 0;
-        for(auto &c : counts) c = 0;
-#endif
 
 restart:
         try {
@@ -1179,17 +1194,6 @@ next_iteration:
             process_thrown_exception(&code_pos, oe);
             goto restart;
         }
-
-#ifdef MEASURE
-        std::cout << "\n\n";
-        for(auto i = 0u; i < (size_t)ExecuteOp::_Count; ++i) {
-            auto t = times[i];
-            auto c = counts[i];
-            if (t > 0) {
-                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << " (count " << c << ")\n";
-            }
-        }
-#endif
     }
     void Executor::complete_all(TemporariesPtr temporary_ptr) {
         auto sc = stacktrace_current;
