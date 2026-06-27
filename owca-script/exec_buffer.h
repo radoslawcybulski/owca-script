@@ -118,8 +118,6 @@ namespace OwcaScript {
             ForCompleted,
             Function,
             If,
-            LoopControlBreak,
-            LoopControlContinue,
             Return,
             ReturnCloseIterator,
             ReturnValue,
@@ -193,8 +191,6 @@ namespace OwcaScript {
             case ExecuteOp::ForCompleted: return "ForCompleted";
             case ExecuteOp::Function: return "Function";
             case ExecuteOp::If: return "If";
-            case ExecuteOp::LoopControlBreak: return "LoopControlBreak";
-            case ExecuteOp::LoopControlContinue: return "LoopControlContinue";
             case ExecuteOp::Return: return "Return";
             case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";

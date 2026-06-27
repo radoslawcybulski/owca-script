@@ -1029,57 +1029,6 @@ restart:
                         code_pos = else_position;
                     }
                     break; }
-                case ExecuteOp::LoopControlBreak: {
-                    auto depth = code_pos.decode<std::uint8_t>();
-                    while(true) {
-                        assert(HAS_STATE());
-                        if (auto s = TRY_STATE(ForState)) {
-                            if (s->loop_control_depth == depth) {
-                                code_pos = s->end_position;
-                                break;
-                            }
-                        }
-                        else if (auto s = TRY_STATE(WhileState)) {
-                            if (s->loop_control_depth == depth) {
-                                code_pos = s->end_position;
-                                break;
-                            }
-                        }
-                        else if (auto s = TRY_STATE(WithState)) {
-                            assert(false);
-                        }
-                        else if (auto s = TRY_STATE(CatchState)) {
-                            assert(false);
-                        }
-                        POP_STATE();
-                    }
-                    break; }
-                case ExecuteOp::LoopControlContinue: {
-                    auto depth = code_pos.decode<std::uint8_t>();
-                    while(true) {
-                        assert(HAS_STATE());
-                        if (auto s = TRY_STATE(ForState)) {
-                            if (s->loop_control_depth == depth) {
-                                code_pos = s->continue_position;
-                                break;
-                            }
-                        }
-                        else if (auto s = TRY_STATE(WhileState)) {
-                        if (s->loop_control_depth == depth) {
-                                code_pos = s->continue_position;
-                                break;
-                            }
-                        }
-                        else if (auto s = TRY_STATE(WithState)) {
-                            assert(false);
-                        }
-                        else if (auto s = TRY_STATE(CatchState)) {
-                            exception_being_handled = s->original_exception_being_handled;
-                        }
-                        // TODO: handle exception
-                        POP_STATE();
-                    }
-                    break; }
                 case ExecuteOp::ReturnCloseIterator: {
                     complete_all(temporary_ptr);
                     return { OwcaCompleted{}, temporary_ptr, code_pos };
