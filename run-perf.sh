@@ -1,5 +1,9 @@
 #!/bin/bash
 
+clear
+rm -rf build
+MODE=Release ./build.sh
+
 OLD_BOOST="$(cat /sys/devices/system/cpu/cpu2/cpufreq/boost)"
 (echo '0' | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/boost) > /dev/null
 
@@ -13,6 +17,7 @@ cleanup() {
 	(echo "${OLD_BOOST}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/boost) > /dev/null
 	(echo "${OLD_SCALING_SPEED}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/scaling_setspeed) > /dev/null
 	(echo "${OLD_SCALING_GOVERNOR}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor) > /dev/null
+	exit 1
 }
 
 trap cleanup SIGINT SIGTERM
@@ -32,8 +37,6 @@ do
 	V2R="$V2R\\n$V"
 done
 
-cleanup
-
 echo "V1R: `${V1R}`"
 echo "V2R: `${V2R}`"
 
@@ -43,3 +46,5 @@ V2=$(echo -e "$V2R" | sort -n | head -n 2 | tail -n 1)
 echo "Performance test results:"
 echo "  Test 1: $V1 seconds (lowest of $C)"
 echo "  Test 2: $V2 seconds (lowest of $C)"
+
+cleanup
