@@ -17,8 +17,29 @@ cleanup() {
 
 trap cleanup SIGINT SIGTERM
 
-taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_1 --gtest_also_run_disabled_tests
-taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_2 --gtest_also_run_disabled_tests
+V1R=""
+V2R=""
+
+C=7
+for i in $(seq 1 $C)
+do
+	echo "Running 1 ($i of $C)"
+	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_1 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
+	V1R="$V1R\\n$V"
+
+	echo "Running 2 ($i of $C)"
+	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_2 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
+	V2R="$V2R\\n$V"
+done
 
 cleanup
 
+echo "V1R: `${V1R}`"
+echo "V2R: `${V2R}`"
+
+V1=$(echo -e "$V1R" | sort -n | head -n 2 | tail -n 1)
+V2=$(echo -e "$V2R" | sort -n | head -n 2 | tail -n 1)
+
+echo "Performance test results:"
+echo "  Test 1: $V1 seconds (lowest of $C)"
+echo "  Test 2: $V2 seconds (lowest of $C)"
