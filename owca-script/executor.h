@@ -153,9 +153,7 @@ namespace OwcaScript {
 			};
 			struct WhileState {
 				static constexpr const std::uint8_t Kind = 2;
-				std::uint64_t index = (std::uint64_t)-1;
 				CodePosition end_position = CodePosition{}, continue_position = CodePosition{};
-				std::uint32_t loop_index = 0, value_index = 0;
 				std::uint8_t loop_control_depth = 0;
 
 				friend void gc_mark_value(GenerationGC generation_gc, const WhileState &e);

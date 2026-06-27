@@ -1171,16 +1171,8 @@ restart:
                     PUSH_STATE(WhileState{});
                     auto &state = STATE(WhileState);
                     state.end_position = code_pos.decode_jump();
-                    state.loop_index = code_pos.decode<std::uint32_t>();
                     state.loop_control_depth = code_pos.decode<std::uint8_t>();
                     state.continue_position = code_pos;
-                    break; }
-                case ExecuteOp::WhileCondition: {
-                    auto &state = STATE(WhileState);
-                    state.index++;
-                    if (state.loop_index != std::numeric_limits<std::uint32_t>::max()) {
-                        LOCAL_VAR(state.loop_index) = state.index;
-                    }
                     break; }
                 case ExecuteOp::WhileNext: {
                     auto &state = STATE(WhileState);

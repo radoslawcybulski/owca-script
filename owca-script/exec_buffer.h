@@ -130,7 +130,6 @@ namespace OwcaScript {
             TryCatchType,
             TryCatchTypeCompleted,
             WhileInit,
-            WhileCondition,
             WhileNext,
             WhileCompleted,
             WithInit,
@@ -206,7 +205,6 @@ namespace OwcaScript {
             case ExecuteOp::TryCatchType: return "TryCatchType";
             case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
             case ExecuteOp::WhileInit: return "WhileInit";
-            case ExecuteOp::WhileCondition: return "WhileCondition";
             case ExecuteOp::WhileNext: return "WhileNext";
             case ExecuteOp::WhileCompleted: return "WhileCompleted";
             case ExecuteOp::WithInit: return "WithInit";

@@ -10,10 +10,8 @@ namespace OwcaScript::Internal {
         ei.states.push();
         ei.code_writer.append(line, ExecuteOp::WhileInit);
         const auto end = ei.code_writer.append_jump_placeholder(line);
-        ei.code_writer.append(line, loop_ident_index_.value_or(std::numeric_limits<std::uint32_t>::max()));
         ei.code_writer.append(line, loop_control_depth_);
         const auto pos = ei.code_writer.position();
-        ei.code_writer.append(line, ExecuteOp::WhileCondition);
         value_->emit(ei);
         ei.code_writer.append(line, ExecuteOp::WhileNext);
         ei.stack.pop();

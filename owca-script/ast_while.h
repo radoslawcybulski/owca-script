@@ -8,21 +8,16 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstWhile : public AstStat {
 		private:
-            std::string_view loop_identifier_;
 			std::unique_ptr<AstExpr> value_;
             std::unique_ptr<AstStat> body_;
             std::uint8_t loop_control_depth_;
-            std::optional<unsigned int> loop_ident_index_;
 
 		public:
-			AstWhile(Line line, std::uint8_t loop_control_depth, std::string_view loop_identifier, std::unique_ptr<AstExpr> value, std::unique_ptr<AstStat> body) : AstStat(line), loop_identifier_(loop_identifier), value_(std::move(value)), body_(std::move(body)), loop_control_depth_(loop_control_depth) {}
+			AstWhile(Line line, std::uint8_t loop_control_depth, std::unique_ptr<AstExpr> value, std::unique_ptr<AstStat> body) : AstStat(line), value_(std::move(value)), body_(std::move(body)), loop_control_depth_(loop_control_depth) {}
 
 			auto &value() { return *value_; }
 			auto &body() { return *body_; }
-            auto loop_identifier() const { return loop_identifier_; }
-            void update_loop_ident_index(unsigned int index) {
-                loop_ident_index_ = index;
-            }
+
 			void emit(EmitInfo& ei) override;
 
 			void visit(AstVisitor&) override;
