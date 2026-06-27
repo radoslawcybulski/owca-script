@@ -1,8 +1,10 @@
 #!/bin/bash
 
-clear
+die() { echo "$*" 1>&2 ; exit 1; }
+
 rm -rf build
-MODE=Release ./build.sh
+echo "Building..."
+MODE=Release ./build.sh > /dev/null || die "Build failed"
 
 OLD_BOOST="$(cat /sys/devices/system/cpu/cpu2/cpufreq/boost)"
 (echo '0' | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/boost) > /dev/null
@@ -28,23 +30,22 @@ V2R=""
 C=7
 for i in $(seq 1 $C)
 do
-	echo "Running 1 ($i of $C)"
+	echo -ne "Running 1 ($i of $C)\r"
 	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_1 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
 	V1R="$V1R\\n$V"
 
-	echo "Running 2 ($i of $C)"
+	echo -ne "Running 2 ($i of $C)\r"
 	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_2 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
 	V2R="$V2R\\n$V"
 done
 
-echo "V1R: `${V1R}`"
-echo "V2R: `${V2R}`"
-
 V1=$(echo -e "$V1R" | sort -n | head -n 2 | tail -n 1)
 V2=$(echo -e "$V2R" | sort -n | head -n 2 | tail -n 1)
+V3=$(echo -e "$V1R" | sort -n | tail -n 1)
+V4=$(echo -e "$V2R" | sort -n | tail -n 1)
 
-echo "Performance test results:"
-echo "  Test 1: $V1 seconds (lowest of $C)"
-echo "  Test 2: $V2 seconds (lowest of $C)"
+echo "Performance test results $1"
+echo "  Test 1: $V1 seconds (lowest of $C) (highest: $V3)"
+echo "  Test 2: $V2 seconds (lowest of $C) (highest: $V4)"
 
 cleanup
