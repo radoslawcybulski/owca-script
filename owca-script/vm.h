@@ -67,6 +67,7 @@ namespace OwcaScript {
 		public:
 			static constexpr const std::string builtin_filename = "<builtin>";
 
+            auto &get_executor() { return *executor; }
 			VM();
 			~VM();
 			

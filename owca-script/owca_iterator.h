@@ -22,6 +22,7 @@ namespace OwcaScript {
 
         bool completed() const;
         std::optional<OwcaValue> next() const;
+        explicit operator bool() const { return !completed(); }
         bool operator == (OwcaIterator other) const { return object == other.object; }
         bool operator != (OwcaIterator other) const { return !(*this == other); }
         bool is(OwcaIterator other) const { return object == other.object; }

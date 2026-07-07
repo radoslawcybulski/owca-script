@@ -24,7 +24,95 @@ namespace OwcaScript {
 		class Executor;
 		class CodePosition;
 
-		struct Operators2 {
+        struct LocalsPtr {
+            OwcaValue *local_values_ptr;
+
+            explicit LocalsPtr(OwcaValue *ptr) : local_values_ptr(ptr) {}
+
+            LocalsPtr operator+(int offset) const {
+                return LocalsPtr(local_values_ptr + offset);
+            }
+            LocalsPtr operator-(int offset) const {
+                return LocalsPtr(local_values_ptr - offset);
+            }
+            LocalsPtr &operator++() {
+                ++local_values_ptr;
+                return *this;
+            }
+            LocalsPtr &operator--() {
+                --local_values_ptr;
+                return *this;
+            }
+            LocalsPtr operator ++ ( int ) {
+                LocalsPtr tmp = *this;
+                ++local_values_ptr;
+                return tmp;
+            }
+            LocalsPtr operator -- ( int ) {
+                LocalsPtr tmp = *this;
+                --local_values_ptr;
+                return tmp;
+            }
+            OwcaValue &operator [] (std::size_t index) const {
+                return local_values_ptr[index];
+            }
+        };
+        struct GlobalsPtr {
+            OwcaValue *global_values_ptr;
+
+            explicit GlobalsPtr(OwcaValue *ptr) : global_values_ptr(ptr) {}
+
+            OwcaValue &operator [] (std::size_t index) const {
+                return global_values_ptr[index];
+            }
+        };			
+        struct TemporariesPtr {
+            OwcaValue *temporaries_ptr;
+
+            explicit TemporariesPtr(OwcaValue *ptr) : temporaries_ptr(ptr) {}
+
+            TemporariesPtr operator+(int offset) const {
+                return TemporariesPtr(temporaries_ptr + offset);
+            }
+            TemporariesPtr operator-(int offset) const {
+                return TemporariesPtr(temporaries_ptr - offset);
+            }
+
+            TemporariesPtr &operator++() {
+                ++temporaries_ptr;
+                return *this;
+            }
+            TemporariesPtr &operator--() {
+                --temporaries_ptr;
+                return *this;
+            }
+            TemporariesPtr operator ++ ( int ) {
+                TemporariesPtr tmp = *this;
+                ++temporaries_ptr;
+                return tmp;
+            }
+            TemporariesPtr operator -- ( int ) {
+                TemporariesPtr tmp = *this;
+                --temporaries_ptr;
+                return tmp;
+            }
+            bool operator == (TemporariesPtr other) const {
+                return temporaries_ptr == other.temporaries_ptr;
+            }
+            bool operator < (TemporariesPtr other) const {
+                return temporaries_ptr < other.temporaries_ptr;
+            }
+            OwcaValue &operator [] (std::size_t index ) {
+                return *(temporaries_ptr - index);
+            }
+            std::span<OwcaValue> operator [] (std::pair<std::size_t, std::size_t> indexes) {
+                return std::span{ temporaries_ptr - indexes.first, indexes.second };
+            }
+            LocalsPtr locals(size_t args) {
+                return LocalsPtr(temporaries_ptr - args);
+            }
+        };
+        struct Operators2 {
 			OwcaValue (*add)(OwcaValue left, OwcaValue right);
 			OwcaValue (*sub)(OwcaValue left, OwcaValue right);
 			OwcaValue (*mul)(OwcaValue left, OwcaValue right);
@@ -41,99 +129,15 @@ namespace OwcaScript {
 
 			Operators2();
 		};
+        struct Operators1 {
+            OwcaValue (*call)(TemporariesPtr values, size_t count);
+            bool (*is_true)(OwcaValue value);
+        };
+
         class Executor {
 			friend class VM;
 
 		public:
-			struct LocalsPtr {
-				OwcaValue *local_values_ptr;
-
-				explicit LocalsPtr(OwcaValue *ptr) : local_values_ptr(ptr) {}
-
-				LocalsPtr operator+(int offset) const {
-					return LocalsPtr(local_values_ptr + offset);
-				}
-				LocalsPtr operator-(int offset) const {
-					return LocalsPtr(local_values_ptr - offset);
-				}
-				LocalsPtr &operator++() {
-					++local_values_ptr;
-					return *this;
-				}
-				LocalsPtr &operator--() {
-					--local_values_ptr;
-					return *this;
-				}
-				LocalsPtr operator ++ ( int ) {
-					LocalsPtr tmp = *this;
-					++local_values_ptr;
-					return tmp;
-				}
-				LocalsPtr operator -- ( int ) {
-					LocalsPtr tmp = *this;
-					--local_values_ptr;
-					return tmp;
-				}
-				OwcaValue &operator [] (std::size_t index) const {
-					return local_values_ptr[index];
-				}
-			};
-			struct GlobalsPtr {
-				OwcaValue *global_values_ptr;
-
-				explicit GlobalsPtr(OwcaValue *ptr) : global_values_ptr(ptr) {}
-
-				OwcaValue &operator [] (std::size_t index) const {
-					return global_values_ptr[index];
-				}
-			};			
-			struct TemporariesPtr {
-				OwcaValue *temporaries_ptr;
-
-				explicit TemporariesPtr(OwcaValue *ptr) : temporaries_ptr(ptr) {}
-
-				TemporariesPtr operator+(int offset) const {
-					return TemporariesPtr(temporaries_ptr + offset);
-				}
-				TemporariesPtr operator-(int offset) const {
-					return TemporariesPtr(temporaries_ptr - offset);
-				}
-
-				TemporariesPtr &operator++() {
-					++temporaries_ptr;
-					return *this;
-				}
-				TemporariesPtr &operator--() {
-					--temporaries_ptr;
-					return *this;
-				}
-				TemporariesPtr operator ++ ( int ) {
-					TemporariesPtr tmp = *this;
-					++temporaries_ptr;
-					return tmp;
-				}
-				TemporariesPtr operator -- ( int ) {
-					TemporariesPtr tmp = *this;
-					--temporaries_ptr;
-					return tmp;
-				}
-				bool operator == (TemporariesPtr other) const {
-					return temporaries_ptr == other.temporaries_ptr;
-				}
-				bool operator < (TemporariesPtr other) const {
-					return temporaries_ptr < other.temporaries_ptr;
-				}
-				OwcaValue &operator [] (std::size_t index ) {
-					return *(temporaries_ptr - index);
-				}
-				std::span<OwcaValue> operator [] (std::pair<std::size_t, std::size_t> indexes) {
-					return std::span{ temporaries_ptr - indexes.first, indexes.second };
-				}
-				LocalsPtr locals(size_t args) {
-					return LocalsPtr(temporaries_ptr - args);
-				}
-			};
-
 			struct ClassState {
 				static constexpr const std::uint8_t Kind = 0;
 				std::string_view name, full_name;
@@ -283,7 +287,6 @@ namespace OwcaScript {
 			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count);
 			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count);
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
-			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
 
 			OwcaValue create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr);
 			void process_thrown_exception(CodePosition *pos, OwcaException exc);
@@ -302,6 +305,8 @@ namespace OwcaScript {
 			std::span<const OwcaValue> values_vector_span() const { return std::span{ values_vector.data(), values_vector.size() }; };
 
 			OwcaNamespace execute_code_block(OwcaCode oc);
+            OwcaValue execute_function_call_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
+			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
 			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, CodePosition code_pos);
 			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);

@@ -35,6 +35,8 @@ namespace OwcaScript {
 		bool operator == (OwcaSet other) const;
 		bool operator != (OwcaSet other) const { return !(*this == other); }
 
+        explicit operator bool() const { return size() > 0; }
+        
 		OwcaSet operator | (OwcaSet other) const { auto v = copy(); v.union_with(other);  return v; }
 		OwcaSet operator & (OwcaSet other) const { auto v = copy(); v.intersection_with(other);  return v; }
 		OwcaSet operator - (OwcaSet other) const { auto v = copy(); v.difference_with(other);  return v; }

@@ -26,7 +26,7 @@ print(`Final result: {s} expected (46592) {s == 46592}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 26.42 // 100000000
+{ // 25.52 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {

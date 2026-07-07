@@ -25,6 +25,8 @@ namespace OwcaScript {
 
         std::string to_string() const;
 
+        explicit operator bool() const { return size() > 0; }
+        
 		bool operator == (OwcaTuple other) const;
 		bool operator != (OwcaTuple other) const { return !(*this == other); }
 		bool operator < (OwcaTuple other) const;

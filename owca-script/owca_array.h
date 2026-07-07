@@ -30,6 +30,7 @@ namespace OwcaScript {
 		OwcaValue pop_back();
 		OwcaValue pop_front();
         std::string to_string() const;
+        explicit operator bool() const { return size() > 0; }
 		bool operator == (OwcaArray other) const;
 		bool operator != (OwcaArray other) const { return !(*this == other); }
 		bool operator < (OwcaArray other) const;

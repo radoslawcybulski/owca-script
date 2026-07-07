@@ -296,6 +296,64 @@ namespace OwcaScript::Internal {
     }
 #endif
 
+    using Oper1TypeArray = std::array<Operators1, OwcaValuesCount>;
+
+    static OwcaValue op_call_cant(TemporariesPtr values, size_t count) {
+        current_vm().throw_cant_call(std::format("can't call {} with {} parameters", values[0].type(), count - 1));
+    };
+    static OwcaValue op_call_functions(TemporariesPtr values, size_t count) {
+        return current_vm().get_executor().execute_function_call_from_values(values, count);
+    };
+    static OwcaValue op_call_class(TemporariesPtr values, size_t count) {
+        return current_vm().get_executor().allocate_user_class_from_values(values, count);
+    };
+    
+    static bool op_is_true_empty(OwcaValue self) { return false; }
+    static bool op_is_true_completed(OwcaValue self) { return false;}
+    static bool op_is_true_range(OwcaValue self) { return true;}
+    static bool op_is_true_bool(OwcaValue self) { return self.as_bool_certainly(); }
+    static bool op_is_true_float(OwcaValue self) { return self.as_float_certainly() != 0; }
+    static bool op_is_true_string(OwcaValue self) { return (bool)self.as_string_certainly(); }
+    static bool op_is_true_functions(OwcaValue self) { return true; }
+    static bool op_is_true_map(OwcaValue self) { return (bool)self.as_map_certainly(); }
+    static bool op_is_true_set(OwcaValue self) { return (bool)self.as_set_certainly(); }
+    static bool op_is_true_class(OwcaValue self) { return true; }
+    static bool op_is_true_object(OwcaValue self) { return true; }
+    static bool op_is_true_tuple(OwcaValue self) { return (bool)self.as_tuple_certainly(); }
+    static bool op_is_true_array(OwcaValue self) { return (bool)self.as_array_certainly(); }
+    static bool op_is_true_iterator(OwcaValue self) { return (bool)self.as_iterator_certainly(); }
+    static bool op_is_true_namespace(OwcaValue self) { return true; }
+
+    #define OPER1_GET(oper, left_kind) oper1_functions[static_cast<size_t>(left_kind)].oper
+    #define OPER1_SET(oper, left_kind, func) OPER1_GET(oper, left_kind) = func
+    Oper1TypeArray oper1_functions = []() {
+        Oper1TypeArray oper1_functions;
+
+        for(auto i =0u; i < OwcaValuesCount; ++i) {
+            OPER1_SET(call, (OwcaValueKind)i, op_call_cant);
+        }
+        OPER1_SET(call, OwcaValueKind::Functions, op_call_functions);
+        OPER1_SET(call, OwcaValueKind::Class, op_call_class);
+        OPER1_SET(is_true, OwcaValueKind::Empty, op_is_true_empty);
+        OPER1_SET(is_true, OwcaValueKind::Completed, op_is_true_completed);
+        OPER1_SET(is_true, OwcaValueKind::Range, op_is_true_range);
+        OPER1_SET(is_true, OwcaValueKind::Bool, op_is_true_bool);
+        OPER1_SET(is_true, OwcaValueKind::Float, op_is_true_float);
+        OPER1_SET(is_true, OwcaValueKind::String, op_is_true_string);
+        OPER1_SET(is_true, OwcaValueKind::Functions, op_is_true_functions);
+        OPER1_SET(is_true, OwcaValueKind::Map, op_is_true_map);
+        OPER1_SET(is_true, OwcaValueKind::Set, op_is_true_set);
+        OPER1_SET(is_true, OwcaValueKind::Class, op_is_true_class);
+        OPER1_SET(is_true, OwcaValueKind::Object, op_is_true_object);
+        OPER1_SET(is_true, OwcaValueKind::Tuple, op_is_true_tuple);
+        OPER1_SET(is_true, OwcaValueKind::Array, op_is_true_array);
+        OPER1_SET(is_true, OwcaValueKind::Iterator, op_is_true_iterator);
+        OPER1_SET(is_true, OwcaValueKind::Namespace, op_is_true_namespace);
+
+        return oper1_functions;
+    }();
+
+
     Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
         stacktrace_current = stacktrace_vector.data();
     }
@@ -633,7 +691,7 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, Executor::TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
+    std::tuple<OwcaValue, TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
     {
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
@@ -743,6 +801,13 @@ restart:
                 case ExecuteOp::ExprPopAndIgnore: {
                     POP_VALUES(1);
                     break; }
+#define IS_TRUE(v) OPER1_GET(is_true, (v).kind())(v)
+#define OPER2_RUN(oper) do { \
+        auto left = temporary_ptr[2]; \
+        auto right = temporary_ptr[1]; \
+        temporary_ptr[2] = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
+        POP_VALUES(1); \
+    } while(0)
 #define OPER2_RUN(oper) do { \
         auto left = temporary_ptr[2]; \
         auto right = temporary_ptr[1]; \
@@ -880,7 +945,7 @@ restart:
                     break; }
                 case ExecuteOp::ExprOper1LogNot: {
                     auto &left = PEEK_VALUE(1);
-                    left = !left.is_true();
+                    left = !IS_TRUE(left);
                     break; }
                 case ExecuteOp::ExprOper1Negate: {
                     auto &left = PEEK_VALUE(1);
@@ -888,7 +953,7 @@ restart:
                     break; }
                 case ExecuteOp::ExprRetTrueAndJumpIfTrue: {
                     auto jump_dest = code_pos.decode_jump();
-                    if (PEEK_VALUE(1).is_true()) {
+                    if (IS_TRUE(PEEK_VALUE(1))) {
                         code_pos = jump_dest;
                     }
                     else {
@@ -897,7 +962,7 @@ restart:
                     break; }
                 case ExecuteOp::ExprRetFalseAndJumpIfFalse: {
                     auto jump_dest = code_pos.decode_jump();
-                    if (!PEEK_VALUE(1).is_true()) {
+                    if (!IS_TRUE(PEEK_VALUE(1))) {
                         code_pos = jump_dest;
                     }
                     else {
@@ -1001,7 +1066,7 @@ restart:
                     break; }
                 case ExecuteOp::ExprOperXCall: {
                     auto size = code_pos.decode<std::uint32_t>();
-                    PEEK_VALUE(size) = execute_call_from_values(temporary_ptr, size);
+                    PEEK_VALUE(size) = OPER1_GET(call, PEEK_VALUE(size).kind())(temporary_ptr, size);
                     POP_VALUES(size - 1);
                     break; }
                 case ExecuteOp::ExprOperXCreateArray: {
@@ -1060,7 +1125,7 @@ restart:
                     PUSH_VALUE(create_function(code_pos, globals_ptr, locals_ptr));
                     break; }
                 case ExecuteOp::If: {
-                    auto val = PEEK_VALUE(1).is_true();
+                    auto val = IS_TRUE(PEEK_VALUE(1));
                     POP_VALUES(1);
                     auto else_position = code_pos.decode_jump();
                     if (!val) {
@@ -1462,6 +1527,15 @@ restart:
             throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
         }
     }
+    OwcaValue Executor::execute_function_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
+        auto func = PEEK_VALUE(argument_count);
+        auto f = func.as_functions_certainly();
+        auto runtime_functions = f.internal_value();
+        PEEK_VALUE(argument_count) = f.self().value_or(OwcaValue{});
+        
+        return execute_function_call_from_values(runtime_functions, temporary_ptr, argument_count);
+    }
+
     OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count) {
         assert(arg_count > 0);
         auto runtime_function = runtime_functions->functions[arg_count - 1];

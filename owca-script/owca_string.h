@@ -20,6 +20,7 @@ namespace OwcaScript {
 
 		std::string_view text() const;
 		explicit operator std::string_view() const { return text(); }
+        explicit operator bool() const { return size() > 0; }
 
 		OwcaValue substr(size_t start, size_t end) const;
 		OwcaValue operator [] (size_t pos) const;

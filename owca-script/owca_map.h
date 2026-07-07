@@ -42,6 +42,8 @@ namespace OwcaScript {
 		bool operator == (OwcaMap other) const;
 		bool operator != (OwcaMap other) const { return !(*this == other); }
 
+        explicit operator bool() const { return size() > 0; }
+        
 		OwcaMap operator | (OwcaMap other) const { auto v = copy(); v.union_with(other);  return v; }
 		OwcaMap operator & (OwcaMap other) const { auto v = copy(); v.intersection_with(other);  return v; }
 		OwcaMap operator - (OwcaMap other) const { auto v = copy(); v.difference_with(other);  return v; }
