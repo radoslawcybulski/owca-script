@@ -34,4 +34,8 @@ namespace OwcaScript::Internal {
         }
         return temp;
     }
+
+    OwcaValue Array::bound_function_self_object() {
+        return OwcaArray{ this };
+    }
 }

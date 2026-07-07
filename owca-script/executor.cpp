@@ -1514,11 +1514,7 @@ restart:
     OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
         auto func = PEEK_VALUE(argument_count);
         if (func.kind() == OwcaValueKind::Functions) [[likely]] {
-            auto f = func.as_functions_certainly();
-            auto runtime_functions = f.internal_value();
-            PEEK_VALUE(argument_count) = f.self().value_or(OwcaValue{});
-            
-            return execute_function_call_from_values(runtime_functions, temporary_ptr, argument_count);
+            return execute_function_call_from_values(temporary_ptr, argument_count);
         }
         else {
             if (func.kind() == OwcaValueKind::Class) [[likely]] {
@@ -1531,7 +1527,7 @@ restart:
         auto func = PEEK_VALUE(argument_count);
         auto f = func.as_functions_certainly();
         auto runtime_functions = f.internal_value();
-        PEEK_VALUE(argument_count) = f.self().value_or(OwcaValue{});
+        PEEK_VALUE(argument_count) = f.self();
         
         return execute_function_call_from_values(runtime_functions, temporary_ptr, argument_count);
     }

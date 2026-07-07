@@ -43,4 +43,8 @@ namespace OwcaScript::Internal {
         globals[it->second] = val;
         return true;
     }
+
+    OwcaValue Namespace::bound_function_self_object() {
+        return OwcaNamespace{ this };
+    }
 }

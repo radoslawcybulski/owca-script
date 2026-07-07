@@ -23,6 +23,8 @@ namespace OwcaScript {
             Generator iter() const;
 			void gc_mark(GenerationGC generation_gc) const override {}
             size_t hash() const;
+
+            OwcaValue bound_function_self_object() override;
 		};
         struct RangeIterator {
             Number lower, upper, step;

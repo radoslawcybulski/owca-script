@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "allocation_base.h"
+#include "owca_value.h"
 #include <atomic>
 
 namespace OwcaScript::Internal {
@@ -21,4 +22,9 @@ namespace OwcaScript::Internal {
 		return 0;
 	}
 #endif
+
+    OwcaValue AllocationEmpty::bound_function_self_object() {
+        assert(false);
+        return {};
+    }
 }

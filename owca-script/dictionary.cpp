@@ -296,4 +296,11 @@ namespace OwcaScript::Internal {
 			gc_mark_value(gc, *v.second);
 		}
 	}
+
+    OwcaValue DictionaryShared::bound_function_self_object() {
+        return OwcaMap{ this };
+    }
+    OwcaValue SetShared::bound_function_self_object() {
+        return OwcaSet{ this };
+    }
 }

@@ -10,7 +10,7 @@ TEST_F(SimpleTest, empty)
 TEST_F(SimpleTest, simple)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", "function r() { return 14; }");
+	auto code = compile(__LINE__, vm, "test.os", "function r() { return 14; }");
 	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(), 14);
 }
@@ -18,7 +18,7 @@ TEST_F(SimpleTest, simple)
 TEST_F(SimpleTest, string)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", "function r() { return 'qwe' + 'rty'; }");
+	auto code = compile(__LINE__, vm, "test.os", "function r() { return 'qwe' + 'rty'; }");
 	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_string().text(), "qwerty");
 }
@@ -26,7 +26,7 @@ TEST_F(SimpleTest, string)
 TEST_F(SimpleTest, range)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
     return 'qwerty'[2:4];
 }
@@ -37,7 +37,7 @@ function r() {
 TEST_F(SimpleTest, dict)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r() {
     v = { 'a': 1, 'b': 2 };
     return v['a'] + v['b'];
@@ -60,7 +60,7 @@ TEST_F(SimpleTest, native_func)
 			return std::nullopt;
 		}
 	};
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function native foo(a, b);
 function r() {
     return foo(1, 2);
@@ -72,7 +72,7 @@ function r() {
 TEST_F(SimpleTest, external_vars)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 function r(q, b, c) {
     return q + b + c;
 }
@@ -84,7 +84,7 @@ function r(q, b, c) {
 TEST_F(SimpleTest, class_)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {
 	function __init__(self, a, b, c) {
 		self.value = a + b + c;
@@ -121,7 +121,7 @@ TEST_F(SimpleTest, native_class)
 			return nullptr;
 		}
 	};
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 class native A {
 	function __init__(self, a, b, c) {
 		self.value = a + b + c;
@@ -179,7 +179,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 				return std::nullopt;
 			}
 		};
-		auto code = vm.compile("test.os", R"(
+		auto code = compile(__LINE__, vm, "test.os", R"(
 	class native A {
 		function __init__(self, a, b, c) {
 			self.set_value(a + b + c);
@@ -252,7 +252,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 			}
 		};
 		unsigned int reads = 0, writes = 0;
-		auto code = vm.compile("test.os", R"(
+		auto code = compile(__LINE__, vm, "test.os", R"(
 	class native A {
 		function __init__(self, a, b, c) {
 			self.value = a + b + c;
@@ -329,7 +329,7 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 			}
 		};
 		unsigned int reads = 0, writes = 0;
-		auto code = vm.compile("test.os", R"(
+		auto code = compile(__LINE__, vm, "test.os", R"(
 class native A {
 	var value;
 
@@ -421,7 +421,7 @@ TEST_F(SimpleTest, variable_missing)
 				return nullptr;
 			}
 		};
-		auto code = vm.compile("test.os", R"(
+		auto code = compile(__LINE__, vm, "test.os", R"(
 	class native A {
 		var value;
 
@@ -453,10 +453,10 @@ TEST_F(SimpleTest, variable_missing)
 	}
 }
 
-TEST_F(SimpleTest, simple10)
+TEST_F(SimpleTest, call)
 {
 	OwcaVM vm;
-	auto code = vm.compile("test.os", R"(
+	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {
 	function __init__(self, v) {
 		self.v = v;

@@ -11,9 +11,17 @@
 #include "iterator.h"
 #include "range.h"
 #include "namespace.h"
+#include "owca_value.h"
 
 namespace OwcaScript {
-	OwcaFunctions::OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::AllocationBase* self_object) : functions(functions), self_object(self_object) {}
+    static Internal::BoundFunctionSelfObject bound_function_self_object_empty{ OwcaEmpty{} };
+    static Internal::BoundFunctionSelfObject bound_function_self_object_completed{ OwcaCompleted{} };
+    static Internal::BoundFunctionSelfObject bound_function_self_object_true{ true };
+    static Internal::BoundFunctionSelfObject bound_function_self_object_false{ false };
+
+	OwcaFunctions::OwcaFunctions(Internal::RuntimeFunctions* functions, Internal::AllocationBase* self_object) : functions(functions), self_object(self_object) {
+        if (!this->self_object) this->self_object = &bound_function_self_object_empty;
+    }
 	
 	std::string_view OwcaFunctions::name() const
 	{
@@ -23,45 +31,28 @@ namespace OwcaScript {
 	OwcaValue OwcaFunctions::bind(OwcaValue self) const
 	{
 		auto s = self.visit(
-			[](OwcaEmpty) -> Internal::AllocationBase * { return nullptr; },
-			[&](OwcaCompleted) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](Number) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](bool) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](OwcaRange) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self); },
-			[&](OwcaException oe) -> Internal::AllocationBase * { return oe.internal_owner(); },
-			[&](OwcaFunctions oe) -> Internal::AllocationBase * {
+			[](OwcaEmpty) -> Internal::AllocationBase * { return &bound_function_self_object_empty; },
+			[](OwcaCompleted) -> Internal::AllocationBase * { return &bound_function_self_object_completed; },
+			[](Number n) -> Internal::AllocationBase * { return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, n); },
+			[](bool b) -> Internal::AllocationBase * { return b ? &bound_function_self_object_true : &bound_function_self_object_false; },
+			[](OwcaRange b) -> Internal::AllocationBase * { return b.internal_object(); },
+			[](OwcaException oe) -> Internal::AllocationBase * { return oe.internal_owner(); },
+			[](OwcaFunctions oe) -> Internal::AllocationBase * {
 				if (oe.internal_self_object()) {
-					return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, self);
+					return Internal::current_vm().allocate<Internal::BoundFunctionSelfObject>(0, oe);
 				}
 				return oe.internal_value();
 			},
-			[&](auto v) -> Internal::AllocationBase * {
+			[](auto v) -> Internal::AllocationBase * {
 				return v.internal_value();
 			}
 		);
 		return OwcaFunctions{ internal_value(), s };
 	}
 
-	std::optional<OwcaValue> OwcaFunctions::self() const
+	OwcaValue OwcaFunctions::self() const
 	{
-		if (!self_object) return std::nullopt;
-		switch(self_object->kind) {
-		case Internal::AllocationBase::Kind::User: return OwcaObject{ static_cast<Internal::Object*>(self_object) };
-		case Internal::AllocationBase::Kind::String: return OwcaString{ static_cast<Internal::String*>(self_object) };
-		case Internal::AllocationBase::Kind::RuntimeFunction: assert(false); break;
-		case Internal::AllocationBase::Kind::RuntimeFunctions: return OwcaFunctions{ static_cast<Internal::RuntimeFunctions*>(self_object) };
-		case Internal::AllocationBase::Kind::Map: return OwcaMap{ static_cast<Internal::DictionaryShared*>(self_object) };
-		case Internal::AllocationBase::Kind::Class: return OwcaClass{ static_cast<Internal::Class*>(self_object) };
-		case Internal::AllocationBase::Kind::Tuple: return OwcaTuple{ static_cast<Internal::Tuple*>(self_object) };
-		case Internal::AllocationBase::Kind::Array: return OwcaArray{ static_cast<Internal::Array*>(self_object) };
-		case Internal::AllocationBase::Kind::Set: return OwcaSet{ static_cast<Internal::SetShared*>(self_object) };
-		case Internal::AllocationBase::Kind::Iterator: return OwcaIterator{ static_cast<Internal::Iterator*>(self_object) };
-		case Internal::AllocationBase::Kind::BoundSelfObject: return static_cast<Internal::BoundFunctionSelfObject*>(self_object)->self;
-		case Internal::AllocationBase::Kind::Range: return OwcaRange{ static_cast<Internal::Range*>(self_object) };
-		case Internal::AllocationBase::Kind::Namespace: return OwcaNamespace{ static_cast<Internal::Namespace*>(self_object) };
-		}
-		assert(false);
-		return {};
+        return self_object->bound_function_self_object(); 
 	}
 
 	void gc_mark_value(GenerationGC gc, const OwcaFunctions &f) {

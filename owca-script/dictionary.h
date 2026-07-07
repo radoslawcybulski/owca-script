@@ -68,6 +68,7 @@ namespace OwcaScript {
 			void gc_mark(GenerationGC generation_gc) const override {
 				gc_mark_value(generation_gc, dict);
 			}
+            OwcaValue bound_function_self_object() override;
 		};
 
 		struct SetShared : public AllocationBase {
@@ -87,6 +88,7 @@ namespace OwcaScript {
 			void gc_mark(GenerationGC generation_gc) const override {
 				gc_mark_value(generation_gc, dict);
 			}
+            OwcaValue bound_function_self_object() override;            
 		};
 	}
 }

@@ -53,6 +53,8 @@ namespace OwcaScript {
 			const char* native_storage_ptr(const Object *) const;
 
 			Class(Line line, std::string_view type, std::string_view full_name, OwcaCode code);
+
+            OwcaValue bound_function_self_object() override;
 		};
 
 		struct Object : public AllocationBase {
@@ -75,6 +77,8 @@ namespace OwcaScript {
 				}
 				return { (char*)nullptr, 0 };
 			}
+
+            OwcaValue bound_function_self_object() override;
 		};
 
 		void gc_mark_value(GenerationGC ggc, const AllocationBase* ptr);

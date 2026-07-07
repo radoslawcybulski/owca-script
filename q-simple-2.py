@@ -2,21 +2,23 @@
 
 import time
 
-def foo1(s):
-    return s + 1
-def foo2(s):
-    return foo1(s)
-def foo3(s):
-    return foo2(s)
-def foo4(s):
-    return foo3(s)
-def foo5(s):
-    return foo4(s)
+class A:    
+    def foo1(self, s):
+        return s + 1
+    def foo2(self, s):
+        return self.foo1(s)
+    def foo3(self, s):
+        return self.foo2(s)
+    def foo4(self, s):
+        return self.foo3(s)
+    def foo5(self, s):
+        return self.foo4(s)
 s = 0
+a = A()
 start = time.time()
 i = 0
 while i < 100000000:
-    s = foo5((s * 11035 + 12345) & 0xffff)
+    s = a.foo5((s * 11035 + 12345) & 0xffff)
     i += 1
 end = time.time()
 

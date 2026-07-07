@@ -32,6 +32,7 @@ namespace OwcaScript {
 
 			virtual OwcaValue call(Executor &e, TemporariesPtr temporary_ptr) = 0;
 			virtual unsigned int line(CodePosition) const;
+            OwcaValue bound_function_self_object() override { assert(false); return {}; }
 		protected:
 			RuntimeFunction(OwcaCode code, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
 				code(std::move(code)), name(name), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
@@ -99,6 +100,8 @@ namespace OwcaScript {
 			std::string_view type() const override;
 			std::string to_string() const override;
 			void gc_mark(GenerationGC generation_gc) const override;
+
+            OwcaValue bound_function_self_object() override;
 		};
 
 		struct BoundFunctionSelfObject : public AllocationBase {
@@ -111,7 +114,7 @@ namespace OwcaScript {
 			std::string_view type() const override { return "bound function's self helper object"; }
 			std::string to_string() const override { return std::string{ type() }; }
 			void gc_mark(GenerationGC generation_gc) const override;
-			BoundFunctionSelfObject* is_bound_function_self_object() override { return this; }
+			OwcaValue bound_function_self_object() override { return self; }
 		};
 	}
 }

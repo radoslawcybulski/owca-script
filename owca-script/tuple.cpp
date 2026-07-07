@@ -50,4 +50,9 @@ namespace OwcaScript::Internal {
         }
         return temp;
     }
+
+    OwcaValue Tuple::bound_function_self_object() {
+        return OwcaTuple{ this };
+    }
+
 }

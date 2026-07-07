@@ -191,7 +191,7 @@ namespace OwcaScript::Internal {
 			return self.bind(bind);
 		}
 		static OwcaValue function_bound_value(OwcaFunctions self) {
-			return self.self().value_or(OwcaValue{});
+			return self.self();
 		}
 		static OwcaValue map_has_key(OwcaMap self, OwcaValue key) {
 			return self.has_key(key);
@@ -1071,8 +1071,7 @@ function native time();
 
 		if (v && v->kind() == OwcaValueKind::Functions && bind_if_needed) {
 			auto f = v->as_functions_certainly();
-			if (!f.internal_self_object())
-				return f.bind(val);
+			return f.bind(val);
 		}
 
 		if (!v) return std::nullopt;

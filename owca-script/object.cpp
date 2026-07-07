@@ -170,4 +170,7 @@ namespace OwcaScript::Internal {
 			cls->native->gc_mark_members(p, size, generation_gc);
 		}
 	}
+
+    OwcaValue Class::bound_function_self_object() { return OwcaClass{ this }; }
+    OwcaValue Object::bound_function_self_object() { return OwcaObject{ this }; }
 }

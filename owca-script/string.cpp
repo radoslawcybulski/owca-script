@@ -12,4 +12,8 @@ namespace OwcaScript::Internal {
         }
         return hash_value;
     }
+
+    OwcaValue String::bound_function_self_object() {
+        return OwcaString{ this };
+    }
 }

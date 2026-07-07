@@ -35,6 +35,8 @@ namespace OwcaScript {
 				code(std::move(code)), identifier_to_global_index(std::move(identifier_to_global_index)) {
                     globals.resize(this->identifier_to_global_index.size());
                 }
+
+            OwcaValue bound_function_self_object() override;
 		};
 	}
 }

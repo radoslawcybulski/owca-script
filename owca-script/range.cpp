@@ -33,4 +33,8 @@ namespace OwcaScript::Internal {
             }
         }
     }
+
+    OwcaValue Range::bound_function_self_object() {
+        return OwcaRange{ this };
+    }
 }

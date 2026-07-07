@@ -20,4 +20,7 @@ namespace OwcaScript::Internal {
             gc_mark_value(generation_gc, s);
         }
     }
+    OwcaValue Iterator::bound_function_self_object() {
+        return OwcaIterator{ this };
+    }
 }

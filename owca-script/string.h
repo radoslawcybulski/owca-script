@@ -27,6 +27,8 @@ namespace OwcaScript {
             size_t hash() const;
 			char *pointer() { return (char*)this + sizeof(*this); }
 			const char *pointer() const { return (char*)this + sizeof(*this); }
+
+            OwcaValue bound_function_self_object() override;
 		};
 	}
 }

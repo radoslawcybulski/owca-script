@@ -31,6 +31,8 @@ namespace OwcaScript {
 			}
 			std::string to_string() const override;
 			void gc_mark(GenerationGC generation_gc) const override;
+
+			OwcaValue bound_function_self_object() override;
 		};
 	}
 }

@@ -24,6 +24,7 @@ namespace OwcaScript {
 			std::deque<OwcaValue> sub_deque(size_t from, size_t to) const;
 			std::string to_string() const override;
 			void gc_mark(GenerationGC generation_gc) const override;
+            OwcaValue bound_function_self_object() override;
 		};
 	}
 }

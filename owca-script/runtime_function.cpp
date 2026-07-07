@@ -104,4 +104,6 @@ namespace OwcaScript::Internal {
         iter->generator = run_native_generator(e, iter, std::move(generator_object));
         return OwcaIterator{ iter };
 	}
+
+    OwcaValue RuntimeFunctions::bound_function_self_object() { return OwcaFunctions{ this }; }
 }
