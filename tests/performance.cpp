@@ -25,29 +25,32 @@ print(`Final result: {s} expected (46592) {s == 46592}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 15.68 // 100000000
+{ // 26.42 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
-function foo1(s) {
-    return s + 1;
+class A {
+    function foo1(s) {
+        return s + 1;
+    }
+    function foo2(self, s) {
+        return self.foo1(s);
+    }
+    function foo3(self, s) {
+        return self.foo2(s);
+    }
+    function foo4(self, s) {
+        return self.foo3(s);
+    }
+    function foo5(self, s) {
+        return self.foo4(s);
+    }
 }
-function foo2(s) {
-    return foo1(s);
-}
-function foo3(s) {
-    return foo2(s);
-}
-function foo4(s) {
-    return foo3(s);
-}
-function foo5(s) {
-    return foo4(s);
-}
+a = A();
 s = 0;
 start = time();
 i = 0;
 while (i < 100000000) {
-    s = foo5((s * 11035 + 12345) & 0xffff);
+    s = a.foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }
 end = time();

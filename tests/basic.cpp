@@ -452,3 +452,25 @@ TEST_F(SimpleTest, variable_missing)
 		ASSERT_TRUE(oe.message().find(std::format("doesn't have a member value2")) != std::string_view::npos) << oe.message();
 	}
 }
+
+TEST_F(SimpleTest, simple10)
+{
+	OwcaVM vm;
+	auto code = vm.compile("test.os", R"(
+class A {
+	function __init__(self, v) {
+		self.v = v;
+	}
+	function r(self, a) {
+		return a + self.v;
+	}
+}
+function r() {
+	a = A(5);
+	return a.r(10);
+}
+)");
+	auto val = vm.execute(code).member("r").call();;
+	ASSERT_EQ(val.as_int(), 15);
+}
+
