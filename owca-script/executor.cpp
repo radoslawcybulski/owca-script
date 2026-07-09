@@ -716,7 +716,6 @@ restart:
                 std::string states_debug;
                 for(auto &s : stacktrace_current->states) {
                     visit_variant(s,
-                        [&](const ClassState& c) { states_debug += "S"; },
                         [&](const ForState& c) { states_debug += "F"; },
                         [&](const WhileState& c) { states_debug += "W"; },
                         [&](const TryState& t) { states_debug += "T"; },
@@ -741,19 +740,12 @@ restart:
                 case ExecuteOp::_Count:
                     assert(false);
                     break;
-                case ExecuteOp::ClassInit: {
-                    auto &code_object = stacktrace_current->runtime_function->code;
-                    auto line = code_object.get_line_by_position(code_pos - 1);
+                case ExecuteOp::ClassCreate: {
                     auto name = code_pos.decode<std::string_view>();
                     auto full_name = code_pos.decode<std::string_view>();
+                    auto &code_object = stacktrace_current->runtime_function->code;
+                    auto line = code_object.get_line_by_position(code_pos - 1);
                     auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
-                    PUSH_STATE(ClassState{});
-                    STATE(ClassState).cls = cls;
-                    break; }
-                case ExecuteOp::ClassCreate: {
-                    auto cls = STATE(ClassState).cls;
-                    POP_STATE();
-
                     auto native = code_pos.decode<bool>();
                     auto base_class_count = code_pos.decode<std::uint32_t>();
                     auto member_count = code_pos.decode<std::uint32_t>();
@@ -1840,9 +1832,6 @@ restart:
     }
 
     void gc_mark_value(GenerationGC generation_gc, const Executor::WhileState &e) {
-    }
-    void gc_mark_value(GenerationGC generation_gc, const Executor::ClassState &e) {
-        gc_mark_value(generation_gc, e.cls);
     }
     void gc_mark_value(GenerationGC generation_gc, const Executor::ForState &e) {
         gc_mark_value(generation_gc, e.iterator);

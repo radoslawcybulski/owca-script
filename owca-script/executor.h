@@ -138,13 +138,6 @@ namespace OwcaScript {
 			friend class VM;
 
 		public:
-			struct ClassState {
-				static constexpr const std::uint8_t Kind = 0;
-				std::string_view name, full_name;
-				Class *cls;
-
-				friend void gc_mark_value(GenerationGC generation_gc, const ClassState &e);
-			};
 			struct ForState {
 				static constexpr const std::uint8_t Kind = 1;
 				OwcaIterator iterator;
@@ -187,7 +180,7 @@ namespace OwcaScript {
 
 				friend void gc_mark_value(GenerationGC generation_gc, const WithState &e);
 			};
-			using StatesType = std::variant<ClassState, ForState, WhileState, TryState, CatchState, WithState>;
+			using StatesType = std::variant<WhileState, ForState, TryState, CatchState, WithState>;
 			struct StatesTypePtr {
 				StatesType *states_type_ptr;
 

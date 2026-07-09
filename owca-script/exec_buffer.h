@@ -65,7 +65,6 @@ namespace OwcaScript {
             }
         }
         enum class ExecuteOp : std::uint8_t {
-            ClassInit,
             ClassCreate,
             ExprPopAndIgnore,
             ExprCompareEq,
@@ -138,7 +137,6 @@ namespace OwcaScript {
         };
         inline std::string_view to_string(ExecuteOp op) {
             switch(op) {
-            case ExecuteOp::ClassInit: return "ClassInit";
             case ExecuteOp::ClassCreate: return "ClassCreate";
             case ExecuteOp::ExprPopAndIgnore: return "ExprPopAndIgnore";
             case ExecuteOp::ExprCompareEq: return "ExprCompareEq";
