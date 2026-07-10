@@ -30,6 +30,19 @@
 namespace OwcaScript::Internal {
     enum class CompareResult : std::uint8_t;
 
+    enum {
+        Add = 0,
+        Sub = 1,
+        Mul = 2,
+        Div = 3,
+        Mod = 4,
+        BinAnd = 5,
+        BinOr = 6,
+        BinXor = 7,
+        BinLShift = 8,
+        BinRShift = 9,
+    };
+    
     static OwcaValue op_add_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("+", left.type(), right.type()); }
     static OwcaValue op_sub_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("-", left.type(), right.type()); }
     static OwcaValue op_mul_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("*", left.type(), right.type()); }
@@ -45,16 +58,16 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_default(OwcaValue left, OwcaValue right) { return false; }
 
     Operators2::Operators2() {
-        add = op_add_cant;
-        sub = op_sub_cant;
-        mul = op_mul_cant;
-        div = op_div_cant;
-        mod = op_mod_cant;
-        bin_and = op_bin_and_cant;
-        bin_or = op_bin_or_cant;
-        bin_xor = op_bin_xor_cant;
-        bin_lshift = op_bin_lshift_cant;
-        bin_rshift = op_bin_rshift_cant;
+        math_opers[Add] = op_add_cant;
+        math_opers[Sub] = op_sub_cant;
+        math_opers[Mul] = op_mul_cant;
+        math_opers[Div] = op_div_cant;
+        math_opers[Mod] = op_mod_cant;
+        math_opers[BinAnd] = op_bin_and_cant;
+        math_opers[BinOr] = op_bin_or_cant;
+        math_opers[BinXor] = op_bin_xor_cant;
+        math_opers[BinLShift] = op_bin_lshift_cant;
+        math_opers[BinRShift] = op_bin_rshift_cant;
 
         eq = op_compare_eq_default;
         less = op_compare_lt_cant;
@@ -185,40 +198,43 @@ namespace OwcaScript::Internal {
     constexpr const size_t OwcaValuesCount = static_cast<size_t>(OwcaValueKind::_Count);
     using Oper2TypeArray = std::array<Operators2, OwcaValuesCount * OwcaValuesCount>;
 
+    #define OPER2_MATH_GET(oper, left_kind, right_kind) oper2_functions[static_cast<size_t>(left_kind) * OwcaValuesCount + static_cast<size_t>(right_kind)].math_opers[oper]
+    #define OPER2_MATH_SET(oper, left_kind, right_kind, func) OPER2_MATH_GET(oper, left_kind, right_kind) = func
+
     #define OPER2_GET(oper, left_kind, right_kind) oper2_functions[static_cast<size_t>(left_kind) * OwcaValuesCount + static_cast<size_t>(right_kind)].oper
     #define OPER2_SET(oper, left_kind, right_kind, func) OPER2_GET(oper, left_kind, right_kind) = func
     Oper2TypeArray oper2_functions = []() {
         constexpr size_t kind_count = static_cast<size_t>(OwcaValueKind::_Count);
         Oper2TypeArray oper2_functions;
 
-        OPER2_SET(add, OwcaValueKind::Float, OwcaValueKind::Float, op_add_number_number);
-        OPER2_SET(sub, OwcaValueKind::Float, OwcaValueKind::Float, op_sub_number_number);
-        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Float, op_mul_number_number);
-        OPER2_SET(div, OwcaValueKind::Float, OwcaValueKind::Float, op_div_number_number);
-        OPER2_SET(mod, OwcaValueKind::Float, OwcaValueKind::Float, op_mod_number_number);
-        OPER2_SET(bin_and, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_and_number_number);
-        OPER2_SET(bin_or, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_or_number_number);
-        OPER2_SET(bin_xor, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_xor_number_number);
-        OPER2_SET(bin_lshift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_lshift_number_number);
-        OPER2_SET(bin_rshift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_rshift_number_number);
+        OPER2_MATH_SET(Add, OwcaValueKind::Float, OwcaValueKind::Float, op_add_number_number);
+        OPER2_MATH_SET(Sub, OwcaValueKind::Float, OwcaValueKind::Float, op_sub_number_number);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Float, op_mul_number_number);
+        OPER2_MATH_SET(Div, OwcaValueKind::Float, OwcaValueKind::Float, op_div_number_number);
+        OPER2_MATH_SET(Mod, OwcaValueKind::Float, OwcaValueKind::Float, op_mod_number_number);
+        OPER2_MATH_SET(BinAnd, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_and_number_number);
+        OPER2_MATH_SET(BinOr, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_or_number_number);
+        OPER2_MATH_SET(BinXor, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_xor_number_number);
+        OPER2_MATH_SET(BinLShift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_lshift_number_number);
+        OPER2_MATH_SET(BinRShift, OwcaValueKind::Float, OwcaValueKind::Float, op_bin_rshift_number_number);
 
-        OPER2_SET(add, OwcaValueKind::String, OwcaValueKind::String, op_add_string_string);
-        OPER2_SET(mul, OwcaValueKind::String, OwcaValueKind::Float, op_mul_string_number);
-        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::String, op_mul_number_string);
+        OPER2_MATH_SET(Add, OwcaValueKind::String, OwcaValueKind::String, op_add_string_string);
+        OPER2_MATH_SET(Mul, OwcaValueKind::String, OwcaValueKind::Float, op_mul_string_number);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Float, OwcaValueKind::String, op_mul_number_string);
 
-        OPER2_SET(mul, OwcaValueKind::Array, OwcaValueKind::Float, op_mul_array_number);
-        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Array, op_mul_number_array);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Array, OwcaValueKind::Float, op_mul_array_number);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Array, op_mul_number_array);
 
-        OPER2_SET(mul, OwcaValueKind::Tuple, OwcaValueKind::Float, op_mul_tuple_number);
-        OPER2_SET(mul, OwcaValueKind::Float, OwcaValueKind::Tuple, op_mul_number_tuple);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Tuple, OwcaValueKind::Float, op_mul_tuple_number);
+        OPER2_MATH_SET(Mul, OwcaValueKind::Float, OwcaValueKind::Tuple, op_mul_number_tuple);
 
-        OPER2_SET(bin_and, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_and_map_map);
-        OPER2_SET(bin_or, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_or_map_map);
-        OPER2_SET(bin_xor, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_xor_map_map);
+        OPER2_MATH_SET(BinAnd, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_and_map_map);
+        OPER2_MATH_SET(BinOr, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_or_map_map);
+        OPER2_MATH_SET(BinXor, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_xor_map_map);
 
-        OPER2_SET(bin_and, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_and_set_set);
-        OPER2_SET(bin_or, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_or_set_set);
-        OPER2_SET(bin_xor, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_xor_set_set);
+        OPER2_MATH_SET(BinAnd, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_and_set_set);
+        OPER2_MATH_SET(BinOr, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_or_set_set);
+        OPER2_MATH_SET(BinXor, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_xor_set_set);
 
         OPER2_SET(eq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_eq_number_number);
         OPER2_SET(less, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_lt_number_number);
@@ -784,18 +800,6 @@ restart:
                     POP_VALUES(1);
                     break; }
 #define IS_TRUE(v) OPER1_GET(is_true, (v).kind())(v)
-#define OPER2_RUN(oper) do { \
-        auto left = temporary_ptr[2]; \
-        auto right = temporary_ptr[1]; \
-        temporary_ptr[2] = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
-        POP_VALUES(1); \
-    } while(0)
-#define OPER2_RUN(oper) do { \
-        auto left = temporary_ptr[2]; \
-        auto right = temporary_ptr[1]; \
-        temporary_ptr[2] = OPER2_GET(oper, left.kind(), right.kind())(left, right); \
-        POP_VALUES(1); \
-    } while(0)
 #define CMP2_RUN(oper, reverse, upd) do { \
         auto jump_dest = code_pos.decode_jump();        \
         const auto last = code_pos.decode<bool>();      \
@@ -969,35 +973,21 @@ restart:
                         val = execute_call_from_values(temporary_ptr, 1);
                     }
                     break; }
-                case ExecuteOp::ExprOper2BinOr: {
-                    OPER2_RUN(bin_or); 
-                    break; }
-                case ExecuteOp::ExprOper2BinAnd: {
-                    OPER2_RUN(bin_and);
-                    break; }
-                case ExecuteOp::ExprOper2BinXor: {
-                    OPER2_RUN(bin_xor);
-                    break; }
-                case ExecuteOp::ExprOper2BinLShift: {
-                    OPER2_RUN(bin_lshift);
-                    break; }
+                case ExecuteOp::ExprOper2Add:
+                case ExecuteOp::ExprOper2Sub:
+                case ExecuteOp::ExprOper2Mul:
+                case ExecuteOp::ExprOper2Div:
+                case ExecuteOp::ExprOper2Mod:
+                case ExecuteOp::ExprOper2BinOr:
+                case ExecuteOp::ExprOper2BinAnd:
+                case ExecuteOp::ExprOper2BinXor:
+                case ExecuteOp::ExprOper2BinLShift:
                 case ExecuteOp::ExprOper2BinRShift: {
-                    OPER2_RUN(bin_rshift);
-                    break; }
-                case ExecuteOp::ExprOper2Add: {
-                    OPER2_RUN(add);
-                    break; }
-                case ExecuteOp::ExprOper2Sub: {
-                    OPER2_RUN(sub);
-                    break; }
-                case ExecuteOp::ExprOper2Mul: {
-                    OPER2_RUN(mul);
-                    break; }
-                case ExecuteOp::ExprOper2Div: {
-                    OPER2_RUN(div);
-                    break; }
-                case ExecuteOp::ExprOper2Mod: {
-                    OPER2_RUN(mod);
+                    auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2Add);
+                    auto left = temporary_ptr[2];
+                    auto right = temporary_ptr[1];
+                    temporary_ptr[2] = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
+                    POP_VALUES(1);
                     break; }
                 case ExecuteOp::ExprOper2MakeRange: {
                     auto mode = code_pos.decode<std::uint8_t>();

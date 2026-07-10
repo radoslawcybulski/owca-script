@@ -65,26 +65,29 @@ TEST_F(PerformanceTest, DISABLED_simple_3)
 { // 17.56 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
-function foo1(s) {
-    return s + 1;
-}
-function foo2(s) {
-    return foo1(s);
-}
-function foo3(s) {
-    return foo2(s);
-}
-function foo4(s) {
-    return foo3(s);
-}
-function foo5(s) {
-    return foo4(s);
+class A {
+    function foo1(self, s) {
+        return s + 1;
+    }
+    function foo2(self, s) {
+        return self.foo1(s);
+    }
+    function foo3(self, s) {
+        return self.foo2(s);
+    }
+    function foo4(self, s) {
+        return self.foo3(s);
+    }
+    function foo5(self, s) {
+        return self.foo4(s);
+    }
 }
 s = 0;
+a = A();
 start = time();
 i = 0;
 while (i < 100000) {
-    s = foo5((s * 11035 + 12345) & 0xffff);
+    s = a.foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }
 end = time();

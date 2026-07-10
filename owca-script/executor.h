@@ -113,16 +113,18 @@ namespace OwcaScript {
             }
         };
         struct Operators2 {
-			OwcaValue (*add)(OwcaValue left, OwcaValue right);
-			OwcaValue (*sub)(OwcaValue left, OwcaValue right);
-			OwcaValue (*mul)(OwcaValue left, OwcaValue right);
-			OwcaValue (*div)(OwcaValue left, OwcaValue right);
-			OwcaValue (*mod)(OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_and)(OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_or)(OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_xor)(OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_lshift)(OwcaValue left, OwcaValue right);
-			OwcaValue (*bin_rshift)(OwcaValue left, OwcaValue right);
+			std::array<OwcaValue (*)(OwcaValue, OwcaValue), 10> math_opers;
+			//std::array<bool (*)(OwcaValue, OwcaValue), 3> compare_opers;
+			// OwcaValue (*add)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*sub)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*mul)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*div)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*mod)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*bin_or)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*bin_and)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*bin_xor)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*bin_lshift)(OwcaValue left, OwcaValue right);
+			// OwcaValue (*bin_rshift)(OwcaValue left, OwcaValue right);
 			bool (*less)(OwcaValue left, OwcaValue right);
 			bool (*eq)(OwcaValue left, OwcaValue right);
 			bool (*is)(OwcaValue left, OwcaValue right);
