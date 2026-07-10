@@ -377,18 +377,19 @@ namespace OwcaScript::Internal {
 
     void Executor::process_thrown_exception(CodePosition *code_pos, OwcaException exception)
     {
-        while(HAS_STATE()) {
-            if (auto state = TRY_STATE(TryState)) {
-                *code_pos = state->catches_pos;
-                exception_being_thrown = exception;
-#ifdef OWCA_SCRIPT_EXEC_LOG
-                std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)code_pos << ") to " << (void*)code_pos->value() << std::endl;
-#endif
-                return;
-            }
-            POP_STATE();
-        }
-        throw exception;
+        assert(false);
+//         while(HAS_STATE()) {
+//             if (auto state = TRY_STATE(TryState)) {
+//                 *code_pos = state->catches_pos;
+//                 exception_being_thrown = exception;
+// #ifdef OWCA_SCRIPT_EXEC_LOG
+//                 std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)code_pos << ") to " << (void*)code_pos->value() << std::endl;
+// #endif
+//                 return;
+//             }
+//             POP_STATE();
+//         }
+//         throw exception;
     }
     
 	std::tuple<Number, Number, Number> Executor::parse_key(OwcaValue v, OwcaValue key, Number size) {
@@ -713,17 +714,7 @@ restart:
                 // last_time = now;
                 // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-                std::string states_debug;
-                for(auto &s : stacktrace_current->states) {
-                    visit_variant(s,
-                        [&](const ForState& c) { states_debug += "F"; },
-                        [&](const TryState& t) { states_debug += "T"; },
-                        [&](const CatchState& t) { states_debug += "C"; },
-                        [&](const WithState& t) { states_debug += "H"; }
-                    );
-                }
                 std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
-                    " states " << std::setw(6) << states_debug <<
                     " stack " << std::setw(2) << (stacktrace_current - stacktrace_vector.data()) <<
                     " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";
@@ -1155,111 +1146,111 @@ restart:
                     }
                     break; }
                 case ExecuteOp::ReturnCloseIterator: {
-                    complete_all(temporary_ptr);
+                    //complete_all(temporary_ptr);
                     return { OwcaCompleted{}, temporary_ptr, code_pos };
                     }
                 case ExecuteOp::Return: {
-                    complete_all(temporary_ptr);
+                    //complete_all(temporary_ptr);
                     return { OwcaEmpty{}, temporary_ptr, code_pos };
                     }
                 case ExecuteOp::ReturnValue: {
                     auto val = PEEK_VALUE(1);
                     POP_VALUES(1);
-                    complete_all(temporary_ptr);
+                    //complete_all(temporary_ptr);
                     return { val, temporary_ptr, code_pos };
                     }
-                case ExecuteOp::Throw: {
-                    auto exception = PEEK_VALUE(1);
-                    POP_VALUES(1);
-                    throw exception.as_exception();
-                    }
-                case ExecuteOp::TryInit: {
-                    PUSH_STATE(TryState{temporary_ptr});
-                    auto &state = STATE(TryState);
-                    state.begin_position = code_pos.decode_jump();
-                    state.end_position = code_pos.decode_jump();
-                    state.catches_pos = code_pos;
-                    code_pos = state.begin_position;
-                    state.temporary_ptr = temporary_ptr;
-                    state.original_exception_being_handled = exception_being_handled;
-                    break; }
-                case ExecuteOp::TryCompleted: {
-                    if (auto state = TRY_STATE(TryState)) {
-                        assert(exception_being_handled == state->original_exception_being_handled);
-                    }
-                    else if (auto state = TRY_STATE(CatchState)) {
-                        assert(exception_being_handled == state->original_exception_being_handled);
-                    }
-                    else {
-                        assert(false);
-                    }
-                    POP_STATE();
-                    break; }
-                case ExecuteOp::TryCatchType: {
-                    auto values = code_pos.decode<std::uint32_t>();
-                    auto ident = code_pos.decode<std::uint32_t>();
-                    auto skip_jump = code_pos.decode_jump();
+                // case ExecuteOp::Throw: {
+                //     auto exception = PEEK_VALUE(1);
+                //     POP_VALUES(1);
+                //     throw exception.as_exception();
+                //     }
+                // case ExecuteOp::TryInit: {
+                //     PUSH_STATE(TryState{temporary_ptr});
+                //     auto &state = STATE(TryState);
+                //     state.begin_position = code_pos.decode_jump();
+                //     state.end_position = code_pos.decode_jump();
+                //     state.catches_pos = code_pos;
+                //     code_pos = state.begin_position;
+                //     state.temporary_ptr = temporary_ptr;
+                //     state.original_exception_being_handled = exception_being_handled;
+                //     break; }
+                // case ExecuteOp::TryCompleted: {
+                //     if (auto state = TRY_STATE(TryState)) {
+                //         assert(exception_being_handled == state->original_exception_being_handled);
+                //     }
+                //     else if (auto state = TRY_STATE(CatchState)) {
+                //         assert(exception_being_handled == state->original_exception_being_handled);
+                //     }
+                //     else {
+                //         assert(false);
+                //     }
+                //     POP_STATE();
+                //     break; }
+                // case ExecuteOp::TryCatchType: {
+                //     auto values = code_pos.decode<std::uint32_t>();
+                //     auto ident = code_pos.decode<std::uint32_t>();
+                //     auto skip_jump = code_pos.decode_jump();
 
-                    auto exc_types = PEEK_VALUES(values, values);
-                    POP_VALUES(values);
-                    assert(exception_being_thrown);
+                //     auto exc_types = PEEK_VALUES(values, values);
+                //     POP_VALUES(values);
+                //     assert(exception_being_thrown);
 
-                    bool found = false;
-                    for(auto e : exc_types) {
-                        auto exc_type = e.as_class();
-                        if (exception_being_thrown->type().has_base_class(exc_type)) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) {
-                        if (ident != std::numeric_limits<std::uint32_t>::max()) {
-                            LOCAL_VAR(ident) = *exception_being_thrown;
-                        }
-                        auto &state = STATE(TryState);
-                        auto original_exception_being_handled = state.original_exception_being_handled;
-                        POP_STATE();
-                        PUSH_STATE(CatchState{});
-                        auto &state2 = STATE(CatchState);
-                        state2.exception_being_handled = exception_being_handled = exception_being_thrown;
-                        state2.original_exception_being_handled = original_exception_being_handled;
-                    }
-                    else {
-                        code_pos = skip_jump;
-                    }
-                    break; }
-                case ExecuteOp::TryCatchTypeCompleted: {
-                    auto &state = STATE(TryState);
-                    POP_STATE();
-                    throw *exception_being_thrown;
-                    }
-                case ExecuteOp::TryBlockCompleted: {
-                    auto &state = STATE(CatchState);
-                    assert(exception_being_thrown);
-                    assert(exception_being_handled);
-                    exception_being_thrown = std::nullopt;
-                    exception_being_handled = std::nullopt;
-                    code_pos = code_pos.decode_jump();
-                    break; }
-                case ExecuteOp::WithInit: {
-                    PUSH_STATE(WithState{});
-                    auto &state = STATE(WithState);
-                    auto &obj = PEEK_VALUE(1);
-                    state.context = obj;
-                    obj = current_vm().member(obj, "__enter__");
-                    obj = execute_call_from_values(temporary_ptr, 1);
-                    state.entered = true;
-                    auto index = code_pos.decode<std::uint32_t>();
-                    if (index != std::numeric_limits<std::uint32_t>::max()) {
-                        LOCAL_VAR(index) = obj;
-                    }
-                    POP_VALUES(1);
-                    break; }
-                case ExecuteOp::WithCompleted: {
-                    auto &state = STATE(WithState);
-                    complete(state, temporary_ptr);
-                    POP_STATE();
-                    break; }
+                //     bool found = false;
+                //     for(auto e : exc_types) {
+                //         auto exc_type = e.as_class();
+                //         if (exception_being_thrown->type().has_base_class(exc_type)) {
+                //             found = true;
+                //             break;
+                //         }
+                //     }
+                //     if (found) {
+                //         if (ident != std::numeric_limits<std::uint32_t>::max()) {
+                //             LOCAL_VAR(ident) = *exception_being_thrown;
+                //         }
+                //         auto &state = STATE(TryState);
+                //         auto original_exception_being_handled = state.original_exception_being_handled;
+                //         POP_STATE();
+                //         PUSH_STATE(CatchState{});
+                //         auto &state2 = STATE(CatchState);
+                //         state2.exception_being_handled = exception_being_handled = exception_being_thrown;
+                //         state2.original_exception_being_handled = original_exception_being_handled;
+                //     }
+                //     else {
+                //         code_pos = skip_jump;
+                //     }
+                //     break; }
+                // case ExecuteOp::TryCatchTypeCompleted: {
+                //     auto &state = STATE(TryState);
+                //     POP_STATE();
+                //     throw *exception_being_thrown;
+                //     }
+                // case ExecuteOp::TryBlockCompleted: {
+                //     auto &state = STATE(CatchState);
+                //     assert(exception_being_thrown);
+                //     assert(exception_being_handled);
+                //     exception_being_thrown = std::nullopt;
+                //     exception_being_handled = std::nullopt;
+                //     code_pos = code_pos.decode_jump();
+                //     break; }
+                // case ExecuteOp::WithInit: {
+                //     PUSH_STATE(WithState{});
+                //     auto &state = STATE(WithState);
+                //     auto &obj = PEEK_VALUE(1);
+                //     state.context = obj;
+                //     obj = current_vm().member(obj, "__enter__");
+                //     obj = execute_call_from_values(temporary_ptr, 1);
+                //     state.entered = true;
+                //     auto index = code_pos.decode<std::uint32_t>();
+                //     if (index != std::numeric_limits<std::uint32_t>::max()) {
+                //         LOCAL_VAR(index) = obj;
+                //     }
+                //     POP_VALUES(1);
+                //     break; }
+                // case ExecuteOp::WithCompleted: {
+                //     auto &state = STATE(WithState);
+                //     complete(state, temporary_ptr);
+                //     POP_STATE();
+                //     break; }
                 case ExecuteOp::Yield: {
                     auto val = PEEK_VALUE(1);
                     POP_VALUES(1);
@@ -1269,6 +1260,8 @@ restart:
                     auto dest = code_pos.decode_jump();
                     code_pos = dest;
                     break; }
+                default:
+                    assert(false);
                 }
                 assert(stacktrace_current == stacktrace_current_copy);
                 stacktrace_current_copy->code_position = code_pos;
@@ -1280,24 +1273,24 @@ restart:
             goto restart;
         }
     }
-    void Executor::complete_all(TemporariesPtr temporary_ptr) {
-        auto sc = stacktrace_current;
-        while(HAS_STATE()) {
-            if (auto s = TRY_STATE(WithState)) {
-                complete(*s, temporary_ptr);
-            }
-            POP_STATE();
-        }
-    }
-    void Executor::complete(WithState state, TemporariesPtr temporary_ptr) {
-        if (state.entered) {
-            state.entered = false;
-            auto mbm = current_vm().member(state.context, "__exit__");
-            PUSH_VALUE(mbm);
-            execute_call_from_values(temporary_ptr, 1);
-            POP_VALUES(1);
-        }
-    }
+    // void Executor::complete_all(TemporariesPtr temporary_ptr) {
+    //     auto sc = stacktrace_current;
+    //     while(HAS_STATE()) {
+    //         if (auto s = TRY_STATE(WithState)) {
+    //             complete(*s, temporary_ptr);
+    //         }
+    //         POP_STATE();
+    //     }
+    // }
+    // void Executor::complete(WithState state, TemporariesPtr temporary_ptr) {
+    //     if (state.entered) {
+    //         state.entered = false;
+    //         auto mbm = current_vm().member(state.context, "__exit__");
+    //         PUSH_VALUE(mbm);
+    //         execute_call_from_values(temporary_ptr, 1);
+    //         POP_VALUES(1);
+    //     }
+    // }
     // template <typename Tag> std::string_view tag_name = "unknown";
     // template <> std::string_view tag_name<Executor::TagAdd> = "addition";
     // template <> std::string_view tag_name<Executor::TagSub> = "subtraction";
@@ -1436,7 +1429,7 @@ restart:
         auto [ retval, new_values_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, function->entry_point);
         return retval;
     }
-    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, CodePosition code_pos)
+    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
         const auto temporary_ptr = temporary_ptr_current_top;
@@ -1445,10 +1438,8 @@ restart:
             {
                 auto est = StackTraceState{ *this, function, code_pos };
                 auto sc = stacktrace_current;
-                std::swap(sc->states, states_vec);
                 auto [ retval, new_temporary_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, code_pos);
                 assert(sc == stacktrace_current);
-                std::swap(sc->states, states_vec);
                 assert(new_temporary_ptr.temporaries_ptr == temporary_ptr.temporaries_ptr);
                 val = retval;
                 code_pos = new_code_pos;
@@ -1842,27 +1833,6 @@ restart:
         return false;
     }
 
-    void gc_mark_value(GenerationGC generation_gc, const Executor::ForState &e) {
-        gc_mark_value(generation_gc, e.iterator);
-    }
-    void gc_mark_value(GenerationGC generation_gc, const Executor::TryState &e) {
-        if (e.original_exception_being_handled)
-            gc_mark_value(generation_gc, *e.original_exception_being_handled);
-    }
-    void gc_mark_value(GenerationGC generation_gc, const Executor::CatchState &e) {
-        if (e.exception_being_handled)
-            gc_mark_value(generation_gc, *e.exception_being_handled);
-        if (e.original_exception_being_handled)
-            gc_mark_value(generation_gc, *e.original_exception_being_handled);
-    }
-    void gc_mark_value(GenerationGC generation_gc, const Executor::WithState &e) {
-        gc_mark_value(generation_gc, e.context);
-    }
-    void gc_mark_value(GenerationGC generation_gc, const Executor::StatesType &e) {
-        visit_variant(e,
-            [&](const auto &a) { gc_mark_value(generation_gc, a); }
-        );
-    }
     void gc_mark_value(GenerationGC ggc, const Executor &e) {
         for(auto it : e.namespaces) {
             gc_mark_value(ggc, it.second);
@@ -1872,7 +1842,6 @@ restart:
         }
         for(auto sc = e.stacktrace_vector.data() + 1; sc <= e.stacktrace_current; ++sc) {
             gc_mark_value(ggc, sc->runtime_function);
-            gc_mark_value(ggc, sc->states);
         }
         if (e.exception_being_thrown) {
             gc_mark_value(ggc, *e.exception_being_thrown);

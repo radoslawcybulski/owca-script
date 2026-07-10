@@ -51,7 +51,6 @@ namespace OwcaScript::Internal {
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
 
         std::vector<OwcaValue> values_vec(max_values + max_temporaries);
-        std::vector<Executor::StatesType> states_vec(max_states);
         for(auto i = 0u; i < param_count; ++i) {
             values_vec[i] = locals_ptr[i];
         }
@@ -63,9 +62,8 @@ namespace OwcaScript::Internal {
         }
 
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
-        auto states_span = std::span{ states_vec.data(), states_vec.size() };
-        auto iter = Internal::current_vm().allocate<Iterator>(0, this, values_span, states_span);
-        iter->generator = e.run_script_generator(iter, this, globals_ptr, std::move(values_vec), std::move(states_vec), entry_point);
+        auto iter = Internal::current_vm().allocate<Iterator>(0, this, values_span);
+        iter->generator = e.run_script_generator(iter, this, globals_ptr, std::move(values_vec), entry_point);
         return OwcaIterator{ iter };
 	}
 
@@ -100,7 +98,7 @@ namespace OwcaScript::Internal {
         auto locals_ptr = temporary_ptr.locals(param_count + 1);
         assert(locals_ptr.local_values_ptr + max_values + max_temporaries <= e.values_vector_span().data() + e.values_vector_span().size());
 		Generator generator_object = this->generator(std::span{ locals_ptr.local_values_ptr, param_count + 1u });
-        auto iter = Internal::current_vm().allocate<Iterator>(0, this, std::span<OwcaValue>{}, std::span<Executor::StatesType>{});
+        auto iter = Internal::current_vm().allocate<Iterator>(0, this, std::span<OwcaValue>{});
         iter->generator = run_native_generator(e, iter, std::move(generator_object));
         return OwcaIterator{ iter };
 	}

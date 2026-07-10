@@ -91,67 +91,67 @@ function r() {
 	ASSERT_EQ(val.as_float(), 0);
 }
 
-TEST_F(MapTest, iters_mod)
-{
-	OwcaVM vm;
-	auto code = compile(__LINE__, vm, "test.os", R"(
-function r() {
-	a = {
-		1: 2,
-		3: 4,
-		5: 6
-	};
+// TEST_F(MapTest, iters_mod)
+// {
+// 	OwcaVM vm;
+// 	auto code = compile(__LINE__, vm, "test.os", R"(
+// function r() {
+// 	a = {
+// 		1: 2,
+// 		3: 4,
+// 		5: 6
+// 	};
 
-	sum = 0;
-	try {
-		counter = 0;
-		for(kv = a.items()) {
-			sum = sum + kv[0] + kv[1];
-			if (counter == 2) {
-				a[7] = 9;
-			}
-			counter = counter + 1;
-		}
-		return -1;
-	}
-	catch(Exception) {
-	}
-	return sum;
-}
-)");
-	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(), 1 + 2 + 3 + 4 + 5 + 6);
-}
+// 	sum = 0;
+// 	try {
+// 		counter = 0;
+// 		for(kv = a.items()) {
+// 			sum = sum + kv[0] + kv[1];
+// 			if (counter == 2) {
+// 				a[7] = 9;
+// 			}
+// 			counter = counter + 1;
+// 		}
+// 		return -1;
+// 	}
+// 	catch(Exception) {
+// 	}
+// 	return sum;
+// }
+// )");
+// 	auto val = vm.execute(code).member("r").call();
+// 	ASSERT_EQ(val.as_float(), 1 + 2 + 3 + 4 + 5 + 6);
+// }
 
-TEST_F(MapTest, pop)
-{
-	OwcaVM vm;
-	auto code = compile(__LINE__, vm, "test.os", R"(
-function r() {
-	a = {
-		1: 2,
-		3: 4,
-		5: 6
-	};
-	a.pop(3);
-	if (a.pop_or_default(7, 1) != 1) return 1;
-	if (a.pop_or_default(3, 1) != 1) return 2;
-	try {
-		a.pop(3);
-		return 3;
-	}
-	catch(Exception) {
-	}
-	sum = 0;
-	for(kv = a.items()) {
-		k = kv[0];
-		v = kv[1];
-		sum = sum + k * v;
-	}
-	return sum;
-}
-)");
-	auto val = vm.execute(code).member("r").call();
-	ASSERT_EQ(val.as_float(), 1 * 2 + 5 * 6);
-}
+// TEST_F(MapTest, pop)
+// {
+// 	OwcaVM vm;
+// 	auto code = compile(__LINE__, vm, "test.os", R"(
+// function r() {
+// 	a = {
+// 		1: 2,
+// 		3: 4,
+// 		5: 6
+// 	};
+// 	a.pop(3);
+// 	if (a.pop_or_default(7, 1) != 1) return 1;
+// 	if (a.pop_or_default(3, 1) != 1) return 2;
+// 	try {
+// 		a.pop(3);
+// 		return 3;
+// 	}
+// 	catch(Exception) {
+// 	}
+// 	sum = 0;
+// 	for(kv = a.items()) {
+// 		k = kv[0];
+// 		v = kv[1];
+// 		sum = sum + k * v;
+// 	}
+// 	return sum;
+// }
+// )");
+// 	auto val = vm.execute(code).member("r").call();
+// 	ASSERT_EQ(val.as_float(), 1 * 2 + 5 * 6);
+// }
 

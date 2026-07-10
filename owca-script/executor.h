@@ -138,73 +138,6 @@ namespace OwcaScript {
 			friend class VM;
 
 		public:
-			struct ForState {
-				static constexpr const std::uint8_t Kind = 1;
-				OwcaIterator iterator;
-				CodePosition continue_position = CodePosition{}, end_position = CodePosition{};
-				std::uint8_t loop_control_depth = 0;
-
-				ForState(OwcaIterator iterator) : iterator(iterator) {}
-
-				friend void gc_mark_value(GenerationGC generation_gc, const ForState &e);
-			};
-			struct TryState {
-				static constexpr const std::uint8_t Kind = 3;
-				CodePosition begin_position = CodePosition{}, end_position = CodePosition{};
-				CodePosition catches_pos = CodePosition{};
-				TemporariesPtr temporary_ptr;
-				std::optional<OwcaException> original_exception_being_handled;
-
-				TryState(TemporariesPtr temporary_ptr) : temporary_ptr(temporary_ptr) {}
-
-				friend void gc_mark_value(GenerationGC generation_gc, const TryState &e);
-			};
-			struct CatchState {
-				static constexpr const std::uint8_t Kind = 4;
-				std::optional<OwcaException> exception_being_handled;
-				std::optional<OwcaException> original_exception_being_handled;
-
-				friend void gc_mark_value(GenerationGC generation_gc, const CatchState &e);
-			};
-			struct WithState {
-				static constexpr const std::uint8_t Kind = 5;
-				OwcaValue context;
-				bool entered = false;
-
-				friend void gc_mark_value(GenerationGC generation_gc, const WithState &e);
-			};
-			using StatesType = std::variant<CatchState, ForState, TryState, WithState>;
-			struct StatesTypePtr {
-				StatesType *states_type_ptr;
-
-				explicit StatesTypePtr(StatesType *ptr) : states_type_ptr(ptr) {}
-
-				StatesTypePtr operator+(int offset) const {
-					return StatesTypePtr(states_type_ptr + offset);
-				}
-				StatesTypePtr operator-(int offset) const {
-					return StatesTypePtr(states_type_ptr - offset);
-				}
-				StatesTypePtr &operator++() {
-					++states_type_ptr;
-					return *this;
-				}
-				StatesTypePtr &operator--() {					--states_type_ptr;
-					return *this;
-				}
-				StatesTypePtr operator ++ ( int ) {
-					StatesTypePtr tmp = *this;
-					++states_type_ptr;
-					return tmp;
-				}
-				StatesTypePtr operator -- ( int ) {
-					StatesTypePtr tmp = *this;
-					--states_type_ptr;
-					return tmp;
-				}
-			};
-			friend void gc_mark_value(GenerationGC generation_gc, const StatesType &e);
-
 			void update_current_top_ptrs(TemporariesPtr temporary_ptr) {
 				temporary_ptr_current_top = temporary_ptr;
 			}
@@ -213,16 +146,10 @@ namespace OwcaScript {
 			struct Frame {
 				RuntimeFunction* runtime_function = nullptr;
 				CodePosition code_position = CodePosition{};
-				std::vector<StatesType> states;
 
-				Frame() {
-					states.reserve(8);
-				}
 				void init(RuntimeFunction* runtime_function, CodePosition code_position) {
 					this->runtime_function = runtime_function;
 					this->code_position = code_position;
-					assert(states.empty());
-					states.clear();
 				}
 			};
 			std::vector<Frame> stacktrace_vector;
@@ -280,8 +207,8 @@ namespace OwcaScript {
 			std::tuple<Number, Number, Number> parse_key(OwcaValue v, OwcaValue key, Number size);
 			size_t verify_key(Number v, size_t size, OwcaValue orig_key, std::string_view name);
 			std::pair<size_t, size_t> verify_key(OwcaRange k, size_t size, OwcaValue orig_key, std::string_view name);
-			void complete(WithState, TemporariesPtr temporary_ptr);
-			void complete_all(TemporariesPtr temporary_ptr);
+			// void complete(WithState, TemporariesPtr temporary_ptr);
+			// void complete_all(TemporariesPtr temporary_ptr);
         public:
             Executor();
 			~Executor();
@@ -293,7 +220,7 @@ namespace OwcaScript {
 			OwcaNamespace execute_code_block(OwcaCode oc);
             OwcaValue execute_function_call_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
 			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
-			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, std::vector<StatesType> states_vec, CodePosition code_pos);
+			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos);
 			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);

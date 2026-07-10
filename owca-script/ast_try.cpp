@@ -5,6 +5,7 @@
 
 namespace OwcaScript::Internal {
 	void AstTry::emit(EmitInfo& ei) {
+        assert(false);
         assert(ei.stack.empty());
         ei.states.push();
         auto start = ei.code_writer.position();

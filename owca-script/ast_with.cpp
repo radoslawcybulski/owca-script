@@ -5,7 +5,8 @@
 #include "flow_control.h"
 
 namespace OwcaScript::Internal {
-	void AstWith::emit(EmitInfo& ei) {
+    void AstWith::emit(EmitInfo& ei) {
+        assert(false);
         assert(ei.stack.empty());        
         ei.states.push();
         value_->emit(ei);
@@ -17,11 +18,11 @@ namespace OwcaScript::Internal {
         ei.stack.push();
         ei.stack.pop();
         ei.states.pop();
-	}
+    }
 
-	void AstWith::visit(AstVisitor& vis) { vis.apply(*this); }
-	void AstWith::visit_children(AstVisitor& vis) {
+    void AstWith::visit(AstVisitor& vis) { vis.apply(*this); }
+    void AstWith::visit_children(AstVisitor& vis) {
         value_->visit(vis);
         body_->visit(vis);
-	}
+    }
 }

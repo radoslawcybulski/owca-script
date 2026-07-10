@@ -19,11 +19,10 @@ namespace OwcaScript {
 			std::optional<Generator> generator;
 			RuntimeFunction *function;
 			std::span<OwcaValue> values;
-			std::span<Executor::StatesType> states;
 			OwcaValue last_value;
 			bool first_time = true;
 
-            Iterator(RuntimeFunction *function, std::span<OwcaValue> values, std::span<Executor::StatesType> states);
+            Iterator(RuntimeFunction *function, std::span<OwcaValue> values);
 			~Iterator();
 
 			std::string_view type() const override{

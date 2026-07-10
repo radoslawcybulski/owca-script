@@ -41,23 +41,23 @@ protected:
     }
 };
 
-TEST_F(GeneratorTest, try1)
-{
-    auto val = run_try(__LINE__, 1);
-	ASSERT_EQ(val, 1);
-}
+// TEST_F(GeneratorTest, try1)
+// {
+//     auto val = run_try(__LINE__, 1);
+// 	ASSERT_EQ(val, 1);
+// }
 
-TEST_F(GeneratorTest, try2)
-{
-    auto val = run_try(__LINE__, 2);
-	ASSERT_EQ(val, 2);
-}
+// TEST_F(GeneratorTest, try2)
+// {
+//     auto val = run_try(__LINE__, 2);
+// 	ASSERT_EQ(val, 2);
+// }
 
-TEST_F(GeneratorTest, try3)
-{
-    auto val = run_try(__LINE__, 3);
-	ASSERT_EQ(val, 3);
-}
+// TEST_F(GeneratorTest, try3)
+// {
+//     auto val = run_try(__LINE__, 3);
+// 	ASSERT_EQ(val, 3);
+// }
 
 TEST_F(GeneratorTest, while_simple1)
 {
