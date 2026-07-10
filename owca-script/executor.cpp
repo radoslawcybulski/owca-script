@@ -717,7 +717,6 @@ restart:
                 for(auto &s : stacktrace_current->states) {
                     visit_variant(s,
                         [&](const ForState& c) { states_debug += "F"; },
-                        [&](const WhileState& c) { states_debug += "W"; },
                         [&](const TryState& t) { states_debug += "T"; },
                         [&](const CatchState& t) { states_debug += "C"; },
                         [&](const WithState& t) { states_debug += "H"; }
@@ -1124,6 +1123,22 @@ restart:
                         code_pos = else_position;
                     }
                     break; }
+                case ExecuteOp::IfAlmostAlwaysFalse: {
+                    auto val = IS_TRUE(PEEK_VALUE(1));
+                    POP_VALUES(1);
+                    auto else_position = code_pos.decode_jump();
+                    if (!val) [[likely]] {
+                        code_pos = else_position;
+                    }
+                    break; }
+                case ExecuteOp::IfAlmostAlwaysTrue: {
+                    auto val = IS_TRUE(PEEK_VALUE(1));
+                    POP_VALUES(1);
+                    auto else_position = code_pos.decode_jump();
+                    if (!val) [[unlikely]] {
+                        code_pos = else_position;
+                    }
+                    break; }
                 case ExecuteOp::ReturnCloseIterator: {
                     complete_all(temporary_ptr);
                     return { OwcaCompleted{}, temporary_ptr, code_pos };
@@ -1210,25 +1225,6 @@ restart:
                     exception_being_thrown = std::nullopt;
                     exception_being_handled = std::nullopt;
                     code_pos = code_pos.decode_jump();
-                    break; }
-                case ExecuteOp::WhileInit: {
-                    PUSH_STATE(WhileState{});
-                    auto &state = STATE(WhileState);
-                    state.end_position = code_pos.decode_jump();
-                    state.loop_control_depth = code_pos.decode<std::uint8_t>();
-                    state.continue_position = code_pos;
-                    break; }
-                case ExecuteOp::WhileNext: {
-                    auto &state = STATE(WhileState);
-
-                    auto value = PEEK_VALUE(1).as_bool();
-                    POP_VALUES(1);
-                    if (!value) {
-                        code_pos = state.end_position;
-                    }
-                    break; }
-                case ExecuteOp::WhileCompleted: {
-                    POP_STATE();
                     break; }
                 case ExecuteOp::WithInit: {
                     PUSH_STATE(WithState{});
@@ -1831,8 +1827,6 @@ restart:
         return false;
     }
 
-    void gc_mark_value(GenerationGC generation_gc, const Executor::WhileState &e) {
-    }
     void gc_mark_value(GenerationGC generation_gc, const Executor::ForState &e) {
         gc_mark_value(generation_gc, e.iterator);
     }

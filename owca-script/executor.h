@@ -148,13 +148,6 @@ namespace OwcaScript {
 
 				friend void gc_mark_value(GenerationGC generation_gc, const ForState &e);
 			};
-			struct WhileState {
-				static constexpr const std::uint8_t Kind = 2;
-				CodePosition end_position = CodePosition{}, continue_position = CodePosition{};
-				std::uint8_t loop_control_depth = 0;
-
-				friend void gc_mark_value(GenerationGC generation_gc, const WhileState &e);
-			};
 			struct TryState {
 				static constexpr const std::uint8_t Kind = 3;
 				CodePosition begin_position = CodePosition{}, end_position = CodePosition{};
@@ -180,7 +173,7 @@ namespace OwcaScript {
 
 				friend void gc_mark_value(GenerationGC generation_gc, const WithState &e);
 			};
-			using StatesType = std::variant<WhileState, ForState, TryState, CatchState, WithState>;
+			using StatesType = std::variant<CatchState, ForState, TryState, WithState>;
 			struct StatesTypePtr {
 				StatesType *states_type_ptr;
 

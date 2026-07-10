@@ -117,6 +117,8 @@ namespace OwcaScript {
             ForCompleted,
             Function,
             If,
+            IfAlmostAlwaysTrue,
+            IfAlmostAlwaysFalse,
             Return,
             ReturnCloseIterator,
             ReturnValue,
@@ -126,9 +128,6 @@ namespace OwcaScript {
             TryBlockCompleted,
             TryCatchType,
             TryCatchTypeCompleted,
-            WhileInit,
-            WhileNext,
-            WhileCompleted,
             WithInit,
             WithCompleted,
             Yield,
@@ -189,6 +188,8 @@ namespace OwcaScript {
             case ExecuteOp::ForCompleted: return "ForCompleted";
             case ExecuteOp::Function: return "Function";
             case ExecuteOp::If: return "If";
+            case ExecuteOp::IfAlmostAlwaysTrue: return "IfAlmostAlwaysTrue";
+            case ExecuteOp::IfAlmostAlwaysFalse: return "IfAlmostAlwaysFalse";
             case ExecuteOp::Return: return "Return";
             case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";
@@ -198,9 +199,6 @@ namespace OwcaScript {
             case ExecuteOp::TryBlockCompleted: return "TryBlockCompleted";
             case ExecuteOp::TryCatchType: return "TryCatchType";
             case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
-            case ExecuteOp::WhileInit: return "WhileInit";
-            case ExecuteOp::WhileNext: return "WhileNext";
-            case ExecuteOp::WhileCompleted: return "WhileCompleted";
             case ExecuteOp::WithInit: return "WithInit";
             case ExecuteOp::WithCompleted: return "WithCompleted";
             case ExecuteOp::Yield: return "Yield";
