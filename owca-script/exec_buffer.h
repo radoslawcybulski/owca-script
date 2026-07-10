@@ -112,9 +112,7 @@ namespace OwcaScript {
             ExprOperXCreateMap,
             ExprToString,
             ExprToIterator,
-            ForInit,
-            ForCondition,
-            ForCompleted,
+            ExprIteratorNextAndJumpIfCompleted,
             Function,
             If,
             IfAlmostAlwaysTrue,
@@ -183,9 +181,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprOperXCreateMap: return "ExprOperXCreateMap";
             case ExecuteOp::ExprToString: return "ExprToString";
             case ExecuteOp::ExprToIterator: return "ExprToIterator";
-            case ExecuteOp::ForInit: return "ForInit";
-            case ExecuteOp::ForCondition: return "ForCondition";
-            case ExecuteOp::ForCompleted: return "ForCompleted";
+            case ExecuteOp::ExprIteratorNextAndJumpIfCompleted: return "ExprIteratorNextAndJumpIfCompleted";
             case ExecuteOp::Function: return "Function";
             case ExecuteOp::If: return "If";
             case ExecuteOp::IfAlmostAlwaysTrue: return "IfAlmostAlwaysTrue";

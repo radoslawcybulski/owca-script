@@ -1086,32 +1086,47 @@ restart:
                     POP_VALUES(size);
                     PUSH_VALUE(current_vm().create_map(args));
                     break; }
-                case ExecuteOp::ForInit: {
-                    auto iterator = PEEK_VALUE(1).as_iterator();
-                    POP_VALUES(1);
-                    PUSH_STATE(ForState{ iterator });
-                    auto &state = STATE(ForState);
-                    state.end_position = code_pos.decode_jump();
-                    state.loop_control_depth = code_pos.decode<std::uint8_t>();
-                    state.continue_position = code_pos;
-                    break; }
-                case ExecuteOp::ForCondition: {
-                    auto &state = STATE(ForState);
-                    if (state.iterator.completed()) [[unlikely]] {
-                        code_pos = state.end_position;
+                case ExecuteOp::ExprIteratorNextAndJumpIfCompleted: {
+                    auto iter = PEEK_VALUE(1).as_iterator_certainly();
+                    auto jump_dest = code_pos.decode_jump();
+                    if (iter.completed()) [[unlikely]] {
+                        code_pos = jump_dest;
                         break;
                     }
-                    auto val = continue_iterator(state.iterator);
+                    auto val = continue_iterator(iter);
                     if (!val) [[unlikely]] {
-                        code_pos = state.end_position;
+                        POP_VALUES(1);
+                        code_pos = jump_dest;
                         break;
                     }
-                    PUSH_VALUE(*val);
+                    PEEK_VALUE(1) = *val;
                     break; }
-                case ExecuteOp::ForCompleted: {
-                    auto &state = STATE(ForState);
-                    POP_STATE();
-                    break; }
+                // case ExecuteOp::ForInit: {
+                //     auto iterator = PEEK_VALUE(1).as_iterator();
+                //     POP_VALUES(1);
+                //     PUSH_STATE(ForState{ iterator });
+                //     auto &state = STATE(ForState);
+                //     state.end_position = code_pos.decode_jump();
+                //     state.loop_control_depth = code_pos.decode<std::uint8_t>();
+                //     state.continue_position = code_pos;
+                //     break; }
+                // case ExecuteOp::ForCondition: {
+                //     auto &state = STATE(ForState);
+                //     if (state.iterator.completed()) [[unlikely]] {
+                //         code_pos = state.end_position;
+                //         break;
+                //     }
+                //     auto val = continue_iterator(state.iterator);
+                //     if (!val) [[unlikely]] {
+                //         code_pos = state.end_position;
+                //         break;
+                //     }
+                //     PUSH_VALUE(*val);
+                //     break; }
+                // case ExecuteOp::ForCompleted: {
+                //     auto &state = STATE(ForState);
+                //     POP_STATE();
+                //     break; }
                 case ExecuteOp::Function: {
                     PUSH_VALUE(create_function(code_pos, globals_ptr, locals_ptr));
                     break; }

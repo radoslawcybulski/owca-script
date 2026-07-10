@@ -1248,6 +1248,7 @@ namespace OwcaScript::Internal {
 		Stack* current_stack = nullptr;
 		bool first_run = true;
 		AstCompiler* compiler;
+		unsigned int for_var_index = 0;
 
 		Phase2(AstCompiler* compiler) : compiler(compiler) {}
 
@@ -1316,6 +1317,25 @@ namespace OwcaScript::Internal {
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
+		}
+		void apply(AstFor &o) override {
+			if (first_run) {
+				auto name = std::format("$for_var_{}", for_var_index);
+				o.update_identifier_name(std::move(name));
+				current_stack->define_identifier(o.identifier_name());
+			}
+			else {
+				auto index_pp = current_stack->lookup_identifier(o.identifier_name());
+				assert(index_pp);
+				o.update_iterator_index(index_pp->index);
+			}
+			++for_var_index;
+			struct Defer {
+				std::function<void()> f;
+				~Defer() { f(); }
+			};
+			Defer defer{ [this]() { --for_var_index; } };
+			apply(static_cast<AstStat&>(o));
 		}
 		void apply(AstFunction &o) override {
 			auto &st = stacks[&o];
