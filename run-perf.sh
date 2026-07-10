@@ -19,7 +19,7 @@ cleanup() {
 	(echo "${OLD_BOOST}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/boost) > /dev/null
 	(echo "${OLD_SCALING_SPEED}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/scaling_setspeed) > /dev/null
 	(echo "${OLD_SCALING_GOVERNOR}" | sudo tee /sys/devices/system/cpu/cpu2/cpufreq/scaling_governor) > /dev/null
-	exit 1
+	exit 0
 }
 
 trap cleanup SIGINT SIGTERM

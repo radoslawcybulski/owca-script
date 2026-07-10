@@ -18,10 +18,11 @@
 #include "ast_function.h"
 #include "exception.h"
 #include "namespace.h"
+#include <chrono>
 #include <utility>
 
 #ifdef DEBUG
-#define OWCA_SCRIPT_EXEC_LOG
+//#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 //#define MEASURE
@@ -257,29 +258,51 @@ namespace OwcaScript::Internal {
         return oper2_functions;
     }();
 
-#ifdef MEASURE        
-    static std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> times;
-    static std::array<std::uint64_t, (size_t)Internal::ExecuteOp::_Count> counts;
+#ifdef MEASURE
+    struct MeasureItem {
+        std::uint64_t opcode : 6 = 0;
+        std::uint64_t time : 58 = 0;
+
+        MeasureItem() = default;
+        MeasureItem(Internal::ExecuteOp op) {
+            auto n = std::chrono::high_resolution_clock::now();
+            time = n.time_since_epoch().count();
+            opcode = static_cast<std::uint32_t>(op);
+        }
+    };
+    static std::vector<MeasureItem> measure_items{ 4ull * 1024 * 1024 * 1024 };
+    static std::uint32_t measure_item = 0;
+
+    static void process_measure_items() {
+        std::array<std::uint64_t, 64> times;
+        std::array<std::uint64_t, 64> counts;
+
+        for(auto &v : times) v = 0;
+        for(auto &v : counts) v = 0;
+
+        for(auto i = 1u; i < measure_item; ++i) {
+            auto rt = measure_items[i].time - measure_items[i - 1].time;
+            auto op = measure_items[i - 1].opcode;
+            times[op] += rt;
+            counts[op] += 1;
+        }
+
+        std::cout << "measure results:" << std::endl;
+        for(auto i = 0u; i < times.size(); ++i) {
+            if (counts[i] > 100) {
+                std::cout << "opcode " << to_string(static_cast<Internal::ExecuteOp>(i)) << ": count = " << counts[i] << ", total time = " << times[i] << ", average time = " << (times[i] / counts[i]) << std::endl;
+            }
+        }
+    }
 #endif
 
     Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
         stacktrace_current = stacktrace_vector.data();
-#ifdef MEASURE        
-        for(auto &t : times) t = 0;
-        for(auto &c : counts) c = 0;
-#endif
     }
 
     Executor::~Executor() {
 #ifdef MEASURE
-        std::cout << "\n\n";
-        for(auto i = 0u; i < (size_t)ExecuteOp::_Count; ++i) {
-            auto t = times[i];
-            auto c = counts[i];
-            if (t > 0) {
-                std::cout << std::setw(40) << to_string((Internal::ExecuteOp)i) << " " << (t / c) << " (count " << c << ")\n";
-            }
-        }
+        process_measure_items();
 #endif
     }
 
@@ -621,9 +644,6 @@ namespace OwcaScript::Internal {
 restart:
         try {
             for(;;) {
-#ifdef MEASURE            
-                auto start = std::chrono::high_resolution_clock::now();
-#endif
                 //std::cout << "Running opcode at position " << reader.position() << std::endl;
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 auto line = code_object.get_line_by_position(code_pos);
@@ -655,6 +675,9 @@ restart:
                 std::cout << std::endl;
 #endif
 
+#ifdef MEASURE            
+                measure_items[measure_item++] = MeasureItem{ opcode };
+#endif
                 //last_time = std::chrono::high_resolution_clock::now();
                 switch(opcode) {
                 case ExecuteOp::_Count:
@@ -1179,14 +1202,8 @@ restart:
                     code_pos = dest;
                     break; }
                 }
-next_iteration:
                 assert(stacktrace_current == stacktrace_current_copy);
                 stacktrace_current_copy->code_position = code_pos;
-#ifdef MEASURE
-                auto end = std::chrono::high_resolution_clock::now();
-                times[(size_t)opcode] += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-                counts[(size_t)opcode]++;
-#endif
                 //std::cout << "setting code position (" << (void*)&frame.code_position << ") to " << frame.code_position << std::endl;
             }
         }
