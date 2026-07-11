@@ -380,11 +380,6 @@ namespace OwcaScript::Internal {
 #endif
     }
 
-#define POP_STATE() stacktrace_current->states.pop_back();
-#define STATE(tp) std::get<tp>(stacktrace_current->states.back())
-#define PUSH_STATE(tp) do { stacktrace_current->states.push_back(tp); } while(0)
-#define TRY_STATE(tp) (std::get_if<tp>(&stacktrace_current->states.back()))
-#define HAS_STATE() (!stacktrace_current->states.empty())
 #define PEEK_VALUES(offset, count) std::span<OwcaValue>{ temporary_ptr[{ (offset), (count) }] }
 #define PEEK_VALUE(offset) temporary_ptr[(offset)]
 #define POP_VALUES(count) do { temporary_ptr = temporary_ptr - (count); } while(0)
@@ -710,8 +705,9 @@ namespace OwcaScript::Internal {
 
     std::tuple<OwcaValue, TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
     {
-        std::array<OwcaValue*, 2> identifier_ptrs = {
+        std::array<OwcaValue*, 3> identifier_ptrs = {
             locals_ptr.local_values_ptr,
+            current_vm().string_constants_pointer(),
             globals_ptr.global_values_ptr,
         };
 
@@ -856,10 +852,6 @@ restart:
                     auto value = code_pos.decode<Number>();
                     PUSH_VALUE(value);
                     break; }
-                case ExecuteOp::ExprConstantString: {
-                    auto value = code_pos.decode<std::string_view>();
-                    PUSH_VALUE(current_vm().create_string_from_view(value));
-                    break; }
                 case ExecuteOp::ExprConstantStringInterpolated: {
                     auto strings = code_pos.decode<std::string_view>();
                     auto expr_count = code_pos.decode<std::uint32_t>();
@@ -889,18 +881,18 @@ restart:
                     break; }
                 case ExecuteOp::ExprIdentifierRead: {
                     auto index = code_pos.decode<std::uint32_t>();
-                    auto val = identifier_ptrs[index >> 31][index & 0x7FFFFFFF];
+                    auto val = identifier_ptrs[index >> 30][index & 0x3FFFFFFF];
                     PUSH_VALUE(val);
                     break; }
                 case ExecuteOp::ExprIdentifierWrite: {
                     auto index = code_pos.decode<std::uint32_t>();
                     auto val = PEEK_VALUE(1);
-                    identifier_ptrs[index >> 31][index & 0x7FFFFFFF] = val;
+                    identifier_ptrs[index >> 30][index & 0x3FFFFFFF] = val;
                     break; }
                 case ExecuteOp::ExprIdentifierFunctionWrite: {
                     auto index = code_pos.decode<std::uint32_t>();
                     auto &val = PEEK_VALUE(1);
-                    auto &tgt = identifier_ptrs[index >> 31][index & 0x7FFFFFFF];
+                    auto &tgt = identifier_ptrs[index >> 30][index & 0x3FFFFFFF];
                     tgt = set_identifier_function(tgt, val);
                     val = tgt;
                     break; }

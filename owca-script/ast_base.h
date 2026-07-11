@@ -5,8 +5,11 @@
 #include "ast_visitor.h"
 #include "line.h"
 #include "exec_buffer.h"
+#include <unordered_map>
 
 namespace OwcaScript {
+	class OwcaValue;
+
 	namespace Internal {
 		class AstCompiler;
 
@@ -40,6 +43,7 @@ namespace OwcaScript {
 				MaxCounter stack, states;
 				std::vector<BreakLoopPositions> break_loops;
 				AstCompiler &compiler;
+
 				bool generator = false;
 			};
 

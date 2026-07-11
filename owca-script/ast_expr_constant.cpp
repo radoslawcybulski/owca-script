@@ -3,6 +3,7 @@
 #include "owca_exception.h"
 #include "vm.h"
 #include "owca_vm.h"
+#include "ast_compiler.h"
 
 namespace OwcaScript::Internal {
 	void AstExprConstant::emit(EmitInfo& ei) {
@@ -19,8 +20,9 @@ namespace OwcaScript::Internal {
 				ei.code_writer.append(line, v);
 			},
 			[&](const std::string& v) {
-				ei.code_writer.append(line, ExecuteOp::ExprConstantString);
-				ei.code_writer.append(line, v);
+				auto index = ei.compiler.get_vm().register_string_constant(v);
+				ei.code_writer.append(line, ExecuteOp::ExprIdentifierRead);
+				ei.code_writer.append(line, index);
 			}
 		);
 		ei.stack.push();

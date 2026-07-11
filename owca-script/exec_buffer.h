@@ -77,7 +77,6 @@ namespace OwcaScript {
             ExprConstantEmpty,
             ExprConstantBool,
             ExprConstantFloat,
-            ExprConstantString,
             ExprConstantStringInterpolated,
             ExprIdentifierRead,
             ExprIdentifierWrite,
@@ -146,7 +145,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprConstantEmpty: return "ExprConstantEmpty";
             case ExecuteOp::ExprConstantBool: return "ExprConstantBool";
             case ExecuteOp::ExprConstantFloat: return "ExprConstantFloat";
-            case ExecuteOp::ExprConstantString: return "ExprConstantString";
             case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
             case ExecuteOp::ExprIdentifierRead: return "ExprIdentifierRead";
             case ExecuteOp::ExprIdentifierWrite: return "ExprIdentifierWrite";

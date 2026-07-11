@@ -160,6 +160,7 @@ namespace OwcaScript {
 			const auto& filename() const { return filename_; }
 			std::optional<OwcaCode> compile(std::vector<std::string> additional_variables = {});
 			auto take_error_messages() const { return std::move(error_messages_); }
+			auto &get_vm() { return vm; }
 		};
 	}
 }

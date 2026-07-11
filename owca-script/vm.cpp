@@ -766,6 +766,18 @@ function native time();
 			}
 		}
 	}
+
+	std::uint32_t VM::register_string_constant(std::string_view str) {
+		auto it = string_constant_map.find(str);
+		if (it != string_constant_map.end()) {
+			return it->second;
+		}
+		auto index = (std::uint32_t)string_constant_vector.size() | 0x40000000;
+		string_constant_map[str] = index;
+		string_constant_vector.push_back(create_string_from_view(str));
+		return index;
+	}
+
 	void VM::initialize_exception_object(Exception &exc)
 	{
         for(auto sc = executor->stacktrace_vector.data() + 1; sc <= executor->stacktrace_current; ++sc) {
@@ -1389,6 +1401,7 @@ function native time();
 		gc_mark_value(ggc, empty_tuple);
 		gc_mark_value(ggc, empty_string);
 		gc_mark_value(ggc, *executor);
+		gc_mark_value(ggc, string_constant_vector);
 
 		gc_mark_value(ggc, temp_gc_protect_list);
 

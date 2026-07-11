@@ -4,14 +4,16 @@
 #include "vm.h"
 #include "owca_vm.h"
 #include "string.h"
+#include "ast_compiler.h"
 
 namespace OwcaScript::Internal {
 	void AstExprInterpretedString::emit(EmitInfo& ei) {
         assert(sizes.size() == evals.size());
 
         if (sizes.empty()) {
-            ei.code_writer.append(line, ExecuteOp::ExprConstantString);
-            ei.code_writer.append(line, strings);
+            auto index = ei.compiler.get_vm().register_string_constant(strings);
+            ei.code_writer.append(line, ExecuteOp::ExprIdentifierRead);
+            ei.code_writer.append(line, index);
             ei.stack.push();
         }
         else {
