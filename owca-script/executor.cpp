@@ -36,8 +36,8 @@ namespace OwcaScript::Internal {
         Mul = 2,
         Div = 3,
         Mod = 4,
-        BinAnd = 5,
-        BinOr = 6,
+        BinOr = 5,
+        BinAnd = 6,
         BinXor = 7,
         BinLShift = 8,
         BinRShift = 9,
@@ -710,6 +710,11 @@ namespace OwcaScript::Internal {
 
     std::tuple<OwcaValue, TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
     {
+        std::array<OwcaValue*, 2> identifier_ptrs = {
+            locals_ptr.local_values_ptr,
+            globals_ptr.global_values_ptr,
+        };
+
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace_current->runtime_function->code;
@@ -884,34 +889,36 @@ restart:
                     break; }
                 case ExecuteOp::ExprIdentifierRead: {
                     auto index = code_pos.decode<std::uint32_t>();
-                    PUSH_VALUE(LOCAL_VAR(index));
+                    auto val = identifier_ptrs[index >> 31][index & 0x7FFFFFFF];
+                    PUSH_VALUE(val);
                     break; }
                 case ExecuteOp::ExprIdentifierWrite: {
                     auto index = code_pos.decode<std::uint32_t>();
-                    LOCAL_VAR(index) = PEEK_VALUE(1);
+                    auto val = PEEK_VALUE(1);
+                    identifier_ptrs[index >> 31][index & 0x7FFFFFFF] = val;
                     break; }
                 case ExecuteOp::ExprIdentifierFunctionWrite: {
                     auto index = code_pos.decode<std::uint32_t>();
                     auto &val = PEEK_VALUE(1);
-                    auto &tgt = LOCAL_VAR(index);
+                    auto &tgt = identifier_ptrs[index >> 31][index & 0x7FFFFFFF];
                     tgt = set_identifier_function(tgt, val);
                     val = tgt;
                     break; }
-                case ExecuteOp::ExprGlobalRead: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    PUSH_VALUE(globals_ptr[index]);
-                    break; }
-                case ExecuteOp::ExprGlobalWrite: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    globals_ptr[index] = PEEK_VALUE(1);
-                    break; }
-                case ExecuteOp::ExprGlobalFunctionWrite: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    auto &val = PEEK_VALUE(1);
-                    auto &tgt = globals_ptr[index];
-                    tgt = set_identifier_function(tgt, val);
-                    val = tgt;
-                    break; }
+                // case ExecuteOp::ExprGlobalRead: {
+                //     auto index = code_pos.decode<std::uint32_t>();
+                //     PUSH_VALUE(globals_ptr[index]);
+                //     break; }
+                // case ExecuteOp::ExprGlobalWrite: {
+                //     auto index = code_pos.decode<std::uint32_t>();
+                //     globals_ptr[index] = PEEK_VALUE(1);
+                //     break; }
+                // case ExecuteOp::ExprGlobalFunctionWrite: {
+                //     auto index = code_pos.decode<std::uint32_t>();
+                //     auto &val = PEEK_VALUE(1);
+                //     auto &tgt = globals_ptr[index];
+                //     tgt = set_identifier_function(tgt, val);
+                //     val = tgt;
+                //     break; }
                 case ExecuteOp::ExprMemberRead: {
                     auto self = PEEK_VALUE(1);
                     auto member = code_pos.decode<std::string_view>();
@@ -986,7 +993,8 @@ restart:
                     auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2Add);
                     auto left = temporary_ptr[2];
                     auto right = temporary_ptr[1];
-                    temporary_ptr[2] = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
+                    auto val = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
+                    temporary_ptr[2] = val;
                     POP_VALUES(1);
                     break; }
                 case ExecuteOp::ExprOper2MakeRange: {

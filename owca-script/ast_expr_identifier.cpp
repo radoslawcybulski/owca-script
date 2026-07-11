@@ -12,13 +12,9 @@ namespace OwcaScript::Internal {
 		else {
 			ei.stack.push();
 		}
-		if (identifier_index_.second) {
-			ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprGlobalFunctionWrite : ExecuteOp::ExprGlobalWrite) : ExecuteOp::ExprGlobalRead);
-		}
-		else {
-			ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprIdentifierFunctionWrite : ExecuteOp::ExprIdentifierWrite) : ExecuteOp::ExprIdentifierRead);
-		}
-		ei.code_writer.append(line, identifier_index_.first);
+		std::uint32_t flag = identifier_index_.second ? 0x80000000 : 0;
+		ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprIdentifierFunctionWrite : ExecuteOp::ExprIdentifierWrite) : ExecuteOp::ExprIdentifierRead);
+		ei.code_writer.append(line, identifier_index_.first | flag);
 	}
 	void AstExprIdentifier::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {

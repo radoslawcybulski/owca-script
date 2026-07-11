@@ -82,9 +82,6 @@ namespace OwcaScript {
             ExprIdentifierRead,
             ExprIdentifierWrite,
             ExprIdentifierFunctionWrite,
-            ExprGlobalRead,
-            ExprGlobalWrite,
-            ExprGlobalFunctionWrite,
             ExprMemberRead,
             ExprMemberWrite,
             ExprOper1BinNeg,
@@ -154,9 +151,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprIdentifierRead: return "ExprIdentifierRead";
             case ExecuteOp::ExprIdentifierWrite: return "ExprIdentifierWrite";
             case ExecuteOp::ExprIdentifierFunctionWrite: return "ExprIdentifierFunctionWrite";
-            case ExecuteOp::ExprGlobalRead: return "ExprGlobalRead";
-            case ExecuteOp::ExprGlobalWrite: return "ExprGlobalWrite";
-            case ExecuteOp::ExprGlobalFunctionWrite: return "ExprGlobalFunctionWrite";
             case ExecuteOp::ExprMemberRead: return "ExprMemberRead";
             case ExecuteOp::ExprMemberWrite: return "ExprMemberWrite";
             case ExecuteOp::ExprOper1BinNeg: return "ExprOper1BinNeg";

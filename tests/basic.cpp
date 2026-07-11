@@ -46,6 +46,20 @@ function r() {
 	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_float(), 3);
 }
+TEST_F(SimpleTest, assign)
+{
+	OwcaVM vm;
+	auto code = compile(__LINE__, vm, "test.os", R"(
+function r() {
+    a = 1;
+	b = 2;
+	v = 3;
+	return a + b + v;
+}
+)");
+	auto val = vm.execute(code).member("r").call();;
+	ASSERT_EQ(val.as_float(), 6);
+}
 TEST_F(SimpleTest, native_func)
 {
 	OwcaVM vm;

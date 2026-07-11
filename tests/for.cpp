@@ -6,17 +6,17 @@ class ForTest : public SimpleTest {
 
 };
 
-static int run_for(std::string code_text, OwcaValue add_val)
+static int run_for(unsigned int first_line, std::string code_text, OwcaValue add_val)
 {
     OwcaVM vm;
-    auto code = vm.compile("test.os", std::move(code_text));
+    auto code = vm.compile("test.os", std::move(code_text), first_line);
     auto val = vm.execute(code).member("r").call(add_val);
     return (int)val.as_int();
 }
 
 TEST_F(ForTest, simple1)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -47,7 +47,7 @@ function r(a) {
 
 TEST_F(ForTest, simple2)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -65,7 +65,7 @@ function r(a) {
 
 TEST_F(ForTest, simple3)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     total = 0;
     arr = [ 0, 1, 2 ];
@@ -86,7 +86,7 @@ function r(a) {
 
 TEST_F(ForTest, loop_ident1)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -107,7 +107,7 @@ function r(a) {
 }
 TEST_F(ForTest, loop_ident2)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -128,7 +128,7 @@ function r(a) {
 }
 TEST_F(ForTest, loop_ident3)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     mode = 0;
     arr = [ 0, 1, 2 ];
@@ -149,7 +149,7 @@ function r(a) {
 }
 TEST_F(ForTest, loop_ident4)
 {
-    ASSERT_EQ(run_for(R"(
+    ASSERT_EQ(run_for(__LINE__, R"(
 function r(a) {
     mode = 0;
     arr = [ 0, 1, 2 ];
