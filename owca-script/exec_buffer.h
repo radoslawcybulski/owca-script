@@ -217,9 +217,9 @@ namespace OwcaScript {
             const DataKindsType *data_kinds;
 #endif
 
-            size_t decode_size() {
+            size_t decode_size(std::source_location sl) {
 #ifdef DEBUG
-                ensure_data_kind(DataKind::Size);
+                ensure_data_kind(DataKind::Size, sl);
 #endif
                 std::uint32_t size;
                 std::memcpy(&size, pos, sizeof(size));
@@ -227,11 +227,11 @@ namespace OwcaScript {
                 return size;
             }
 #ifdef DEBUG
-            void ensure_data_kind(DataKind expected) {
+            void ensure_data_kind(DataKind expected, std::source_location sl) {
                 if (data_kinds && !data_kinds->empty()) {
                     auto it = data_kinds->find(pos);
                     if (it == data_kinds->end() || it->second != expected) {
-                        auto msg = std::format("Data kind mismatch at position {}: expected {}, got {}", (void*)pos, to_string(expected), it == data_kinds->end() ? "Unknown" : to_string(it->second));
+                        auto msg = std::format("{}:{}: Data kind mismatch at position {}: expected {}, got {}", sl.file_name(), sl.line(), (void*)pos, to_string(expected), it == data_kinds->end() ? "Unknown" : to_string(it->second));
                         std::cout << msg << std::endl;
                         throw std::runtime_error(msg);
                     }
@@ -250,38 +250,38 @@ namespace OwcaScript {
             explicit CodePosition() = default;
 #endif
 
-            template <typename T> T decode() requires(std::is_same_v<T, std::string_view>) {
-                auto size = decode_size();
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, std::string_view>) {
+                auto size = decode_size(sl);
                 auto ptr = pos;
 #ifdef DEBUG                
-                if (size > 0) ensure_data_kind(DataKind::Blob);
+                if (size > 0) ensure_data_kind(DataKind::Blob, sl);
 #endif
                 pos += size;
                 return std::string_view((const char*)ptr, size);
             }
-            template <typename T> T decode() requires(std::is_enum_v<T>) {
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
 #ifdef DEBUG                
-                ensure_data_kind(std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum);
+                ensure_data_kind(std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum, sl);
 #endif
                 T t;
                 std::memcpy(&t, pos, sizeof(T));
                 pos += sizeof(T);
                 return static_cast<T>(t);
             }
-            template <typename T> T decode() requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
 #ifdef DEBUG
                 if constexpr (std::is_same_v<T, bool>) {
-                    ensure_data_kind(DataKind::Bool);
+                    ensure_data_kind(DataKind::Bool, sl);
                 } else if constexpr (sizeof(T) == 1) {
-                    ensure_data_kind(DataKind::Int8);
+                    ensure_data_kind(DataKind::Int8, sl);
                 } else if constexpr (sizeof(T) == 2) {
-                    ensure_data_kind(DataKind::Int16);
+                    ensure_data_kind(DataKind::Int16, sl);
                 } else if constexpr (sizeof(T) == 4) {
-                    ensure_data_kind(DataKind::Int32);
+                    ensure_data_kind(DataKind::Int32, sl);
                 } else if constexpr (sizeof(T) == 8) {
-                    ensure_data_kind(DataKind::Int64);
+                    ensure_data_kind(DataKind::Int64, sl);
                 } else {
                     static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
@@ -291,13 +291,13 @@ namespace OwcaScript {
                 pos += sizeof(T);
                 return static_cast<T>(t);
             }
-            template <typename T> T decode() requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_floating_point_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Floating point type too large to decode");
 #ifdef DEBUG
                 if constexpr (sizeof(T) == 4) {
-                    ensure_data_kind(DataKind::Float32);
+                    ensure_data_kind(DataKind::Float32, sl);
                 } else if constexpr (sizeof(T) == 8) {
-                    ensure_data_kind(DataKind::Float64);
+                    ensure_data_kind(DataKind::Float64, sl);
                 } else {
                     static_assert(sizeof(T) == 0, "Unsupported floating point type");
                 }
@@ -307,9 +307,9 @@ namespace OwcaScript {
                 pos += sizeof(T);
                 return static_cast<T>(t);
             }
-            CodePosition decode_jump() {
+            CodePosition decode_jump(std::source_location sl = std::source_location::current()) {
 #ifdef DEBUG
-                ensure_data_kind(DataKind::JumpOffset);
+                ensure_data_kind(DataKind::JumpOffset, sl);
 #endif
                 std::int32_t offset;
                 std::memcpy(&offset, pos, sizeof(offset));

@@ -23,6 +23,7 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <source_location>
 #include <span>
 #include <sstream>
 #include <string_view>
