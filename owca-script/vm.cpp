@@ -778,6 +778,17 @@ function native time();
 		return index;
 	}
 
+	IdentifierIndex VM::register_number_constant(Number num) {
+		auto it = number_constant_map.find(num);
+		if (it != number_constant_map.end()) {
+			return it->second;
+		}
+		auto index = IdentifierIndex{ IdentifierIndexKind::Constant, (std::uint32_t)string_constant_vector.size() };
+		number_constant_map[num] = index;
+		string_constant_vector.push_back(num);
+		return index;
+	}
+
 	void VM::initialize_exception_object(Exception &exc)
 	{
         for(auto sc = executor->stacktrace_vector.data() + 1; sc <= executor->stacktrace_current; ++sc) {

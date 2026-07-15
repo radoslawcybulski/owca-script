@@ -13,10 +13,13 @@ namespace OwcaScript::Internal {
 				ei.code_writer.append(line, target->index);
 			},
 			[&](const Number& v) {
-				if (!target) target = ei.allocate_temporary();
-				ei.code_writer.append(line, ExecuteOp::ExprConstantFloat);
-				ei.code_writer.append(line, target->index);
-				ei.code_writer.append(line, v);
+				auto index = ei.compiler.get_vm().register_number_constant(v);
+				if (target) {
+					ei.write_move(line, target->index, index);
+				}
+				else {
+					target = TempInfo{ ei, index };
+				}
 			},
 			[&](const bool& v) {
 				if (!target) target = ei.allocate_temporary();
