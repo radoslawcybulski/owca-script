@@ -62,9 +62,6 @@ namespace OwcaScript {
 
 			std::list<OwcaValue> temp_gc_protect_list;
 			std::vector<std::string_view> builtin_identifiers;
-			std::unordered_map<std::string_view, IdentifierIndex> string_constant_map;
-			std::unordered_map<Number, IdentifierIndex> number_constant_map;
-			std::vector<OwcaValue> string_constant_vector;
 
 			void initialize_builtins();
 
@@ -166,10 +163,6 @@ namespace OwcaScript {
 			size_t calculate_hash(OwcaValue);
 			bool calculate_if_true(OwcaValue);
 			OwcaIterator create_iterator(OwcaValue );
-
-			IdentifierIndex register_string_constant(std::string_view str);
-			IdentifierIndex register_number_constant(Number num);
-			OwcaValue* string_constants_pointer() { return string_constant_vector.data(); }
 
 			OwcaCode currently_running_code() const;
 			void run_gc();

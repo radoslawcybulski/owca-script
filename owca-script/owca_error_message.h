@@ -21,7 +21,7 @@ namespace OwcaScript {
 		InvalidIdentifier,
 		LoopControlError,
 		TooManyValues,
-		TooManyStates,
+		TooManyConstants,
 		_Count
 	};
 	std::string_view to_string(OwcaErrorKind);

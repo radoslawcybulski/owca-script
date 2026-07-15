@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "ast_compiler.h"
 #include "ast_block.h"
@@ -25,6 +26,7 @@
 #include "ast_with.h"
 #include "owca_code.h"
 #include "exec_buffer.h"
+#include <string>
 #include <string_view>
 
 namespace OwcaScript::Internal {
@@ -1173,6 +1175,89 @@ namespace OwcaScript::Internal {
 		}
 	}
 
+	struct ConstantGatherer : public AstVisitor {
+		std::unordered_map<std::string_view, IdentifierIndex> string_constants;
+		std::unordered_map<Number, IdentifierIndex> number_constants;
+
+		void apply(AstBase &o) override {
+			o.visit_children(*this);
+		}
+		void apply(AstExprInterpretedString &o) override {
+			if (o.single_string()) {
+				string_constants.insert({ o.strings(), IdentifierIndex{} });
+			}
+			apply(static_cast<AstExpr&>(o));
+		}
+		void apply(AstExprConstant &o) override {
+			o.visit_value(
+				[&](const OwcaEmpty& v) {},
+				[&](const Number& v) {
+					number_constants.insert({ v, IdentifierIndex{} });
+				},
+				[&](const bool& v) {},
+				[&](const std::string& v) {
+					string_constants.insert({ v, IdentifierIndex{} });
+				}
+			);
+			apply(static_cast<AstExpr&>(o));
+		}
+	};
+	struct ConstantUpdater : public AstVisitor {
+		std::unordered_map<std::string_view, IdentifierIndex> string_constants;
+		std::unordered_map<Number, IdentifierIndex> number_constants;
+
+		std::tuple<std::vector<std::string_view>, std::vector<Number>> update_indexes() {
+			unsigned int index = 3;
+			std::vector<std::string_view> string_constants_vector;
+			std::vector<Number> number_constants_vector;
+			string_constants_vector.resize(string_constants.size());
+			number_constants_vector.resize(number_constants.size());
+			for(auto &it : string_constants) {
+				it.second = IdentifierIndex{ IdentifierIndexKind::Constant, index };
+				string_constants_vector[index - 3] = it.first;
+				++index;
+			}
+			for(auto &it : number_constants) {
+				it.second = IdentifierIndex{ IdentifierIndexKind::Constant, index };
+				number_constants_vector[index - 3 - string_constants.size()] = it.first;
+				++index;
+			}
+			return { string_constants_vector, number_constants_vector };
+		}
+		void apply(AstBase &o) override {
+			o.visit_children(*this);
+		}
+		void apply(AstExprInterpretedString &o) override {
+			if (o.single_string()) {
+				auto it = string_constants.find(o.strings());
+				assert(it != string_constants.end());
+				o.update_index_if_single_string(it->second);
+			}
+			apply(static_cast<AstExpr&>(o));
+		}
+		void apply(AstExprConstant &o) override {
+			o.visit_value(
+				[&](const OwcaEmpty& v) {
+					o.update_index(IdentifierIndex{ IdentifierIndexKind::Constant, 0 });
+				},
+				[&](const Number& v) {
+					auto it = number_constants.find(v);
+					assert(it != number_constants.end());
+					o.update_index(it->second);
+				},
+				[&](bool v) {
+					o.update_index(IdentifierIndex{ IdentifierIndexKind::Constant, v ? 1u : 2u });
+				},
+				[&](const std::string& v) {
+					auto it = string_constants.find(v);
+					assert(it != string_constants.end());
+					o.update_index(it->second);
+				}
+			);
+			apply(static_cast<AstExpr&>(o));
+		}
+	};
+
 	struct AstCompiler::Phase2 : public AstVisitor {
 		struct Stack {
 			struct LookupResult {
@@ -1407,9 +1492,33 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(Line{ 0 }, name);
 		}
 
+		ConstantGatherer cg;
+		for(auto &r : root) {
+			r->visit(cg);
+		}
+		ConstantUpdater cu;
+		cu.string_constants = std::move(cg.string_constants);
+		cu.number_constants = std::move(cg.number_constants);
+		auto [ string_constants, number_constants ] = cu.update_indexes();
+		for(auto &r : root) {
+			r->visit(cu);
+		}
+		if (string_constants.size() + number_constants.size() + 3 > 0x3fffffff) {
+			add_error_and_throw(OwcaErrorKind::TooManyConstants, filename_, Line{ 0 }, std::format("too many constants, max is 1073741820 (0x3ffffffc), got {}", string_constants.size() + number_constants.size()));
+		}
+		ei.code_writer.append(Line{ 0 }, (std::uint32_t)string_constants.size());
+		ei.code_writer.append(Line{ 0 }, (std::uint32_t)number_constants.size());
+		for(auto &u : string_constants) {
+			ei.code_writer.append(Line{ 0 }, u);
+		}
+		for(auto &u : number_constants) {
+			ei.code_writer.append(Line{ 0 }, u);
+		}
+
 		for(auto &r : root) {
 			r->emit(ei);
 		}
+
 		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 		assert(error_messages_.empty());
         ei.code_writer.update_placeholder(max_values, (std::uint32_t)ei.per_function.max_temporaries);

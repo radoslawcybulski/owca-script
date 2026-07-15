@@ -632,7 +632,7 @@ namespace OwcaScript::Internal {
             auto &native_provider = code_object.native_code_provider();
             auto line = code_object.get_line_by_position(code_pos).line;
             if (is_generator) {
-                auto f = current_vm().allocate<RuntimeFunctionNativeGenerator>(0, code_object, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -645,7 +645,7 @@ namespace OwcaScript::Internal {
                 }
             }
             else {
-                auto f = current_vm().allocate<RuntimeFunctionNativeFunction>(0, code_object, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -673,10 +673,10 @@ namespace OwcaScript::Internal {
 
             RuntimeFunctionScript *f;
             if (is_generator) {
-                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, globals_ptr, name, full_name, is_method, entry_point);
             }
             else {
-                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, globals_ptr, name, full_name, is_method, entry_point);
             }
             fnc = f;
             f->identifier_names = std::move(identifier_names);
@@ -693,12 +693,13 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, CodePosition code_pos)
+    std::tuple<OwcaValue, CodePosition> Executor::run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos)
     {
+        auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
         std::array<OwcaValue*, 3> identifier_ptrs = {
             locals_ptr.local_values_ptr,
-            current_vm().string_constants_pointer(),
-            globals_ptr.global_values_ptr,
+            sf->constants_ptr,
+            sf->globals_ptr.global_values_ptr,
         };
         auto variable = [&](IdentifierIndex index) -> OwcaValue& {
             return identifier_ptrs[(int)index.kind()][index.index()];
@@ -1103,7 +1104,7 @@ restart:
                     break; }
                 case ExecuteOp::Function: {
                     auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    target = create_function(code_pos, globals_ptr, locals_ptr);
+                    target = create_function(code_pos, sf->globals_ptr, locals_ptr);
                     break; }
                 case ExecuteOp::If: {
                     auto condition = variable(code_pos.decode<IdentifierIndex>());
@@ -1389,7 +1390,7 @@ restart:
     //     POP_VALUES(1);
     // }
 
-    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, unsigned int arg_count, bool clear_locals) {
+    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, LocalsPtr locals_ptr, unsigned int arg_count, bool clear_locals) {
         const auto max_values = function->max_values;
 
         assert(locals_ptr.local_values_ptr + max_values <= values_vector.data() + values_vector.size());
@@ -1406,10 +1407,10 @@ restart:
         }
 
         auto est = StackTraceState{ *this, function, function->entry_point };
-        auto [ retval, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, function->entry_point);
+        auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, function->entry_point);
         return retval;
     }
-    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos)
+    Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunctionScriptGenerator *function, std::vector<OwcaValue> values_vec, CodePosition code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
         while(true) {
@@ -1418,7 +1419,7 @@ restart:
                 auto est = StackTraceState{ *this, function, code_pos };
                 auto tpk = Executor::TopPtrsKeeper{ *this, function->max_values };
                 auto sc = stacktrace_current;
-                auto [ retval, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, code_pos);
+                auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, code_pos);
                 assert(sc == stacktrace_current);
                 val = retval;
                 code_pos = new_code_pos;
@@ -1537,7 +1538,26 @@ restart:
             auto ident = code_pos.decode<std::string_view>();
             identifier_to_global_index[ident] = i;
         }
+        std::vector<OwcaValue> constants_vector;
+        auto constants_strings = code_pos.decode<std::uint32_t>();
+        auto constants_numbers = code_pos.decode<std::uint32_t>();
+        constants_vector.reserve(3 + constants_strings + constants_numbers);
+        constants_vector.push_back(OwcaEmpty{});
+        constants_vector.push_back(true);
+        constants_vector.push_back(false);
+        for(auto i = 0u; i < constants_strings; ++i) {
+            auto str = code_pos.decode<std::string_view>();
+            constants_vector.push_back(current_vm().create_string_from_view(str));
+        }
+        for(auto i = 0u; i < constants_numbers; ++i) {
+            auto num = code_pos.decode<Number>();
+            constants_vector.push_back(num);
+        }
+
         auto ns = current_vm().create_namespace(std::move(oc), std::move(identifier_to_global_index));
+        ns.internal_value()->constants = std::move(constants_vector);
+        ns.internal_value()->string_constants_count = constants_strings;
+
         namespaces.insert({ ns.internal_value()->code.filename(), ns});
         if (namespaces.size() > 1) {
             auto ns_it = namespaces.at(current_vm().builtin_filename);
@@ -1549,9 +1569,9 @@ restart:
 
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
 
-        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, code_pos);
+        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, ns, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, code_pos);
         auto est = StackTraceState{ *this, function, function->entry_point };
-        run_opcodes(globals_ptr, locals_ptr, code_pos);
+        run_opcodes(locals_ptr, code_pos);
         return ns;
     }
 

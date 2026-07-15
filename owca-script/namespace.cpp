@@ -12,6 +12,9 @@ namespace OwcaScript::Internal {
 	}
 	void Namespace::gc_mark(GenerationGC generation_gc) const {
         gc_mark_value(generation_gc, globals);
+        for(auto i = 3u; i < 3 + string_constants_count; ++i) {
+            gc_mark_value(generation_gc, constants[i]);
+        }
     }
     OwcaValue Namespace::member(std::string_view key) const {
         auto val = try_member(key);

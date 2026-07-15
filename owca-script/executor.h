@@ -19,6 +19,7 @@ namespace OwcaScript {
 		enum class CompareKind : std::uint8_t;
         class RuntimeFunction;
 		class RuntimeFunctionScriptFunction;
+		class RuntimeFunctionScriptGenerator;
         class RuntimeFunctions;
         class VM;
 		class Executor;
@@ -190,7 +191,7 @@ namespace OwcaScript {
 				}
 			};
 		private:
-			std::tuple<OwcaValue, CodePosition> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, CodePosition code_pos);
+			std::tuple<OwcaValue, CodePosition> run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
 			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
@@ -220,8 +221,8 @@ namespace OwcaScript {
 			OwcaNamespace execute_code_block(OwcaCode oc);
             OwcaValue execute_function_call_from_values(unsigned int arg_count);
 			OwcaValue allocate_user_class_from_values(unsigned int arg_count);
-			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos);
-			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, LocalsPtr locals, unsigned int arg_count, bool clear_locals);
+			Generator run_script_generator(Iterator *iter_object, RuntimeFunctionScriptGenerator *function, std::vector<OwcaValue> values_vec, CodePosition code_pos);
+			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, LocalsPtr locals, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(std::span<OwcaValue> arguments) {

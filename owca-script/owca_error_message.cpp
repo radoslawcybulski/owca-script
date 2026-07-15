@@ -20,8 +20,8 @@ namespace OwcaScript {
 		case OwcaErrorKind::StringContainsEndOfLineCharacter: return "StringContainsEndOfLineCharacter";
 		case OwcaErrorKind::InvalidIdentifier: return "InvalidIdentifier";
 		case OwcaErrorKind::LoopControlError: return "LoopControlError";
-		case OwcaErrorKind::TooManyStates: return "TooManyStates";
 		case OwcaErrorKind::TooManyValues: return "TooManyValues";
+		case OwcaErrorKind::TooManyConstants: return "TooManyConstants";
  		case OwcaErrorKind::_Count: return "_Count";
         }
         assert(false);

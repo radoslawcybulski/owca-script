@@ -84,6 +84,11 @@ namespace OwcaScript::Internal {
 		apply(static_cast<AstExpr&>(o));
 	}
 
+	void AstVisitor::apply(AstExprInterpretedString &o)
+	{
+		apply(static_cast<AstExpr&>(o));
+	}
+
 	void AstVisitor::apply(AstFunction &o)
 	{
 		apply(static_cast<AstExpr&>(o));

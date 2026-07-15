@@ -767,28 +767,6 @@ function native time();
 		}
 	}
 
-	IdentifierIndex VM::register_string_constant(std::string_view str) {
-		auto it = string_constant_map.find(str);
-		if (it != string_constant_map.end()) {
-			return it->second;
-		}
-		auto index = IdentifierIndex{ IdentifierIndexKind::Constant, (std::uint32_t)string_constant_vector.size() };
-		string_constant_map[str] = index;
-		string_constant_vector.push_back(create_string_from_view(str));
-		return index;
-	}
-
-	IdentifierIndex VM::register_number_constant(Number num) {
-		auto it = number_constant_map.find(num);
-		if (it != number_constant_map.end()) {
-			return it->second;
-		}
-		auto index = IdentifierIndex{ IdentifierIndexKind::Constant, (std::uint32_t)string_constant_vector.size() };
-		number_constant_map[num] = index;
-		string_constant_vector.push_back(num);
-		return index;
-	}
-
 	void VM::initialize_exception_object(Exception &exc)
 	{
         for(auto sc = executor->stacktrace_vector.data() + 1; sc <= executor->stacktrace_current; ++sc) {
@@ -1412,7 +1390,6 @@ function native time();
 		gc_mark_value(ggc, empty_tuple);
 		gc_mark_value(ggc, empty_string);
 		gc_mark_value(ggc, *executor);
-		gc_mark_value(ggc, string_constant_vector);
 
 		gc_mark_value(ggc, temp_gc_protect_list);
 

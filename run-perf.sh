@@ -32,11 +32,19 @@ for i in $(seq 1 $C)
 do
 	echo -ne "Running 1 ($i of $C)\r"
 	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_1 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
+	echo $V
 	V1R="$V1R\\n$V"
 
 	echo -ne "Running 2 ($i of $C)\r"
 	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_2 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
+	echo $V
 	V2R="$V2R\\n$V"
+
+	echo -ne "Running 1 ($i of $C)\r"
+	V=$(taskset -c 2 build/owca-script-test --gtest_filter=PerformanceTest.DISABLED_simple_1 --gtest_also_run_disabled_tests | grep "Time taken: " | sed -n 's/.*Time taken: \([0-9.]*\) seconds.*/\1/p')
+	echo $V
+	V1R="$V1R\\n$V"
+	
 done
 
 V1=$(echo -e "$V1R" | sort -n | head -n 2 | tail -n 1)

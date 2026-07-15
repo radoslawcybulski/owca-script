@@ -11,12 +11,12 @@ namespace OwcaScript::Internal {
         assert(sizes.size() == evals.size());
 
         if (sizes.empty()) {
-            auto index = ei.compiler.get_vm().register_string_constant(strings);
+            assert(index_if_single_string_);
             if (target) {
-                ei.write_move(line, target->index, index);
+                ei.write_move(line, target->index, index_if_single_string_);
             }
             else {
-                target = TempInfo{ ei, index };
+                target = TempInfo{ ei, index_if_single_string_ };
             }
             return std::move(*target);
         }
@@ -33,7 +33,7 @@ namespace OwcaScript::Internal {
             }
             ei.code_writer.append(line, ExecuteOp::ExprConstantStringInterpolated);
             ei.code_writer.append(line, target->index);
-            ei.code_writer.append(line, strings);
+            ei.code_writer.append(line, strings_);
             ei.code_writer.append(line, (std::uint32_t)sizes.size());
             for(auto j = 0u; j < evals.size(); ++j) {
                 ei.code_writer.append(line, eval_results[j].index);

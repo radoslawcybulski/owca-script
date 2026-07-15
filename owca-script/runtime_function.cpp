@@ -11,7 +11,9 @@ namespace OwcaScript::Internal {
 	std::string RuntimeFunction::to_string() const {
 		return std::format("function set {}", name);
 	}
-	void RuntimeFunction::gc_mark(GenerationGC generation_gc) const {}
+	void RuntimeFunction::gc_mark(GenerationGC generation_gc) const {
+		gc_mark_value(generation_gc, owning_namespace);
+	}
 
 	unsigned int RuntimeFunction::line(CodePosition pos) const {
 		return code.get_line_by_position(pos - 1).line;
@@ -42,7 +44,7 @@ namespace OwcaScript::Internal {
         auto locals = e.get_current_unused_locals_ptr();
         assert(locals.local_values_ptr + max_values <= e.values_vector_span().data() + e.values_vector_span().size());
 		auto tpk = Executor::TopPtrsKeeper{ e, max_values };
-		return e.run_script_code(this, globals_ptr, locals, param_count, true);
+		return e.run_script_code(this, locals, param_count, true);
 	}
 
 	void RuntimeFunctionScriptGenerator::gc_mark(GenerationGC generation_gc) const {
@@ -64,7 +66,7 @@ namespace OwcaScript::Internal {
 
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
         auto iter = Internal::current_vm().allocate<Iterator>(0, this, values_span);
-        iter->generator = e.run_script_generator(iter, this, globals_ptr, std::move(values_vec), entry_point);
+        iter->generator = e.run_script_generator(iter, this, std::move(values_vec), entry_point);
         return OwcaIterator{ iter };
 	}
 

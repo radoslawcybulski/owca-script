@@ -20,8 +20,10 @@ namespace OwcaScript {
 
 			OwcaCode code;
             std::vector<OwcaValue> globals;
+            std::vector<OwcaValue> constants;
             std::unordered_map<std::string_view, size_t> identifier_to_global_index;
-
+            std::uint32_t string_constants_count = 0;
+            
             std::string_view type() const override;
 			std::string to_string() const override;
 
