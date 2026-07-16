@@ -27,7 +27,7 @@ namespace OwcaScript {
 			auto &first() const { return *first_; }
 			const auto &nexts() const { return nexts_; }
 
-			void emit(EmitInfo& ei) override;
+			AstBase::TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

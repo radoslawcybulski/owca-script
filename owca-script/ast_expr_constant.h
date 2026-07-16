@@ -19,7 +19,7 @@ namespace OwcaScript {
 			AstExprConstant(Line line, bool value) : AstExpr (line), value_(value) {}
 			AstExprConstant(Line line, std::string value) : AstExpr (line), value_(std::move(value)) {}
 
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			auto value() const { return value_; }
 

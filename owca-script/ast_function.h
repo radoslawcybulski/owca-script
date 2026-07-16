@@ -52,7 +52,7 @@ namespace OwcaScript {
 			bool is_generator() const { return generator_ == Generator::Yes; }
 			auto param_count() const { return param_count_; }
 			const auto &identifier_names() const { return identifier_names_; }
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

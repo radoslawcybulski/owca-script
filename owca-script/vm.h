@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_VM_H
 #define RC_OWCA_SCRIPT_VM_H
 
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
@@ -61,7 +62,7 @@ namespace OwcaScript {
 
 			std::list<OwcaValue> temp_gc_protect_list;
 			std::vector<std::string_view> builtin_identifiers;
-			std::unordered_map<std::string_view, std::uint32_t> string_constant_map;
+			std::unordered_map<std::string_view, IdentifierIndex> string_constant_map;
 			std::vector<OwcaValue> string_constant_vector;
 
 			void initialize_builtins();
@@ -165,7 +166,7 @@ namespace OwcaScript {
 			bool calculate_if_true(OwcaValue);
 			OwcaIterator create_iterator(OwcaValue );
 
-			std::uint32_t register_string_constant(std::string_view str);
+			IdentifierIndex register_string_constant(std::string_view str);
 			OwcaValue* string_constants_pointer() { return string_constant_vector.data(); }
 
 			OwcaCode currently_running_code() const;

@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "owca-script/owca_namespace.h"
 #include "owca-script/owca_value.h"
 #include "owca_exception.h"
@@ -19,6 +20,7 @@
 #include "exception.h"
 #include "namespace.h"
 #include <chrono>
+#include <string_view>
 #include <utility>
 
 #ifdef DEBUG
@@ -314,14 +316,15 @@ namespace OwcaScript::Internal {
 
     using Oper1TypeArray = std::array<Operators1, OwcaValuesCount>;
 
-    static OwcaValue op_call_cant(TemporariesPtr values, size_t count) {
-        current_vm().throw_cant_call(std::format("can't call {} with {} parameters", values[0].type(), count - 1));
+    static OwcaValue op_call_cant(size_t count) {
+        auto locals = current_vm().get_executor().get_current_unused_locals_ptr();
+        current_vm().throw_cant_call(std::format("can't call {} with {} parameters", locals[0].type(), count - 1));
     };
-    static OwcaValue op_call_functions(TemporariesPtr values, size_t count) {
-        return current_vm().get_executor().execute_function_call_from_values(values, count);
+    static OwcaValue op_call_functions(size_t count) {
+        return current_vm().get_executor().execute_function_call_from_values(count);
     };
-    static OwcaValue op_call_class(TemporariesPtr values, size_t count) {
-        return current_vm().get_executor().allocate_user_class_from_values(values, count);
+    static OwcaValue op_call_class(size_t count) {
+        return current_vm().get_executor().allocate_user_class_from_values(count);
     };
     
     static bool op_is_true_empty(OwcaValue self) { return false; }
@@ -370,7 +373,7 @@ namespace OwcaScript::Internal {
     }();
 
 
-    Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), temporary_ptr_current_top(values_vector.data()) {
+    Executor::Executor() : stacktrace_vector(1024), values_vector(1024 * 1024), current_unused_locals_ptr(values_vector.data()) {
         stacktrace_current = stacktrace_vector.data();
     }
 
@@ -379,12 +382,6 @@ namespace OwcaScript::Internal {
         process_measure_items();
 #endif
     }
-
-#define PEEK_VALUES(offset, count) std::span<OwcaValue>{ temporary_ptr[{ (offset), (count) }] }
-#define PEEK_VALUE(offset) temporary_ptr[(offset)]
-#define POP_VALUES(count) do { temporary_ptr = temporary_ptr - (count); } while(0)
-#define PUSH_VALUE(val) do { temporary_ptr[0] = (val); ++temporary_ptr; } while(0)
-#define LOCAL_VAR(index) (locals_ptr[index])
 
     void Executor::process_thrown_exception(CodePosition *code_pos, OwcaException exception)
     {
@@ -625,10 +622,9 @@ namespace OwcaScript::Internal {
         auto is_method = code_pos.decode<bool>();
         auto param_count = code_pos.decode<std::uint16_t>();
         auto value_count = code_pos.decode<std::uint16_t>();
-        auto temporaries_count = code_pos.decode<std::uint16_t>();
-        auto state_count = code_pos.decode<std::uint16_t>();
+        auto identifier_count = code_pos.decode<std::uint16_t>();
         std::vector<std::string_view> identifier_names;
-        identifier_names.resize(value_count);
+        identifier_names.resize(identifier_count);
         for(auto &n : identifier_names) n = code_pos.decode<std::string_view>();
 
         RuntimeFunction *fnc = nullptr;
@@ -687,34 +683,30 @@ namespace OwcaScript::Internal {
             f->copy_from_parents = std::move(copy_from_parents);
             f->values_from_parents.reserve(f->copy_from_parents.size());
             for(auto c : f->copy_from_parents) {
-                f->values_from_parents.push_back(LOCAL_VAR(c.index_in_parent));
+                f->values_from_parents.push_back(locals_ptr[c.index_in_parent]);
             }
         }
-        if (is_method) {
-            assert(param_count > 0);
-            --param_count;
-        }
         fnc->param_count = param_count;
-        fnc->max_temporaries = temporaries_count;
-        fnc->max_states = state_count;
         fnc->max_values = value_count;
         auto rfs = current_vm().allocate<RuntimeFunctions>(0, name, full_name);
         rfs->functions[fnc->param_count] = fnc;
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, TemporariesPtr, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos)
+    std::tuple<OwcaValue, CodePosition> Executor::run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, CodePosition code_pos)
     {
         std::array<OwcaValue*, 3> identifier_ptrs = {
             locals_ptr.local_values_ptr,
             current_vm().string_constants_pointer(),
             globals_ptr.global_values_ptr,
         };
+        auto variable = [&](IdentifierIndex index) -> OwcaValue& {
+            return identifier_ptrs[(int)index.kind()][index.index()];
+        };
 
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace_current->runtime_function->code;
-        auto temporary_ptr_start = temporary_ptr;
 #endif        
 
 restart:
@@ -731,7 +723,7 @@ restart:
                 // last_time = now;
                 // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1) << " temporaries " << std::setw(2) << (temporary_ptr.temporaries_ptr - temporary_ptr_start.temporaries_ptr) << 
+                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1) <<
                     " stack " << std::setw(2) << (stacktrace_current - stacktrace_vector.data()) <<
                     " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";
@@ -748,17 +740,37 @@ restart:
                     assert(false);
                     break;
                 case ExecuteOp::ClassCreate: {
+                    auto &code_object = stacktrace_current->runtime_function->code;
+                    const auto line = code_object.get_line_by_position(code_pos - 1);
+                    auto &dest = variable(code_pos.decode<IdentifierIndex>());
+
                     auto name = code_pos.decode<std::string_view>();
                     auto full_name = code_pos.decode<std::string_view>();
-                    auto &code_object = stacktrace_current->runtime_function->code;
-                    auto line = code_object.get_line_by_position(code_pos - 1);
-                    auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
                     auto native = code_pos.decode<bool>();
                     auto base_class_count = code_pos.decode<std::uint32_t>();
                     auto member_count = code_pos.decode<std::uint32_t>();
                     auto all_variable_names = code_pos.decode<bool>();
                     auto variable_name_count = code_pos.decode<std::uint32_t>();
+                    std::vector<std::string_view> variable_names;
+                    variable_names.reserve(variable_name_count);
+                    for(auto i = 0u; i < variable_name_count; ++i) {
+                        variable_names.push_back(code_pos.decode<std::string_view>());
+                    }
+                    std::vector<OwcaValue> base_classes;
+                    base_classes.reserve(base_class_count);
+                    std::vector<OwcaValue> members;
+                    members.reserve(member_count);
+                    for(auto i = 0u; i < base_class_count; ++i) {
+                        auto d = code_pos.decode<IdentifierIndex>();
+                        base_classes.push_back(variable(d));
+                    }
+                    for(auto i = 0u; i < member_count; ++i) {
+                        auto d = code_pos.decode<IdentifierIndex>();
+                        members.push_back(variable(d));
+                    }
 
+                    auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
+                    
                     if (native) {
                         auto &native_provider = cls->code.native_code_provider();
                         if (native_provider) {
@@ -773,9 +785,6 @@ restart:
                         }
                     }
 
-
-                    auto base_classes = PEEK_VALUES(base_class_count, base_class_count);
-                    auto members = PEEK_VALUES(member_count + base_class_count, member_count);
                     for(auto b : base_classes) {
                         cls->initialize_add_base_class(b.as_class());
                     }
@@ -787,39 +796,39 @@ restart:
                     }
                     else {
                         for(auto i = 0u; i < variable_name_count; ++i) {
-                            auto var_name = code_pos.decode<std::string_view>();
-                            cls->initialize_add_variable(var_name);
+                            cls->initialize_add_variable(variable_names[i]);
                         }
                     }
 
                     cls->finalize_initializing();
 
-                    POP_VALUES(base_class_count + member_count);
-                    PUSH_VALUE(OwcaClass{ cls });
-                    break; }
-                case ExecuteOp::ExprPopAndIgnore: {
-                    POP_VALUES(1);
+                    dest = OwcaClass{ cls };
                     break; }
 #define IS_TRUE(v) OPER1_GET(is_true, (v).kind())(v)
-#define CMP2_RUN(oper, reverse, upd) do { \
-        auto jump_dest = code_pos.decode_jump();        \
-        const auto last = code_pos.decode<bool>();      \
-        auto left = PEEK_VALUE(2);                                                                 \
-        auto right = PEEK_VALUE(1);                                                                 \
-        auto res = (!reverse) ?                                                                      \
-            OPER2_GET(oper, left.kind(), right.kind())(left, right) :                        \
-            OPER2_GET(oper, right.kind(), left.kind())(right, left);                         \
-        res = (upd);                                                                                \
-        if (res) {                                                                                  \
-            PEEK_VALUE(2) = last ? OwcaValue{ true } : right;                                                \
-        }                                                                                           \
-        else {                                                                                      \
-            PEEK_VALUE(2) = false;                                                                           \
-            code_pos = jump_dest;                                                                   \
-        }                                                                                           \
-        POP_VALUES(1);                                                                              \
+#define CMP2_RUN(oper, reverse, upd) do {                                 \
+        auto &target = variable(code_pos.decode<IdentifierIndex>());      \
+        auto left = variable(code_pos.decode<IdentifierIndex>());         \
+        auto right = variable(code_pos.decode<IdentifierIndex>());        \
+        auto jump_dest = code_pos.decode_jump();                          \
+        const auto last = code_pos.decode<bool>();                        \
+        auto res = (!reverse) ?                                           \
+            OPER2_GET(oper, left.kind(), right.kind())(left, right) :     \
+            OPER2_GET(oper, right.kind(), left.kind())(right, left);      \
+        res = (upd);                                                      \
+        if (res) {                                                        \
+            target = last ? OwcaValue{ true } : right;                    \
+        }                                                                 \
+        else {                                                            \
+            target = false;                                               \
+            code_pos = jump_dest;                                         \
+        }                                                                 \
     } while(0)
 
+                case ExecuteOp::ExprMove: {
+                    auto dest = code_pos.decode<IdentifierIndex>();
+                    auto src = code_pos.decode<IdentifierIndex>();
+                    variable(dest) = variable(src);
+                    break; }
                 case ExecuteOp::ExprCompareEq: {
                     CMP2_RUN(eq, 0, res);
                     break; }
@@ -842,23 +851,26 @@ restart:
                     CMP2_RUN(is, 0, res);
                     break; }
                 case ExecuteOp::ExprConstantEmpty: {
-                    PUSH_VALUE(OwcaEmpty{});
+                    variable(code_pos.decode<IdentifierIndex>()) = OwcaEmpty{};
                     break; }
                 case ExecuteOp::ExprConstantBool: {
-                    auto value = code_pos.decode<bool>();
-                    PUSH_VALUE(value);
+                    auto dest = code_pos.decode<IdentifierIndex>();
+                    variable(dest) = code_pos.decode<bool>();
                     break; }
                 case ExecuteOp::ExprConstantFloat: {
-                    auto value = code_pos.decode<Number>();
-                    PUSH_VALUE(value);
+                    auto dest = code_pos.decode<IdentifierIndex>();
+                    variable(dest) = code_pos.decode<Number>();
                     break; }
                 case ExecuteOp::ExprConstantStringInterpolated: {
+                    auto target = code_pos.decode<IdentifierIndex>();
                     auto strings = code_pos.decode<std::string_view>();
                     auto expr_count = code_pos.decode<std::uint32_t>();
+                    std::vector<std::string_view> exprs;
+                    exprs.reserve(expr_count);
                     size_t size = strings.size();
-                    auto values = PEEK_VALUES(expr_count, expr_count);
                     for(auto i = 0u; i < expr_count; ++i) {
-                        size += values[i].as_string_certainly().size();
+                        exprs.push_back(variable(code_pos.decode<IdentifierIndex>()).as_string_certainly().text());
+                        size += exprs.back().size();
                     }
                     auto new_str = current_vm().precreate_string(size);
                     auto new_str_pt = new_str->pointer();
@@ -868,108 +880,93 @@ restart:
                         std::memcpy(new_str_pt, strings_ptr, sz);
                         new_str_pt += sz;
                         strings_ptr += sz;
-                        auto str = values[i].as_string_certainly();
-                        std::memcpy(new_str_pt, str.text().data(), str.size());
+                        auto str = exprs[i];
+                        std::memcpy(new_str_pt, str.data(), str.size());
                         new_str_pt += str.size();
                     }
                     auto remaining = strings.data() + strings.size() - strings_ptr;
                     std::memcpy(new_str_pt, strings_ptr, remaining);
                     new_str_pt += remaining;
                     assert(new_str_pt == new_str->pointer() + new_str->size());
-                    POP_VALUES(expr_count);
-                    PUSH_VALUE(OwcaString{ new_str });
-                    break; }
-                case ExecuteOp::ExprIdentifierRead: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    auto val = identifier_ptrs[index >> 30][index & 0x3FFFFFFF];
-                    PUSH_VALUE(val);
-                    break; }
-                case ExecuteOp::ExprIdentifierWrite: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    auto val = PEEK_VALUE(1);
-                    identifier_ptrs[index >> 30][index & 0x3FFFFFFF] = val;
+                    variable(target) = OwcaString{ new_str };
                     break; }
                 case ExecuteOp::ExprIdentifierFunctionWrite: {
-                    auto index = code_pos.decode<std::uint32_t>();
-                    auto &val = PEEK_VALUE(1);
-                    auto &tgt = identifier_ptrs[index >> 30][index & 0x3FFFFFFF];
-                    tgt = set_identifier_function(tgt, val);
-                    val = tgt;
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &func = variable(code_pos.decode<IdentifierIndex>());
+                    auto src = variable(code_pos.decode<IdentifierIndex>());
+                    func = set_identifier_function(func, src);
+                    target = func;
                     break; }
-                // case ExecuteOp::ExprGlobalRead: {
-                //     auto index = code_pos.decode<std::uint32_t>();
-                //     PUSH_VALUE(globals_ptr[index]);
-                //     break; }
-                // case ExecuteOp::ExprGlobalWrite: {
-                //     auto index = code_pos.decode<std::uint32_t>();
-                //     globals_ptr[index] = PEEK_VALUE(1);
-                //     break; }
-                // case ExecuteOp::ExprGlobalFunctionWrite: {
-                //     auto index = code_pos.decode<std::uint32_t>();
-                //     auto &val = PEEK_VALUE(1);
-                //     auto &tgt = globals_ptr[index];
-                //     tgt = set_identifier_function(tgt, val);
-                //     val = tgt;
-                //     break; }
                 case ExecuteOp::ExprMemberRead: {
-                    auto self = PEEK_VALUE(1);
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
                     auto member = code_pos.decode<std::string_view>();
-                    PEEK_VALUE(1) = current_vm().member(self, member);
+                    target = current_vm().member(self, member);
                     break; }
                 case ExecuteOp::ExprMemberWrite: {
-                    auto val_to_write = PEEK_VALUE(1);
-                    auto self = PEEK_VALUE(2);
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
                     auto member = code_pos.decode<std::string_view>();
+                    auto val_to_write = variable(code_pos.decode<IdentifierIndex>());
                     current_vm().member(self, member, val_to_write);
-                    PEEK_VALUE(2) = val_to_write;
-                    POP_VALUES(1);
+                    target = val_to_write;
                     break; }
                 case ExecuteOp::ExprOper1BinNeg: {
-                    auto &left = PEEK_VALUE(1);
-                    left = -(std::int64_t)left.as_float();
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    target = -(std::int64_t)self.as_float();
                     break; }
                 case ExecuteOp::ExprOper1LogNot: {
-                    auto &left = PEEK_VALUE(1);
-                    left = !IS_TRUE(left);
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    target = !IS_TRUE(self);
                     break; }
                 case ExecuteOp::ExprOper1Negate: {
-                    auto &left = PEEK_VALUE(1);
-                    left = -left.as_float();
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    target = -self.as_float();
                     break; }
                 case ExecuteOp::ExprRetTrueAndJumpIfTrue: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto condition = variable(code_pos.decode<IdentifierIndex>());
                     auto jump_dest = code_pos.decode_jump();
-                    if (IS_TRUE(PEEK_VALUE(1))) {
+                    if (IS_TRUE(condition)) {
+                        target = true;
                         code_pos = jump_dest;
-                    }
-                    else {
-                        POP_VALUES(1);
                     }
                     break; }
                 case ExecuteOp::ExprRetFalseAndJumpIfFalse: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto condition = variable(code_pos.decode<IdentifierIndex>());
                     auto jump_dest = code_pos.decode_jump();
-                    if (!IS_TRUE(PEEK_VALUE(1))) {
+                    if (!IS_TRUE(condition)) {
+                        target = false;
                         code_pos = jump_dest;
-                    }
-                    else {
-                        POP_VALUES(1);
                     }
                     break; }
                 case ExecuteOp::ExprToString: {
-                    auto v = PEEK_VALUE(1);
-                    if (v.kind() == OwcaValueKind::String) {
-                        break;
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    if (self.kind() == OwcaValueKind::String) {
+                        target = self;
                     }
-                    PEEK_VALUE(1) = current_vm().create_string_from_view(v.to_string());
+                    target = current_vm().create_string_from_view(self.to_string());
                     break; }
                 case ExecuteOp::ExprToIterator: {
-                    auto &val = PEEK_VALUE(1);
-                    if (val.kind() != OwcaValueKind::Iterator) {
-                        auto func = current_vm().try_member(val, "__iter__");
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    if (self.kind() != OwcaValueKind::Iterator) {
+                        auto func = current_vm().try_member(self, "__iter__");
                         if (!func) {
-                            throw_not_iterable(val.type());
+                            throw_not_iterable(self.type());
                         }
-                        val = *func;
-                        val = execute_call_from_values(temporary_ptr, 1);
+                        self = *func;
+                        auto mv = stacktrace_current->runtime_function->max_values;
+                        current_unused_locals_ptr[0] = self;
+                        target = execute_call_from_values(1);
+                    }
+                    else {
+                        target = self;
                     }
                     break; }
                 case ExecuteOp::ExprOper2Add:
@@ -982,33 +979,36 @@ restart:
                 case ExecuteOp::ExprOper2BinXor:
                 case ExecuteOp::ExprOper2BinLShift:
                 case ExecuteOp::ExprOper2BinRShift: {
+                    auto target_index = code_pos.decode<IdentifierIndex>();
+                    auto left_index = code_pos.decode<IdentifierIndex>();
+                    auto right_index = code_pos.decode<IdentifierIndex>();
+                    auto &target = variable(target_index);
+                    auto left = variable(left_index);
+                    auto right = variable(right_index);
                     auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2Add);
-                    auto left = temporary_ptr[2];
-                    auto right = temporary_ptr[1];
-                    auto val = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
-                    temporary_ptr[2] = val;
-                    POP_VALUES(1);
+                    target = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
                     break; }
                 case ExecuteOp::ExprOper2MakeRange: {
-                    auto mode = code_pos.decode<std::uint8_t>();
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto first_index = code_pos.decode<IdentifierIndex>();
+                    auto second_index = code_pos.decode<IdentifierIndex>();
+                    auto third_index = code_pos.decode<IdentifierIndex>();
+
                     Number first, second, third;
-                    if (mode & 4) {
-                        third = PEEK_VALUE(1).as_float();
-                        POP_VALUES(1);
+                    if (third_index) {
+                        third = variable(third_index).as_float();
                     }
                     else {
                         third = 1;
                     }
-                    if (mode & 2) {
-                        second = PEEK_VALUE(1).as_float();
-                        POP_VALUES(1);
+                    if (second_index) {
+                        second = variable(second_index).as_float();
                     }
                     else {
                         second = std::numeric_limits<Number>::max();
                     }
-                    if (mode & 1) {   
-                        first = PEEK_VALUE(1).as_float();
-                        POP_VALUES(1);
+                    if (first_index) {   
+                        first = variable(first_index).as_float();
                     }
                     else {
                         first = 0;
@@ -1020,135 +1020,136 @@ restart:
                     ret->from = first;
                     ret->to = second;
                     ret->step = third;
-                    PUSH_VALUE(OwcaRange{ ret });
+                    target = OwcaRange{ ret };
                     break; }
                 case ExecuteOp::ExprOper2IndexRead: {
-                    auto key = PEEK_VALUE(1);
-                    auto self = PEEK_VALUE(2);
-                    auto &ret = PEEK_VALUE(2);
-                    POP_VALUES(1);
-                    ret = index_read(self, key);
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto key = variable(code_pos.decode<IdentifierIndex>());
+                    target = index_read(self, key);
                     break; }
                 case ExecuteOp::ExprOper2IndexWrite: {
-                    auto value = PEEK_VALUE(1);
-                    auto key = PEEK_VALUE(2);
-                    auto &self = PEEK_VALUE(3);
-                    POP_VALUES(2);
-                    self = index_write(self, key, value);
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto key = variable(code_pos.decode<IdentifierIndex>());
+                    auto value_to_write = variable(code_pos.decode<IdentifierIndex>());
+                    target = index_write(self, key, value_to_write);
                     break; }
                 case ExecuteOp::ExprOperXCall: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
                     auto size = code_pos.decode<std::uint32_t>();
-                    PEEK_VALUE(size) = OPER1_GET(call, PEEK_VALUE(size).kind())(temporary_ptr, size);
-                    POP_VALUES(size - 1);
+                    auto mv = stacktrace_current->runtime_function->max_values;
+                    for(auto i = 0u; i < size; ++i) {
+                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        current_unused_locals_ptr[i] = v;
+                    }
+                    target = OPER1_GET(call, current_unused_locals_ptr[0].kind())(size);
                     break; }
                 case ExecuteOp::ExprOperXCreateArray: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
                     auto size = code_pos.decode<std::uint32_t>();
-                    auto args = PEEK_VALUES(size, size);
-                    auto arguments = std::deque<OwcaValue>{ args.begin(), args.end() };
-                    POP_VALUES(size);
-                    PUSH_VALUE(current_vm().create_array(std::move(arguments)));
+                    auto arguments = std::deque<OwcaValue>{};
+                    for(auto i = 0u; i < size; ++i) {
+                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        arguments.push_back(v);
+                    }
+                    target = current_vm().create_array(std::move(arguments));
                     break; }
                 case ExecuteOp::ExprOperXCreateTuple: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
                     auto size = code_pos.decode<std::uint32_t>();
-                    auto args = PEEK_VALUES(size, size);
-                    auto arguments = std::vector<OwcaValue>{ args.begin(), args.end() };
-                    POP_VALUES(size);
-                    PUSH_VALUE(current_vm().create_tuple(std::move(arguments)));
+                    auto arguments = std::vector<OwcaValue>{};
+                    for(auto i = 0u; i < size; ++i) {
+                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        arguments.push_back(v);
+                    }
+                    target = current_vm().create_tuple(std::move(arguments));
                     break; }
                 case ExecuteOp::ExprOperXCreateSet: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
                     auto size = code_pos.decode<std::uint32_t>();
-                    auto args = PEEK_VALUES(size, size);
-                    POP_VALUES(size);
-                    PUSH_VALUE(current_vm().create_set(args));
+                    auto arguments = std::vector<OwcaValue>{};
+                    for(auto i = 0u; i < size; ++i) {
+                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        arguments.push_back(v);
+                    }
+                    target = current_vm().create_set(arguments);
                     break; }
                 case ExecuteOp::ExprOperXCreateMap: {
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
                     auto size = code_pos.decode<std::uint32_t>();
-                    auto args = PEEK_VALUES(size, size);
-                    POP_VALUES(size);
-                    PUSH_VALUE(current_vm().create_map(args));
+                    auto arguments = std::vector<OwcaValue>{};
+                    for(auto i = 0u; i < size; ++i) {
+                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        arguments.push_back(v);
+                    }
+                    target = current_vm().create_map(arguments);
                     break; }
                 case ExecuteOp::ExprIteratorNextAndJumpIfCompleted: {
-                    auto iter = PEEK_VALUE(1).as_iterator_certainly();
-                    auto jump_dest = code_pos.decode_jump();
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto iter = variable(code_pos.decode<IdentifierIndex>()).as_iterator_certainly();
+                    auto end_position = code_pos.decode_jump();
+
                     if (iter.completed()) [[unlikely]] {
-                        code_pos = jump_dest;
+                        code_pos = end_position;
                         break;
                     }
                     auto val = continue_iterator(iter);
                     if (!val) [[unlikely]] {
-                        POP_VALUES(1);
-                        code_pos = jump_dest;
+                        code_pos = end_position;
                         break;
                     }
-                    PEEK_VALUE(1) = *val;
+                    target = *val;
                     break; }
-                // case ExecuteOp::ForInit: {
-                //     auto iterator = PEEK_VALUE(1).as_iterator();
-                //     POP_VALUES(1);
-                //     PUSH_STATE(ForState{ iterator });
-                //     auto &state = STATE(ForState);
-                //     state.end_position = code_pos.decode_jump();
-                //     state.loop_control_depth = code_pos.decode<std::uint8_t>();
-                //     state.continue_position = code_pos;
-                //     break; }
-                // case ExecuteOp::ForCondition: {
-                //     auto &state = STATE(ForState);
-                //     if (state.iterator.completed()) [[unlikely]] {
-                //         code_pos = state.end_position;
-                //         break;
-                //     }
-                //     auto val = continue_iterator(state.iterator);
-                //     if (!val) [[unlikely]] {
-                //         code_pos = state.end_position;
-                //         break;
-                //     }
-                //     PUSH_VALUE(*val);
-                //     break; }
-                // case ExecuteOp::ForCompleted: {
-                //     auto &state = STATE(ForState);
-                //     POP_STATE();
-                //     break; }
                 case ExecuteOp::Function: {
-                    PUSH_VALUE(create_function(code_pos, globals_ptr, locals_ptr));
+                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    target = create_function(code_pos, globals_ptr, locals_ptr);
                     break; }
                 case ExecuteOp::If: {
-                    auto val = IS_TRUE(PEEK_VALUE(1));
-                    POP_VALUES(1);
+                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
                     if (!val) {
                         code_pos = else_position;
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysFalse: {
-                    auto val = IS_TRUE(PEEK_VALUE(1));
-                    POP_VALUES(1);
+                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
-                    if (!val) [[likely]] {
+                    if (!val){
                         code_pos = else_position;
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysTrue: {
-                    auto val = IS_TRUE(PEEK_VALUE(1));
-                    POP_VALUES(1);
+                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
-                    if (!val) [[unlikely]] {
+                    if (!val){
                         code_pos = else_position;
                     }
                     break; }
                 case ExecuteOp::ReturnCloseIterator: {
                     //complete_all(temporary_ptr);
-                    return { OwcaCompleted{}, temporary_ptr, code_pos };
+                    return { OwcaCompleted{}, code_pos };
                     }
                 case ExecuteOp::Return: {
                     //complete_all(temporary_ptr);
-                    return { OwcaEmpty{}, temporary_ptr, code_pos };
+                    return { OwcaEmpty{}, code_pos };
                     }
                 case ExecuteOp::ReturnValue: {
-                    auto val = PEEK_VALUE(1);
-                    POP_VALUES(1);
+                    auto val = variable(code_pos.decode<IdentifierIndex>());
                     //complete_all(temporary_ptr);
-                    return { val, temporary_ptr, code_pos };
+                    return { val, code_pos };
                     }
+                case ExecuteOp::Yield: {
+                    auto val = variable(code_pos.decode<IdentifierIndex>());
+                    return { val, code_pos };
+                    }
+                case ExecuteOp::Jump: {
+                    auto dest = code_pos.decode_jump();
+                    code_pos = dest;
+                    break; }
                 // case ExecuteOp::Throw: {
                 //     auto exception = PEEK_VALUE(1);
                 //     POP_VALUES(1);
@@ -1241,15 +1242,6 @@ restart:
                 //     complete(state, temporary_ptr);
                 //     POP_STATE();
                 //     break; }
-                case ExecuteOp::Yield: {
-                    auto val = PEEK_VALUE(1);
-                    POP_VALUES(1);
-                    return { val, temporary_ptr, code_pos };
-                    }
-                case ExecuteOp::Jump: {
-                    auto dest = code_pos.decode_jump();
-                    code_pos = dest;
-                    break; }
                 default:
                     assert(false);
                 }
@@ -1397,40 +1389,37 @@ restart:
     //     POP_VALUES(1);
     // }
 
-    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals) {
-        auto locals_ptr = temporary_ptr.locals(arg_count + 1);
+    OwcaValue Executor::run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, LocalsPtr locals_ptr, unsigned int arg_count, bool clear_locals) {
         const auto max_values = function->max_values;
-        temporary_ptr = temporary_ptr + max_values - arg_count;
 
-        assert(locals_ptr.local_values_ptr + max_values + function->max_temporaries <= values_vector.data() + values_vector.size());
+        assert(locals_ptr.local_values_ptr + max_values <= values_vector.data() + values_vector.size());
         if (clear_locals) [[likely]] {
             for(auto i = arg_count + 1; i < max_values; ++i) {
-                LOCAL_VAR(i) = OwcaEmpty{};
+                locals_ptr[i] = OwcaEmpty{};
             }
         }
 
         assert(function->copy_from_parents.size() == function->values_from_parents.size());
 
         for (auto i = 0u; i < function->copy_from_parents.size(); ++i) {
-            LOCAL_VAR(function->copy_from_parents[i].index_in_child) = function->values_from_parents[i];
+            locals_ptr[function->copy_from_parents[i].index_in_child] = function->values_from_parents[i];
         }
 
         auto est = StackTraceState{ *this, function, function->entry_point };
-        auto [ retval, new_values_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, function->entry_point);
+        auto [ retval, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, function->entry_point);
         return retval;
     }
     Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos)
     {
         const auto locals_ptr = LocalsPtr{ values_vec.data() };
-        const auto temporary_ptr = temporary_ptr_current_top;
         while(true) {
             OwcaValue val;
             {
                 auto est = StackTraceState{ *this, function, code_pos };
+                auto tpk = Executor::TopPtrsKeeper{ *this, function->max_values };
                 auto sc = stacktrace_current;
-                auto [ retval, new_temporary_ptr, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, temporary_ptr, code_pos);
+                auto [ retval, new_code_pos ] = run_opcodes(globals_ptr, locals_ptr, code_pos);
                 assert(sc == stacktrace_current);
-                assert(new_temporary_ptr.temporaries_ptr == temporary_ptr.temporaries_ptr);
                 val = retval;
                 code_pos = new_code_pos;
             }
@@ -1457,13 +1446,12 @@ restart:
         return val;
     }
 
-	OwcaValue Executor::allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count) {
+	OwcaValue Executor::allocate_user_class_from_values(unsigned int arg_count) {
 		OwcaValue obj;
         
         assert(arg_count > 0);
         
-        auto locals_ptr = temporary_ptr.locals(arg_count);
-        auto cls = LOCAL_VAR(0).as_class_certainly().internal_value();
+        auto cls = current_unused_locals_ptr[0].as_class_certainly().internal_value();
 
 		if (cls->allocator_override) {
 			obj = cls->allocator_override();
@@ -1486,8 +1474,8 @@ restart:
             return obj;
 		}
         if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
-            PEEK_VALUE(arg_count) = obj;
-            auto retval = execute_function_call_from_values(*state, temporary_ptr, arg_count);
+            current_unused_locals_ptr[0] = obj;
+            auto retval = execute_function_call_from_values(*state, arg_count);
             if (!cls->reload_self) [[likely]] {
                 retval = obj;
             }
@@ -1495,28 +1483,28 @@ restart:
         }
         throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
 	}
-    OwcaValue Executor::execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
-        auto func = PEEK_VALUE(argument_count);
+    OwcaValue Executor::execute_call_from_values(unsigned int argument_count) {
+        auto func = current_unused_locals_ptr[0];
         if (func.kind() == OwcaValueKind::Functions) [[likely]] {
-            return execute_function_call_from_values(temporary_ptr, argument_count);
+            return execute_function_call_from_values(argument_count);
         }
         else {
             if (func.kind() == OwcaValueKind::Class) [[likely]] {
-                return allocate_user_class_from_values(temporary_ptr, argument_count);
+                return allocate_user_class_from_values(argument_count);
             }
             throw_cant_call(std::format("can't call {} with {} parameters", func.type(), argument_count - 1));
         }
     }
-    OwcaValue Executor::execute_function_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count) {
-        auto func = PEEK_VALUE(argument_count);
+    OwcaValue Executor::execute_function_call_from_values(unsigned int argument_count) {
+        auto func = current_unused_locals_ptr[0];
         auto f = func.as_functions_certainly();
         auto runtime_functions = f.internal_value();
-        PEEK_VALUE(argument_count) = f.self();
-        
-        return execute_function_call_from_values(runtime_functions, temporary_ptr, argument_count);
+        current_unused_locals_ptr[0] = f.self();
+
+        return execute_function_call_from_values(runtime_functions, argument_count);
     }
 
-    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count) {
+    OwcaValue Executor::execute_function_call_from_values(RuntimeFunctions* runtime_functions, unsigned int arg_count) {
         assert(arg_count > 0);
         auto runtime_function = runtime_functions->functions[arg_count - 1];
         if (!runtime_function) [[unlikely]] {
@@ -1524,7 +1512,7 @@ restart:
             tmp += runtime_functions->name;
             throw_not_callable_wrong_number_of_params(std::move(tmp), arg_count - 1);
         }
-        return runtime_function->call(*this, temporary_ptr);
+        return runtime_function->call(*this);
     }
 
 
@@ -1538,10 +1526,12 @@ restart:
 #ifdef OWCA_SCRIPT_EXEC_LOG
         std::cout << "Executing code block from file " << oc.filename() << std::endl;
 #endif        
-        auto tpk = TopPtrsKeeper{ *this };
         auto code_pos = oc.code_position();
 
         auto global_count = code_pos.decode<std::uint32_t>();
+        auto max_values_count = code_pos.decode<std::uint32_t>();
+        auto locals_ptr = current_unused_locals_ptr;
+        auto tpk = TopPtrsKeeper{ *this, max_values_count };
         std::unordered_map<std::string_view, size_t> identifier_to_global_index;
         for(auto i = 0u; i < global_count; ++i) {
             auto ident = code_pos.decode<std::string_view>();
@@ -1557,38 +1547,30 @@ restart:
             }
         }
 
-        auto temporary_ptr = temporary_ptr_current_top;
-        auto locals_ptr = temporary_ptr.locals(0);
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
 
         auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, code_pos);
         auto est = StackTraceState{ *this, function, function->entry_point };
-        run_opcodes(globals_ptr, locals_ptr, temporary_ptr, code_pos);
+        run_opcodes(globals_ptr, locals_ptr, code_pos);
         return ns;
     }
 
     OwcaValue Executor::allocate_user_class(Class *cls, std::span<OwcaValue> arguments) {
-        auto tpk = TopPtrsKeeper{ *this };
+        auto locals_ptr = current_unused_locals_ptr;
+        locals_ptr[0] = OwcaClass{ cls };
 
-        auto temporary_ptr = temporary_ptr_current_top;
-        auto locals_ptr = temporary_ptr.locals(0);
-        PUSH_VALUE(OwcaClass{ cls });
-        for(auto &v : arguments) {
-            PUSH_VALUE(v);
+        for(auto i = 0u; i < arguments.size(); ++i) {
+            locals_ptr[i + 1] = arguments[i];
         }
-
-        return allocate_user_class_from_values(temporary_ptr, (unsigned int)arguments.size() + 1);
+        return allocate_user_class_from_values((unsigned int)arguments.size() + 1);
     }
     OwcaValue Executor::execute_call(OwcaValue func, std::span<OwcaValue> arguments) {
-        auto tpk = TopPtrsKeeper{ *this };
-
-        auto temporary_ptr = temporary_ptr_current_top;
-        auto locals_ptr = temporary_ptr.locals(0);
-        LOCAL_VAR(0) = func;
+        auto locals_ptr = current_unused_locals_ptr;
+        locals_ptr[0] = func;
         for(size_t i = 0; i < arguments.size(); ++i) {
-            LOCAL_VAR(i + 1) = arguments[i];
+            locals_ptr[i + 1] = arguments[i];
         }
-        return execute_call_from_values(temporary_ptr + (unsigned int)arguments.size() + 1, (unsigned int)arguments.size() + 1);
+        return execute_call_from_values((unsigned int)arguments.size() + 1);
     }
 	void Executor::throw_too_many_elements(size_t expected)
 	{
@@ -1827,7 +1809,7 @@ restart:
         for(auto it : e.namespaces) {
             gc_mark_value(ggc, it.second);
         }
-        for(auto v = e.values_vector.data(); v < e.temporary_ptr_current_top.temporaries_ptr; ++v) {
+        for(auto v = e.values_vector.data(); v < e.current_unused_locals_ptr.local_values_ptr; ++v) {
             gc_mark_value(ggc, *v);
         }
         for(auto sc = e.stacktrace_vector.data() + 1; sc <= e.stacktrace_current; ++sc) {

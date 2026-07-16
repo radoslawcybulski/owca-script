@@ -14,6 +14,10 @@ namespace OwcaScript {
 	namespace Internal {
 		class AstFunction;
 
+		struct CompilationError {
+			unsigned int line = 0;
+			std::string message;
+		};
 		class AstCompiler {
 			std::string filename_;
 			std::string content;

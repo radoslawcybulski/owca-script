@@ -6,10 +6,9 @@
 
 namespace OwcaScript::Internal {
 	void AstIf::emit(EmitInfo& ei) {
-		value_->emit(ei);
-		ei.stack.pop();
-		assert(ei.stack.empty());
+		auto res = value_->emit(ei);
 		ei.code_writer.append(line, ExecuteOp::If);
+		ei.code_writer.append(line, res.index);
 		if (if_false_) {
 			auto else_pos = ei.code_writer.append_jump_placeholder(line);
 			if_true_->emit(ei);

@@ -9,10 +9,13 @@ namespace OwcaScript {
 		class AstFunction;
 
 		class AstExprNoop : public AstExpr {
+			IdentifierIndex index_;
 		public:
 			AstExprNoop(Line line) : AstExpr(line) {}
 
-			void emit(EmitInfo& ei) override;
+			void update_index(IdentifierIndex index) { index_ = index; }
+
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;
 		};

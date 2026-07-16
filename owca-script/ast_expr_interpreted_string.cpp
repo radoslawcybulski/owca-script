@@ -7,28 +7,41 @@
 #include "ast_compiler.h"
 
 namespace OwcaScript::Internal {
-	void AstExprInterpretedString::emit(EmitInfo& ei) {
+	AstBase::TempInfo AstExprInterpretedString::emit(EmitInfo& ei, std::optional<TempInfo> target) {
         assert(sizes.size() == evals.size());
 
         if (sizes.empty()) {
             auto index = ei.compiler.get_vm().register_string_constant(strings);
-            ei.code_writer.append(line, ExecuteOp::ExprIdentifierRead);
-            ei.code_writer.append(line, index);
-            ei.stack.push();
+            if (target) {
+                ei.write_move(line, target->index, index);
+            }
+            else {
+                target = TempInfo{ ei, index };
+            }
+            return std::move(*target);
         }
         else {
+            if (!target) target = ei.allocate_temporary();
+            std::vector<TempInfo> eval_results;
             for(auto j = 0u; j < evals.size(); ++j) {
-                evals[j]->emit(ei);
+                auto val = evals[j]->emit(ei);
+                auto dest = ei.allocate_temporary();
                 ei.code_writer.append(line, ExecuteOp::ExprToString);
+                ei.code_writer.append(line, dest.index);
+                ei.code_writer.append(line, val.index);
+                eval_results.push_back(std::move(dest));
             }
-            ei.stack.pop(evals.size());
-            ei.stack.push();
             ei.code_writer.append(line, ExecuteOp::ExprConstantStringInterpolated);
+            ei.code_writer.append(line, target->index);
             ei.code_writer.append(line, strings);
             ei.code_writer.append(line, (std::uint32_t)sizes.size());
+            for(auto j = 0u; j < evals.size(); ++j) {
+                ei.code_writer.append(line, eval_results[j].index);
+            }
             for(auto j = 0u; j < sizes.size(); ++j) {
                 ei.code_writer.append(line, sizes[j]);
             }
+            return std::move(*target);
         }
 	}
 	void AstExprInterpretedString::visit(AstVisitor& vis) { vis.apply(*this); }

@@ -222,10 +222,6 @@ function r(a) {
 )", 0), 3);
 }
 
-
-
-
-
 TEST_F(GeneratorTest, for_simple1)
 {
     ASSERT_EQ(run_gen(__LINE__, R"(

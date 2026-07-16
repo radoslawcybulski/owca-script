@@ -12,26 +12,37 @@ namespace OwcaScript::Internal {
 			assert(this->variable_names_.empty() || native_);
 		}
 
-	void AstClass::emit(EmitInfo& ei) {
+	AstBase::TempInfo AstClass::emit(EmitInfo& ei, std::optional<TempInfo> target) {
+		if (!target) target = ei.allocate_temporary();
+		std::vector<TempInfo> member_temps, base_classes_temps;
 		for(auto &q : members_) {
-			q->emit(ei);
+			member_temps.push_back(q->emit(ei, std::nullopt));
 		}
 		for(auto &q : base_classes_) {
-			q->emit(ei);
+			base_classes_temps.push_back(q->emit(ei, std::nullopt));
 		}
 		ei.code_writer.append(line, ExecuteOp::ClassCreate);
+		ei.code_writer.append(line, target->index);
 		ei.code_writer.append(line, name_);
 		ei.code_writer.append(line, full_name_);
 		ei.code_writer.append(line, native_);
-		ei.code_writer.append(line, (std::uint32_t)base_classes_.size());
-		ei.code_writer.append(line, (std::uint32_t)members_.size());
+		ei.code_writer.append(line, (std::uint32_t)base_classes_temps.size());
+		ei.code_writer.append(line, (std::uint32_t)member_temps.size());
 		ei.code_writer.append(line, all_variable_names_);
-		ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
-		for (auto &q : variable_names_)
-			ei.code_writer.append(line, q);
+		if (!all_variable_names_) {
+			ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
+			for (auto &q : variable_names_) {
+				ei.code_writer.append(line, q);
+			}
+		}
 
-		ei.stack.pop(members_.size() + base_classes_.size());
-		ei.stack.push();
+		for (auto &q : base_classes_temps) {
+			ei.code_writer.append(line, q.index);
+		}
+		for (auto &q : member_temps) {
+			ei.code_writer.append(line, q.index);
+		}
+		return std::move(*target);
 	}
 
 	void AstClass::visit(AstVisitor& vis) { vis.apply(*this); }

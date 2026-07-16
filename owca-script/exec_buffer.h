@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "line.h"
 #include "owca_code.h"
+#include "identifier_index.h"
 #include <unordered_map>
 
 #ifdef DEBUG
@@ -44,6 +45,7 @@ namespace OwcaScript {
             Float64,
             JumpOffset,
             Blob,
+            IdentifierIndex,
         };
         inline std::string_view to_string(DataKind kind) {
             switch(kind) {
@@ -66,7 +68,6 @@ namespace OwcaScript {
         }
         enum class ExecuteOp : std::uint8_t {
             ClassCreate,
-            ExprPopAndIgnore,
             ExprCompareEq,
             ExprCompareNotEq,
             ExprCompareLessEq,
@@ -78,8 +79,6 @@ namespace OwcaScript {
             ExprConstantBool,
             ExprConstantFloat,
             ExprConstantStringInterpolated,
-            ExprIdentifierRead,
-            ExprIdentifierWrite,
             ExprIdentifierFunctionWrite,
             ExprMemberRead,
             ExprMemberWrite,
@@ -88,6 +87,7 @@ namespace OwcaScript {
             ExprOper1Negate,
             ExprRetTrueAndJumpIfTrue,
             ExprRetFalseAndJumpIfFalse,
+            ExprMove,
 
             // order of binary operators is fixed
             ExprOper2Add,
@@ -134,7 +134,6 @@ namespace OwcaScript {
         inline std::string_view to_string(ExecuteOp op) {
             switch(op) {
             case ExecuteOp::ClassCreate: return "ClassCreate";
-            case ExecuteOp::ExprPopAndIgnore: return "ExprPopAndIgnore";
             case ExecuteOp::ExprCompareEq: return "ExprCompareEq";
             case ExecuteOp::ExprCompareNotEq: return "ExprCompareNotEq";
             case ExecuteOp::ExprCompareLessEq: return "ExprCompareLessEq";
@@ -146,8 +145,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprConstantBool: return "ExprConstantBool";
             case ExecuteOp::ExprConstantFloat: return "ExprConstantFloat";
             case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
-            case ExecuteOp::ExprIdentifierRead: return "ExprIdentifierRead";
-            case ExecuteOp::ExprIdentifierWrite: return "ExprIdentifierWrite";
             case ExecuteOp::ExprIdentifierFunctionWrite: return "ExprIdentifierFunctionWrite";
             case ExecuteOp::ExprMemberRead: return "ExprMemberRead";
             case ExecuteOp::ExprMemberWrite: return "ExprMemberWrite";
@@ -177,6 +174,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprToString: return "ExprToString";
             case ExecuteOp::ExprToIterator: return "ExprToIterator";
             case ExecuteOp::ExprIteratorNextAndJumpIfCompleted: return "ExprIteratorNextAndJumpIfCompleted";
+            case ExecuteOp::ExprMove: return "ExprMove";
             case ExecuteOp::Function: return "Function";
             case ExecuteOp::If: return "If";
             case ExecuteOp::IfAlmostAlwaysTrue: return "IfAlmostAlwaysTrue";
@@ -268,6 +266,15 @@ namespace OwcaScript {
                 std::memcpy(&t, pos, sizeof(T));
                 pos += sizeof(T);
                 return static_cast<T>(t);
+            }
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, IdentifierIndex>) {
+#ifdef DEBUG
+                ensure_data_kind(DataKind::IdentifierIndex, sl);
+#endif
+                std::uint32_t t;
+                std::memcpy(&t, pos, sizeof(std::uint32_t));
+                pos += sizeof(std::uint32_t);
+                return IdentifierIndex{ static_cast<IdentifierIndexKind>(t >> 30), t & 0x3fffffff };
             }
             template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
@@ -432,6 +439,9 @@ namespace OwcaScript {
             void append(Line line, const std::string &str) {
                 append_size(line, str.size());
                 append_impl_vec(str.data(), str.size());
+            }
+            void append(Line line, IdentifierIndex value) {
+                append_impl(line, value.value(), DataKind::IdentifierIndex);
             }
             template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
                 serialize_object(*this, line, t);

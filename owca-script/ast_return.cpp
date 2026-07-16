@@ -7,15 +7,15 @@
 namespace OwcaScript::Internal {
 	void AstReturn::emit(EmitInfo& ei) {
 		if (value_) {
-			value_->emit(ei);
-			ei.stack.pop();
-			assert(ei.stack.empty());
-			if (ei.generator) {
+			auto ret = value_->emit(ei);
+			if (ei.per_function.generator) {
 				ei.code_writer.append(line, ExecuteOp::Yield);
+				ei.code_writer.append(line, ret.index);
 				ei.code_writer.append(line, ExecuteOp::ReturnCloseIterator);
 			}
 			else {
 				ei.code_writer.append(line, ExecuteOp::ReturnValue);
+				ei.code_writer.append(line, ret.index);
 			}
 		}
 		else {

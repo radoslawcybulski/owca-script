@@ -24,7 +24,7 @@ namespace OwcaScript {
 			auto &left() { return *left_; }
 			auto kind() const { return kind_; }
 			
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

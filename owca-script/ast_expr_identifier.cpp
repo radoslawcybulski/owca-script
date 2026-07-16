@@ -5,16 +5,34 @@
 #include "owca_vm.h"
 
 namespace OwcaScript::Internal {
-	void AstExprIdentifier::emit(EmitInfo& ei) {
-		if (value_to_write_) {
-			value_to_write_->emit(ei);
+	AstBase::TempInfo AstExprIdentifier::emit(EmitInfo& ei, std::optional<TempInfo> target) {
+		if (function_write_) {
+			if (!target) target = ei.allocate_temporary();
+			assert(value_to_write_);
+			auto dest = value_to_write_->emit(ei);
+			ei.code_writer.append(line, ExecuteOp::ExprIdentifierFunctionWrite);
+			ei.code_writer.append(line, target->index);
+			ei.code_writer.append(line, identifier_index_);
+			ei.code_writer.append(line, dest.index);
+			return std::move(*target);
+		}
+		else if (value_to_write_) {
+			if (!target) {
+				return value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
+			}
+			auto src = value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
+			ei.write_move(line, target->index, src.index);
+			return std::move(*target);
 		}
 		else {
-			ei.stack.push();
+			if (target && target->index != identifier_index_) {
+				ei.write_move(line, target->index, identifier_index_);
+			}
+			else {
+				target = TempInfo{ ei, identifier_index_ };
+			}
 		}
-		std::uint32_t flag = identifier_index_.second ? 0x80000000 : 0;
-		ei.code_writer.append(line, value_to_write_ ? (function_write_ ? ExecuteOp::ExprIdentifierFunctionWrite : ExecuteOp::ExprIdentifierWrite) : ExecuteOp::ExprIdentifierRead);
-		ei.code_writer.append(line, identifier_index_.first | flag);
+		return std::move(*target);
 	}
 	void AstExprIdentifier::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprIdentifier::visit_children(AstVisitor& vis) {

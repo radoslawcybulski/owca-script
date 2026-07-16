@@ -6,9 +6,10 @@
 
 namespace OwcaScript::Internal {
 	void AstThrow::emit(EmitInfo& ei) {
-		value_->emit(ei);
-		ei.stack.pop();
-		ei.code_writer.append(line, ExecuteOp::Throw);
+		assert(false);
+		// value_->emit(ei);
+		// ei.stack.pop();
+		// ei.code_writer.append(line, ExecuteOp::Throw);
 	}
 
 	void AstThrow::visit(AstVisitor& vis) { vis.apply(*this); }

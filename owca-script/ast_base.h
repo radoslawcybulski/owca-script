@@ -5,7 +5,7 @@
 #include "ast_visitor.h"
 #include "line.h"
 #include "exec_buffer.h"
-#include <unordered_map>
+#include "identifier_index.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -16,37 +16,65 @@ namespace OwcaScript {
 		class AstBase {
 		public:
 			const Line line;
+			struct TempInfo;
 
 			struct EmitInfo {
-				class MaxCounter {
-					unsigned int max = 0, current = 0;
-				public:
-					void push() {
-						++current;
-						if (current > max) {
-							max = current;
-						}
-					}
-					void pop(size_t s = 1) {
-						assert(current >= s);
-						current -= s;
-					}
-					auto maximum() const { return max; }
-					bool empty() const { return current == 0; }
-				};
 				struct BreakLoopPositions {
 					std::vector<ExecuteBufferWriter::JumpPlaceholder> break_positions;
 					std::vector<ExecuteBufferWriter::JumpPlaceholder> continue_positions;
 					std::uint8_t depth;
 				};
 				ExecuteBufferWriter code_writer;
-				MaxCounter stack, states;
 				std::vector<BreakLoopPositions> break_loops;
 				AstCompiler &compiler;
 
-				bool generator = false;
-			};
+				struct PerFunctionInfo {
+					std::vector<std::uint32_t> temporaries;
+					std::uint32_t max_temporaries = 0;
+					std::uint32_t local_variables = 0;
+					bool generator = false;
+				};
 
+				PerFunctionInfo per_function;
+				TempInfo allocate_temporary();
+				void write_move(Line line, IdentifierIndex dest, IdentifierIndex src);
+			};
+			struct TempInfo {
+				EmitInfo *ei = nullptr;
+				IdentifierIndex index;
+
+				bool is_temporary() const { return ei != nullptr; }
+				void release() {
+					if (!ei) return;
+					ei->per_function.temporaries.push_back(index.index());
+					ei = nullptr;
+				}
+				explicit TempInfo(IdentifierIndex index) : index(index) {
+					assert(index.kind() != IdentifierIndexKind::Local);
+				}
+				TempInfo(EmitInfo &ei, IdentifierIndex index) : ei(&ei), index(index) {
+					if (index.kind() != IdentifierIndexKind::Local || index.index() < ei.per_function.local_variables) {
+						this->ei = nullptr; 
+					}
+				}
+				~TempInfo() {
+					release();
+				}
+				TempInfo(const TempInfo&) = delete;
+				TempInfo(TempInfo&& other) : ei(other.ei), index(other.index) {
+					other.ei = nullptr;
+				}
+				TempInfo& operator=(const TempInfo&) = delete;
+				TempInfo& operator=(TempInfo&& other) {
+					if (this != &other) {
+						release();
+						ei = other.ei;
+						index = other.index;
+						other.ei = nullptr;
+					}
+					return *this;
+				}
+			};
 			AstBase(Line line) : line(line) {}
 
 			virtual ~AstBase() = default;
@@ -66,7 +94,7 @@ namespace OwcaScript {
 		public:
 			using AstBase::AstBase;
 
-			virtual void emit(EmitInfo& ei) = 0;
+			virtual TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target = std::nullopt) = 0;
 		};
 	}
 }

@@ -37,7 +37,6 @@ namespace OwcaScript::Internal {
 	static std::string_view Operators2_1 = {
 			"+-*/%&|^='\";[](){}<>:,."
 	};
-	struct CompilationError {};
 
 	static bool is_digit(char c, unsigned int base = 10) {
 		if (base == 2)
@@ -991,14 +990,16 @@ namespace OwcaScript::Internal {
 		if (!is_identifier(text))
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, text_line, std::format("expected identifier for iteration's value, got `{}`", text));
 		auto write_ident = std::make_unique<AstExprIdentifier>(text_line, text);
-		write_ident->update_value_to_write(std::make_unique<AstExprNoop>(text_line));
+		auto noop = std::make_unique<AstExprNoop>(text_line);
+		auto noop_ptr = noop.get();
+		write_ident->update_value_to_write(std::move(noop));
 		consume("=");
 		std::unique_ptr<AstExpr> iterator = compile_expression_no_assign();
 		consume(")");
 		auto control_depth = loop_control_depth;
 		auto lcu = LoopControlUpdater{ *this, line, loop_ident };
 		auto body = compile_stat();
-		return std::make_unique<AstFor>(line, control_depth, std::move(iterator), std::move(write_ident), std::move(body));
+		return std::make_unique<AstFor>(line, control_depth, std::move(iterator), std::move(write_ident), *noop_ptr, std::move(body));
 	}
 
 	std::unique_ptr<AstStat> AstCompiler::compile_with()
@@ -1179,6 +1180,10 @@ namespace OwcaScript::Internal {
 				bool writeable;
 				bool global;
 				bool parameter = false;
+
+				IdentifierIndex to_identifier_index() const {
+					return { global ? IdentifierIndexKind::Global : IdentifierIndexKind::Local, index };
+				}
 			};
 			std::unordered_map<std::string_view, LookupResult> identifiers;
 			std::vector<std::string_view> identifier_names;
@@ -1313,29 +1318,10 @@ namespace OwcaScript::Internal {
 						if (!index_pp->writeable) 
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_identifier_index(index_pp->index, index_pp->global);
+					o.update_identifier_index(index_pp->to_identifier_index());
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
-		}
-		void apply(AstFor &o) override {
-			if (first_run) {
-				auto name = std::format("$for_var_{}", for_var_index);
-				o.update_identifier_name(std::move(name));
-				current_stack->define_identifier(o.identifier_name());
-			}
-			else {
-				auto index_pp = current_stack->lookup_identifier(o.identifier_name());
-				assert(index_pp);
-				o.update_iterator_index(index_pp->index);
-			}
-			++for_var_index;
-			struct Defer {
-				std::function<void()> f;
-				~Defer() { f(); }
-			};
-			Defer defer{ [this]() { --for_var_index; } };
-			apply(static_cast<AstStat&>(o));
 		}
 		void apply(AstFunction &o) override {
 			auto &st = stacks[&o];
@@ -1416,6 +1402,7 @@ namespace OwcaScript::Internal {
 			.compiler = *this
 		};
 		ei.code_writer.append(Line{ 0 }, (std::uint32_t)ident_names.size());
+        auto max_values = ei.code_writer.append_placeholder<std::uint32_t>(Line{ 0 });
 		for(auto &name : ident_names) {
 			ei.code_writer.append(Line{ 0 }, name);
 		}
@@ -1425,6 +1412,7 @@ namespace OwcaScript::Internal {
 		}
 		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
 		assert(error_messages_.empty());
+        ei.code_writer.update_placeholder(max_values, (std::uint32_t)ei.per_function.max_temporaries);
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
 		auto buffer_span = std::span{ buffer.data(), buffer.size() };

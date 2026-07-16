@@ -66,52 +66,52 @@ namespace OwcaScript {
                 return global_values_ptr[index];
             }
         };			
-        struct TemporariesPtr {
-            OwcaValue *temporaries_ptr;
+        // struct TemporariesPtr {
+        //     OwcaValue *temporaries_ptr;
 
-            explicit TemporariesPtr(OwcaValue *ptr) : temporaries_ptr(ptr) {}
+        //     explicit TemporariesPtr(OwcaValue *ptr) : temporaries_ptr(ptr) {}
 
-            TemporariesPtr operator+(int offset) const {
-                return TemporariesPtr(temporaries_ptr + offset);
-            }
-            TemporariesPtr operator-(int offset) const {
-                return TemporariesPtr(temporaries_ptr - offset);
-            }
+        //     TemporariesPtr operator+(int offset) const {
+        //         return TemporariesPtr(temporaries_ptr + offset);
+        //     }
+        //     TemporariesPtr operator-(int offset) const {
+        //         return TemporariesPtr(temporaries_ptr - offset);
+        //     }
 
-            TemporariesPtr &operator++() {
-                ++temporaries_ptr;
-                return *this;
-            }
-            TemporariesPtr &operator--() {
-                --temporaries_ptr;
-                return *this;
-            }
-            TemporariesPtr operator ++ ( int ) {
-                TemporariesPtr tmp = *this;
-                ++temporaries_ptr;
-                return tmp;
-            }
-            TemporariesPtr operator -- ( int ) {
-                TemporariesPtr tmp = *this;
-                --temporaries_ptr;
-                return tmp;
-            }
-            bool operator == (TemporariesPtr other) const {
-                return temporaries_ptr == other.temporaries_ptr;
-            }
-            bool operator < (TemporariesPtr other) const {
-                return temporaries_ptr < other.temporaries_ptr;
-            }
-            OwcaValue &operator [] (std::size_t index ) {
-                return *(temporaries_ptr - index);
-            }
-            std::span<OwcaValue> operator [] (std::pair<std::size_t, std::size_t> indexes) {
-                return std::span{ temporaries_ptr - indexes.first, indexes.second };
-            }
-            LocalsPtr locals(size_t args) {
-                return LocalsPtr(temporaries_ptr - args);
-            }
-        };
+        //     TemporariesPtr &operator++() {
+        //         ++temporaries_ptr;
+        //         return *this;
+        //     }
+        //     TemporariesPtr &operator--() {
+        //         --temporaries_ptr;
+        //         return *this;
+        //     }
+        //     TemporariesPtr operator ++ ( int ) {
+        //         TemporariesPtr tmp = *this;
+        //         ++temporaries_ptr;
+        //         return tmp;
+        //     }
+        //     TemporariesPtr operator -- ( int ) {
+        //         TemporariesPtr tmp = *this;
+        //         --temporaries_ptr;
+        //         return tmp;
+        //     }
+        //     bool operator == (TemporariesPtr other) const {
+        //         return temporaries_ptr == other.temporaries_ptr;
+        //     }
+        //     bool operator < (TemporariesPtr other) const {
+        //         return temporaries_ptr < other.temporaries_ptr;
+        //     }
+        //     OwcaValue &operator [] (std::size_t index ) {
+        //         return *(temporaries_ptr - index);
+        //     }
+        //     std::span<OwcaValue> operator [] (std::pair<std::size_t, std::size_t> indexes) {
+        //         return std::span{ temporaries_ptr - indexes.first, indexes.second };
+        //     }
+        //     LocalsPtr locals(size_t args) {
+        //         return LocalsPtr(temporaries_ptr - args);
+        //     }
+        // };
         struct Operators2 {
 			std::array<OwcaValue (*)(OwcaValue, OwcaValue), 10> math_opers;
 			//std::array<bool (*)(OwcaValue, OwcaValue), 3> compare_opers;
@@ -132,17 +132,12 @@ namespace OwcaScript {
 			Operators2();
 		};
         struct Operators1 {
-            OwcaValue (*call)(TemporariesPtr values, size_t count);
+            OwcaValue (*call)(size_t count);
             bool (*is_true)(OwcaValue value);
         };
 
         class Executor {
 			friend class VM;
-
-		public:
-			void update_current_top_ptrs(TemporariesPtr temporary_ptr) {
-				temporary_ptr_current_top = temporary_ptr;
-			}
 
 		private:
 			struct Frame {
@@ -160,16 +155,18 @@ namespace OwcaScript {
 			std::unordered_map<std::string_view, OwcaNamespace> namespaces;
 			std::optional<OwcaException> exception_being_thrown;
 			std::optional<OwcaException> exception_being_handled;
-			TemporariesPtr temporary_ptr_current_top;
+			LocalsPtr current_unused_locals_ptr;
 			
 		public:
 			struct TopPtrsKeeper {
 				Executor &e;
-				TemporariesPtr temporary_ptr_current_top;
+				LocalsPtr current_unused_locals_ptr;
 
-				TopPtrsKeeper(Executor &e) : e(e), temporary_ptr_current_top(e.temporary_ptr_current_top) {}
+				TopPtrsKeeper(Executor &e, size_t reserve_values) : e(e), current_unused_locals_ptr(e.current_unused_locals_ptr) {
+                    e.current_unused_locals_ptr = e.current_unused_locals_ptr + reserve_values;
+                }
 				~TopPtrsKeeper() {
-					e.temporary_ptr_current_top = temporary_ptr_current_top;
+					e.current_unused_locals_ptr = current_unused_locals_ptr;
 					e.exception_being_thrown.reset();
 					e.exception_being_handled.reset();
 				}
@@ -193,14 +190,14 @@ namespace OwcaScript {
 				}
 			};
 		private:
-			std::tuple<OwcaValue, TemporariesPtr, CodePosition> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, TemporariesPtr temporary_ptr, CodePosition code_pos);
+			std::tuple<OwcaValue, CodePosition> run_opcodes(GlobalsPtr globals_ptr, const LocalsPtr locals_ptr, CodePosition code_pos);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
 			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
 
-			OwcaValue execute_function(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
-			OwcaValue execute_call_from_values(TemporariesPtr temporary_ptr, unsigned int argument_count);
-			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, TemporariesPtr temporary_ptr, unsigned int arg_count);
+			OwcaValue execute_function(RuntimeFunctions* runtime_functions, LocalsPtr temporary_ptr, std::optional<OwcaValue> self_value, std::span<OwcaValue> arguments);
+			OwcaValue execute_call_from_values(unsigned int argument_count);
+			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, unsigned int arg_count);
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
 
 			OwcaValue create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr);
@@ -219,11 +216,12 @@ namespace OwcaScript {
 
 			std::span<const OwcaValue> values_vector_span() const { return std::span{ values_vector.data(), values_vector.size() }; };
 
+			auto get_current_unused_locals_ptr() const { return current_unused_locals_ptr; }
 			OwcaNamespace execute_code_block(OwcaCode oc);
-            OwcaValue execute_function_call_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
-			OwcaValue allocate_user_class_from_values(TemporariesPtr temporary_ptr, unsigned int arg_count);
+            OwcaValue execute_function_call_from_values(unsigned int arg_count);
+			OwcaValue allocate_user_class_from_values(unsigned int arg_count);
 			Generator run_script_generator(Iterator *iter_object, RuntimeFunction *function, GlobalsPtr globals_ptr, std::vector<OwcaValue> values_vec, CodePosition code_pos);
-			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, TemporariesPtr temporary_ptr, unsigned int arg_count, bool clear_locals);
+			OwcaValue run_script_code(RuntimeFunctionScriptFunction *function, GlobalsPtr globals_ptr, LocalsPtr locals, unsigned int arg_count, bool clear_locals);
 			OwcaValue allocate_user_class(Class *cls, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			OwcaValue execute_call(std::span<OwcaValue> arguments) {

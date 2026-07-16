@@ -767,12 +767,12 @@ function native time();
 		}
 	}
 
-	std::uint32_t VM::register_string_constant(std::string_view str) {
+	IdentifierIndex VM::register_string_constant(std::string_view str) {
 		auto it = string_constant_map.find(str);
 		if (it != string_constant_map.end()) {
 			return it->second;
 		}
-		auto index = (std::uint32_t)string_constant_vector.size() | 0x40000000;
+		auto index = IdentifierIndex{ IdentifierIndexKind::Constant, (std::uint32_t)string_constant_vector.size() };
 		string_constant_map[str] = index;
 		string_constant_vector.push_back(create_string_from_view(str));
 		return index;

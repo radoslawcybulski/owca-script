@@ -29,7 +29,7 @@ namespace OwcaScript {
 			auto &third() { return *third_; }
 			bool has_third() const { return third_ != nullptr; }
 			void update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third);
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

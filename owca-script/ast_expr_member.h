@@ -20,7 +20,7 @@ namespace OwcaScript {
 			auto &value_to_write() { return *value_to_write_; }
 			bool write() const { return value_to_write_ != nullptr; }
 
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

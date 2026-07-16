@@ -5,14 +5,26 @@
 #include "owca_vm.h"
 
 namespace OwcaScript::Internal {
-	void AstExprMember::emit(EmitInfo& ei) {
-		value_->emit(ei);
-		if (value_to_write_) {
-			value_to_write_->emit(ei);
-			ei.stack.pop();
+	AstBase::TempInfo AstExprMember::emit(EmitInfo& ei, std::optional<TempInfo> target) {
+		auto self = value_->emit(ei);
+		if (!target) {
+			target = ei.allocate_temporary();
 		}
-		ei.code_writer.append(line, value_to_write_ ? ExecuteOp::ExprMemberWrite : ExecuteOp::ExprMemberRead);
-		ei.code_writer.append(line, member_);
+		if (value_to_write_) {
+			auto val = value_to_write_->emit(ei);
+			ei.code_writer.append(line, ExecuteOp::ExprMemberWrite);
+			ei.code_writer.append(line, target->index);
+			ei.code_writer.append(line, self.index);
+			ei.code_writer.append(line, member_);
+			ei.code_writer.append(line, val.index);
+		}
+		else {
+			ei.code_writer.append(line, ExecuteOp::ExprMemberRead);
+			ei.code_writer.append(line, target->index);
+			ei.code_writer.append(line, self.index);
+			ei.code_writer.append(line, member_);
+		}
+		return std::move(*target);
 	}
 	void AstExprMember::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstExprMember::visit_children(AstVisitor& vis) {

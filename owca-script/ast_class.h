@@ -28,7 +28,7 @@ namespace OwcaScript {
 			bool all_variable_names() const { return all_variable_names_; }
 			bool is_native() const { return native_; }
 
-			void emit(EmitInfo& ei) override;
+			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;
 			void visit_children(AstVisitor&) override;

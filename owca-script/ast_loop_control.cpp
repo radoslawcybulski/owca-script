@@ -8,7 +8,6 @@ namespace OwcaScript::Internal {
 	void AstLoopControl::emit(EmitInfo& ei) {
 		ei.code_writer.append(line, ExecuteOp::Jump);
 		auto pos = ei.code_writer.append_jump_placeholder(line);
-		assert(ei.stack.empty());
 		bool found = false;
 		for(auto &le : ei.break_loops) {
 			if (le.depth == depth_) {
