@@ -1,7 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_VM_H
 #define RC_OWCA_SCRIPT_VM_H
 
-#include "owca-script/identifier_index.h"
+#include "owca-script/variable_index.h"
 #include "stdafx.h"
 #include "ast_expr_compare.h"
 #include "allocation_base.h"
@@ -32,10 +32,10 @@ namespace OwcaScript {
 
 		class VM {
 			friend class Executor;
-			
+
 			AllocationEmpty root_allocated_memory;
 			std::unique_ptr<Executor> executor;
-			
+
 			Class *c_nul = nullptr;
 			Class *c_completed = nullptr;
 			Class *c_range = nullptr;
@@ -72,7 +72,7 @@ namespace OwcaScript {
             auto &get_executor() { return *executor; }
 			VM();
 			~VM();
-			
+
 			class TempGCProtect {
 				VM &vm;
 				std::list<OwcaValue>::iterator it;

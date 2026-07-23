@@ -1,4 +1,4 @@
-#include "owca-script/identifier_index.h"
+#include "owca-script/variable_index.h"
 #include "owca-script/owca_namespace.h"
 #include "owca-script/owca_value.h"
 #include "owca_exception.h"
@@ -44,7 +44,7 @@ namespace OwcaScript::Internal {
         BinLShift = 8,
         BinRShift = 9,
     };
-    
+
     static OwcaValue op_add_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("+", left.type(), right.type()); }
     static OwcaValue op_sub_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("-", left.type(), right.type()); }
     static OwcaValue op_mul_cant(OwcaValue left, OwcaValue right) { current_vm().throw_unsupported_operation_2("*", left.type(), right.type()); }
@@ -326,7 +326,7 @@ namespace OwcaScript::Internal {
     static OwcaValue op_call_class(size_t count) {
         return current_vm().get_executor().allocate_user_class_from_values(count);
     };
-    
+
     static bool op_is_true_empty(OwcaValue self) { return false; }
     static bool op_is_true_completed(OwcaValue self) { return false;}
     static bool op_is_true_range(OwcaValue self) { return true;}
@@ -399,7 +399,7 @@ namespace OwcaScript::Internal {
 //         }
 //         throw exception;
     }
-    
+
 	std::tuple<Number, Number, Number> Executor::parse_key(OwcaValue v, OwcaValue key, Number size) {
 		return key.visit(
 			[&](Number o) -> std::tuple<Number, Number, Number> {
@@ -486,7 +486,7 @@ namespace OwcaScript::Internal {
         }
         return value;
     }
-    
+
     OwcaValue Executor::index_write(OwcaValue self, OwcaValue key, OwcaValue value) {
         return self.visit(
             [&](const OwcaMap& o) -> OwcaValue {
@@ -612,7 +612,7 @@ namespace OwcaScript::Internal {
         );
     }
 
-    OwcaValue Executor::create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr)
+    OwcaValue Executor::create_function(CodePosition &code_pos, const IdentifierPtrs &identifier_ptrs)
     {
         auto &code_object = stacktrace_current->runtime_function->code;
         auto name = code_pos.decode<std::string_view>();
@@ -659,13 +659,12 @@ namespace OwcaScript::Internal {
             }
         }
         else {
-            std::vector<AstFunction::CopyFromParent> copy_from_parents;
             auto copy_from_parent_count = code_pos.decode<std::uint32_t>();
-            copy_from_parents.reserve(copy_from_parent_count);
+            std::vector<OwcaValue> values_from_parents;
+            values_from_parents.reserve(copy_from_parent_count);
             for(auto i = 0u; i < copy_from_parent_count; ++i) {
-                auto index_in_parent = code_pos.decode<std::uint32_t>();
-                auto identifier_index = code_pos.decode<std::uint32_t>();
-                copy_from_parents.push_back({ index_in_parent, identifier_index });
+                auto index = code_pos.decode<VariableIndex>();
+                values_from_parents.push_back(identifier_ptrs[index]);
             }
             auto z = code_pos.decode_jump();
             auto entry_point = code_pos;
@@ -673,18 +672,14 @@ namespace OwcaScript::Internal {
 
             RuntimeFunctionScript *f;
             if (is_generator) {
-                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name, full_name, is_method, entry_point);
             }
             else {
-                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, globals_ptr, name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name, full_name, is_method, entry_point);
             }
             fnc = f;
             f->identifier_names = std::move(identifier_names);
-            f->copy_from_parents = std::move(copy_from_parents);
-            f->values_from_parents.reserve(f->copy_from_parents.size());
-            for(auto c : f->copy_from_parents) {
-                f->values_from_parents.push_back(locals_ptr[c.index_in_parent]);
-            }
+            f->values_from_parents = std::move(values_from_parents);
         }
         fnc->param_count = param_count;
         fnc->max_values = value_count;
@@ -696,19 +691,17 @@ namespace OwcaScript::Internal {
     std::tuple<OwcaValue, CodePosition> Executor::run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos)
     {
         auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
-        std::array<OwcaValue*, 3> identifier_ptrs = {
+        IdentifierPtrs identifier_ptrs{
             locals_ptr.local_values_ptr,
             sf->constants_ptr,
             sf->globals_ptr.global_values_ptr,
-        };
-        auto variable = [&](IdentifierIndex index) -> OwcaValue& {
-            return identifier_ptrs[(int)index.kind()][index.index()];
+            sf->values_from_parents.data(),
         };
 
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
         auto &code_object = stacktrace_current->runtime_function->code;
-#endif        
+#endif
 
 restart:
         try {
@@ -732,7 +725,7 @@ restart:
                 std::cout << std::endl;
 #endif
 
-#ifdef MEASURE            
+#ifdef MEASURE
                 measure_items[measure_item++] = MeasureItem{ opcode };
 #endif
                 //last_time = std::chrono::high_resolution_clock::now();
@@ -743,7 +736,7 @@ restart:
                 case ExecuteOp::ClassCreate: {
                     auto &code_object = stacktrace_current->runtime_function->code;
                     const auto line = code_object.get_line_by_position(code_pos - 1);
-                    auto &dest = variable(code_pos.decode<IdentifierIndex>());
+                    auto &dest = identifier_ptrs[code_pos.decode<VariableIndex>()];
 
                     auto name = code_pos.decode<std::string_view>();
                     auto full_name = code_pos.decode<std::string_view>();
@@ -762,16 +755,16 @@ restart:
                     std::vector<OwcaValue> members;
                     members.reserve(member_count);
                     for(auto i = 0u; i < base_class_count; ++i) {
-                        auto d = code_pos.decode<IdentifierIndex>();
-                        base_classes.push_back(variable(d));
+                        auto d = code_pos.decode<VariableIndex>();
+                        base_classes.push_back(identifier_ptrs[d]);
                     }
                     for(auto i = 0u; i < member_count; ++i) {
-                        auto d = code_pos.decode<IdentifierIndex>();
-                        members.push_back(variable(d));
+                        auto d = code_pos.decode<VariableIndex>();
+                        members.push_back(identifier_ptrs[d]);
                     }
 
                     auto cls = current_vm().allocate<Class>(0, line, name, full_name, code_object);
-                    
+
                     if (native) {
                         auto &native_provider = cls->code.native_code_provider();
                         if (native_provider) {
@@ -806,29 +799,29 @@ restart:
                     dest = OwcaClass{ cls };
                     break; }
 #define IS_TRUE(v) OPER1_GET(is_true, (v).kind())(v)
-#define CMP2_RUN(oper, reverse, upd) do {                                 \
-        auto &target = variable(code_pos.decode<IdentifierIndex>());      \
-        auto left = variable(code_pos.decode<IdentifierIndex>());         \
-        auto right = variable(code_pos.decode<IdentifierIndex>());        \
-        auto jump_dest = code_pos.decode_jump();                          \
-        const auto last = code_pos.decode<bool>();                        \
-        auto res = (!reverse) ?                                           \
-            OPER2_GET(oper, left.kind(), right.kind())(left, right) :     \
-            OPER2_GET(oper, right.kind(), left.kind())(right, left);      \
-        res = (upd);                                                      \
-        if (res) {                                                        \
-            target = last ? OwcaValue{ true } : right;                    \
-        }                                                                 \
-        else {                                                            \
-            target = false;                                               \
-            code_pos = jump_dest;                                         \
-        }                                                                 \
+#define CMP2_RUN(oper, reverse, upd) do {                                   \
+        auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()]; \
+        auto left = identifier_ptrs[code_pos.decode<VariableIndex>()];    \
+        auto right = identifier_ptrs[code_pos.decode<VariableIndex>()];   \
+        auto jump_dest = code_pos.decode_jump();                            \
+        const auto last = code_pos.decode<bool>();                          \
+        auto res = (!reverse) ?                                             \
+            OPER2_GET(oper, left.kind(), right.kind())(left, right) :       \
+            OPER2_GET(oper, right.kind(), left.kind())(right, left);        \
+        res = (upd);                                                        \
+        if (res) {                                                          \
+            target = last ? OwcaValue{ true } : right;                      \
+        }                                                                   \
+        else {                                                              \
+            target = false;                                                 \
+            code_pos = jump_dest;                                           \
+        }                                                                   \
     } while(0)
 
                 case ExecuteOp::ExprMove: {
-                    auto dest = code_pos.decode<IdentifierIndex>();
-                    auto src = code_pos.decode<IdentifierIndex>();
-                    variable(dest) = variable(src);
+                    auto dest = code_pos.decode<VariableIndex>();
+                    auto src = code_pos.decode<VariableIndex>();
+                    identifier_ptrs[dest] = identifier_ptrs[src];
                     break; }
                 case ExecuteOp::ExprCompareEq: {
                     CMP2_RUN(eq, 0, res);
@@ -851,26 +844,15 @@ restart:
                 case ExecuteOp::ExprCompareIs: {
                     CMP2_RUN(is, 0, res);
                     break; }
-                case ExecuteOp::ExprConstantEmpty: {
-                    variable(code_pos.decode<IdentifierIndex>()) = OwcaEmpty{};
-                    break; }
-                case ExecuteOp::ExprConstantBool: {
-                    auto dest = code_pos.decode<IdentifierIndex>();
-                    variable(dest) = code_pos.decode<bool>();
-                    break; }
-                case ExecuteOp::ExprConstantFloat: {
-                    auto dest = code_pos.decode<IdentifierIndex>();
-                    variable(dest) = code_pos.decode<Number>();
-                    break; }
                 case ExecuteOp::ExprConstantStringInterpolated: {
-                    auto target = code_pos.decode<IdentifierIndex>();
+                    auto target = code_pos.decode<VariableIndex>();
                     auto strings = code_pos.decode<std::string_view>();
                     auto expr_count = code_pos.decode<std::uint32_t>();
                     std::vector<std::string_view> exprs;
                     exprs.reserve(expr_count);
                     size_t size = strings.size();
                     for(auto i = 0u; i < expr_count; ++i) {
-                        exprs.push_back(variable(code_pos.decode<IdentifierIndex>()).as_string_certainly().text());
+                        exprs.push_back(identifier_ptrs[code_pos.decode<VariableIndex>()].as_string_certainly().text());
                         size += exprs.back().size();
                     }
                     auto new_str = current_vm().precreate_string(size);
@@ -889,47 +871,47 @@ restart:
                     std::memcpy(new_str_pt, strings_ptr, remaining);
                     new_str_pt += remaining;
                     assert(new_str_pt == new_str->pointer() + new_str->size());
-                    variable(target) = OwcaString{ new_str };
+                    identifier_ptrs[target] = OwcaString{ new_str };
                     break; }
                 case ExecuteOp::ExprIdentifierFunctionWrite: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto &func = variable(code_pos.decode<IdentifierIndex>());
-                    auto src = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto &func = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto src = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     func = set_identifier_function(func, src);
                     target = func;
                     break; }
                 case ExecuteOp::ExprMemberRead: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto member = code_pos.decode<std::string_view>();
                     target = current_vm().member(self, member);
                     break; }
                 case ExecuteOp::ExprMemberWrite: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto member = code_pos.decode<std::string_view>();
-                    auto val_to_write = variable(code_pos.decode<IdentifierIndex>());
+                    auto val_to_write = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     current_vm().member(self, member, val_to_write);
                     target = val_to_write;
                     break; }
                 case ExecuteOp::ExprOper1BinNeg: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = -(std::int64_t)self.as_float();
                     break; }
                 case ExecuteOp::ExprOper1LogNot: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = !IS_TRUE(self);
                     break; }
                 case ExecuteOp::ExprOper1Negate: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = -self.as_float();
                     break; }
                 case ExecuteOp::ExprRetTrueAndJumpIfTrue: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto jump_dest = code_pos.decode_jump();
                     if (IS_TRUE(condition)) {
                         target = true;
@@ -937,8 +919,8 @@ restart:
                     }
                     break; }
                 case ExecuteOp::ExprRetFalseAndJumpIfFalse: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto jump_dest = code_pos.decode_jump();
                     if (!IS_TRUE(condition)) {
                         target = false;
@@ -946,16 +928,16 @@ restart:
                     }
                     break; }
                 case ExecuteOp::ExprToString: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     if (self.kind() == OwcaValueKind::String) {
                         target = self;
                     }
                     target = current_vm().create_string_from_view(self.to_string());
                     break; }
                 case ExecuteOp::ExprToIterator: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     if (self.kind() != OwcaValueKind::Iterator) {
                         auto func = current_vm().try_member(self, "__iter__");
                         if (!func) {
@@ -980,36 +962,36 @@ restart:
                 case ExecuteOp::ExprOper2BinXor:
                 case ExecuteOp::ExprOper2BinLShift:
                 case ExecuteOp::ExprOper2BinRShift: {
-                    auto target_index = code_pos.decode<IdentifierIndex>();
-                    auto left_index = code_pos.decode<IdentifierIndex>();
-                    auto right_index = code_pos.decode<IdentifierIndex>();
-                    auto &target = variable(target_index);
-                    auto left = variable(left_index);
-                    auto right = variable(right_index);
+                    auto target_index = code_pos.decode<VariableIndex>();
+                    auto left_index = code_pos.decode<VariableIndex>();
+                    auto right_index = code_pos.decode<VariableIndex>();
+                    auto &target = identifier_ptrs[target_index];
+                    auto left = identifier_ptrs[left_index];
+                    auto right = identifier_ptrs[right_index];
                     auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2Add);
                     target = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
                     break; }
                 case ExecuteOp::ExprOper2MakeRange: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto first_index = code_pos.decode<IdentifierIndex>();
-                    auto second_index = code_pos.decode<IdentifierIndex>();
-                    auto third_index = code_pos.decode<IdentifierIndex>();
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto first_index = code_pos.decode<VariableIndex>();
+                    auto second_index = code_pos.decode<VariableIndex>();
+                    auto third_index = code_pos.decode<VariableIndex>();
 
                     Number first, second, third;
                     if (third_index) {
-                        third = variable(third_index).as_float();
+                        third = identifier_ptrs[third_index].as_float();
                     }
                     else {
                         third = 1;
                     }
                     if (second_index) {
-                        second = variable(second_index).as_float();
+                        second = identifier_ptrs[second_index].as_float();
                     }
                     else {
                         second = std::numeric_limits<Number>::max();
                     }
-                    if (first_index) {   
-                        first = variable(first_index).as_float();
+                    if (first_index) {
+                        first = identifier_ptrs[first_index].as_float();
                     }
                     else {
                         first = 0;
@@ -1024,71 +1006,71 @@ restart:
                     target = OwcaRange{ ret };
                     break; }
                 case ExecuteOp::ExprOper2IndexRead: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
-                    auto key = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto key = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = index_read(self, key);
                     break; }
                 case ExecuteOp::ExprOper2IndexWrite: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto self = variable(code_pos.decode<IdentifierIndex>());
-                    auto key = variable(code_pos.decode<IdentifierIndex>());
-                    auto value_to_write = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto key = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto value_to_write = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = index_write(self, key, value_to_write);
                     break; }
                 case ExecuteOp::ExprOperXCall: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
                     auto mv = stacktrace_current->runtime_function->max_values;
                     for(auto i = 0u; i < size; ++i) {
-                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         current_unused_locals_ptr[i] = v;
                     }
                     target = OPER1_GET(call, current_unused_locals_ptr[0].kind())(size);
                     break; }
                 case ExecuteOp::ExprOperXCreateArray: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
                     auto arguments = std::deque<OwcaValue>{};
                     for(auto i = 0u; i < size; ++i) {
-                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         arguments.push_back(v);
                     }
                     target = current_vm().create_array(std::move(arguments));
                     break; }
                 case ExecuteOp::ExprOperXCreateTuple: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
                     auto arguments = std::vector<OwcaValue>{};
                     for(auto i = 0u; i < size; ++i) {
-                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         arguments.push_back(v);
                     }
                     target = current_vm().create_tuple(std::move(arguments));
                     break; }
                 case ExecuteOp::ExprOperXCreateSet: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
                     auto arguments = std::vector<OwcaValue>{};
                     for(auto i = 0u; i < size; ++i) {
-                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         arguments.push_back(v);
                     }
                     target = current_vm().create_set(arguments);
                     break; }
                 case ExecuteOp::ExprOperXCreateMap: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
                     auto arguments = std::vector<OwcaValue>{};
                     for(auto i = 0u; i < size; ++i) {
-                        auto v = variable(code_pos.decode<IdentifierIndex>());
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         arguments.push_back(v);
                     }
                     target = current_vm().create_map(arguments);
                     break; }
                 case ExecuteOp::ExprIteratorNextAndJumpIfCompleted: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    auto iter = variable(code_pos.decode<IdentifierIndex>()).as_iterator_certainly();
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto iter = identifier_ptrs[code_pos.decode<VariableIndex>()].as_iterator_certainly();
                     auto end_position = code_pos.decode_jump();
 
                     if (iter.completed()) [[unlikely]] {
@@ -1103,11 +1085,11 @@ restart:
                     target = *val;
                     break; }
                 case ExecuteOp::Function: {
-                    auto &target = variable(code_pos.decode<IdentifierIndex>());
-                    target = create_function(code_pos, sf->globals_ptr, locals_ptr);
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    target = create_function(code_pos, identifier_ptrs);
                     break; }
                 case ExecuteOp::If: {
-                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
                     if (!val) {
@@ -1115,7 +1097,7 @@ restart:
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysFalse: {
-                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
                     if (!val){
@@ -1123,7 +1105,7 @@ restart:
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysTrue: {
-                    auto condition = variable(code_pos.decode<IdentifierIndex>());
+                    auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto val = IS_TRUE(condition);
                     auto else_position = code_pos.decode_jump();
                     if (!val){
@@ -1139,12 +1121,12 @@ restart:
                     return { OwcaEmpty{}, code_pos };
                     }
                 case ExecuteOp::ReturnValue: {
-                    auto val = variable(code_pos.decode<IdentifierIndex>());
+                    auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     //complete_all(temporary_ptr);
                     return { val, code_pos };
                     }
                 case ExecuteOp::Yield: {
-                    auto val = variable(code_pos.decode<IdentifierIndex>());
+                    auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     return { val, code_pos };
                     }
                 case ExecuteOp::Jump: {
@@ -1314,7 +1296,7 @@ restart:
     //     return left * right;
     // }
     // Number Executor::expr_oper_2(Executor::TagDiv, Number left, Number right) {
-    //     if (right == 0) 
+    //     if (right == 0)
     //         throw_division_by_zero();
     //     return left / right;
     // }
@@ -1402,10 +1384,6 @@ restart:
 
         assert(function->copy_from_parents.size() == function->values_from_parents.size());
 
-        for (auto i = 0u; i < function->copy_from_parents.size(); ++i) {
-            locals_ptr[function->copy_from_parents[i].index_in_child] = function->values_from_parents[i];
-        }
-
         auto est = StackTraceState{ *this, function, function->entry_point };
         auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, function->entry_point);
         return retval;
@@ -1449,9 +1427,9 @@ restart:
 
 	OwcaValue Executor::allocate_user_class_from_values(unsigned int arg_count) {
 		OwcaValue obj;
-        
+
         assert(arg_count > 0);
-        
+
         auto cls = current_unused_locals_ptr[0].as_class_certainly().internal_value();
 
 		if (cls->allocator_override) {
@@ -1526,7 +1504,7 @@ restart:
 
 #ifdef OWCA_SCRIPT_EXEC_LOG
         std::cout << "Executing code block from file " << oc.filename() << std::endl;
-#endif        
+#endif
         auto code_pos = oc.code_position();
 
         auto global_count = code_pos.decode<std::uint32_t>();
@@ -1721,7 +1699,7 @@ restart:
         OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not callable", type));
 		throw allocate_user_class(current_vm().c_invalid_operation_exception, std::span{ &temp_arg, 1 }).as_exception();
 	}
-	
+
 	void Executor::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
         OwcaValue temp_arg = current_vm().create_string_from_view(std::format("{} is not callable - wrong number of parameters ({})", type, params));
@@ -1808,7 +1786,7 @@ restart:
     bool Executor::execute_compare_is(OwcaValue left, OwcaValue right) {
         return OPER2_GET(is, left.kind(), right.kind())(left, right);
     }
-    
+
     bool Executor::execute_compare(OwcaValue left, OwcaValue right, CompareKind kind)
     {
         switch(kind) {

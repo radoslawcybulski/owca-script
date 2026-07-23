@@ -36,8 +36,12 @@ namespace OwcaScript::Internal {
 	{
 	}
 
+	void RuntimeFunctionScript::gc_mark(GenerationGC generation_gc) const {
+	    gc_mark_value(generation_gc, values_from_parents);
+	}
+
 	void RuntimeFunctionScriptFunction::gc_mark(GenerationGC generation_gc) const {
-		gc_mark_value(generation_gc, values_from_parents);
+	    RuntimeFunctionScript::gc_mark(generation_gc);
 	}
 
 	OwcaValue RuntimeFunctionScriptFunction::call(Executor &e) {
@@ -48,7 +52,7 @@ namespace OwcaScript::Internal {
 	}
 
 	void RuntimeFunctionScriptGenerator::gc_mark(GenerationGC generation_gc) const {
-		gc_mark_value(generation_gc, values_from_parents);
+	    RuntimeFunctionScript::gc_mark(generation_gc);
 	}
 
 	OwcaValue RuntimeFunctionScriptGenerator::call(Executor &e) {
@@ -59,10 +63,6 @@ namespace OwcaScript::Internal {
         }
 
         assert(copy_from_parents.size() == values_from_parents.size());
-
-        for (auto i = 0u; i < copy_from_parents.size(); ++i) {
-            values_vec[copy_from_parents[i].index_in_child] = values_from_parents[i];
-        }
 
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
         auto iter = Internal::current_vm().allocate<Iterator>(0, this, values_span);

@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "line.h"
 #include "owca_code.h"
-#include "identifier_index.h"
+#include "variable_index.h"
 #include <unordered_map>
 
 #ifdef DEBUG
@@ -45,7 +45,7 @@ namespace OwcaScript {
             Float64,
             JumpOffset,
             Blob,
-            IdentifierIndex,
+            VariableIndex,
         };
         inline std::string_view to_string(DataKind kind) {
             switch(kind) {
@@ -75,9 +75,6 @@ namespace OwcaScript {
             ExprCompareLess,
             ExprCompareMore,
             ExprCompareIs,
-            ExprConstantEmpty,
-            ExprConstantBool,
-            ExprConstantFloat,
             ExprConstantStringInterpolated,
             ExprIdentifierFunctionWrite,
             ExprMemberRead,
@@ -141,9 +138,6 @@ namespace OwcaScript {
             case ExecuteOp::ExprCompareLess: return "ExprCompareLess";
             case ExecuteOp::ExprCompareMore: return "ExprCompareMore";
             case ExecuteOp::ExprCompareIs: return "ExprCompareIs";
-            case ExecuteOp::ExprConstantEmpty: return "ExprConstantEmpty";
-            case ExecuteOp::ExprConstantBool: return "ExprConstantBool";
-            case ExecuteOp::ExprConstantFloat: return "ExprConstantFloat";
             case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
             case ExecuteOp::ExprIdentifierFunctionWrite: return "ExprIdentifierFunctionWrite";
             case ExecuteOp::ExprMemberRead: return "ExprMemberRead";
@@ -251,7 +245,7 @@ namespace OwcaScript {
             template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, std::string_view>) {
                 auto size = decode_size(sl);
                 auto ptr = pos;
-#ifdef DEBUG                
+#ifdef DEBUG
                 if (size > 0) ensure_data_kind(DataKind::Blob, sl);
 #endif
                 pos += size;
@@ -259,7 +253,7 @@ namespace OwcaScript {
             }
             template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Enum type too large to decode");
-#ifdef DEBUG                
+#ifdef DEBUG
                 ensure_data_kind(std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum, sl);
 #endif
                 T t;
@@ -267,14 +261,14 @@ namespace OwcaScript {
                 pos += sizeof(T);
                 return static_cast<T>(t);
             }
-            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, IdentifierIndex>) {
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, VariableIndex>) {
 #ifdef DEBUG
-                ensure_data_kind(DataKind::IdentifierIndex, sl);
+                ensure_data_kind(DataKind::VariableIndex, sl);
 #endif
                 std::uint32_t t;
                 std::memcpy(&t, pos, sizeof(std::uint32_t));
                 pos += sizeof(std::uint32_t);
-                return IdentifierIndex{ static_cast<IdentifierIndexKind>(t >> 30), t & 0x3fffffff };
+                return VariableIndex{ static_cast<VariableIndexKind>(t >> 30), t & 0x3fffffff };
             }
             template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
@@ -323,7 +317,7 @@ namespace OwcaScript {
                 pos += sizeof(offset);
                 return CodePosition{ *this, pos + offset };
             }
-                        
+
             auto value() const { return pos; }
             CodePosition operator + (std::int32_t offset) const {
                 return CodePosition(*this, pos + offset);
@@ -366,7 +360,7 @@ namespace OwcaScript {
                 handle_line(line);
                 auto pos = prepare(&value, 1, kind);
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
-#ifdef OWCA_SCRIPT_EXEC_LOG                
+#ifdef OWCA_SCRIPT_EXEC_LOG
                 if (kind == DataKind::Op) {
                     std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
                 }
@@ -440,8 +434,8 @@ namespace OwcaScript {
                 append_size(line, str.size());
                 append_impl_vec(str.data(), str.size());
             }
-            void append(Line line, IdentifierIndex value) {
-                append_impl(line, value.value(), DataKind::IdentifierIndex);
+            void append(Line line, VariableIndex value) {
+                append_impl(line, value.value(), DataKind::VariableIndex);
             }
             template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
                 serialize_object(*this, line, t);

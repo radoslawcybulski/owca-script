@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_AST_FUNCTION_H
 #define RC_OWCA_SCRIPT_AST_FUNCTION_H
 
+#include "owca-script/variable_index.h"
 #include "stdafx.h"
 #include "ast_base.h"
 #include "owca_vm.h"
@@ -13,27 +14,17 @@ namespace OwcaScript {
 		public:
 			enum class Native : unsigned char { No = 0, Yes = 1 };
 			enum class Generator : unsigned char { No = 0, Yes = 1 };
-			struct CopyFromParent {
-				std::uint32_t index_in_parent;
-				std::uint32_t index_in_child;
 
-				CopyFromParent(std::uint32_t index_in_parent, std::uint32_t index_in_child) : index_in_parent(index_in_parent), index_in_child(index_in_child) {}
-
-				bool compare(const CopyFromParent &o) const {
-					return index_in_child == o.index_in_child && index_in_parent == o.index_in_parent;
-				}
-			};
-		
 		private:
 			std::string name_, full_name_;
-			std::vector<CopyFromParent> copy_from_parents_;
+			std::vector<VariableIndex> copy_from_parents_;
 			std::vector<std::string_view> identifier_names_;
 			std::uint16_t param_count_;
 			std::unique_ptr<AstStat> body_;
 			Native native_;
 			Generator generator_;
 		public:
-			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string_view> identifier_names, std::uint16_t param_count, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)), 
+			AstFunction(Line line, std::string name, std::string full_name, std::vector<std::string_view> identifier_names, std::uint16_t param_count, Native native, Generator generator) : AstExpr(line), name_(std::move(name)), full_name_(std::move(full_name)),
 				identifier_names_(std::move(identifier_names)), param_count_(param_count), native_(native), generator_(generator) {}
 
 			const auto &name() const { return name_; }
@@ -42,7 +33,7 @@ namespace OwcaScript {
 			void update_body(std::unique_ptr<AstStat> body) {
 				this->body_ = std::move(body);
 			}
-			void update_copy_from_parents(std::vector<CopyFromParent> copy_from_parents) {
+			void update_copy_from_parents(std::vector<VariableIndex> copy_from_parents) {
 				this->copy_from_parents_ = std::move(copy_from_parents);
 			}
 

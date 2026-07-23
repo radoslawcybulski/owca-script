@@ -11,7 +11,7 @@ namespace OwcaScript {
 		class AstExprIdentifier : public AstExpr {
 			std::string_view identifier_;
 			std::unique_ptr<AstExpr> value_to_write_ = nullptr;
-			IdentifierIndex identifier_index_;
+			VariableIndex identifier_index_;
 			bool function_write_ = false;
 
 		public:
@@ -21,7 +21,7 @@ namespace OwcaScript {
 			auto &value_to_write() const { return *value_to_write_; }
 			auto function_write() const { return function_write_; }
 			bool write() const { return value_to_write_ != nullptr; }
-			void update_identifier_index(IdentifierIndex index) { identifier_index_ = index; }
+			void update_identifier_index(VariableIndex index) { identifier_index_ = index; }
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write_ = std::move(v); }
 			void set_function_write() { function_write_ = true; }
 

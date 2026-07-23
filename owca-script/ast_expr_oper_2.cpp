@@ -25,7 +25,7 @@ namespace OwcaScript::Internal {
 			ei.code_writer.update_jump_placeholder(pos, ei.code_writer.position());
 		}
 		else if (kind_ == Kind::MakeRange) {
-			TempInfo left_temp{ IdentifierIndex{} }, right_temp{ IdentifierIndex{} }, third_temp{ IdentifierIndex{}};
+			TempInfo left_temp{ VariableIndex{} }, right_temp{ VariableIndex{} }, third_temp{ VariableIndex{}};
 			if (left_) left_temp = left_->emit(ei);
 			if (right_) right_temp = right_->emit(ei);
 			if (third_) third_temp = third_->emit(ei);
@@ -38,7 +38,7 @@ namespace OwcaScript::Internal {
 		else {
 			auto left_val = left_->emit(ei);
 			auto right_val = right_->emit(ei);
-			TempInfo third_val{ IdentifierIndex{} };
+			TempInfo third_val{ VariableIndex{} };
 			if (third_) third_val =third_->emit(ei);
 
 			switch (kind_) {

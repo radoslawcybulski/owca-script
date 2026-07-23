@@ -1,4 +1,4 @@
-#include "owca-script/identifier_index.h"
+#include "owca-script/variable_index.h"
 #include "stdafx.h"
 #include "ast_compiler.h"
 #include "ast_block.h"
@@ -276,7 +276,7 @@ namespace OwcaScript::Internal {
 				++i;
 			if (i < txt.size() && is_digit(txt[i]))
 				succ = true;
-			if (!succ) 
+			if (!succ)
 				return false;
 			while (i < txt.size() && is_digit(txt[i])) ++i;
 		}
@@ -404,7 +404,7 @@ namespace OwcaScript::Internal {
 		if (tok == "false") return std::make_unique<AstExprConstant>(line, false);
 		if (tok == "nul") return std::make_unique<AstExprConstant>(line, OwcaEmpty{});
 		if (is_digit(tok[0]) || tok[0] == '.') return compile_parse_constant_number(line, tok);
-		
+
 		if (is_alpha_or_underscore(tok[0])) {
 			if (is_keyword(tok)) {
 				add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("unexpected keyword `{}`", tok));
@@ -477,7 +477,7 @@ namespace OwcaScript::Internal {
 			consume("}");
 			return std::make_unique<AstExprOperX>(line, map ? AstExprOperX::Kind::CreateMap : AstExprOperX::Kind::CreateSet, std::move(values));
 		}
-		add_error_and_throw(OwcaErrorKind::ExpectedValue, filename_, line, 
+		add_error_and_throw(OwcaErrorKind::ExpectedValue, filename_, line,
 			std::format("unexpected token `{}`, expected value, which is true, false, nul, number, string, identifier, expression in parenthesis, array construction object or set / map construction object", tok)
 		);
 	}
@@ -909,7 +909,7 @@ namespace OwcaScript::Internal {
 		}
 		return f;
 	}
-	
+
 	bool AstCompiler::preview_is_with_assignment()
 	{
 		auto start = content_offset;
@@ -919,7 +919,7 @@ namespace OwcaScript::Internal {
 
 		if (is_identifier(tok)) {
 			consume(tok);
-			if (preview().second == "=") 
+			if (preview().second == "=")
 				is_loop_identifier = true;
 		}
 		content_offset = start;
@@ -935,7 +935,7 @@ namespace OwcaScript::Internal {
 
 		if (is_identifier(tok)) {
 			consume(tok);
-			if (preview().second == ":") 
+			if (preview().second == ":")
 				is_loop_identifier = true;
 		}
 		content_offset = start;
@@ -1081,7 +1081,7 @@ namespace OwcaScript::Internal {
 		}
 		return std::make_unique<AstTry>(line, std::move(body), std::move(catches));
 	}
-	
+
 	std::unique_ptr<AstStat> AstCompiler::compile_throw()
 	{
 		auto line = consume("throw");
@@ -1089,7 +1089,7 @@ namespace OwcaScript::Internal {
 		consume(";");
 		return std::make_unique<AstThrow>(line, std::move(val));
 	}
-	
+
 	std::unique_ptr<AstStat> AstCompiler::compile_if(bool elif)
 	{
 		auto line = consume(elif ? "elif" : "if");
@@ -1176,15 +1176,15 @@ namespace OwcaScript::Internal {
 	}
 
 	struct ConstantGatherer : public AstVisitor {
-		std::unordered_map<std::string_view, IdentifierIndex> string_constants;
-		std::unordered_map<Number, IdentifierIndex> number_constants;
+		std::unordered_map<std::string_view, VariableIndex> string_constants;
+		std::unordered_map<Number, VariableIndex> number_constants;
 
 		void apply(AstBase &o) override {
 			o.visit_children(*this);
 		}
 		void apply(AstExprInterpretedString &o) override {
 			if (o.single_string()) {
-				string_constants.insert({ o.strings(), IdentifierIndex{} });
+				string_constants.insert({ o.strings(), VariableIndex{} });
 			}
 			apply(static_cast<AstExpr&>(o));
 		}
@@ -1192,19 +1192,19 @@ namespace OwcaScript::Internal {
 			o.visit_value(
 				[&](const OwcaEmpty& v) {},
 				[&](const Number& v) {
-					number_constants.insert({ v, IdentifierIndex{} });
+					number_constants.insert({ v, VariableIndex{} });
 				},
 				[&](const bool& v) {},
 				[&](const std::string& v) {
-					string_constants.insert({ v, IdentifierIndex{} });
+					string_constants.insert({ v, VariableIndex{} });
 				}
 			);
 			apply(static_cast<AstExpr&>(o));
 		}
 	};
 	struct ConstantUpdater : public AstVisitor {
-		std::unordered_map<std::string_view, IdentifierIndex> string_constants;
-		std::unordered_map<Number, IdentifierIndex> number_constants;
+		std::unordered_map<std::string_view, VariableIndex> string_constants;
+		std::unordered_map<Number, VariableIndex> number_constants;
 
 		std::tuple<std::vector<std::string_view>, std::vector<Number>> update_indexes() {
 			unsigned int index = 3;
@@ -1213,12 +1213,12 @@ namespace OwcaScript::Internal {
 			string_constants_vector.resize(string_constants.size());
 			number_constants_vector.resize(number_constants.size());
 			for(auto &it : string_constants) {
-				it.second = IdentifierIndex{ IdentifierIndexKind::Constant, index };
+				it.second = VariableIndex{ VariableIndexKind::Constant, index };
 				string_constants_vector[index - 3] = it.first;
 				++index;
 			}
 			for(auto &it : number_constants) {
-				it.second = IdentifierIndex{ IdentifierIndexKind::Constant, index };
+				it.second = VariableIndex{ VariableIndexKind::Constant, index };
 				number_constants_vector[index - 3 - string_constants.size()] = it.first;
 				++index;
 			}
@@ -1238,7 +1238,7 @@ namespace OwcaScript::Internal {
 		void apply(AstExprConstant &o) override {
 			o.visit_value(
 				[&](const OwcaEmpty& v) {
-					o.update_index(IdentifierIndex{ IdentifierIndexKind::Constant, 0 });
+					o.update_index(VariableIndex{ VariableIndexKind::Constant, 0 });
 				},
 				[&](const Number& v) {
 					auto it = number_constants.find(v);
@@ -1246,7 +1246,7 @@ namespace OwcaScript::Internal {
 					o.update_index(it->second);
 				},
 				[&](bool v) {
-					o.update_index(IdentifierIndex{ IdentifierIndexKind::Constant, v ? 1u : 2u });
+					o.update_index(VariableIndex{ VariableIndexKind::Constant, v ? 1u : 2u });
 				},
 				[&](const std::string& v) {
 					auto it = string_constants.find(v);
@@ -1261,19 +1261,13 @@ namespace OwcaScript::Internal {
 	struct AstCompiler::Phase2 : public AstVisitor {
 		struct Stack {
 			struct LookupResult {
-				unsigned int index;
+				VariableIndex index;
 				bool writeable;
-				bool global;
 				bool parameter = false;
-
-				IdentifierIndex to_identifier_index() const {
-					return { global ? IdentifierIndexKind::Global : IdentifierIndexKind::Local, index };
-				}
 			};
 			std::unordered_map<std::string_view, LookupResult> identifiers;
 			std::vector<std::string_view> identifier_names;
-			using CopyFromParent = AstFunction::CopyFromParent;
-			std::vector<CopyFromParent> copy_from_parents;
+			std::vector<VariableIndex> copy_from_parents;
 			bool check_ = false;
 			unsigned int next_index = 0;
 
@@ -1281,27 +1275,28 @@ namespace OwcaScript::Internal {
 			Stack* parent = nullptr;
 
 			void define_identifier(std::string_view name, bool parameter = false) {
-				auto it = identifiers.insert({ name, { next_index, true, !parent, parameter } });
+			    auto iindex = VariableIndex{ parent ? VariableIndexKind::Local : VariableIndexKind::Global, next_index };
+				auto it = identifiers.insert({ name, { iindex, true, parameter } });
 				if (it.second) {
 					identifier_names.push_back(name);
 					++next_index;
 				}
 			}
-			void check() {
-				if (check_) return;
-				check_ = true;
-				if (!parent) return;
-				parent->check();
-				
-				for(auto &[name, res] : identifiers) {
-					if (res.parameter) continue;
-					auto res_parent = parent->lookup_identifier(name);
-					if (res_parent) {
-						res.writeable = false;
-						res.global = res_parent->global;
-					}
-				}
-			}
+			// void check() {
+			// 	if (check_) return;
+			// 	check_ = true;
+			// 	if (!parent) return;
+			// 	parent->check();
+
+			// 	for(auto &[name, res] : identifiers) {
+			// 		if (res.parameter) continue;
+			// 		auto res_parent = parent->lookup_identifier(name);
+			// 		if (res_parent) {
+			// 			res.writeable = false;
+			// 			res.index = res_parent->index;
+			// 		}
+			// 	}
+			// }
 			std::optional<LookupResult> lookup_identifier(std::string_view name) {
 				assert(check_);
 				auto it = identifiers.find(name);
@@ -1309,16 +1304,14 @@ namespace OwcaScript::Internal {
 					if (!parent) return std::nullopt;
 					auto parent_res = parent->lookup_identifier(name);
 					if (!parent_res) return std::nullopt;
-					if (parent_res->global) {
+					if (parent_res->index.kind() == VariableIndexKind::Global) {
 						parent_res->writeable = false;
 						identifiers.insert({ name, *parent_res });
 						return *parent_res;
 					}
-					auto index = next_index++;
+					auto index = VariableIndex{ VariableIndexKind::Parent, (unsigned int)copy_from_parents.size() };
+					copy_from_parents.push_back(parent_res->index);
 					it = identifiers.insert({ name, { index, false, false } }).first;
-					identifier_names.push_back(name);
-					assert(identifier_names.size() == next_index);
-					copy_from_parents.push_back({ parent_res->index, index });
 				}
 				assert(it != identifiers.end());
 				return it->second;
@@ -1327,8 +1320,16 @@ namespace OwcaScript::Internal {
 				assert(check_);
 				auto pp = lookup_identifier(name);
 				assert(pp);
-				if (!pp->writeable) comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack", name));
-				return pp->index;
+				if (!pp->writeable) {
+				    if (pp->index.kind() == VariableIndexKind::Global) {
+						comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is in global scope and is non-modifiable here. Note it might still change the value from the global scope.", name));
+					}
+				    else {
+				        comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack.", name));
+					}
+				}
+				assert(pp->index.kind() == VariableIndexKind::Local);
+				return pp->index.index();
 			}
 			bool is_global() const {
 				return parent == nullptr;
@@ -1342,11 +1343,11 @@ namespace OwcaScript::Internal {
 
 		Phase2(AstCompiler* compiler) : compiler(compiler) {}
 
-		void check_all_stacks() {
-			for(auto &[func, st] : stacks) {
-				st.check();
-			}
-		}
+		// void check_all_stacks() {
+		// 	for(auto &[func, st] : stacks) {
+		// 		st.check();
+		// 	}
+		// }
 		void add_error(OwcaErrorKind kind, Line line, std::string msg) {
 			compiler->add_error(kind, compiler->filename_, line, std::move(msg));
 		}
@@ -1400,10 +1401,10 @@ namespace OwcaScript::Internal {
 				}
 				else {
 					if (o.write()) {
-						if (!index_pp->writeable) 
+						if (!index_pp->writeable)
 							add_error(OwcaErrorKind::VariableIsConstant, o.line, std::format("variable `{}` is constant - it has been copied from parent function's stack", o.identifier()));
 					}
-					o.update_identifier_index(index_pp->to_identifier_index());
+					o.update_identifier_index(index_pp->index);
 				}
 			}
 			apply(static_cast<AstExpr&>(o));
@@ -1425,7 +1426,7 @@ namespace OwcaScript::Internal {
 			}
 
 			apply(static_cast<AstExpr&>(o));
-			
+
 			if (!first_run) {
 				auto offset = !o.identifier_names().empty() && o.identifier_names()[0] == "self" ? 0 : 1;
 				for(auto i = 0u; i < o.param_count(); ++i) {
@@ -1457,7 +1458,7 @@ namespace OwcaScript::Internal {
 		for(auto &r : root) {
 			r->visit(p);
 		}
-		p.check_all_stacks();
+		//p.check_all_stacks();
 		p.first_run = false;
 		for(auto &r : root) {
 			r->visit(p);

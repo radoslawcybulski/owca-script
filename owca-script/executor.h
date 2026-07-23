@@ -66,7 +66,25 @@ namespace OwcaScript {
             OwcaValue &operator [] (std::size_t index) const {
                 return global_values_ptr[index];
             }
-        };			
+        };
+        class IdentifierPtrs {
+            std::array<OwcaValue*, 4> identifier_ptrs;
+
+        public:
+            IdentifierPtrs(OwcaValue *locals, OwcaValue *constants, OwcaValue *globals, OwcaValue *parent_values) :
+                identifier_ptrs({ locals, constants, globals, parent_values }) {}
+
+            GlobalsPtr get_globals_pointer() const { return GlobalsPtr{ identifier_ptrs[2] }; }
+
+            OwcaValue &operator [] (VariableIndex index) {
+                return identifier_ptrs[(int)index.kind()][index.index()];
+            };
+
+            const OwcaValue &operator [] (VariableIndex index) const {
+                return identifier_ptrs[(int)index.kind()][index.index()];
+            };
+        };
+
         // struct TemporariesPtr {
         //     OwcaValue *temporaries_ptr;
 
@@ -157,7 +175,7 @@ namespace OwcaScript {
 			std::optional<OwcaException> exception_being_thrown;
 			std::optional<OwcaException> exception_being_handled;
 			LocalsPtr current_unused_locals_ptr;
-			
+
 		public:
 			struct TopPtrsKeeper {
 				Executor &e;
@@ -201,7 +219,7 @@ namespace OwcaScript {
 			OwcaValue execute_function_call_from_values(RuntimeFunctions* runtime_functions, unsigned int arg_count);
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
 
-			OwcaValue create_function(CodePosition &code_pos, GlobalsPtr globals_ptr, LocalsPtr locals_ptr);
+			OwcaValue create_function(CodePosition &code_pos, const IdentifierPtrs &identifier_ptrs);
 			void process_thrown_exception(CodePosition *pos, OwcaException exc);
 
 			std::tuple<Number, Number, Number> parse_key(OwcaValue v, OwcaValue key, Number size);

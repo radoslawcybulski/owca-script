@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "ast_for.h"
-#include "identifier_index.h"
+#include "variable_index.h"
 #include "ast_expr_noop.h"
 
 namespace OwcaScript::Internal {
@@ -18,7 +18,7 @@ namespace OwcaScript::Internal {
         ei.code_writer.append(line, iter_value.index);
         ei.code_writer.append(line, iterator_temp.index);
         auto end_pos = ei.code_writer.append_jump_placeholder(line);
-        
+
         iterator_value_.update_index(iter_value.index);
         write_idents_->emit(ei);
         iter_value.release();
@@ -30,7 +30,7 @@ namespace OwcaScript::Internal {
 
         ei.code_writer.append(line, ExecuteOp::Jump);
         ei.code_writer.append_jump_position(line, continue_position);
-        
+
         ei.code_writer.update_jump_placeholder(end_pos, (std::int32_t)ei.code_writer.position());
 
         for(auto & break_pos : break_loop.break_positions) {

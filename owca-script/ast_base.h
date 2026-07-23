@@ -1,11 +1,11 @@
 #ifndef RC_OWCA_SCRIPT_AST_BASE_H
 #define RC_OWCA_SCRIPT_AST_BASE_H
 
-#include "stdafx.h" 
+#include "stdafx.h"
 #include "ast_visitor.h"
 #include "line.h"
 #include "exec_buffer.h"
-#include "identifier_index.h"
+#include "variable_index.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -37,11 +37,11 @@ namespace OwcaScript {
 
 				PerFunctionInfo per_function;
 				TempInfo allocate_temporary();
-				void write_move(Line line, IdentifierIndex dest, IdentifierIndex src);
+				void write_move(Line line, VariableIndex dest, VariableIndex src);
 			};
 			struct TempInfo {
 				EmitInfo *ei = nullptr;
-				IdentifierIndex index;
+				VariableIndex index;
 
 				bool is_temporary() const { return ei != nullptr; }
 				void release() {
@@ -49,12 +49,12 @@ namespace OwcaScript {
 					ei->per_function.temporaries.push_back(index.index());
 					ei = nullptr;
 				}
-				explicit TempInfo(IdentifierIndex index) : index(index) {
-					assert(index.kind() != IdentifierIndexKind::Local);
+				explicit TempInfo(VariableIndex index) : index(index) {
+					assert(index.kind() != VariableIndexKind::Local);
 				}
-				TempInfo(EmitInfo &ei, IdentifierIndex index) : ei(&ei), index(index) {
-					if (index.kind() != IdentifierIndexKind::Local || index.index() < ei.per_function.local_variables) {
-						this->ei = nullptr; 
+				TempInfo(EmitInfo &ei, VariableIndex index) : ei(&ei), index(index) {
+					if (index.kind() != VariableIndexKind::Local || index.index() < ei.per_function.local_variables) {
+						this->ei = nullptr;
 					}
 				}
 				~TempInfo() {

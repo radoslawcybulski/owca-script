@@ -40,14 +40,15 @@ namespace OwcaScript {
 		};
 
 		struct RuntimeFunctionScript : public RuntimeFunction {
+		    void gc_mark(GenerationGC generation_gc) const override;
+
 			std::vector<OwcaValue> values_from_parents;
-			std::vector<AstFunction::CopyFromParent> copy_from_parents;
 			std::vector<std::string_view> identifier_names;
 			CodePosition entry_point = CodePosition{};
 			GlobalsPtr globals_ptr;
 			OwcaValue *constants_ptr;
 		protected:
-			RuntimeFunctionScript(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, CodePosition entry_point, GlobalsPtr globals_ptr) : 
+			RuntimeFunctionScript(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, CodePosition entry_point, GlobalsPtr globals_ptr) :
 					RuntimeFunction(std::move(code), owning_namespace, name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr), constants_ptr(owning_namespace.internal_value()->constants.data()) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
