@@ -5,10 +5,11 @@
 #include "line.h"
 #include "owca_code.h"
 #include "variable_index.h"
-#include <unordered_map>
+#include "identifier_index.h"
+#include <source_location>
 
 #ifdef DEBUG
-//#define OWCA_SCRIPT_EXEC_LOG
+// #define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 namespace OwcaScript {
@@ -46,6 +47,7 @@ namespace OwcaScript {
             JumpOffset,
             Blob,
             VariableIndex,
+            IdentifierIndex,
         };
         inline std::string_view to_string(DataKind kind) {
             switch(kind) {
@@ -63,6 +65,8 @@ namespace OwcaScript {
             case DataKind::Float64: return "Float64";
             case DataKind::JumpOffset: return "JumpOffset";
             case DataKind::Blob: return "Blob";
+            case DataKind::VariableIndex: return "VariableIndex";
+            case DataKind::IdentifierIndex: return "IdentifierIndex";
             default: return "Unknown";
             }
         }
@@ -123,8 +127,7 @@ namespace OwcaScript {
             TryCatchType,
             TryCatchTypeCompleted,
             WithInit,
-            WithCompleted,
-            Yield,
+            WithCompleted,Yield,
             Jump,
             _Count
         };
@@ -189,14 +192,6 @@ namespace OwcaScript {
             default: return "Unknown";
             }
         }
-        struct LineEntry {
-            std::uint32_t code_pos;
-            std::uint32_t line;
-
-            bool operator <(const LineEntry &other) const {
-                return code_pos < other.code_pos;
-            }
-        };
         using DataKindsType = std::unordered_map<const unsigned char *, DataKind>;
 
         class CodePosition {
@@ -223,7 +218,11 @@ namespace OwcaScript {
                 if (data_kinds && !data_kinds->empty()) {
                     auto it = data_kinds->find(pos);
                     if (it == data_kinds->end() || it->second != expected) {
-                        auto msg = std::format("{}:{}: Data kind mismatch at position {}: expected {}, got {}", sl.file_name(), sl.line(), (void*)pos, to_string(expected), it == data_kinds->end() ? "Unknown" : to_string(it->second));
+                        const unsigned char *start = pos;
+                        for(auto &[p, k] : *data_kinds) {
+                            if (p < start) start = p;
+                        }
+                        auto msg = std::format("{}:{}: Data kind mismatch at position {} ({}): expected {}, got {}", sl.file_name(), sl.line(), (pos - start), (void*)pos, to_string(expected), it == data_kinds->end() ? "Unknown" : to_string(it->second));
                         std::cout << msg << std::endl;
                         throw std::runtime_error(msg);
                     }
@@ -269,6 +268,15 @@ namespace OwcaScript {
                 std::memcpy(&t, pos, sizeof(std::uint32_t));
                 pos += sizeof(std::uint32_t);
                 return VariableIndex{ static_cast<VariableIndexKind>(t >> 30), t & 0x3fffffff };
+            }
+            template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_same_v<T, IdentifierIndex>) {
+#ifdef DEBUG
+                ensure_data_kind(DataKind::IdentifierIndex, sl);
+#endif
+                std::uint32_t t;
+                std::memcpy(&t, pos, sizeof(std::uint32_t));
+                pos += sizeof(std::uint32_t);
+                return IdentifierIndex(t);
             }
             template <typename T> T decode(std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 static_assert(sizeof(T) <= sizeof(std::uint64_t), "Integral type too large to decode");
@@ -341,44 +349,61 @@ namespace OwcaScript {
             std::vector<unsigned char> buffer;
             WriteDataKindsType data_kinds;
             std::vector<LineEntry> lines;
+            std::vector<std::pair<std::string, std::uint32_t>> identifiers;
 
-            template <typename T> std::uint32_t prepare(const T *data, size_t sz, DataKind kind) {
-                auto align = alignof(T);
+            template <typename T> std::uint32_t prepare(Line line, const T *data, size_t sz, DataKind kind, std::source_location sl) {
                 auto size = sizeof(T) * sz;
                 auto current_size = buffer.size();
                 auto padding = 0u;
                 buffer.resize(current_size + padding + size);
                 data_kinds[current_size + padding] = kind;
-                return current_size + padding;
-            }
-            template <typename T> void append_impl_vec(const T *data, size_t sz) {
-                if (sz == 0) return;
-                auto pos = prepare(data, sz, DataKind::Blob);
-                std::memcpy(buffer.data() + pos, data, sizeof(T) * sz);
-            }
-            template <typename T> void append_impl(Line line, T value, DataKind kind) {
-                handle_line(line);
-                auto pos = prepare(&value, 1, kind);
-                std::memcpy(buffer.data() + pos, &value, sizeof(T));
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 if (kind == DataKind::Op) {
-                    std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << " oper " << to_string((ExecuteOp)buffer[pos]) << std::endl;
+                    std::cout << sl.file_name() << ":" << sl.line() << " Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (current_size + padding) << " oper " << to_string((ExecuteOp)buffer[current_size + padding]) << std::endl;
                 }
                 else {
-                    std::cout << "Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (pos) << std::endl;
+                    std::cout << sl.file_name() << ":" << sl.line() << " Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (current_size + padding) << std::endl;
                 }
 #endif
+                return current_size + padding;
+            }
+            void append_impl_vec(Line line, const char *data, size_t sz, std::source_location sl) {
+                if (sz == 0) return;
+                auto pos = prepare(line, data, sz, DataKind::Blob, sl);
+                std::memcpy(buffer.data() + pos, data, sz);
+            }
+            template <typename T> void append_impl(Line line, T value, DataKind kind, std::source_location sl) {
+                handle_line(line);
+                auto pos = prepare(line, &value, 1, kind, sl);
+                std::memcpy(buffer.data() + pos, &value, sizeof(T));
             }
             void handle_line(Line line) {
                 if (lines.empty() || lines.back().line != line.line) {
                     lines.emplace_back(LineEntry{static_cast<std::uint32_t>(buffer.size()), line.line});
                 }
             }
-            void append_size(Line line, size_t size) {
-                append_impl(line, (std::uint32_t)size, DataKind::Size);
+            void append_size(Line line, size_t size, std::source_location sl) {
+                append_impl(line, (std::uint32_t)size, DataKind::Size, sl);
             }
         public:
             ExecuteBufferWriter() = default;
+
+            void finalize() {
+                std::sort(identifiers.begin(), identifiers.end(), [](const auto &a, const auto &b) { return a.first < b.first; });
+                auto identifier_count = append_placeholder<std::uint32_t>(Line{ 0 });
+                auto ii = 0;
+                for(auto i = 0u; i < identifiers.size(); ) {
+                    append(Line{ 0 }, identifiers[i].first);
+                    auto entries_count = append_placeholder<std::uint32_t>(Line{ 0 });
+                    auto first = i;
+                    for(; i < identifiers.size() && identifiers[first].first == identifiers[i].first; ++i) {
+                        append(Line{ 0 }, identifiers[i].second);
+                    }
+                    update_placeholder(entries_count, (std::uint32_t)(i - first));
+                    ++ii;
+                }
+                update_placeholder(identifier_count, ii);
+            }
 
             Line current_line() const {
                 if (lines.empty()) return Line{ 0 };
@@ -397,10 +422,10 @@ namespace OwcaScript {
                 auto jump_pos = append_jump_placeholder(line);
                 update_jump_placeholder(jump_pos, target_pos);
             }
-            template <typename T> void append(Line line, T value) requires(std::is_enum_v<T>) {
-                append_impl(line, value, std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum);
+            template <typename T> void append(Line line, T value, std::source_location sl = std::source_location::current()) requires(std::is_enum_v<T>) {
+                append_impl(line, value, std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum, sl);
             }
-            template <typename T> void append(Line line, T value) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
+            template <typename T> void append(Line line, T value, std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 DataKind kind;
                 if constexpr (std::is_same_v<T, bool>) kind = DataKind::Bool;
                 else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>) kind = DataKind::Int8;
@@ -410,32 +435,44 @@ namespace OwcaScript {
                 else {
                     static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
-                append_impl(line, value, kind);
+                append_impl(line, value, kind, sl);
             }
-            template <typename T> void append(Line line, T value) requires(std::is_floating_point_v<T>) {
+            template <typename T> void append(Line line, T value, std::source_location sl = std::source_location::current()) requires(std::is_floating_point_v<T>) {
                 DataKind kind;
                 if constexpr (std::is_same_v<T, float>) kind = DataKind::Float32;
                 else if constexpr (std::is_same_v<T, double>) kind = DataKind::Float64;
                 else {
                     static_assert(sizeof(T) == 0, "Unsupported floating point type");
                 }
-                append_impl(line, value, kind);
+                append_impl(line, value, kind, sl);
             }
-            void append(Line line, const char *str) {
+            void append(Line line, const char *str, std::source_location sl = std::source_location::current()) {
                 auto sz = strlen(str);
-                append_size(line, sz);
-                append_impl_vec(str, sz);
+                append_size(line, sz, sl);
+                append_impl_vec(line, str, sz, sl);
             }
-            void append(Line line, std::string_view str) {
-                append_size(line, str.size());
-                append_impl_vec(str.data(), str.size());
+            void append_identifier(Line line, std::string_view str, std::source_location sl = std::source_location::current()) {
+                auto p = buffer.size();
+                append_impl(line, (std::uint32_t)0, DataKind::IdentifierIndex, sl);
+                identifiers.push_back({ std::string{ str }, p });
             }
-            void append(Line line, const std::string &str) {
-                append_size(line, str.size());
-                append_impl_vec(str.data(), str.size());
+            void append(Line line, std::string_view str, std::source_location sl = std::source_location::current()) {
+                append_size(line, str.size(), sl);
+                append_impl_vec(line, str.data(), str.size(), sl);
             }
-            void append(Line line, VariableIndex value) {
-                append_impl(line, value.value(), DataKind::VariableIndex);
+            void append(Line line, const std::string &str, std::source_location sl = std::source_location::current()) {
+                append_size(line, str.size(), sl);
+                append_impl_vec(line, str.data(), str.size(), sl);
+            }
+            void append(Line line, VariableIndex value, std::source_location sl = std::source_location::current()) {
+                append_impl(line, value.value(), DataKind::VariableIndex, sl);
+            }
+            void append(Line line, IdentifierIndex value, std::source_location sl = std::source_location::current()) {
+                append_impl(line, value.value(), DataKind::IdentifierIndex, sl);
+            }
+            static void set_identifier_index(unsigned char *pos, IdentifierIndex value) {
+                auto v = value.value();
+                std::memcpy(pos, &v, sizeof(v));
             }
             template <typename T> void append(Line line, const T &t) requires (!std::is_enum_v<T> && !std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_same_v<T, std::string_view> && !Span<T> && !Vector<T>) {
                 serialize_object(*this, line, t);
@@ -446,7 +483,7 @@ namespace OwcaScript {
                 const std::uint32_t pos;
             };
 
-            template <typename T> Placeholder<T> append_placeholder(Line line) {
+            template <typename T> Placeholder<T> append_placeholder(Line line, std::source_location sl = std::source_location::current()) {
                 DataKind kind;
                 if constexpr (std::is_same_v<T, bool>) kind = DataKind::Bool;
                 else if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>) kind = DataKind::Int8;
@@ -457,7 +494,7 @@ namespace OwcaScript {
                     static_assert(sizeof(T) == 0, "Unsupported integral type");
                 }
                 handle_line(line);
-                auto pos = prepare((T*)nullptr, 1, kind);
+                auto pos = prepare(line, (T*)nullptr, 1, kind, sl);
                 return Placeholder<T>{ pos };
             }
             template <typename T> void update_placeholder(const Placeholder<T> &placeholder, std::int32_t value) {
@@ -469,10 +506,10 @@ namespace OwcaScript {
                 const std::uint32_t pos;
             };
 
-            JumpPlaceholder append_jump_placeholder(Line line) {
+            JumpPlaceholder append_jump_placeholder(Line line, std::source_location sl = std::source_location::current()) {
                 DataKind kind = DataKind::JumpOffset;
                 handle_line(line);
-                auto pos = prepare((std::int32_t*)nullptr, 1, kind);
+                auto pos = prepare(line, (std::int32_t*)nullptr, 1, kind, sl);
                 return JumpPlaceholder{ pos };
             }
             void update_jump_placeholder(const JumpPlaceholder &placeholder, std::int32_t value) {

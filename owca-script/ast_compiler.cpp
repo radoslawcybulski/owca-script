@@ -1268,7 +1268,6 @@ namespace OwcaScript::Internal {
 			std::unordered_map<std::string_view, LookupResult> identifiers;
 			std::vector<std::string_view> identifier_names;
 			std::vector<VariableIndex> copy_from_parents;
-			bool check_ = false;
 			unsigned int next_index = 0;
 
 			AstFunction* owner;
@@ -1298,7 +1297,6 @@ namespace OwcaScript::Internal {
 			// 	}
 			// }
 			std::optional<LookupResult> lookup_identifier(std::string_view name) {
-				assert(check_);
 				auto it = identifiers.find(name);
 				if (it == identifiers.end()) {
 					if (!parent) return std::nullopt;
@@ -1317,7 +1315,6 @@ namespace OwcaScript::Internal {
 				return it->second;
 			}
 			unsigned int ensure_writable_identifier(AstCompiler *comp, Line line, std::string_view name) {
-				assert(check_);
 				auto pp = lookup_identifier(name);
 				assert(pp);
 				if (!pp->writeable) {
@@ -1471,7 +1468,7 @@ namespace OwcaScript::Internal {
 		return ident_names;
 	}
 
-	std::optional<OwcaCode> AstCompiler::compile(std::vector<std::string> additional_variables)
+	std::optional<OwcaCodeBuffer> AstCompiler::compile(std::vector<std::string> additional_variables)
 	{
 		auto root = compile_main_block();
 		if (!error_messages_.empty()) {
@@ -1487,15 +1484,14 @@ namespace OwcaScript::Internal {
 		auto ei = AstBase::EmitInfo{
 			.compiler = *this
 		};
+		ConstantGatherer cg;
+		for(auto &r : root) {
+			r->visit(cg);
+		}
 		ei.code_writer.append(Line{ 0 }, (std::uint32_t)ident_names.size());
         auto max_values = ei.code_writer.append_placeholder<std::uint32_t>(Line{ 0 });
 		for(auto &name : ident_names) {
 			ei.code_writer.append(Line{ 0 }, name);
-		}
-
-		ConstantGatherer cg;
-		for(auto &r : root) {
-			r->visit(cg);
 		}
 		ConstantUpdater cu;
 		cu.string_constants = std::move(cg.string_constants);
@@ -1516,23 +1512,20 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(Line{ 0 }, u);
 		}
 
+		auto code_size = ei.code_writer.append_placeholder<std::uint32_t>(Line{ 0 });
+		auto start_code = ei.code_writer.position();
 		for(auto &r : root) {
 			r->emit(ei);
 		}
-
 		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
+		ei.code_writer.update_placeholder(code_size, (std::int32_t)(ei.code_writer.position() - start_code));
+
 		assert(error_messages_.empty());
         ei.code_writer.update_placeholder(max_values, (std::uint32_t)ei.per_function.max_temporaries);
+        ei.code_writer.finalize();
 
 		auto [ buffer, data_kinds, lines ] = std::move(ei.code_writer).take();
-		auto buffer_span = std::span{ buffer.data(), buffer.size() };
-		std::shared_ptr<DataKindsType> data_kinds_ = std::make_shared<DataKindsType>(std::move(data_kinds));
-		auto data_kinds_span_ptr = data_kinds_.get();
-		auto lines_span = std::span{ lines.data(), lines.size() };
-		auto fname = std::vector<char>(filename_.begin(), filename_.end());
-		auto fname_sv = std::string_view{ fname.data(), fname.size() };
 
-		auto dstr = [buffer = std::move(buffer), data_kinds = std::move(data_kinds_), lines = std::move(lines), fname = std::move(fname)]() {};
-		return OwcaCode{ fname_sv, buffer_span, *data_kinds_span_ptr, lines_span, native_code_provider, std::move(dstr) };
+		return OwcaCodeBuffer{ filename_, std::move(buffer), std::move(lines), std::move(data_kinds) };
 	}
 }

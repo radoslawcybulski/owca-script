@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "owca_object.h"
 #include "object.h"
@@ -13,16 +14,29 @@ namespace OwcaScript {
 	{
 		return object->type();
 	}
-	
-	OwcaValue OwcaObject::member(const std::string& key) const
+
+	OwcaValue OwcaObject::member(std::string_view key) const
 	{
 		return Internal::current_vm().member(*this, key);
 	}
-	std::optional<OwcaValue> OwcaObject::try_member(const std::string& key) const
+	std::optional<OwcaValue> OwcaObject::try_member(std::string_view key) const
 	{
 		return Internal::current_vm().try_member(*this, key);
 	}
-	void OwcaObject::member(const std::string& key, OwcaValue val)
+	void OwcaObject::member(std::string_view key, OwcaValue val)
+	{
+		Internal::current_vm().member(*this, key, std::move(val));
+	}
+
+	OwcaValue OwcaObject::member(IdentifierIndex key) const
+	{
+		return Internal::current_vm().member(*this, key);
+	}
+	std::optional<OwcaValue> OwcaObject::try_member(IdentifierIndex key) const
+	{
+		return Internal::current_vm().try_member(*this, key);
+	}
+	void OwcaObject::member(IdentifierIndex key, OwcaValue val)
 	{
 		Internal::current_vm().member(*this, key, std::move(val));
 	}

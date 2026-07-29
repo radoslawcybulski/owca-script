@@ -82,12 +82,22 @@ namespace OwcaScript {
 		return Internal::current_vm().execute_call(*this, args);
 	}
 
-	OwcaValue OwcaValue::member(const std::string& key) const
+	OwcaValue OwcaValue::member(std::string_view key) const
 	{
 		return Internal::current_vm().member(*this, key);
 	}
 
-	void OwcaValue::member(const std::string& key, OwcaValue val)
+	void OwcaValue::member(std::string_view key, OwcaValue val)
+	{
+		return Internal::current_vm().member(*this, key, std::move(val));
+	}
+
+	OwcaValue OwcaValue::member(IdentifierIndex key) const
+	{
+		return Internal::current_vm().member(*this, key);
+	}
+
+	void OwcaValue::member(IdentifierIndex key, OwcaValue val)
 	{
 		return Internal::current_vm().member(*this, key, std::move(val));
 	}

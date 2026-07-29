@@ -20,23 +20,25 @@ namespace OwcaScript {
 
 			OwcaCode code;
             std::vector<OwcaValue> globals;
-            std::vector<OwcaValue> constants;
-            std::unordered_map<std::string_view, size_t> identifier_to_global_index;
-            std::uint32_t string_constants_count = 0;
-            
+            OwcaValue *constants;
             std::string_view type() const override;
 			std::string to_string() const override;
 
 			void gc_mark(GenerationGC generation_gc) const override;
+            OwcaValue member(IdentifierIndex key) const;
+            std::optional<OwcaValue> try_member(IdentifierIndex key) const;
+            void set_member(IdentifierIndex key, OwcaValue val);
+            bool try_set_member(IdentifierIndex key, OwcaValue val);
+
             OwcaValue member(std::string_view key) const;
             std::optional<OwcaValue> try_member(std::string_view key) const;
             void set_member(std::string_view key, OwcaValue val);
             bool try_set_member(std::string_view key, OwcaValue val);
 
-			Namespace(OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index) :
-				code(std::move(code)), identifier_to_global_index(std::move(identifier_to_global_index)) {
-                    globals.resize(this->identifier_to_global_index.size());
-                }
+			Namespace(OwcaCode code) : code(std::move(code)) {
+                globals.resize(this->code.globals_count());
+                constants = this->code.constants();
+            }
 
             OwcaValue bound_function_self_object() override;
 		};

@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "owca_namespace.h"
 #include "namespace.h"
@@ -13,7 +14,7 @@ namespace OwcaScript {
 	{
 		return object->type();
 	}
-	
+
 	OwcaValue OwcaNamespace::member(std::string_view key) const
 	{
 		return object->member(key);
@@ -29,7 +30,24 @@ namespace OwcaScript {
     bool OwcaNamespace::try_member(std::string_view key, OwcaValue val) {
         return object->try_set_member(key, std::move(val));
     }
-	OwcaNamespace::Iterator::Iterator(Internal::Namespace *nspace, std::unordered_map<std::string_view, size_t>::iterator it) : nspace(nspace), it(it) {}
+
+    OwcaValue OwcaNamespace::member(IdentifierIndex key) const
+	{
+		return object->member(key);
+	}
+	std::optional<OwcaValue> OwcaNamespace::try_member(IdentifierIndex key) const
+	{
+		return object->try_member(key);
+	}
+	void OwcaNamespace::member(IdentifierIndex key, OwcaValue val)
+	{
+		object->set_member(key, std::move(val));
+	}
+       bool OwcaNamespace::try_member(IdentifierIndex key, OwcaValue val) {
+           return object->try_set_member(key, std::move(val));
+    }
+
+    OwcaNamespace::Iterator::Iterator(Internal::Namespace *nspace, std::unordered_map<IdentifierIndex, size_t>::const_iterator it) : nspace(nspace), it(it) {}
 
 	OwcaNamespace::Iterator::reference OwcaNamespace::Iterator::operator*() const
 	{
@@ -52,15 +70,15 @@ namespace OwcaScript {
 
 	OwcaNamespace::Iterator OwcaNamespace::begin() const
 	{
-		auto it = object->identifier_to_global_index.begin();
+		auto it = object->code.identifier_to_global_index().begin();
 		return Iterator{ object, it };
 	}
 
 	OwcaNamespace::Iterator OwcaNamespace::end() const
 	{
-		auto it = object->identifier_to_global_index.end();
+		auto it = object->code.identifier_to_global_index().end();
 		return Iterator{ object, it };
-	}    
+	}
 	void gc_mark_value(GenerationGC gc, OwcaNamespace obj)
 	{
 		gc_mark_value(gc, obj.internal_value());

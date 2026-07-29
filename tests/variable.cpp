@@ -47,10 +47,10 @@ class native A {
 function r() {
     return A();
 }
-)", std::make_shared<Provider>(counter));
+)");
     auto provider = Provider{ counter };
 
-	auto val = vm.execute(code);
+	auto val = vm.execute(code, std::make_shared<Provider>(counter));
 	ASSERT_EQ(val.member("r").call().as_object().type(), "A");
     ASSERT_EQ(counter, 1);
     vm.run_gc();

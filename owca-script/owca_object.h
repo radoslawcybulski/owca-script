@@ -1,10 +1,12 @@
 #ifndef RC_OWCA_SCRIPT_OWCA_OBJECT_H
 #define RC_OWCA_SCRIPT_OWCA_OBJECT_H
 
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "tokens.h"
 #include "object.h"
 #include "garbage.h"
+#include "identifier_index.h"
 #include "native_class_interface.h"
 
 namespace OwcaScript {
@@ -26,11 +28,15 @@ namespace OwcaScript {
 		std::string to_string() const;
 		std::string_view type() const;
 
-		OwcaValue member(const std::string& key) const;
-		std::optional<OwcaValue> try_member(const std::string& key) const;
+		OwcaValue member(std::string_view key) const;
+		std::optional<OwcaValue> try_member(std::string_view key) const;
+		void member(std::string_view key, OwcaValue);
+		OwcaValue member(IdentifierIndex key) const;
+		std::optional<OwcaValue> try_member(IdentifierIndex key) const;
+		void member(IdentifierIndex key, OwcaValue);
+
 		bool is(OwcaObject other) const { return object == other.object; }
 
-		void member(const std::string& key, OwcaValue);
 
 		bool operator == (OwcaObject other) const { return object == other.object; }
 		bool operator != (OwcaObject other) const { return !(*this == other); }

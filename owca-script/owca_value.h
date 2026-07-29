@@ -380,9 +380,12 @@ namespace OwcaScript {
 		std::string_view type() const;
 		std::string to_string() const;
 
-		OwcaValue member(const std::string& key) const;
-		void member(const std::string& key, OwcaValue val);
+		OwcaValue member(std::string_view key) const;
+		void member(std::string_view key, OwcaValue val);
+		OwcaValue member(IdentifierIndex key) const;
+		void member(IdentifierIndex key, OwcaValue val);
 		OwcaValue call(std::span<OwcaValue> args) const;
+
 
 		OwcaValue call_with_args(std::span<OwcaValue> args) const;
 		template <typename ... ARGS> OwcaValue call(ARGS&&... args) const {

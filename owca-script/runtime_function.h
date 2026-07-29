@@ -2,6 +2,7 @@
 #define RC_OWCA_SCRIPT_RUNTIME_FUNCTION_H
 
 #include "owca-script/executor.h"
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "allocation_base.h"
 #include "ast_function.h"
@@ -21,6 +22,7 @@ namespace OwcaScript {
 			OwcaCode code;
 			OwcaNamespace owning_namespace;
 			std::string_view name, full_name;
+			IdentifierIndex name_index;
 			std::uint16_t param_count = 0;
 			std::uint16_t max_values = 0; // all values + temporaries
 			const bool is_method = false;
@@ -35,8 +37,8 @@ namespace OwcaScript {
 			virtual unsigned int line(CodePosition) const;
             OwcaValue bound_function_self_object() override { assert(false); return {}; }
 		protected:
-			RuntimeFunction(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
-				code(std::move(code)), owning_namespace(owning_namespace), name(name), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
+			RuntimeFunction(OwcaCode code, OwcaNamespace owning_namespace, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, bool is_generator) :
+				code(std::move(code)), owning_namespace(owning_namespace), name(name), name_index(name_index), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
 		};
 
 		struct RuntimeFunctionScript : public RuntimeFunction {
@@ -48,13 +50,13 @@ namespace OwcaScript {
 			GlobalsPtr globals_ptr;
 			OwcaValue *constants_ptr;
 		protected:
-			RuntimeFunctionScript(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, CodePosition entry_point, GlobalsPtr globals_ptr) :
-					RuntimeFunction(std::move(code), owning_namespace, name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr), constants_ptr(owning_namespace.internal_value()->constants.data()) {}
+			RuntimeFunctionScript(OwcaCode code, OwcaNamespace owning_namespace, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, bool is_generator, CodePosition entry_point, GlobalsPtr globals_ptr) :
+					RuntimeFunction(std::move(code), owning_namespace, name_index, name, full_name, is_method, is_generator), entry_point(entry_point), globals_ptr(globals_ptr), constants_ptr(owning_namespace.internal_value()->constants) {}
 		};
 		struct RuntimeFunctionScriptFunction : public RuntimeFunctionScript {
 			void gc_mark(GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptFunction(OwcaCode code, OwcaNamespace owning_namespace, GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(code, owning_namespace, name, full_name, is_method, false, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptFunction(OwcaCode code, OwcaNamespace owning_namespace, GlobalsPtr globals_ptr, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(std::move(code), owning_namespace, name_index, name, full_name, is_method, false, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e) override;
 		};
@@ -62,7 +64,7 @@ namespace OwcaScript {
 		struct RuntimeFunctionScriptGenerator : public RuntimeFunctionScript {
 			void gc_mark(GenerationGC generation_gc) const override;
 
-			RuntimeFunctionScriptGenerator(OwcaCode code, OwcaNamespace owning_namespace, GlobalsPtr globals_ptr, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(code, owning_namespace, name, full_name, is_method, true, entry_point, globals_ptr) {}
+			RuntimeFunctionScriptGenerator(OwcaCode code, OwcaNamespace owning_namespace, GlobalsPtr globals_ptr, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, CodePosition entry_point) : RuntimeFunctionScript(std::move(code), owning_namespace, name_index, name, full_name, is_method, true, entry_point, globals_ptr) {}
 
 			OwcaValue call(Executor &e) override;
 		};
@@ -72,7 +74,7 @@ namespace OwcaScript {
 			NativeCodeProvider::Function function;
 			unsigned int line_;
 
-			RuntimeFunctionNativeFunction(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, owning_namespace, name, full_name, is_method, false), line_(line) {}
+			RuntimeFunctionNativeFunction(OwcaCode code, OwcaNamespace owning_namespace, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(std::move(code), owning_namespace, name_index, name, full_name, is_method, false), line_(line) {}
 
 			OwcaValue call(Executor &e) override;
 			unsigned int line(CodePosition) const override { return line_; }
@@ -83,7 +85,7 @@ namespace OwcaScript {
 			NativeCodeProvider::GeneratorFunction generator;
 			unsigned int line_;
 
-			RuntimeFunctionNativeGenerator(OwcaCode code, OwcaNamespace owning_namespace, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(code, owning_namespace, name, full_name, is_method, true), line_(line) {}
+			RuntimeFunctionNativeGenerator(OwcaCode code, OwcaNamespace owning_namespace, IdentifierIndex name_index, std::string_view name, std::string_view full_name, bool is_method, unsigned int line) : RuntimeFunction(std::move(code), owning_namespace, name_index, name, full_name, is_method, true), line_(line) {}
 
 			Generator run_native_generator(Executor &e, Iterator *iter_object, Generator generator_object);
 			OwcaValue call(Executor &e) override;
@@ -95,8 +97,9 @@ namespace OwcaScript {
 
 			std::array<RuntimeFunction*, 16> functions;
 			std::string_view name, full_name;
+			IdentifierIndex name_index;
 
-			RuntimeFunctions(std::string_view name, std::string_view full_name) : name(name), full_name(full_name) {
+			RuntimeFunctions(IdentifierIndex name_index, std::string_view name, std::string_view full_name) : name_index(name_index), name(name), full_name(full_name) {
 				for(auto &f : functions) f = nullptr;
 			}
 

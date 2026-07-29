@@ -1,6 +1,7 @@
 #ifndef RC_OWCA_SCRIPT_NATIVE_CLASS_INTERFACE_H
 #define RC_OWCA_SCRIPT_NATIVE_CLASS_INTERFACE_H
 
+#include "owca-script/identifier_index.h"
 #include "tokens.h"
 #include "garbage.h"
 #include <span>
@@ -19,8 +20,8 @@ namespace OwcaScript {
 		virtual void destroy_storage(void* ptr, size_t s) = 0;
 		virtual void gc_mark_members(const void* ptr, size_t s, GenerationGC generation_gc) = 0;
 		virtual size_t native_storage_size() = 0;
-		virtual bool get_member(std::string_view, std::span<char> native_storage, OwcaValue &) { return false; }
-		virtual bool set_member(std::string_view, std::span<char> native_storage, const OwcaValue &) { return false; }
+		virtual bool get_member(IdentifierIndex, std::span<char> native_storage, OwcaValue &) { return false; }
+		virtual bool set_member(IdentifierIndex, std::span<char> native_storage, const OwcaValue &) { return false; }
 	};
 	template <typename T> struct NativeClassInterfaceImplementation : public NativeClassInterface {
 		static Internal::UserClassTokenPtr token() {

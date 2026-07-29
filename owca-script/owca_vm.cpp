@@ -49,9 +49,16 @@ namespace OwcaScript {
 		Internal::set_current_vm(nullptr);
 	}
 
-	OwcaNamespace OwcaVM::execute(const OwcaCode &oc) {
+	IdentifierIndex OwcaVM::get_identifier_index(std::string_view name) {
+		return Internal::current_vm().get_identifier_index(name);
+	}
+	std::string_view OwcaVM::get_identifier_name(IdentifierIndex index) {
+		return Internal::current_vm().get_identifier_name(index);
+	}
+
+	OwcaNamespace OwcaVM::execute(const OwcaCodeBuffer &oc, std::shared_ptr<NativeCodeProvider> native_code_provider) {
 		assert(current_vm_ptr == vm.get());
-		return vm->execute_code_block(oc);
+		return vm->execute_code_block(oc, std::move(native_code_provider));
 	}
 	OwcaValue OwcaVM::get_member(OwcaValue self, std::string_view key) {
 		assert(current_vm_ptr == vm.get());
@@ -66,14 +73,10 @@ namespace OwcaScript {
 		return vm->execute_call(func, values);
 	}
 
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, size_t first_line)
+	OwcaCodeBuffer OwcaVM::compile(std::string filename, std::string content, size_t first_line)
 	{
-		return compile(std::move(filename), std::move(content), nullptr, first_line);
-	}
-	OwcaCode OwcaVM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line)
-	{
-		assert(current_vm_ptr == vm.get());
-		return vm->compile(filename, content, std::move(native_code_provider), first_line);
+	    assert(current_vm_ptr == vm.get());
+		return vm->compile(std::move(filename), std::move(content), first_line);
 	}
 
 	OwcaArray OwcaVM::create_array() const

@@ -6,6 +6,7 @@ namespace OwcaScript {
 		unsigned int value;
 
 	public:
+	    explicit GenerationGC() : value(0) {}
 		explicit GenerationGC(unsigned int value) : value(value) {}
 
 		bool operator == (GenerationGC other) const { return value == other.value; }

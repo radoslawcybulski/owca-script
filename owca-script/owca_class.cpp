@@ -10,7 +10,12 @@ namespace OwcaScript {
 		return object->to_string();
 	}
 
-	OwcaValue OwcaClass::operator [] (const std::string &key) const
+	OwcaValue OwcaClass::operator [] (std::string_view key) const
+	{
+		return Internal::current_vm().member(*this, key);
+	}
+
+	OwcaValue OwcaClass::operator [] (IdentifierIndex key) const
 	{
 		return Internal::current_vm().member(*this, key);
 	}

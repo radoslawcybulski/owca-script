@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "owca-script/owca_tuple.h"
 #include "vm.h"
@@ -23,6 +24,9 @@
 
 namespace OwcaScript::Internal {
 	VM::VM() {
+		ii_init = get_identifier_index("__init__");
+		ii_iter = get_identifier_index("__iter__");
+
 		set_current_vm(this);
 		executor = std::make_unique<Executor>();
 		root_allocated_memory.prev = root_allocated_memory.next = &root_allocated_memory;
@@ -116,11 +120,11 @@ namespace OwcaScript::Internal {
 							text = text.substr(2);
 						}
 					}
-			
+
 					if (base > 0) {
 						long long int value = 0;
 						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, base);
-			
+
 						if (ec == std::errc() && ptr == text.data() + text.size()) {
 							return (Number)value;
 						}
@@ -138,7 +142,7 @@ namespace OwcaScript::Internal {
 					else {
 						Number value = 0;
 						auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value);
-			
+
 						if (ec == std::errc() && ptr == text.data() + text.size()) {
 							return value;
 						}
@@ -210,7 +214,7 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue map_set_default(OwcaMap self, OwcaValue key, OwcaValue default_value) {
 			return self.set_default(key, default_value);
-		}		
+		}
 		static Generator map_keys(OwcaMap self) {
 			return self.keys();
 		}
@@ -353,7 +357,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaSet o) {
 					for(const auto &val : o) {
 						self.internal_value()->values.push_back(val);
-					} 
+					}
 				},
 				[&](OwcaString o) {
 					for(auto i = 0u; i < o.size(); ++i) {
@@ -385,7 +389,7 @@ namespace OwcaScript::Internal {
 				co_yield self[i];
 			}
 		}
-		
+
 		static OwcaValue array_push_back(OwcaArray self, OwcaValue v) {
 			self.push_back(v);
 			return {};
@@ -418,7 +422,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaMap o) {
 					for(const auto &val : o) {
 						self.internal_value()->values.push_back(val.first);
-					} 
+					}
 				},
 				[&](OwcaSet o) {
 					for(const auto &val : o) {
@@ -480,7 +484,7 @@ namespace OwcaScript::Internal {
 			if (ind < 0 || ind >= self.count())
 				Internal::current_vm().throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
 			return self.frame(ind).line;
-			
+
 		}
 		static OwcaValue exception_filename(OwcaException self, Number index) {
 			assert(self.count() > 0);
@@ -676,13 +680,14 @@ function native hash(value);
 function native print(msg);
 function native time();
 )" };
-		auto code_compiled = compile(builtin_filename, std::move(code), std::make_shared<BuiltinProvider>());
-		auto builtins = executor->execute_code_block(code_compiled);
+		auto code_compiled = compile(builtin_filename, std::move(code));
+		auto builtins = executor->execute_code_block(code_compiled, std::make_shared<BuiltinProvider>());
 
 		auto read = [&](OwcaValue val) -> Class*{
 			return val.as_class().internal_value();
 		};
-		for(auto [key, value] : builtins) {
+		for(auto [key_, value] : builtins) {
+		    auto key = get_identifier_name(key_);
 			builtin_identifiers.push_back(key);
 			if (key == "Nul") {
 				c_nul = read(value);
@@ -779,20 +784,41 @@ function native time();
 	Exception *VM::is_exception(OwcaObject obj) const
 	{
 		return obj.user_data_maybe<Exception>();
-	}	
+	}
 	VM& VM::get(const OwcaVM &v)
 	{
 		return *v.vm;
 	}
 
-	OwcaCode VM::compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line) {
-		auto compiler = Internal::AstCompiler{ *this, std::move(filename), std::move(content), std::move(native_code_provider), first_line };
+	OwcaCodeBuffer VM::compile(std::string filename, std::string content, size_t first_line) {
+		auto compiler = Internal::AstCompiler{ *this, std::move(filename), std::move(content), first_line };
 		auto v = compiler.compile();
 		if (!v)
 			throw OwcaVM::CompilationFailed{ compiler.filename(), compiler.take_error_messages()};
 
 		return std::move(*v);
+	}
 
+	std::string_view VM::get_identifier_name(IdentifierIndex ii) const {
+		return identifier_name_vector[ii.value() - 1];
+	}
+	IdentifierIndex VM::get_identifier_index(std::string name) {
+		auto it = identifier_index_map.emplace(std::move(name), IdentifierIndex{ (std::uint32_t)(identifier_index_map.size() + 1) });
+		if (it.second) {
+			identifier_name_vector.push_back(it.first->first);
+		}
+		return it.first->second;
+	}
+	IdentifierIndex VM::get_identifier_index(std::string_view name) {
+		auto it = identifier_index_map.find(name);
+		if (it == identifier_index_map.end()) {
+			auto it2 = identifier_index_map.emplace(std::string{ name }, IdentifierIndex{ (std::uint32_t)(identifier_index_map.size() + 1) });
+			if (it2.second) {
+				identifier_name_vector.push_back(it2.first->first);
+			}
+			it = it2.first;
+		}
+		return it->second;
 	}
 
 	void VM::throw_exception(Class *exc, std::string_view msg)
@@ -893,7 +919,7 @@ function native time();
 	{
 		executor->throw_not_callable(type);
 	}
-	
+
 	void VM::throw_not_callable_wrong_number_of_params(std::string_view type, unsigned int params)
 	{
 		executor->throw_not_callable_wrong_number_of_params(type, params);
@@ -991,16 +1017,27 @@ function native time();
 			}
 		);
 	}
-	OwcaValue VM::member(OwcaValue val, std::string_view key)
+
+	OwcaValue VM::member(OwcaValue val, std::string_view key) {
+		return member(val, get_identifier_index(key));
+	}
+	std::optional<OwcaValue> VM::try_member(OwcaValue val, std::string_view key) {
+		return try_member(val, get_identifier_index(key));
+	}
+	void VM::member(OwcaValue val, std::string_view key, OwcaValue val2) {
+		member(val, get_identifier_index(key), std::move(val2));
+	}
+
+	OwcaValue VM::member(OwcaValue val, IdentifierIndex key)
 	{
 		auto v = try_member(val, key);
 		if (!v) {
-			throw_missing_member(val.type(), key);
+			throw_missing_member(val.type(), get_identifier_name(key));
 		}
 		return *v;
 	}
 
-	std::optional<OwcaValue> VM::try_member(OwcaValue val, std::string_view key)
+	std::optional<OwcaValue> VM::try_member(OwcaValue val, IdentifierIndex key)
 	{
 		OwcaValue tmp;
 		auto read_member = [&](Class *cls) -> OwcaValue * {
@@ -1043,8 +1080,8 @@ function native time();
 			return read_from_class(obj->type_, obj);
 		};
 		auto read_from_nspace = [&](Internal::Namespace *obj) -> OwcaValue* {
-			auto it = obj->identifier_to_global_index.find(key);
-			if (it != obj->identifier_to_global_index.end()) {
+			auto it = obj->code.identifier_to_global_index().find(key);
+			if (it != obj->code.identifier_to_global_index().end()) {
 				bind_if_needed = false;
 				return &obj->globals[it->second];
 			}
@@ -1080,7 +1117,7 @@ function native time();
 		return *v;
 	}
 
-	void VM::member(OwcaValue val, std::string_view key, OwcaValue value)
+	void VM::member(OwcaValue val, IdentifierIndex key, OwcaValue value)
 	{
 		val.visit(
 			[&](OwcaObject o) {
@@ -1095,7 +1132,7 @@ function native time();
 						});
 					if (succ) return;
 				}
-				o.internal_value()->values[std::string{ key }] = value;
+				o.internal_value()->values[key] = value;
 			},
 			[&](OwcaNamespace o) {
 				o.member(key, value);
@@ -1106,9 +1143,9 @@ function native time();
 		);
 	}
 
-	OwcaNamespace VM::execute_code_block(const OwcaCode &oc)
+	OwcaNamespace VM::execute_code_block(const OwcaCodeBuffer &oc, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
-		return executor->execute_code_block(oc);
+		return executor->execute_code_block(oc, std::move(native_code_provider));
 	}
 
 	std::optional<OwcaValue> VM::resume_generator(OwcaIterator oi)
@@ -1207,9 +1244,9 @@ function native time();
 		}
 		return OwcaSet{ ds };
 	}
-	OwcaNamespace VM::create_namespace(OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index) {
-		auto ns = allocate<Namespace>(0, std::move(code), std::move(identifier_to_global_index));
-		return OwcaNamespace{ ns };	
+	OwcaNamespace VM::create_namespace(OwcaCode code) {
+		auto ns = allocate<Namespace>(0, std::move(code));
+		return OwcaNamespace{ ns };
 	}
 	OwcaString VM::create_string_from_view(std::string_view txt)
 	{
@@ -1279,7 +1316,7 @@ function native time();
 	// 	}
 	// 	return value == CompareResult::True;
 	// }
-	
+
 	bool VM::calculate_if_true(OwcaValue r) {
 		return r.visit(
 			[&](OwcaEmpty value) -> bool {

@@ -10,7 +10,7 @@
 
 namespace OwcaScript {
 	class OwcaVM;
-	class OwcaCode;
+	class OwcaCodeBuffer;
 	class OwcaMap;
 	class OwcaSet;
 	class OwcaArray;
@@ -25,7 +25,7 @@ namespace OwcaScript {
 	namespace Internal {
 		class VM;
 	}
-	
+
 	struct NativeCodeProvider {
 		virtual ~NativeCodeProvider() = default;
 
@@ -61,7 +61,7 @@ namespace OwcaScript {
 			Activation(Activation &&) = delete;
 			Activation &operator=(Activation &&) = delete;
 		};
-		
+
 		class SerializationFailed : public std::exception {
 			std::string msg;
 		public:
@@ -79,15 +79,17 @@ namespace OwcaScript {
 			CompilationFailed(std::string filename_, std::vector<OwcaErrorMessage> error_messages_);
 
 			const auto& error_messages() const { return error_messages_; }
-			
+
 			const char* what() const noexcept {
 				return err_msg.c_str();
 			}
 		};
 
-		OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
-		OwcaCode compile(std::string filename, std::string content, size_t first_line = 1);
-		OwcaNamespace execute(const OwcaCode&);
+		static IdentifierIndex get_identifier_index(std::string_view name);
+		static std::string_view get_identifier_name(IdentifierIndex index);
+
+		OwcaCodeBuffer compile(std::string filename, std::string content, size_t first_line = 1);
+		OwcaNamespace execute(const OwcaCodeBuffer&, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 		OwcaValue get_member(OwcaValue self, std::string_view key);
 		void set_member(OwcaValue self, std::string_view key, OwcaValue value);
 		OwcaValue call(OwcaValue func, std::span<OwcaValue> values);
@@ -102,7 +104,7 @@ namespace OwcaScript {
 		OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values) const;
 		OwcaSet create_set(const std::span<OwcaValue> &values) const;
 		OwcaString create_string(std::string_view) const;
-		
+
 		void run_gc();
 	};
 }

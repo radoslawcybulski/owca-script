@@ -18,6 +18,7 @@ namespace OwcaScript::Internal {
 
 		ei.code_writer.append(line, ExecuteOp::Function);
 		ei.code_writer.append(line, target->index);
+		ei.code_writer.append_identifier(line, name_);
 		ei.code_writer.append(line, name_);
 		ei.code_writer.append(line, full_name_);
 		ei.code_writer.append(line, native_ == Native::Yes);

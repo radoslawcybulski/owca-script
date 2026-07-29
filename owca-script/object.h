@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "allocation_base.h"
+#include "identifier_index.h"
 #include "owca_code.h"
 #include "line.h"
 
@@ -20,7 +21,7 @@ namespace OwcaScript {
 		struct Class : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::Class;
 
-			std::unordered_map<std::string, std::variant<Class*, RuntimeFunctions*>, StringHash, StringCmp> values;
+			std::unordered_map<IdentifierIndex, std::variant<Class*, RuntimeFunctions*>> values;
 			const std::string_view name, full_name;
 			OwcaCode code;
 			Line fileline;
@@ -28,8 +29,7 @@ namespace OwcaScript {
 			std::vector<Class*> base_classes;
 			std::vector<Class*> lookup_order;
 			std::vector<RuntimeFunction*> runtime_functions;
-			std::vector<std::string_view> runtime_variables;
-			std::unordered_map<std::string_view, Class*> member_names;
+			std::vector<IdentifierIndex> runtime_variables;
 			std::vector<std::tuple<UserClassTokenPtr, Class*, size_t, size_t>> native_storage_pointers;
 			std::shared_ptr<NativeClassInterface> native;
 			std::optional<UserClassTokenPtr> native_token;
@@ -46,7 +46,7 @@ namespace OwcaScript {
 			void initialize_set_native_class_info(UserClassTokenPtr token, size_t sz);
 			void initialize_add_base_class(OwcaClass b);
 			void initialize_add_function(OwcaFunctions f);
-			void initialize_add_variable(std::string_view name);
+			void initialize_add_variable(IdentifierIndex name);
 			void initialize_set_all_variables();
 			void finalize_initializing();
 			char* native_storage_ptr(Object *) const;
@@ -60,7 +60,7 @@ namespace OwcaScript {
 		struct Object : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::User;
 
-			std::unordered_map<std::string, OwcaValue, StringHash, StringCmp> values;
+			std::unordered_map<IdentifierIndex, OwcaValue> values;
 			Class* type_;
 
 			Object(Class* type);

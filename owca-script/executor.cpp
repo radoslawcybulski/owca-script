@@ -1,3 +1,5 @@
+#include "owca-script/identifier_index.h"
+#include "owca-script/owca_code.h"
 #include "owca-script/variable_index.h"
 #include "owca-script/owca_namespace.h"
 #include "owca-script/owca_value.h"
@@ -615,6 +617,7 @@ namespace OwcaScript::Internal {
     OwcaValue Executor::create_function(CodePosition &code_pos, const IdentifierPtrs &identifier_ptrs)
     {
         auto &code_object = stacktrace_current->runtime_function->code;
+        auto name_index = code_pos.decode<IdentifierIndex>();
         auto name = code_pos.decode<std::string_view>();
         auto full_name = code_pos.decode<std::string_view>();
         auto is_native = code_pos.decode<bool>();
@@ -632,7 +635,7 @@ namespace OwcaScript::Internal {
             auto &native_provider = code_object.native_code_provider();
             auto line = code_object.get_line_by_position(code_pos).line;
             if (is_generator) {
-                auto f = current_vm().allocate<RuntimeFunctionNativeGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name_index, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -645,7 +648,7 @@ namespace OwcaScript::Internal {
                 }
             }
             else {
-                auto f = current_vm().allocate<RuntimeFunctionNativeFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name, full_name, is_method, line);
+                auto f = current_vm().allocate<RuntimeFunctionNativeFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, name_index, name, full_name, is_method, line);
                 fnc = f;
                 f->parameter_names = std::move(identifier_names);
                 if (native_provider) {
@@ -672,10 +675,10 @@ namespace OwcaScript::Internal {
 
             RuntimeFunctionScript *f;
             if (is_generator) {
-                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name_index, name, full_name, is_method, entry_point);
             }
             else {
-                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name, full_name, is_method, entry_point);
+                f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name_index, name, full_name, is_method, entry_point);
             }
             fnc = f;
             f->identifier_names = std::move(identifier_names);
@@ -683,7 +686,7 @@ namespace OwcaScript::Internal {
         }
         fnc->param_count = param_count;
         fnc->max_values = value_count;
-        auto rfs = current_vm().allocate<RuntimeFunctions>(0, name, full_name);
+        auto rfs = current_vm().allocate<RuntimeFunctions>(0, name_index, name, full_name);
         rfs->functions[fnc->param_count] = fnc;
         return OwcaFunctions{ rfs };
     }
@@ -737,7 +740,7 @@ restart:
                     auto &code_object = stacktrace_current->runtime_function->code;
                     const auto line = code_object.get_line_by_position(code_pos - 1);
                     auto &dest = identifier_ptrs[code_pos.decode<VariableIndex>()];
-
+                    
                     auto name = code_pos.decode<std::string_view>();
                     auto full_name = code_pos.decode<std::string_view>();
                     auto native = code_pos.decode<bool>();
@@ -745,10 +748,10 @@ restart:
                     auto member_count = code_pos.decode<std::uint32_t>();
                     auto all_variable_names = code_pos.decode<bool>();
                     auto variable_name_count = code_pos.decode<std::uint32_t>();
-                    std::vector<std::string_view> variable_names;
+                    std::vector<IdentifierIndex> variable_names;
                     variable_names.reserve(variable_name_count);
                     for(auto i = 0u; i < variable_name_count; ++i) {
-                        variable_names.push_back(code_pos.decode<std::string_view>());
+                        variable_names.push_back(code_pos.decode<IdentifierIndex>());
                     }
                     std::vector<OwcaValue> base_classes;
                     base_classes.reserve(base_class_count);
@@ -883,13 +886,13 @@ restart:
                 case ExecuteOp::ExprMemberRead: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
-                    auto member = code_pos.decode<std::string_view>();
+                    auto member = code_pos.decode<IdentifierIndex>();
                     target = current_vm().member(self, member);
                     break; }
                 case ExecuteOp::ExprMemberWrite: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
-                    auto member = code_pos.decode<std::string_view>();
+                    auto member = code_pos.decode<IdentifierIndex>();
                     auto val_to_write = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     current_vm().member(self, member, val_to_write);
                     target = val_to_write;
@@ -939,7 +942,7 @@ restart:
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     if (self.kind() != OwcaValueKind::Iterator) {
-                        auto func = current_vm().try_member(self, "__iter__");
+                        auto func = current_vm().try_member(self, current_vm().get_ii_iter());
                         if (!func) {
                             throw_not_iterable(self.type());
                         }
@@ -1382,7 +1385,7 @@ restart:
             }
         }
 
-        assert(function->copy_from_parents.size() == function->values_from_parents.size());
+        //assert(function->copy_from_parents.size() == function->values_from_parents.size());
 
         auto est = StackTraceState{ *this, function, function->entry_point };
         auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, function->entry_point);
@@ -1445,7 +1448,7 @@ restart:
             }
 		}
 
-		auto it = cls->values.find(std::string_view{ "__init__" });
+		auto it = cls->values.find(current_vm().get_ii_init());
 		if (it == cls->values.end()) {
 			if (arg_count > 1) {
 				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} parameters", cls->full_name, arg_count - 1));
@@ -1495,61 +1498,35 @@ restart:
     }
 
 
-	OwcaNamespace Executor::execute_code_block(OwcaCode oc)
+	OwcaNamespace Executor::execute_code_block(const OwcaCodeBuffer &oc_buffer, std::shared_ptr<NativeCodeProvider> native_code_provider)
 	{
-        auto it = namespaces.find(oc.filename());
+        auto it = namespaces.find(oc_buffer.filename());
         if (it != namespaces.end()) {
             return OwcaNamespace{ it->second };
         }
 
 #ifdef OWCA_SCRIPT_EXEC_LOG
-        std::cout << "Executing code block from file " << oc.filename() << std::endl;
+        std::cout << "Executing code block from file " << oc_buffer.filename() << std::endl;
 #endif
-        auto code_pos = oc.code_position();
-
-        auto global_count = code_pos.decode<std::uint32_t>();
-        auto max_values_count = code_pos.decode<std::uint32_t>();
-        auto locals_ptr = current_unused_locals_ptr;
-        auto tpk = TopPtrsKeeper{ *this, max_values_count };
-        std::unordered_map<std::string_view, size_t> identifier_to_global_index;
-        for(auto i = 0u; i < global_count; ++i) {
-            auto ident = code_pos.decode<std::string_view>();
-            identifier_to_global_index[ident] = i;
-        }
-        std::vector<OwcaValue> constants_vector;
-        auto constants_strings = code_pos.decode<std::uint32_t>();
-        auto constants_numbers = code_pos.decode<std::uint32_t>();
-        constants_vector.reserve(3 + constants_strings + constants_numbers);
-        constants_vector.push_back(OwcaEmpty{});
-        constants_vector.push_back(true);
-        constants_vector.push_back(false);
-        for(auto i = 0u; i < constants_strings; ++i) {
-            auto str = code_pos.decode<std::string_view>();
-            constants_vector.push_back(current_vm().create_string_from_view(str));
-        }
-        for(auto i = 0u; i < constants_numbers; ++i) {
-            auto num = code_pos.decode<Number>();
-            constants_vector.push_back(num);
-        }
-
-        auto ns = current_vm().create_namespace(std::move(oc), std::move(identifier_to_global_index));
-        ns.internal_value()->constants = std::move(constants_vector);
-        ns.internal_value()->string_constants_count = constants_strings;
-
+        auto oc = Internal::OwcaCode{ current_vm(), oc_buffer, std::move(native_code_provider) };
+        auto ns = current_vm().create_namespace(std::move(oc));
         namespaces.insert({ ns.internal_value()->code.filename(), ns});
         if (namespaces.size() > 1) {
             auto ns_it = namespaces.at(current_vm().builtin_filename);
-            for(auto it : ns_it.internal_value()->identifier_to_global_index) {
+            for(auto it : ns_it.internal_value()->code.identifier_to_global_index()) {
                 auto val = ns_it.internal_value()->globals[it.second];
                 ns.try_member(it.first, val);
             }
         }
 
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
+        auto tpk = TopPtrsKeeper{ *this, ns.internal_value()->code.max_values_count() };
+        auto locals_ptr = tpk.current_unused_locals_ptr;
 
-        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, ns, globals_ptr, std::string_view("main-code-block"), std::string_view("main-code-block"), false, code_pos);
+        auto mcb_index = current_vm().get_identifier_index("main-code-block");
+        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, ns, globals_ptr, mcb_index, std::string_view("main-code-block"), std::string_view("main-code-block"), false, ns.internal_value()->code.code_position());
         auto est = StackTraceState{ *this, function, function->entry_point };
-        run_opcodes(locals_ptr, code_pos);
+        run_opcodes(locals_ptr, ns.internal_value()->code.code_position());
         return ns;
     }
 

@@ -7,7 +7,7 @@
 #include "runtime_function.h"
 
 namespace OwcaScript::Internal {
-	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool all_variable_names, bool native) : 
+	AstClass::AstClass(Line line, std::string_view name, std::string full_name, std::vector<std::unique_ptr<AstExpr>> base_classes, std::vector<std::unique_ptr<AstFunction>> members, std::vector<std::string> variable_names, bool all_variable_names, bool native) :
 		AstExpr(line), base_classes_(std::move(base_classes)), members_(std::move(members)), variable_names_(std::move(variable_names)), name_(std::string{name}), full_name_(std::move(full_name)), all_variable_names_(all_variable_names), native_(native) {
 			assert(this->variable_names_.empty() || native_);
 		}
@@ -32,7 +32,7 @@ namespace OwcaScript::Internal {
 		if (!all_variable_names_) {
 			ei.code_writer.append(line, (std::uint32_t)variable_names_.size());
 			for (auto &q : variable_names_) {
-				ei.code_writer.append(line, q);
+				ei.code_writer.append_identifier(line, q);
 			}
 		}
 

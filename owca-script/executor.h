@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace OwcaScript {
-	class OwcaCode;
 	class OwcaVariable;
 
 	namespace Internal {
@@ -236,7 +235,7 @@ namespace OwcaScript {
 			std::span<const OwcaValue> values_vector_span() const { return std::span{ values_vector.data(), values_vector.size() }; };
 
 			auto get_current_unused_locals_ptr() const { return current_unused_locals_ptr; }
-			OwcaNamespace execute_code_block(OwcaCode oc);
+			OwcaNamespace execute_code_block(const OwcaCodeBuffer &oc, std::shared_ptr<NativeCodeProvider> native_code_provider);
             OwcaValue execute_function_call_from_values(unsigned int arg_count);
 			OwcaValue allocate_user_class_from_values(unsigned int arg_count);
 			Generator run_script_generator(Iterator *iter_object, RuntimeFunctionScriptGenerator *function, std::vector<OwcaValue> values_vec, CodePosition code_pos);

@@ -23,9 +23,11 @@ TEST_F(BufferTest, ints)
     tmp.append({}, (std::uint64_t)8);
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-
-    auto code_pos = code.code_position();
+#ifdef DEBUG
+    auto code_pos = Internal::CodePosition(buf.data(), deb);
+#else
+    auto code_pos = Internal::CodePosition(buf.data());
+#endif
     ASSERT_EQ(code_pos.decode<std::int8_t>(), 1);
     ASSERT_EQ(code_pos.decode<std::int16_t>(), 2);
     ASSERT_EQ(code_pos.decode<std::int32_t>(), 3);
@@ -46,8 +48,11 @@ TEST_F(BufferTest, floats)
     tmp.append({}, (double)2.2);
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto code_pos = code.code_position();
+    #ifdef DEBUG
+        auto code_pos = Internal::CodePosition(buf.data(), deb);
+    #else
+        auto code_pos = Internal::CodePosition(buf.data());
+    #endif
     ASSERT_EQ(code_pos.decode<float>(), 1.1f);
     ASSERT_EQ(code_pos.decode<double>(), 2.2);
 }
@@ -59,8 +64,11 @@ TEST_F(BufferTest, string)
     tmp.append({}, "qwerty");
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto code_pos = code.code_position();
+    #ifdef DEBUG
+        auto code_pos = Internal::CodePosition(buf.data(), deb);
+    #else
+        auto code_pos = Internal::CodePosition(buf.data());
+    #endif
 
     ASSERT_EQ(code_pos.decode<std::string_view>(), "qwerty");
 }
@@ -73,10 +81,13 @@ TEST_F(BufferTest, invalid_opcode1)
     tmp.append({}, (float)1.1);
 
     auto [ buf, deb, lines ] = std::move(tmp).take();
-    OwcaCode code{ "filename", std::move(buf), std::move(deb), std::move(lines), nullptr, {} };
-    auto code_pos = code.code_position();
+    #ifdef DEBUG
+        auto code_pos = Internal::CodePosition(buf.data(), deb);
+    #else
+        auto code_pos = Internal::CodePosition(buf.data());
+    #endif
 
-    ASSERT_THROW(code_pos.decode<Internal::ExecuteOp>(), std::runtime_error);    
+    ASSERT_THROW(code_pos.decode<Internal::ExecuteOp>(), std::runtime_error);
 }
 
 // TEST_F(BufferTest, invalid_opcode2)
@@ -90,7 +101,7 @@ TEST_F(BufferTest, invalid_opcode1)
 //     auto code_start = Internal::StartOfCode{ };
 //     auto code_pos = Internal::ExecuteBufferReader::Position{ code.code().data() };
 
-//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
+//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint8_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);
 // }
 
 // TEST_F(BufferTest, invalid_opcode3)
@@ -104,7 +115,7 @@ TEST_F(BufferTest, invalid_opcode1)
 //     auto code_start = Internal::StartOfCode{ };
 //     auto code_pos = Internal::ExecuteBufferReader::Position{ code.code().data() };
 
-//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
+//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<Internal::ExecuteBufferReader::Op>(code_start, code_pos, code.data_kinds()), std::runtime_error);
 // }
 
 // TEST_F(BufferTest, invalid_opcode4)
@@ -118,6 +129,6 @@ TEST_F(BufferTest, invalid_opcode1)
 //     auto code_start = Internal::StartOfCode{ };
 //     auto code_pos = Internal::ExecuteBufferReader::Position{ code.code().data() };
 
-//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);    
+//     ASSERT_THROW(Internal::ExecuteBufferReader::decode<std::uint32_t>(code_start, code_pos, code.data_kinds()), std::runtime_error);
 // }
 #endif

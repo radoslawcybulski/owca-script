@@ -1,12 +1,14 @@
 #ifndef RC_OWCA_SCRIPT_OWCA_NAMESPACE_H
 #define RC_OWCA_SCRIPT_OWCA_NAMESPACE_H
 
+#include "identifier_index.h"
 #include "stdafx.h"
 #include "tokens.h"
 
 namespace OwcaScript {
 	class OwcaValue;
 	class OwcaVM;
+	class IdentifierIndex;
 
 	namespace Internal {
 		struct Namespace;
@@ -18,7 +20,7 @@ namespace OwcaScript {
 		explicit OwcaNamespace(Internal::Namespace* object) : object(object) {}
 
 		auto internal_value() const { return object; }
-		
+
 		std::string to_string() const;
 		std::string_view type() const;
 
@@ -27,13 +29,18 @@ namespace OwcaScript {
 		void member(std::string_view key, OwcaValue);
         bool try_member(std::string_view key, OwcaValue);
 
+        OwcaValue member(IdentifierIndex key) const;
+		std::optional<OwcaValue> try_member(IdentifierIndex key) const;
+		void member(IdentifierIndex key, OwcaValue);
+        bool try_member(IdentifierIndex key, OwcaValue);
+
         bool operator == (OwcaNamespace other) const { return object == other.object; }
         bool operator != (OwcaNamespace other) const { return !(*this == other); }
         bool is(OwcaNamespace other) const { return object == other.object; }
 
 		class Iterator {
 		public:
-			using value_type = std::pair<std::string_view, OwcaValue&>;
+			using value_type = std::pair<IdentifierIndex, OwcaValue&>;
 			class Pointer {
 				value_type val;
 			public:
@@ -46,7 +53,7 @@ namespace OwcaScript {
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::forward_iterator_tag;
 
-			Iterator(Internal::Namespace *nspace, std::unordered_map<std::string_view, size_t>::iterator it);
+			Iterator(Internal::Namespace *nspace, std::unordered_map<IdentifierIndex, size_t>::const_iterator it);
 
 			reference operator*() const;
 			pointer operator->();
@@ -64,7 +71,7 @@ namespace OwcaScript {
 
 		private:
 			Internal::Namespace *nspace;
-			std::unordered_map<std::string_view, size_t>::iterator it;
+			std::unordered_map<IdentifierIndex, size_t>::const_iterator it;
 		};
 
         Iterator begin() const;

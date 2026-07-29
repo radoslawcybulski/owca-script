@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "object.h"
 #include "vm.h"
@@ -29,7 +30,7 @@ namespace OwcaScript::Internal {
 	}
 
 	std::string Class::to_string() const
-	{ 
+	{
 		std::string tmp = "class ";
 		tmp += full_name;
 		return tmp;
@@ -69,7 +70,7 @@ namespace OwcaScript::Internal {
 	{
 		base_classes.push_back(b.internal_value());
 	}
-	void Class::initialize_add_variable(std::string_view name) {
+	void Class::initialize_add_variable(IdentifierIndex name) {
 		runtime_variables.push_back(name);
 	}
 	void Class::initialize_set_all_variables() {
@@ -126,18 +127,16 @@ namespace OwcaScript::Internal {
 		fill_lookup_order(this);
 		for (auto i = lookup_order.size(); i > 0; --i) {
 			for (auto f : lookup_order[i - 1]->runtime_functions) {
-				auto name = f->name;
-
-				auto it = values.insert({ std::string{ name }, {} });
+				auto it = values.insert({ f->name_index, {} });
 				if (it.second || std::get_if<RuntimeFunctions*>(&it.first->second) == nullptr) {
-					auto rf = Internal::current_vm().allocate<RuntimeFunctions>(0, name, f->full_name);
+					auto rf = Internal::current_vm().allocate<RuntimeFunctions>(0, f->name_index, f->name, f->full_name);
 					it.first->second = rf;
 				}
 				auto &dst_fnc = std::get<RuntimeFunctions*>(it.first->second);
 				dst_fnc->functions[f->param_count] = f;
 			}
 			for (auto name: lookup_order[i - 1]->runtime_variables) {
-				auto it = values.insert({ std::string{ name }, {} });
+				auto it = values.insert({ name, {} });
 				it.first->second = lookup_order[i - 1];
 			}
 		}

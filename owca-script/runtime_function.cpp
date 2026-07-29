@@ -62,7 +62,7 @@ namespace OwcaScript::Internal {
             values_vec[i] = locals_ptr[i];
         }
 
-        assert(copy_from_parents.size() == values_from_parents.size());
+        //assert(copy_from_parents.size() == values_from_parents.size());
 
         auto values_span = std::span{ values_vec.data(), values_vec.size() };
         auto iter = Internal::current_vm().allocate<Iterator>(0, this, values_span);

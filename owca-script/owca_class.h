@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "native_class_interface.h"
 #include "garbage.h"
+#include "identifier_index.h"
 
 namespace OwcaScript {
 	class OwcaValue;
@@ -25,7 +26,8 @@ namespace OwcaScript {
 		std::string to_string() const;
 		std::string_view type() const { return "class"; }
 		bool has_base_class(OwcaClass base) const;
-		OwcaValue operator [] (const std::string &key) const;
+		OwcaValue operator [] (std::string_view key) const;
+		OwcaValue operator [] (IdentifierIndex key) const;
 		bool is(OwcaClass other) const { return object == other.object; }
 
 		bool operator == (OwcaClass other) const { return object == other.object; }

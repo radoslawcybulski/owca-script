@@ -1,3 +1,4 @@
+#include "owca-script/identifier_index.h"
 #include "test.h"
 
 using namespace OwcaScript;
@@ -79,8 +80,8 @@ function native foo(a, b);
 function r() {
     return foo(1, 2);
 }
-)", std::make_shared<Provider>());
-	auto val = vm.execute(code).member("r").call();;
+)");
+	auto val = vm.execute(code, std::make_shared<Provider>()).member("r").call();;
 	ASSERT_EQ(val.as_float(), 3);
 }
 TEST_F(SimpleTest, external_vars)
@@ -144,8 +145,8 @@ class native A {
 function r(q, b, c) {
     return A(q, b, c);
 }
-)", std::make_shared<Provider>());
-	auto val = vm.execute(code).member("r").call(1, 2, 3);
+)");
+	auto val = vm.execute(code, std::make_shared<Provider>()).member("r").call(1, 2, 3);
 	auto val2 = val.member("value");
 	ASSERT_EQ(val2.as_float(), 6);
 }
@@ -204,8 +205,8 @@ TEST_F(SimpleTest, native_class_with_funcs)
 	function r(q, b, c) {
 		return A(q, b, c);
 	}
-	)", std::make_shared<Provider>());
-		auto val = vm.execute(code).member("r").call(1, 2, 3);
+	)");
+		auto val = vm.execute(code, std::make_shared<Provider>()).member("r").call(1, 2, 3);
 		auto val2 = val.member("get_value").call();
 		ASSERT_EQ(val2.as_float(), 6);
 	}
@@ -241,8 +242,8 @@ TEST_F(SimpleTest, native_class_with_vars)
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
-					if (name == "value") {
+				bool get_member(IdentifierIndex name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == OwcaVM::get_identifier_index("value")) {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
 						val = v;
@@ -250,8 +251,8 @@ TEST_F(SimpleTest, native_class_with_vars)
 					}
 					return false;
 				}
-				bool set_member(std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
-					if (name == "value") {
+				bool set_member(IdentifierIndex name, std::span<char> native_storage, const OwcaValue &val) override {
+					if (name == OwcaVM::get_identifier_index("value")) {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int();
 						return true;
@@ -276,8 +277,8 @@ TEST_F(SimpleTest, native_class_with_vars)
 	function r(q, b, c) {
 		return A(q, b, c);
 	}
-	)", std::make_shared<Provider>(reads, writes));
-		auto val = vm.execute(code).member("r").call(1, 2, 3);
+	)");
+		auto val = vm.execute(code, std::make_shared<Provider>(reads, writes)).member("r").call(1, 2, 3);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
 
@@ -318,8 +319,8 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
-					if (name == "value") {
+				bool get_member(IdentifierIndex name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == OwcaVM::get_identifier_index("value")) {
 						++reads;
 						auto v = *(std::uint64_t*)native_storage.data();
 						val = v;
@@ -327,8 +328,8 @@ TEST_F(SimpleTest, get_set_member_and_exec)
 					}
 					return false;
 				}
-				bool set_member(std::string_view name, std::span<char> native_storage, const OwcaValue &val) override {
-					if (name == "value") {
+				bool set_member(IdentifierIndex name, std::span<char> native_storage, const OwcaValue &val) override {
+					if (name == OwcaVM::get_identifier_index("value")) {
 						++writes;
 						*(std::uint64_t*)native_storage.data() = (std::uint64_t)val.as_int();
 						return true;
@@ -354,11 +355,11 @@ class native A {
 function r() {
 	return A();
 }
-	)", std::make_shared<Provider>(reads, writes));
-		auto object = vm.execute(code).member("r").call();
+	)");
+		auto object = vm.execute(code, std::make_shared<Provider>(reads, writes)).member("r").call();
 		ASSERT_EQ(writes, 0);
 		ASSERT_EQ(reads, 0);
-		
+
 		vm.set_member(object, "value", 6);
 		ASSERT_EQ(writes, 1);
 		ASSERT_EQ(reads, 0);
@@ -424,8 +425,8 @@ TEST_F(SimpleTest, variable_missing)
 				size_t native_storage_size() override {
 					return sizeof(std::uint64_t);
 				}
-				bool get_member(std::string_view name, std::span<char> native_storage, OwcaValue &val) override {
-					if (name == "value") return true;
+				bool get_member(IdentifierIndex name, std::span<char> native_storage, OwcaValue &val) override {
+					if (name == OwcaVM::get_identifier_index("value")) return true;
 					return false;
 				}
 			};
@@ -445,8 +446,8 @@ TEST_F(SimpleTest, variable_missing)
 	function r() {
 		return A();
 	}
-	)", std::make_shared<Provider>());
-		object = vm.execute(code).member("r").call();;
+	)");
+		object = vm.execute(code, std::make_shared<Provider>()).member("r").call();;
 	}
 	catch(std::exception &e) {
 		std::cerr << "Exception: " << e.what() << "\n";
@@ -487,4 +488,3 @@ function r() {
 	auto val = vm.execute(code).member("r").call();;
 	ASSERT_EQ(val.as_int(), 15);
 }
-

@@ -9,7 +9,7 @@
 #include "owca_vm.h"
 
 namespace OwcaScript {
-	class OwcaCode;
+	class OwcaCodeBuffer;
 
 	namespace Internal {
 		class AstFunction;
@@ -26,7 +26,6 @@ namespace OwcaScript {
 			Line content_line = Line{ 1 };
 			std::vector<OwcaErrorMessage> error_messages_;
 			std::vector<AstFunction*> functions_stack;
-			std::shared_ptr<NativeCodeProvider> native_code_provider;
 			std::unordered_map<std::string_view, std::pair<Line, unsigned int>> loop_control_identifiers;
 			unsigned int loop_control_depth = 0;
 			VM &vm;
@@ -152,8 +151,8 @@ namespace OwcaScript {
 			struct RewriteAsWrite;
 			std::vector<std::string> compile_phase_2(const std::vector<std::unique_ptr<AstStat>> &);
 		public:
-			AstCompiler(VM &vm, std::string filename_, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line) : 
-						filename_(std::move(filename_)), content(std::move(content)), native_code_provider(std::move(native_code_provider)), vm(vm) 
+			AstCompiler(VM &vm, std::string filename_, std::string content, size_t first_line) :
+						filename_(std::move(filename_)), content(std::move(content)), vm(vm)
 			{
 				content_line = Line{ (unsigned int)first_line };
 			}
@@ -162,7 +161,7 @@ namespace OwcaScript {
 			[[noreturn]] void add_error_and_throw(OwcaErrorKind kind_, std::string file_, Line line_, std::string message_);
 
 			const auto& filename() const { return filename_; }
-			std::optional<OwcaCode> compile(std::vector<std::string> additional_variables = {});
+			std::optional<OwcaCodeBuffer> compile(std::vector<std::string> additional_variables = {});
 			auto take_error_messages() const { return std::move(error_messages_); }
 			auto &get_vm() { return vm; }
 		};

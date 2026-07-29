@@ -17,6 +17,14 @@ namespace OwcaScript {
                 return line == o.line;
             }
 		};
+		struct LineEntry {
+            std::uint32_t code_pos;
+            std::uint32_t line;
+
+            bool operator <(const LineEntry &other) const {
+                return code_pos < other.code_pos;
+            }
+        };
 	}
 }
 
@@ -27,7 +35,7 @@ namespace std {
         template <typename FormatContext>
         auto format(OwcaScript::Internal::Line v, FormatContext& ctx) const
         {
-            return format_to(ctx.out(), "{}", v.line);  
+            return format_to(ctx.out(), "{}", v.line);
         }
         template<class ParseContext>
         constexpr ParseContext::iterator parse(ParseContext& ctx)

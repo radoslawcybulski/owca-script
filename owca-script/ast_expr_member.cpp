@@ -15,14 +15,14 @@ namespace OwcaScript::Internal {
 			ei.code_writer.append(line, ExecuteOp::ExprMemberWrite);
 			ei.code_writer.append(line, target->index);
 			ei.code_writer.append(line, self.index);
-			ei.code_writer.append(line, member_);
+			ei.code_writer.append_identifier(line, member_);
 			ei.code_writer.append(line, val.index);
 		}
 		else {
 			ei.code_writer.append(line, ExecuteOp::ExprMemberRead);
 			ei.code_writer.append(line, target->index);
 			ei.code_writer.append(line, self.index);
-			ei.code_writer.append(line, member_);
+			ei.code_writer.append_identifier(line, member_);
 		}
 		return std::move(*target);
 	}

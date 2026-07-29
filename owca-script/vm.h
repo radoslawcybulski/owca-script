@@ -8,12 +8,12 @@
 #include "owca_value.h"
 #include "owca_namespace.h"
 #include "owca_code.h"
+#include "identifier_index.h"
+#include <string_view>
 #include <unordered_map>
-#include <vector>
 
 namespace OwcaScript {
 	class OwcaValue;
-	class OwcaCode;
 	class OwcaVariable;
 
 	namespace Internal {
@@ -62,6 +62,10 @@ namespace OwcaScript {
 
 			std::list<OwcaValue> temp_gc_protect_list;
 			std::vector<std::string_view> builtin_identifiers;
+			std::unordered_map<std::string, IdentifierIndex, StringHash, StringCmp> identifier_index_map;
+			std::vector<std::string> identifier_name_vector;
+			IdentifierIndex ii_init = IdentifierIndex{ 0 };
+			IdentifierIndex ii_iter = IdentifierIndex{ 0 };
 
 			void initialize_builtins();
 
@@ -69,6 +73,8 @@ namespace OwcaScript {
 		public:
 			static constexpr const std::string builtin_filename = "<builtin>";
 
+			auto get_ii_init() const { return ii_init; }
+			auto get_ii_iter() const { return ii_iter; }
             auto &get_executor() { return *executor; }
 			VM();
 			~VM();
@@ -125,10 +131,15 @@ namespace OwcaScript {
 			[[noreturn]] void throw_not_implemented(std::string_view msg);
 			[[noreturn]] void throw_dictionary_changed(bool is_dict);
 
-			OwcaCode compile(std::string filename, std::string content, std::shared_ptr<NativeCodeProvider> native_code_provider, size_t first_line = 1);
+			OwcaCodeBuffer compile(std::string filename, std::string content, size_t first_line = 1);
+
+			IdentifierIndex get_identifier_index(std::string name);
+			IdentifierIndex get_identifier_index(std::string_view name);
+			IdentifierIndex get_identifier_index(const char *name) { return get_identifier_index(std::string_view{ name }); }
+			std::string_view get_identifier_name(IdentifierIndex index) const;
 
 			auto get_builtin_identifiers() const { return builtin_identifiers; }
-			OwcaNamespace execute_code_block(const OwcaCode&);
+			OwcaNamespace execute_code_block(const OwcaCodeBuffer&, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);
 			std::optional<OwcaValue> resume_generator(OwcaIterator oi);
 			OwcaArray create_array(std::deque<OwcaValue> arguments);
@@ -144,16 +155,21 @@ namespace OwcaScript {
 			OwcaMap create_map(const std::span<std::pair<OwcaValue, OwcaValue>> &values);
 			OwcaMap create_map(const std::span<std::pair<std::string, OwcaValue>> &values);
 			OwcaSet create_set(const std::span<OwcaValue> &arguments);
-			OwcaNamespace create_namespace(OwcaCode code, std::unordered_map<std::string_view, size_t> identifier_to_global_index);
+			OwcaNamespace create_namespace(OwcaCode code);
 			OwcaString create_string_from_view(std::string_view txt);
 			OwcaString create_string(OwcaString str, size_t start, size_t end);
 			OwcaString create_string(OwcaString str, size_t count);
 			OwcaString create_string(OwcaString left, OwcaString right);
 			String *precreate_string(size_t size);
 			std::pair<OwcaValue, OwcaValue> unpack_two_elements_or_raise(OwcaValue val);
+
+			OwcaValue member(OwcaValue val, IdentifierIndex key);
+			std::optional<OwcaValue> try_member(OwcaValue val, IdentifierIndex key);
+			void member(OwcaValue val, IdentifierIndex key, OwcaValue);
 			OwcaValue member(OwcaValue val, std::string_view key);
 			std::optional<OwcaValue> try_member(OwcaValue val, std::string_view key);
 			void member(OwcaValue val, std::string_view key, OwcaValue);
+
 			Exception *is_exception(OwcaObject obj) const;
 
 			bool compare_values(OwcaValue left, OwcaValue right, CompareKind kind);
