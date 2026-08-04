@@ -12,7 +12,11 @@ namespace OwcaScript::Internal {
 		}
 		if (value_to_write_) {
 			auto val = value_to_write_->emit(ei);
-			ei.code_writer.append(line, ExecuteOp::ExprMemberWrite);
+			auto oper = ExecuteOp::ExprMemberWrite;
+			if (self_assign_kind_ != SelfAssignKind::None) {
+				oper = (ExecuteOp)((std::uint8_t)self_assign_kind_ - 1 + (std::uint8_t)ExecuteOp::ExprOper2MemberFirst);
+			}
+			ei.code_writer.append(line, oper);
 			ei.code_writer.append(line, target->index);
 			ei.code_writer.append(line, self.index);
 			ei.code_writer.append_identifier(line, member_);

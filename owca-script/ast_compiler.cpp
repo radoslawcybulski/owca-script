@@ -692,7 +692,6 @@ namespace OwcaScript::Internal {
 	struct AstCompiler::RewriteAsWrite : public AstVisitor {
 		AstCompiler* compiler;
 		std::unique_ptr<AstExpr> right;
-		std::unique_ptr<AstExpr> res;
 		SelfAssignKind self_assign_kind = SelfAssignKind::None;
 
 		RewriteAsWrite(AstCompiler* compiler, std::unique_ptr<AstExpr> right, std::string_view token) : compiler(compiler), right(std::move(right)) {
@@ -759,7 +758,6 @@ namespace OwcaScript::Internal {
 			auto right = compile_expression();
 			auto vis = RewriteAsWrite{ this, std::move(right), t };
 			left->visit(vis);
-			if (vis.res) left = std::move(vis.res);
 		}
 		return left;
 	}

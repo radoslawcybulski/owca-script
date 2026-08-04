@@ -897,6 +897,26 @@ restart:
                     current_vm().member(self, member, val_to_write);
                     target = val_to_write;
                     break; }
+                case ExecuteOp::ExprOper2MemberAdd:
+                case ExecuteOp::ExprOper2MemberSub:
+                case ExecuteOp::ExprOper2MemberMul:
+                case ExecuteOp::ExprOper2MemberDiv:
+                case ExecuteOp::ExprOper2MemberMod:
+                case ExecuteOp::ExprOper2MemberBinOr:
+                case ExecuteOp::ExprOper2MemberBinAnd:
+                case ExecuteOp::ExprOper2MemberBinXor:
+                case ExecuteOp::ExprOper2MemberBinLShift:
+                case ExecuteOp::ExprOper2MemberBinRShift: {
+                    auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2MemberFirst);
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto member = code_pos.decode<IdentifierIndex>();
+                    auto right = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto left = current_vm().member(self, member);
+                    auto v = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
+                    current_vm().member(self, member, v);
+                    target = v;
+                    break; }
                 case ExecuteOp::ExprOper1BinNeg: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
