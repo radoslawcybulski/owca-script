@@ -96,6 +96,13 @@ namespace OwcaScript {
 
 			virtual TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target = std::nullopt) = 0;
 		};
+
+		// orders of those must match order of operators in ExecuteOp
+		enum class SelfAssignKind {
+			None,
+			Add, Sub, Mul, Div, Mod,
+			BinOr, BinAnd, BinXor, BinLShift, BinRShift,
+		};
 	}
 }
 

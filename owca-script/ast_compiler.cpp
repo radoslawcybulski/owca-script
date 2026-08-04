@@ -33,8 +33,12 @@ namespace OwcaScript::Internal {
 	static std::unordered_set<std::string_view> keywords = { {
 		"true", "false", "nul", "if", "else", "elif", "for", "while", "return", "function", "class", "throw", "try", "catch", "and", "or", "not", "with"
 	} };
+	static std::string_view Operators2_3[] = {
+			"<<=", ">>=",
+	};
 	static std::string_view Operators2_2[] = {
-			">=", "<=", "=>", "==", "!="
+			">=", "<=", "=>", "==", "!=",
+			"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<", ">>",
 	};
 	static std::string_view Operators2_1 = {
 			"+-*/%&|^='\";[](){}<>:,."
@@ -116,6 +120,14 @@ namespace OwcaScript::Internal {
 	{
 		auto start = content_offset;
 		auto c = content[content_offset];
+		auto o3 = std::string_view{ content }.substr(start, 3);
+		for (auto q : Operators2_3) {
+			if (q == o3) {
+				content_offset += o3.size();
+				return o3;
+			}
+		}
+
 		auto o2 = std::string_view{ content }.substr(start, 2);
 		for (auto q : Operators2_2) {
 			if (q == o2) {
@@ -681,21 +693,40 @@ namespace OwcaScript::Internal {
 		AstCompiler* compiler;
 		std::unique_ptr<AstExpr> right;
 		std::unique_ptr<AstExpr> res;
+		SelfAssignKind self_assign_kind = SelfAssignKind::None;
 
-		RewriteAsWrite(AstCompiler* compiler, std::unique_ptr<AstExpr> right) : compiler(compiler), right(std::move(right)) {}
+		RewriteAsWrite(AstCompiler* compiler, std::unique_ptr<AstExpr> right, std::string_view token) : compiler(compiler), right(std::move(right)) {
+			if (token == "=") self_assign_kind = SelfAssignKind::None;
+			else if (token == "+=") self_assign_kind = SelfAssignKind::Add;
+			else if (token == "-=") self_assign_kind = SelfAssignKind::Sub;
+			else if (token == "*=") self_assign_kind = SelfAssignKind::Mul;
+			else if (token == "/=") self_assign_kind = SelfAssignKind::Div;
+			else if (token == "%=") self_assign_kind = SelfAssignKind::Mod;
+			else if (token == "&=") self_assign_kind = SelfAssignKind::BinAnd;
+			else if (token == "|=") self_assign_kind = SelfAssignKind::BinOr;
+			else if (token == "^=") self_assign_kind = SelfAssignKind::BinXor;
+			else if (token == "<<=") self_assign_kind = SelfAssignKind::BinLShift;
+			else if (token == ">>=") self_assign_kind = SelfAssignKind::BinRShift;
+			else {
+				assert(false);
+			}
+		}
 
 		void apply(AstBase &o) override {
 			compiler->add_error_and_throw(OwcaErrorKind::NotALValue, compiler->filename_, o.line, std::format("not a l-value"));
 		}
 		void apply(AstExprIdentifier &o) override {
 			o.update_value_to_write(std::move(right));
+			o.update_self_assign_kind(self_assign_kind);
 		}
 		void apply(AstExprMember &o) override {
 			o.update_value_to_write(std::move(right));
+			o.update_self_assign_kind(self_assign_kind);
 		}
 		void apply(AstExprOper2 &o) override {
 			if (o.kind() == AstExprOper2::Kind::IndexRead) {
 				o.update_value_to_write(AstExprOper2::Kind::IndexWrite, std::move(right));
+				o.update_self_assign_kind(self_assign_kind);
 			}
 			else {
 				apply(static_cast<AstExpr&>(o));
@@ -706,10 +737,27 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstExpr> AstCompiler::compile_expression()
 	{
 		auto left = compile_expression_no_assign();
-		if (preview().second == "=") {
+		auto t = preview().second;
+
+		if (t == "=" || t == "+=" || t == "-=" || t == "*=" || t == "/=" || t == "%=" || t == "&=" || t == "|=" || t == "^=" || t == "<<=" || t == ">>=") {
 			auto [ line, tok ] = consume();
+			SelfAssignKind self_assign_kind = SelfAssignKind::None;
+			if (t == "=") self_assign_kind = SelfAssignKind::None;
+			else if (t == "+=") self_assign_kind = SelfAssignKind::Add;
+			else if (t == "-=") self_assign_kind = SelfAssignKind::Sub;
+			else if (t == "*=") self_assign_kind = SelfAssignKind::Mul;
+			else if (t == "/=") self_assign_kind = SelfAssignKind::Div;
+			else if (t == "%=") self_assign_kind = SelfAssignKind::Mod;
+			else if (t == "&=") self_assign_kind = SelfAssignKind::BinAnd;
+			else if (t == "|=") self_assign_kind = SelfAssignKind::BinOr;
+			else if (t == "^=") self_assign_kind = SelfAssignKind::BinXor;
+			else if (t == "<<=") self_assign_kind = SelfAssignKind::BinLShift;
+			else if (t == ">>=") self_assign_kind = SelfAssignKind::BinRShift;
+			else {
+				assert(false);
+			}
 			auto right = compile_expression();
-			auto vis = RewriteAsWrite{ this, std::move(right) };
+			auto vis = RewriteAsWrite{ this, std::move(right), t };
 			left->visit(vis);
 			if (vis.res) left = std::move(vis.res);
 		}

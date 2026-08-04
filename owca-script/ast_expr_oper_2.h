@@ -19,6 +19,7 @@ namespace OwcaScript {
 		private:
 			std::unique_ptr<AstExpr> left_, right_, third_;
 			Kind kind_;
+			SelfAssignKind self_assign_kind_ = SelfAssignKind::None;
 
 		public:
 			AstExprOper2(Line line, Kind kind, std::unique_ptr<AstExpr> left, std::unique_ptr<AstExpr> right, std::unique_ptr<AstExpr> third = nullptr) : AstExpr (line), left_(std::move(left)), right_(std::move(right)), third_(std::move(third)), kind_(kind) {}
@@ -29,6 +30,7 @@ namespace OwcaScript {
 			auto &third() { return *third_; }
 			bool has_third() const { return third_ != nullptr; }
 			void update_value_to_write(Kind new_kind, std::unique_ptr<AstExpr> third);
+			void update_self_assign_kind(SelfAssignKind kind) { self_assign_kind_ = kind; }
 			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
 
 			void visit(AstVisitor&) override;

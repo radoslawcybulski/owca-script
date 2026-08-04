@@ -11,6 +11,7 @@ namespace OwcaScript {
 			std::string member_;
 			std::unique_ptr<AstExpr> value_;
 			std::unique_ptr<AstExpr> value_to_write_ = nullptr;
+			SelfAssignKind self_assign_kind_ = SelfAssignKind::None;
 
 		public:
 			AstExprMember(Line line, std::unique_ptr<AstExpr> value, std::string member, std::unique_ptr<AstExpr> value_to_write = nullptr) : AstExpr (line), member_(std::move(member)), value_(std::move(value)), value_to_write_(std::move(value_to_write)) {}
@@ -26,6 +27,7 @@ namespace OwcaScript {
 			void visit_children(AstVisitor&) override;
 
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write_ = std::move(v); }
+			void update_self_assign_kind(SelfAssignKind kind) { self_assign_kind_ = kind; }
 		};
 	}
 }

@@ -7,6 +7,7 @@
 namespace OwcaScript::Internal {
 	AstBase::TempInfo AstExprIdentifier::emit(EmitInfo& ei, std::optional<TempInfo> target) {
 		if (function_write_) {
+			assert(self_assign_kind_ == SelfAssignKind::None);
 			if (!target) target = ei.allocate_temporary();
 			assert(value_to_write_);
 			auto dest = value_to_write_->emit(ei);
@@ -17,11 +18,26 @@ namespace OwcaScript::Internal {
 			return std::move(*target);
 		}
 		else if (value_to_write_) {
-			if (!target) {
-				return value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
+			if (self_assign_kind_ == SelfAssignKind::None) {
+				if (!target) {
+					return value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
+				}
+				auto right = value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
+				ei.write_move(line, target->index, right.index);
+				return std::move(*target);
 			}
-			auto src = value_to_write_->emit(ei, TempInfo{ ei, identifier_index_ });
-			ei.write_move(line, target->index, src.index);
+			auto right = value_to_write_->emit(ei);
+			auto oper = (ExecuteOp)((std::uint8_t)self_assign_kind_ - 1 + (std::uint8_t)ExecuteOp::ExprOper2First);
+			ei.code_writer.append(line, oper);
+			ei.code_writer.append(line, identifier_index_);
+			ei.code_writer.append(line, identifier_index_);
+			ei.code_writer.append(line, right.index);
+			if (!target) {
+				target = TempInfo{ ei, identifier_index_ };
+			}
+			else if (target->index != identifier_index_) {
+				ei.write_move(line, target->index, identifier_index_);
+			}
 			return std::move(*target);
 		}
 		else {

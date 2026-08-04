@@ -91,7 +91,8 @@ namespace OwcaScript {
             ExprMove,
 
             // order of binary operators is fixed
-            ExprOper2Add,
+            ExprOper2First,
+            ExprOper2Add = ExprOper2First,
             ExprOper2Sub,
             ExprOper2Mul,
             ExprOper2Div,

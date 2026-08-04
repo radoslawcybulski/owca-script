@@ -11,6 +11,7 @@ namespace OwcaScript {
 		class AstExprIdentifier : public AstExpr {
 			std::string_view identifier_;
 			std::unique_ptr<AstExpr> value_to_write_ = nullptr;
+			SelfAssignKind self_assign_kind_ = SelfAssignKind::None;
 			VariableIndex identifier_index_;
 			bool function_write_ = false;
 
@@ -23,6 +24,7 @@ namespace OwcaScript {
 			bool write() const { return value_to_write_ != nullptr; }
 			void update_identifier_index(VariableIndex index) { identifier_index_ = index; }
 			void update_value_to_write(std::unique_ptr<AstExpr> v) { value_to_write_ = std::move(v); }
+			void update_self_assign_kind(SelfAssignKind kind) { self_assign_kind_ = kind; }
 			void set_function_write() { function_write_ = true; }
 
 			TempInfo emit(EmitInfo& ei, std::optional<TempInfo> target) override;
