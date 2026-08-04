@@ -57,10 +57,17 @@ namespace OwcaScript::Internal {
 			case Kind::Mul: ei.code_writer.append(line, ExecuteOp::ExprOper2Mul); break;
 			case Kind::Div: ei.code_writer.append(line, ExecuteOp::ExprOper2Div); break;
 			case Kind::Mod: ei.code_writer.append(line, ExecuteOp::ExprOper2Mod); break;
-			case Kind::IndexRead: ei.code_writer.append(line, ExecuteOp::ExprOper2IndexRead); break;
+			case Kind::IndexRead:
+				ei.code_writer.append(line, ExecuteOp::ExprOper2IndexRead);
+				break;
 			case Kind::IndexWrite:
 				assert(third_);
-				ei.code_writer.append(line, ExecuteOp::ExprOper2IndexWrite);
+				if (self_assign_kind_ != SelfAssignKind::None) {
+					ei.code_writer.append(line, (ExecuteOp)((std::uint8_t)self_assign_kind_ - 1 + (std::uint8_t)ExecuteOp::ExprOper2IndexFirst));
+				}
+				else {
+					ei.code_writer.append(line, ExecuteOp::ExprOper2IndexWrite);
+				}
 				break;
 			}
 			ei.code_writer.append(line, target->index);

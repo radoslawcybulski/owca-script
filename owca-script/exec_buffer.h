@@ -116,6 +116,19 @@ namespace OwcaScript {
             ExprOper2MemberBinLShift,
             ExprOper2MemberBinRShift,
 
+            // order of binary operators is fixed
+            ExprOper2IndexFirst,
+            ExprOper2IndexAdd = ExprOper2IndexFirst,
+            ExprOper2IndexSub,
+            ExprOper2IndexMul,
+            ExprOper2IndexDiv,
+            ExprOper2IndexMod,
+            ExprOper2IndexBinOr,
+            ExprOper2IndexBinAnd,
+            ExprOper2IndexBinXor,
+            ExprOper2IndexBinLShift,
+            ExprOper2IndexBinRShift,
+
             ExprOper2MakeRange,
             ExprOper2IndexRead,
             ExprOper2IndexWrite,
@@ -184,6 +197,16 @@ namespace OwcaScript {
             case ExecuteOp::ExprOper2MemberBinXor: return "ExprOper2MemberBinXor";
             case ExecuteOp::ExprOper2MemberBinLShift: return "ExprOper2MemberBinLShift";
             case ExecuteOp::ExprOper2MemberBinRShift: return "ExprOper2MemberBinRShift";
+            case ExecuteOp::ExprOper2IndexAdd: return "ExprOper2IndexAdd";
+            case ExecuteOp::ExprOper2IndexSub: return "ExprOper2IndexSub";
+            case ExecuteOp::ExprOper2IndexMul: return "ExprOper2IndexMul";
+            case ExecuteOp::ExprOper2IndexDiv: return "ExprOper2IndexDiv";
+            case ExecuteOp::ExprOper2IndexMod: return "ExprOper2IndexMod";
+            case ExecuteOp::ExprOper2IndexBinOr: return "ExprOper2IndexBinOr";
+            case ExecuteOp::ExprOper2IndexBinAnd: return "ExprOper2IndexBinAnd";
+            case ExecuteOp::ExprOper2IndexBinXor: return "ExprOper2IndexBinXor";
+            case ExecuteOp::ExprOper2IndexBinLShift: return "ExprOper2IndexBinLShift";
+            case ExecuteOp::ExprOper2IndexBinRShift: return "ExprOper2IndexBinRShift";
             case ExecuteOp::ExprOper2MakeRange: return "ExprOper2MakeRange";
             case ExecuteOp::ExprOper2IndexRead: return "ExprOper2IndexRead";
             case ExecuteOp::ExprOper2IndexWrite: return "ExprOper2IndexWrite";

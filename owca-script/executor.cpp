@@ -1028,6 +1028,27 @@ restart:
                     ret->step = third;
                     target = OwcaRange{ ret };
                     break; }
+                case ExecuteOp::ExprOper2IndexAdd:
+                case ExecuteOp::ExprOper2IndexSub:
+                case ExecuteOp::ExprOper2IndexMul:
+                case ExecuteOp::ExprOper2IndexDiv:
+                case ExecuteOp::ExprOper2IndexMod:
+                case ExecuteOp::ExprOper2IndexBinOr:
+                case ExecuteOp::ExprOper2IndexBinAnd:
+                case ExecuteOp::ExprOper2IndexBinXor:
+                case ExecuteOp::ExprOper2IndexBinLShift:
+                case ExecuteOp::ExprOper2IndexBinRShift: {
+                    auto oper_index = static_cast<std::uint8_t>(opcode) - static_cast<std::uint8_t>(ExecuteOp::ExprOper2IndexFirst);
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto key = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto right = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto left = index_read(self, key);
+                    auto v = OPER2_MATH_GET(oper_index, left.kind(), right.kind())(left, right);
+                    index_write(self, key, v);
+                    target = v;
+                    break; }
+
                 case ExecuteOp::ExprOper2IndexRead: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto self = identifier_ptrs[code_pos.decode<VariableIndex>()];
