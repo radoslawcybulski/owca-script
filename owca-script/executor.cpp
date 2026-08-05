@@ -108,35 +108,27 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_string_string(OwcaValue left, OwcaValue right) { return left.as_string_certainly().text() == right.as_string_certainly().text(); }
 
     static bool op_compare_eq_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
-    static bool op_compare_ne_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() != right.as_bool_certainly(); }
     static bool op_compare_is_bool_bool(OwcaValue left, OwcaValue right) { return left.as_bool_certainly() == right.as_bool_certainly(); }
 
     static bool op_compare_eq_nul_nul(OwcaValue left, OwcaValue right) { return true; }
-    static bool op_compare_ne_nul_nul(OwcaValue left, OwcaValue right) { return false; }
     static bool op_compare_is_nul_nul(OwcaValue left, OwcaValue right) { return true; }
 
     static bool op_compare_eq_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly() == right.as_range_certainly(); }
-    static bool op_compare_ne_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly() != right.as_range_certainly(); }
     static bool op_compare_is_range_range(OwcaValue left, OwcaValue right) { return left.as_range_certainly().is(right.as_range_certainly()); }
 
     static bool op_compare_eq_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly() == right.as_functions_certainly(); }
-    static bool op_compare_ne_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly() != right.as_functions_certainly(); }
     static bool op_compare_is_functions_functions(OwcaValue left, OwcaValue right) { return left.as_functions_certainly().is(right.as_functions_certainly()); }
 
     static bool op_compare_eq_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly() == right.as_map_certainly(); }
-    static bool op_compare_ne_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly() != right.as_map_certainly(); }
     static bool op_compare_is_map_map(OwcaValue left, OwcaValue right) { return left.as_map_certainly().is(right.as_map_certainly()); }
 
     static bool op_compare_eq_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly() == right.as_set_certainly(); }
-    static bool op_compare_ne_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly() != right.as_set_certainly(); }
     static bool op_compare_is_set_set(OwcaValue left, OwcaValue right) { return left.as_set_certainly().is(right.as_set_certainly()); }
 
     static bool op_compare_eq_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly() == right.as_class_certainly(); }
-    static bool op_compare_ne_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly() != right.as_class_certainly(); }
     static bool op_compare_is_class_class(OwcaValue left, OwcaValue right) { return left.as_class_certainly().is(right.as_class_certainly()); }
 
     static bool op_compare_eq_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly() == right.as_object_certainly(); }
-    static bool op_compare_ne_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly() != right.as_object_certainly(); }
     static bool op_compare_is_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
 
     static bool op_compare_eq_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
@@ -148,15 +140,12 @@ namespace OwcaScript::Internal {
     static bool op_compare_is_array_array(OwcaValue left, OwcaValue right) { return left.as_array_certainly().is(right.as_array_certainly()); }
 
     static bool op_compare_eq_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() == right.as_iterator_certainly(); }
-    static bool op_compare_ne_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly() != right.as_iterator_certainly(); }
     static bool op_compare_is_iterator_iterator(OwcaValue left, OwcaValue right) { return left.as_iterator_certainly().is(right.as_iterator_certainly()); }
 
     static bool op_compare_eq_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly() == right.as_exception_certainly(); }
-    static bool op_compare_ne_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly() != right.as_exception_certainly(); }
     static bool op_compare_is_exception_exception(OwcaValue left, OwcaValue right) { return left.as_exception_certainly().is(right.as_exception_certainly()); }
 
     static bool op_compare_eq_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() == right.as_namespace_certainly(); }
-    static bool op_compare_ne_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly() != right.as_namespace_certainly(); }
     static bool op_compare_is_namespace_namespace(OwcaValue left, OwcaValue right) { return left.as_namespace_certainly().is(right.as_namespace_certainly()); }
 
     static OwcaValue op_add_string_string(OwcaValue left, OwcaValue right) {
@@ -186,7 +175,7 @@ namespace OwcaScript::Internal {
     static OwcaValue op_bin_or_map_map(OwcaValue left, OwcaValue right) {
         return left.as_map_certainly() | right.as_map_certainly();
     }
-    static OwcaValue op_bin_xor_map_map(OwcaValue left, OwcaValue right) {
+    static OwcaValue op_bin_sub_map_map(OwcaValue left, OwcaValue right) {
         return left.as_map_certainly() - right.as_map_certainly();
     }
     static OwcaValue op_bin_and_set_set(OwcaValue left, OwcaValue right) {
@@ -234,46 +223,61 @@ namespace OwcaScript::Internal {
 
         OPER2_MATH_SET(BinAnd, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_and_map_map);
         OPER2_MATH_SET(BinOr, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_or_map_map);
-        OPER2_MATH_SET(BinXor, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_xor_map_map);
+        OPER2_MATH_SET(Sub, OwcaValueKind::Map, OwcaValueKind::Map, op_bin_sub_map_map);
 
         OPER2_MATH_SET(BinAnd, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_and_set_set);
         OPER2_MATH_SET(BinOr, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_or_set_set);
         OPER2_MATH_SET(BinXor, OwcaValueKind::Set, OwcaValueKind::Set, op_bin_xor_set_set);
 
         OPER2_SET(eq, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_eq_number_number);
+        OPER2_SET(is, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_is_number_number);
         OPER2_SET(less, OwcaValueKind::Float, OwcaValueKind::Float, op_compare_lt_number_number);
 
         OPER2_SET(eq, OwcaValueKind::String, OwcaValueKind::String, op_compare_eq_string_string);
+        OPER2_SET(is, OwcaValueKind::String, OwcaValueKind::String, op_compare_is_string_string);
         OPER2_SET(less, OwcaValueKind::String, OwcaValueKind::String, op_compare_lt_string_string);
 
         OPER2_SET(eq, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_eq_bool_bool);
+        OPER2_SET(is, OwcaValueKind::Bool, OwcaValueKind::Bool, op_compare_is_bool_bool);
 
         OPER2_SET(eq, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_eq_range_range);
+        OPER2_SET(is, OwcaValueKind::Range, OwcaValueKind::Range, op_compare_is_range_range);
 
         OPER2_SET(eq, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_eq_functions_functions);
+        OPER2_SET(is, OwcaValueKind::Functions, OwcaValueKind::Functions, op_compare_is_functions_functions);
 
         OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Empty, OwcaValueKind::Completed, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Empty, op_compare_eq_nul_nul);
         OPER2_SET(eq, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_eq_nul_nul);
+        OPER2_SET(is, OwcaValueKind::Empty, OwcaValueKind::Empty, op_compare_is_nul_nul);
+        OPER2_SET(is, OwcaValueKind::Completed, OwcaValueKind::Completed, op_compare_is_nul_nul);
 
         OPER2_SET(eq, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_eq_set_set);
+        OPER2_SET(is, OwcaValueKind::Set, OwcaValueKind::Set, op_compare_is_set_set);
 
         OPER2_SET(eq, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_eq_map_map);
+        OPER2_SET(is, OwcaValueKind::Map, OwcaValueKind::Map, op_compare_is_map_map);
 
         OPER2_SET(eq, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_eq_class_class);
+        OPER2_SET(is, OwcaValueKind::Class, OwcaValueKind::Class, op_compare_is_class_class);
 
         OPER2_SET(eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
+        OPER2_SET(is, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_is_object_object);
 
         OPER2_SET(eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
+        OPER2_SET(is, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_is_tuple_tuple);
         OPER2_SET(less, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_lt_tuple_tuple);
 
         OPER2_SET(eq, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_eq_array_array);
+        OPER2_SET(is, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_is_array_array);
         OPER2_SET(less, OwcaValueKind::Array, OwcaValueKind::Array, op_compare_lt_array_array);
 
         OPER2_SET(eq, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_eq_iterator_iterator);
+        OPER2_SET(is, OwcaValueKind::Iterator, OwcaValueKind::Iterator, op_compare_is_iterator_iterator);
 
         OPER2_SET(eq, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_eq_namespace_namespace);
+        OPER2_SET(is, OwcaValueKind::Namespace, OwcaValueKind::Namespace, op_compare_is_namespace_namespace);
 
         return oper2_functions;
     }();
