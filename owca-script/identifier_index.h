@@ -7,6 +7,7 @@ namespace OwcaScript {
     class IdentifierIndex {
         std::uint32_t value_ = 0xffffffff;
     public:
+        IdentifierIndex() = default;
         explicit IdentifierIndex(std::uint32_t index) : value_(index) {}
 
         auto value() const { return value_; }

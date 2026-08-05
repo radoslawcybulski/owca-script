@@ -5,6 +5,7 @@
 #include "allocation_base.h"
 #include "identifier_index.h"
 #include "owca_code.h"
+#include "owca_value.h"
 #include "line.h"
 
 namespace OwcaScript {
@@ -18,10 +19,107 @@ namespace OwcaScript {
 		struct RuntimeFunctions;
 		struct Object;
 
+		template <typename V> struct ValuesMap {
+			struct ArrayStorage {
+				static constexpr const size_t S = 16;
+				std::array<IdentifierIndex, S> keys;
+				std::array<V, S> values;
+				size_t count = 0;
+			};
+			std::variant<ArrayStorage, std::unordered_map<IdentifierIndex, V>> values;
+
+			template <typename F> void for_each(const F &f) {
+				visit_variant(values, [&](ArrayStorage &arr) {
+					for (size_t i = 0; i < arr.count; ++i) {
+						f(arr.keys[i], arr.values[i]);
+					}
+				}, [&](std::unordered_map<IdentifierIndex, V> &map) {
+					for (auto &it : map) {
+						f(it.first, it.second);
+					}
+				});
+			}
+			template <typename F> void for_each(const F &f) const {
+				visit_variant(values, [&](const ArrayStorage &arr) {
+					for (size_t i = 0; i < arr.count; ++i) {
+						f(arr.keys[i], arr.values[i]);
+					}
+				}, [&](const std::unordered_map<IdentifierIndex, V> &map) {
+					for (auto &it : map) {
+						f(it.first, it.second);
+					}
+				});
+			}
+
+			void set(IdentifierIndex key, V value) {
+				visit_variant(values, [&](ArrayStorage &arr) {
+					for (size_t i = 0; i < arr.count; ++i) {
+						if (arr.keys[i] == key) {
+							arr.values[i] = std::move(value);
+							return;
+						}
+					}
+					if (arr.count < ArrayStorage::S) {
+						arr.keys[arr.count] = key;
+						arr.values[arr.count] = std::move(value);
+						++arr.count;
+						return;
+					}
+					std::unordered_map<IdentifierIndex, V> map;
+					for (size_t i = 0; i < arr.count; ++i) {
+						map[arr.keys[i]] = std::move(arr.values[i]);
+					}
+					map[key] = std::move(value);
+					values = std::move(map);
+				}, [&](std::unordered_map<IdentifierIndex, V> &map) {
+					map[key] = std::move(value);
+				});
+			}
+			std::pair<V*, bool> emplace(IdentifierIndex key, V value) {
+				return visit_variant(values, [&](ArrayStorage &arr) {
+					for (size_t i = 0; i < arr.count; ++i) {
+						if (arr.keys[i] == key) {
+							return std::make_pair(&arr.values[i], false);
+						}
+					}
+					if (arr.count < ArrayStorage::S) {
+						arr.keys[arr.count] = key;
+						arr.values[arr.count] = std::move(value);
+						++arr.count;
+						return std::make_pair(&arr.values[arr.count - 1], true);
+					}
+					std::unordered_map<IdentifierIndex, V> map;
+					for (size_t i = 0; i < arr.count; ++i) {
+						map[arr.keys[i]] = std::move(arr.values[i]);
+					}
+					auto &r = map[key];
+					r = std::move(value);
+					values = std::move(map);
+					return std::make_pair(&r, true);
+				}, [&](std::unordered_map<IdentifierIndex, V> &map) {
+					auto it = map.insert({ key, std::move(value) });
+					return std::make_pair(&it.first->second, it.second);
+				});
+			}
+			V *find(IdentifierIndex key) {
+				return visit_variant(values, [&](ArrayStorage &arr) -> V* {
+					for (size_t i = 0; i < arr.count; ++i) {
+						if (arr.keys[i] == key) {
+							return &arr.values[i];
+						}
+					}
+					return nullptr;
+				}, [&](std::unordered_map<IdentifierIndex, V> &map) -> V* {
+					auto it = map.find(key);
+					if (it == map.end()) return nullptr;
+					return &it->second;
+				});
+			}
+		};
 		struct Class : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::Class;
 
-			std::unordered_map<IdentifierIndex, std::variant<Class*, RuntimeFunctions*>> values;
+			ValuesMap<std::variant<Class*, RuntimeFunctions*>> values;
 			const std::string_view name, full_name;
 			OwcaCode code;
 			Line fileline;
@@ -60,8 +158,8 @@ namespace OwcaScript {
 		struct Object : public AllocationBase {
 			static constexpr const Kind object_kind = Kind::User;
 
-			std::unordered_map<IdentifierIndex, OwcaValue> values;
 			Class* type_;
+			ValuesMap<OwcaValue> values;
 
 			Object(Class* type);
 			~Object();

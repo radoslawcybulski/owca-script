@@ -1041,9 +1041,9 @@ function native time();
 	{
 		OwcaValue tmp;
 		auto read_member = [&](Class *cls) -> OwcaValue * {
-			auto it = cls->values.find(key);
-			if (it == cls->values.end()) return nullptr;
-			return visit_variant(it->second,
+			auto ptr = cls->values.find(key);
+			if (!ptr) return nullptr;
+			return visit_variant(*ptr,
 				[&](RuntimeFunctions *rf) -> OwcaValue * {
 					tmp = OwcaFunctions{ rf };
 					return &tmp;
@@ -1053,9 +1053,9 @@ function native time();
 		};
 		bool bind_if_needed = true;
 		auto read_from_class = [&](Class *cls, Internal::Object *obj) -> OwcaValue* {
-			auto it2 = cls->values.find(key);
-			if (it2 != cls->values.end()) {
-				return visit_variant(it2->second,
+			auto ptr2 = cls->values.find(key);
+			if (ptr2) {
+				return visit_variant(*ptr2,
 					[&](RuntimeFunctions *rf) -> OwcaValue * {
 						tmp = OwcaFunctions{ rf };
 						return &tmp;
@@ -1071,10 +1071,10 @@ function native time();
 			return nullptr;
 		};
 		auto read_from_object = [&](Internal::Object *obj) -> OwcaValue* {
-			auto it = obj->values.find(key);
-			if (it != obj->values.end()) {
+			auto ptr3 = obj->values.find(key);
+			if (ptr3) {
 				bind_if_needed = false;
-				return &it->second;
+				return ptr3;
 			}
 
 			return read_from_class(obj->type_, obj);
@@ -1121,9 +1121,9 @@ function native time();
 	{
 		val.visit(
 			[&](OwcaObject o) {
-				auto it2 = o.internal_value()->type_->values.find(key);
-				if (it2 != o.internal_value()->type_->values.end()) {
-					auto succ = visit_variant(it2->second,
+				auto ptr2 = o.internal_value()->type_->values.find(key);
+				if (ptr2) {
+					auto succ = visit_variant(*ptr2,
 						[&](RuntimeFunctions *rf) -> bool { return false; },
 						[&](Class* var) -> bool {
 							assert(var->native_token);
@@ -1132,7 +1132,8 @@ function native time();
 						});
 					if (succ) return;
 				}
-				o.internal_value()->values[key] = value;
+
+				o.internal_value()->values.set(key, value);
 			},
 			[&](OwcaNamespace o) {
 				o.member(key, value);

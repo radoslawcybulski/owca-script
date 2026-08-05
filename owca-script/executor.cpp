@@ -1489,14 +1489,14 @@ restart:
             }
 		}
 
-		auto it = cls->values.find(current_vm().get_ii_init());
-		if (it == cls->values.end()) {
+		auto ii_ptr = cls->values.find(current_vm().get_ii_init());
+		if (!ii_ptr) {
 			if (arg_count > 1) {
 				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} parameters", cls->full_name, arg_count - 1));
 			}
             return obj;
 		}
-        if (auto state = std::get_if<RuntimeFunctions*>(&it->second)) [[likely]] {
+        if (auto state = std::get_if<RuntimeFunctions*>(ii_ptr)) [[likely]] {
             current_unused_locals_ptr[0] = obj;
             auto retval = execute_function_call_from_values(*state, arg_count);
             if (!cls->reload_self) [[likely]] {
@@ -1504,7 +1504,7 @@ restart:
             }
             return retval;
         }
-        throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(it->second)->full_name));
+        throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(*ii_ptr)->full_name));
 	}
     OwcaValue Executor::execute_call_from_values(unsigned int argument_count) {
         auto func = current_unused_locals_ptr[0];

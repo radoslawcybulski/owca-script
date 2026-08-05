@@ -38,13 +38,15 @@ namespace OwcaScript::Internal {
 
 	void Class::gc_mark(GenerationGC generation_gc) const
 	{
-		for (auto& it : values) {
-			visit_variant(it.second, [&](const Class* p) {
-				gc_mark_value(generation_gc, p);
-			}, [&](const RuntimeFunctions* f) {
-				gc_mark_value(generation_gc, f);
-			});
-		}
+		values.for_each(
+			[&](auto key, auto value) {
+				visit_variant(value, [&](const Class* p) {
+					gc_mark_value(generation_gc, p);
+				}, [&](const RuntimeFunctions* f) {
+					gc_mark_value(generation_gc, f);
+				});
+			}
+		);
 		for (auto c : base_classes) {
 			gc_mark_value(generation_gc, c);
 		}
@@ -127,17 +129,17 @@ namespace OwcaScript::Internal {
 		fill_lookup_order(this);
 		for (auto i = lookup_order.size(); i > 0; --i) {
 			for (auto f : lookup_order[i - 1]->runtime_functions) {
-				auto it = values.insert({ f->name_index, {} });
-				if (it.second || std::get_if<RuntimeFunctions*>(&it.first->second) == nullptr) {
+				auto [ inserted_ptr, is_inserted ] = values.emplace(f->name_index, {});
+				if (is_inserted || std::get_if<RuntimeFunctions*>(inserted_ptr) == nullptr) {
 					auto rf = Internal::current_vm().allocate<RuntimeFunctions>(0, f->name_index, f->name, f->full_name);
-					it.first->second = rf;
+					*inserted_ptr = rf;
 				}
-				auto &dst_fnc = std::get<RuntimeFunctions*>(it.first->second);
+				auto dst_fnc = std::get<RuntimeFunctions*>(*inserted_ptr);
 				dst_fnc->functions[f->param_count] = f;
 			}
 			for (auto name: lookup_order[i - 1]->runtime_variables) {
-				auto it = values.insert({ name, {} });
-				it.first->second = lookup_order[i - 1];
+				auto [ inserted_ptr, is_inserted ] = values.emplace(name, {});
+				*inserted_ptr = lookup_order[i - 1];
 			}
 		}
 		for(auto q : lookup_order) all_base_classes.insert(q);
@@ -158,8 +160,9 @@ namespace OwcaScript::Internal {
 	void Object::gc_mark(GenerationGC generation_gc) const
 	{
 		gc_mark_value(generation_gc, type_);
-		for (auto& it : values)
-			gc_mark_value(generation_gc, it.second);
+		values.for_each([&](auto key, auto value) {
+			gc_mark_value(generation_gc, value);
+		});
 		auto ptr = type_->native_storage_ptr(this);
 		for(auto it : type_->native_storage_pointers) {
 			auto p = ptr + std::get<2>(it);

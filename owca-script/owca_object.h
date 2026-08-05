@@ -4,8 +4,7 @@
 #include "owca-script/identifier_index.h"
 #include "stdafx.h"
 #include "tokens.h"
-#include "object.h"
-#include "garbage.h"
+ #include "garbage.h"
 #include "identifier_index.h"
 #include "native_class_interface.h"
 
