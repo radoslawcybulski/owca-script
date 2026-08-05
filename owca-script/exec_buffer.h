@@ -133,6 +133,7 @@ namespace OwcaScript {
             ExprOper2IndexRead,
             ExprOper2IndexWrite,
             ExprOperXCall,
+            ExprOperXCallWithMember,
             ExprOperXCreateArray,
             ExprOperXCreateTuple,
             ExprOperXCreateSet,
@@ -211,6 +212,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprOper2IndexRead: return "ExprOper2IndexRead";
             case ExecuteOp::ExprOper2IndexWrite: return "ExprOper2IndexWrite";
             case ExecuteOp::ExprOperXCall: return "ExprOperXCall";
+            case ExecuteOp::ExprOperXCallWithMember: return "ExprOperXCallWithMember";
             case ExecuteOp::ExprOperXCreateArray: return "ExprOperXCreateArray";
             case ExecuteOp::ExprOperXCreateTuple: return "ExprOperXCreateTuple";
             case ExecuteOp::ExprOperXCreateSet: return "ExprOperXCreateSet";

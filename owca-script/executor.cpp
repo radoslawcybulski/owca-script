@@ -1065,8 +1065,19 @@ restart:
                 case ExecuteOp::ExprOperXCall: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     auto size = code_pos.decode<std::uint32_t>();
-                    auto mv = stacktrace_current->runtime_function->max_values;
                     for(auto i = 0u; i < size; ++i) {
+                        auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                        current_unused_locals_ptr[i] = v;
+                    }
+                    target = OPER1_GET(call, current_unused_locals_ptr[0].kind())(size);
+                    break; }
+                case ExecuteOp::ExprOperXCallWithMember: {
+                    auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto member = code_pos.decode<IdentifierIndex>();
+                    auto size = code_pos.decode<std::uint32_t>();
+                    auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    current_unused_locals_ptr[0] = current_vm().member(v, member);
+                    for(auto i = 1u; i < size; ++i) {
                         auto v = identifier_ptrs[code_pos.decode<VariableIndex>()];
                         current_unused_locals_ptr[i] = v;
                     }
