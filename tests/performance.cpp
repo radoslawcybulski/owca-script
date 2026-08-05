@@ -350,7 +350,7 @@ public:
         i = 0;
         while (i < iterations) {
             s = a.foo5((s * 11035 + 12345) & 0xffff);
-            i = i + 1;
+            i += 1;
         }
     })", std::max(1u, 1024 * 1024 * 10 / scale), 15000u, 30000u };
     }
@@ -368,7 +368,7 @@ public:
         i = 0;
         while (i < iterations) {
             s = (s * 11035 + 12345) & 0xffff;
-            i = i + 1;
+            i += 1;
         }
     })", std::max(1u, 1024 * 1024 * 10 / scale), 2500u, 7500u };
     }
