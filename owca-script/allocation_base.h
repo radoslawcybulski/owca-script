@@ -14,6 +14,7 @@ namespace OwcaScript {
 		struct AllocationBase {
 			enum class Kind {
 				User,
+				PtrUser,
 				String,
 				RuntimeFunction,
 				RuntimeFunctions,

@@ -23,6 +23,9 @@ namespace OwcaScript {
 
 		auto internal_value() const { return object; }
 
+		std::string_view name() const;
+		std::string_view full_name() const;
+		
 		std::string to_string() const;
 		std::string_view type() const { return "class"; }
 		bool has_base_class(OwcaClass base) const;

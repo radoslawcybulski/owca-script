@@ -47,6 +47,7 @@ namespace OwcaScript {
 			[](OwcaMap) -> std::string_view { return "Map"; },
 			[](OwcaClass) -> std::string_view { return "Class"; },
 			[](OwcaObject o) -> std::string_view { return o.internal_value()->type(); },
+			[](OwcaPtrObject o) -> std::string_view { return o.internal_value()->type(); },
 			[](OwcaArray) -> std::string_view { return "Array"; },
 			[](OwcaTuple) -> std::string_view { return "Tuple"; },
 			[](OwcaSet) -> std::string_view { return "Set"; },
@@ -69,6 +70,7 @@ namespace OwcaScript {
 			[](OwcaMap o) -> std::string { return o.to_string(); },
 			[](OwcaClass o) -> std::string { return o.to_string(); },
 			[](OwcaObject o) -> std::string { return o.to_string(); },
+			[](OwcaPtrObject o) -> std::string { return o.to_string(); },
 			[](OwcaArray o) -> std::string { return o.to_string(); },
 			[](OwcaTuple o) -> std::string { return o.to_string(); },
 			[](OwcaSet o) -> std::string { return o.to_string(); },
@@ -202,6 +204,12 @@ namespace OwcaScript {
 				return *q;
 			}
 			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not an object", I + 1, v.type()));
+		}
+		OwcaPtrObject convert_impl2(size_t I, OwcaPtrObject *b, OwcaValue v) {
+			if (auto q = v.as_ptr_object_maybe()) {
+				return *q;
+			}
+			Internal::current_vm().throw_cant_call(std::format("{} argument ({}) is not a PtrObject", I + 1, v.type()));
 		}
 		OwcaArray convert_impl2(size_t I, OwcaArray *b, OwcaValue v) {
 			if (auto q = v.as_array_maybe()) {

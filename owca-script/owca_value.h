@@ -30,6 +30,7 @@ namespace OwcaScript {
 		Set,
 		Class,
 		Object,
+		PtrObject,
 		Tuple,
 		Array,
 		Iterator,
@@ -124,6 +125,8 @@ namespace OwcaScript {
 		OwcaValue(OwcaMap value): OwcaValue(OwcaValueKind::Map, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaClass value): OwcaValue(OwcaValueKind::Class, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaObject value): OwcaValue(OwcaValueKind::Object, value.internal_value(), nullptr) {}
+		OwcaValue(OwcaPtrObject value): OwcaValue(OwcaValueKind::PtrObject, value.internal_value(), nullptr) {}
+		OwcaValue(PtrObjectInterface *value): OwcaValue(OwcaPtrObject{ value }) {}
 		OwcaValue(OwcaTuple value): OwcaValue(OwcaValueKind::Tuple, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaArray value): OwcaValue(OwcaValueKind::Array, value.internal_value(), nullptr) {}
 		OwcaValue(OwcaSet value): OwcaValue(OwcaValueKind::Set, value.internal_value(), nullptr) {}
@@ -196,6 +199,11 @@ namespace OwcaScript {
 			if (auto v = as_object_maybe()) return *v;
 			throw_wrong_type("Object");
 		}
+		OwcaPtrObject as_ptr_object() const
+		{
+			if (auto v = as_ptr_object_maybe()) return *v;
+			throw_wrong_type("PtrObject");
+		}
 		OwcaArray as_array() const
 		{
 			if (auto v = as_array_maybe()) return *v;
@@ -266,6 +274,10 @@ namespace OwcaScript {
 		OwcaObject as_object_certainly() const
 		{
 			return *as_object_maybe();
+		}
+		OwcaPtrObject as_ptr_object_certainly() const
+		{
+			return *as_ptr_object_maybe();
 		}
 		OwcaArray as_array_certainly() const
 		{
@@ -350,6 +362,11 @@ namespace OwcaScript {
 			if (kind() == OwcaValueKind::Object) return OwcaObject{ (Internal::Object*)internal_ptr1() };
 			return std::nullopt;
 		}
+		std::optional<OwcaPtrObject> as_ptr_object_maybe() const
+		{
+			if (kind() == OwcaValueKind::PtrObject) return OwcaPtrObject{ (PtrObjectInterface*)internal_ptr1() };
+			return std::nullopt;
+		}
 		std::optional<OwcaArray> as_array_maybe() const
 		{
 			if (kind() == OwcaValueKind::Array) return OwcaArray{ (Internal::Array*)internal_ptr1() };
@@ -409,6 +426,7 @@ namespace OwcaScript {
 			case OwcaValueKind::Map: return tmp(as_map_certainly());
 			case OwcaValueKind::Class: return tmp(as_class_certainly());
 			case OwcaValueKind::Object: return tmp(as_object_certainly());
+			case OwcaValueKind::PtrObject: return tmp(as_ptr_object_certainly());
 			case OwcaValueKind::Tuple: return tmp(as_tuple_certainly());
 			case OwcaValueKind::Array: return tmp(as_array_certainly());
 			case OwcaValueKind::Set: return tmp(as_set_certainly());
@@ -453,6 +471,7 @@ namespace OwcaScript {
 		OwcaMap convert_impl2(size_t I, OwcaMap *b, OwcaValue v);
 		OwcaClass convert_impl2(size_t I, OwcaClass *b, OwcaValue v);
 		OwcaObject convert_impl2(size_t I, OwcaObject *b, OwcaValue v);
+		OwcaPtrObject convert_impl2(size_t I, OwcaPtrObject *b, OwcaValue v);
 		OwcaIterator convert_impl2(size_t I, OwcaIterator *b, OwcaValue v);
 		OwcaArray convert_impl2(size_t I, OwcaArray *b, OwcaValue v);
 		OwcaTuple convert_impl2(size_t I, OwcaTuple *b, OwcaValue v);

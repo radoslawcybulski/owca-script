@@ -175,6 +175,7 @@ namespace OwcaScript::Internal {
 				[&](OwcaMap s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
 				[&](OwcaClass s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
 				[&](OwcaObject s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
+				[&](OwcaPtrObject s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
 				[&](OwcaArray s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
 				[&](OwcaTuple s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
 				[&](OwcaSet s) -> OwcaValue { return current_vm().create_string_from_view(s.to_string()); },
@@ -1079,6 +1080,18 @@ function native time();
 
 			return read_from_class(obj->type_, obj);
 		};
+		auto read_from_ptr_object = [&](PtrObjectInterface *obj) -> OwcaValue* {
+			auto get = obj->get_member(key, tmp);
+			if (get) {
+				bind_if_needed = false;
+				return &tmp;
+			}
+			auto tp = obj->get_type();
+			if (tp) {
+				return read_from_class(tp->internal_value(), nullptr);
+			}
+			return nullptr;
+		};
 		auto read_from_nspace = [&](Internal::Namespace *obj) -> OwcaValue* {
 			auto it = obj->code.identifier_to_global_index().find(key);
 			if (it != obj->code.identifier_to_global_index().end()) {
@@ -1099,6 +1112,7 @@ function native time();
 			[&](OwcaMap o) -> OwcaValue* { return read_member(c_map); },
 			[&](OwcaClass o) -> OwcaValue* { return read_member(c_class); },
 			[&](OwcaObject o) -> OwcaValue* { return read_from_object(o.internal_value()); },
+			[&](OwcaPtrObject o) -> OwcaValue* { return read_from_ptr_object(o.internal_value()); },
 			[&](OwcaArray o) -> OwcaValue* { return read_member(c_array); },
 			[&](OwcaTuple o) -> OwcaValue* { return read_member(c_tuple); },
 			[&](OwcaSet o) -> OwcaValue* { return read_member(c_set); },
@@ -1134,6 +1148,10 @@ function native time();
 				}
 
 				o.internal_value()->values.set(key, value);
+			},
+			[&](OwcaPtrObject o) {
+				auto set = o.internal_value()->set_member(key, value);
+				assert(set);
 			},
 			[&](OwcaNamespace o) {
 				o.member(key, value);
@@ -1350,6 +1368,9 @@ function native time();
 			[&](OwcaObject value) -> bool {
 				return true;
 			},
+			[&](OwcaPtrObject value) -> bool {
+				return true;
+			},
 			[&](OwcaArray value) -> bool {
 				return value.size() > 0;
 			},
@@ -1391,6 +1412,9 @@ function native time();
 			[&](OwcaObject o) -> size_t {
 				throw_not_hashable(value.type());
 			},
+			[&](OwcaPtrObject o) -> size_t {
+				throw_not_hashable(value.type());
+			},
 			[&](OwcaException o) -> size_t {
 				throw_not_hashable(value.type());
 			},
@@ -1421,6 +1445,10 @@ function native time();
 		return val.as_iterator();
 	}
 
+	GenerationGC VM::get_current_generation_gc() {
+		return GenerationGC{ generation_gc };
+	}
+
 	void VM::run_gc() {
 		auto ggc = GenerationGC{ ++generation_gc };
 
@@ -1443,6 +1471,17 @@ function native time();
 			}
 			else {
 				valid = valid->next;
+			}
+		}
+
+		for(auto it = active_ptr_object_interfaces.begin(); it != active_ptr_object_interfaces.end(); ) {
+			if ((*it)->generation_gc_ != ggc) {
+				auto p = *it;
+				it = active_ptr_object_interfaces.erase(it);
+				p->release();
+			}
+			else {
+				++it;
 			}
 		}
 	}

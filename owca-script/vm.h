@@ -58,11 +58,12 @@ namespace OwcaScript {
 			Class *c_namespace = nullptr;
 			Tuple *empty_tuple = nullptr;
 			String *empty_string = nullptr;
-			unsigned int generation_gc = 0;
+			unsigned int generation_gc = 1;
 
 			std::list<OwcaValue> temp_gc_protect_list;
 			std::vector<std::string_view> builtin_identifiers;
 			std::unordered_map<std::string, IdentifierIndex, StringHash, StringCmp> identifier_index_map;
+			std::unordered_set<PtrObjectInterface*> active_ptr_object_interfaces;
 			std::vector<std::string> identifier_name_vector;
 			IdentifierIndex ii_init = IdentifierIndex{ 0 };
 			IdentifierIndex ii_iter = IdentifierIndex{ 0 };
@@ -138,6 +139,10 @@ namespace OwcaScript {
 			IdentifierIndex get_identifier_index(const char *name) { return get_identifier_index(std::string_view{ name }); }
 			std::string_view get_identifier_name(IdentifierIndex index) const;
 
+			GenerationGC get_current_generation_gc();
+			void register_active_ptr_object_interface(PtrObjectInterface *ptr) {
+				active_ptr_object_interfaces.insert(ptr);
+			}
 			auto get_builtin_identifiers() const { return builtin_identifiers; }
 			OwcaNamespace execute_code_block(const OwcaCodeBuffer&, std::shared_ptr<NativeCodeProvider> native_code_provider = nullptr);
 			OwcaValue execute_call(OwcaValue func, std::span<OwcaValue> arguments);

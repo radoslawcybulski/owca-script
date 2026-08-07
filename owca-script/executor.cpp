@@ -131,6 +131,9 @@ namespace OwcaScript::Internal {
     static bool op_compare_eq_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly() == right.as_object_certainly(); }
     static bool op_compare_is_object_object(OwcaValue left, OwcaValue right) { return left.as_object_certainly().is(right.as_object_certainly()); }
 
+    static bool op_compare_eq_ptr_object_ptr_object(OwcaValue left, OwcaValue right) { return left.as_ptr_object_certainly() == right.as_ptr_object_certainly(); }
+    static bool op_compare_is_ptr_object_ptr_object(OwcaValue left, OwcaValue right) { return left.as_ptr_object_certainly().is(right.as_ptr_object_certainly()); }
+
     static bool op_compare_eq_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() == right.as_tuple_certainly(); }
     static bool op_compare_lt_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly() < right.as_tuple_certainly(); }
     static bool op_compare_is_tuple_tuple(OwcaValue left, OwcaValue right) { return left.as_tuple_certainly().is(right.as_tuple_certainly()); }
@@ -264,6 +267,8 @@ namespace OwcaScript::Internal {
 
         OPER2_SET(eq, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_eq_object_object);
         OPER2_SET(is, OwcaValueKind::Object, OwcaValueKind::Object, op_compare_is_object_object);
+        OPER2_SET(eq, OwcaValueKind::PtrObject, OwcaValueKind::PtrObject, op_compare_eq_ptr_object_ptr_object);
+        OPER2_SET(is, OwcaValueKind::PtrObject, OwcaValueKind::PtrObject, op_compare_is_ptr_object_ptr_object);
 
         OPER2_SET(eq, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_eq_tuple_tuple);
         OPER2_SET(is, OwcaValueKind::Tuple, OwcaValueKind::Tuple, op_compare_is_tuple_tuple);

@@ -9,6 +9,8 @@ namespace OwcaScript {
 	    explicit GenerationGC() : value(0) {}
 		explicit GenerationGC(unsigned int value) : value(value) {}
 
+		explicit operator bool () const { return value != 0; }
+		
 		bool operator == (GenerationGC other) const { return value == other.value; }
 		bool operator != (GenerationGC other) const { return !(*this == other); }
 	};

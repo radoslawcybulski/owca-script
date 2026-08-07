@@ -5,6 +5,16 @@
 #include "vm.h"
 
 namespace OwcaScript {
+	std::string_view OwcaClass::name() const
+	{
+		return object->name;
+	}
+
+	std::string_view OwcaClass::full_name() const
+	{
+		return object->full_name;
+	}
+
 	std::string OwcaClass::to_string() const
 	{
 		return object->to_string();
