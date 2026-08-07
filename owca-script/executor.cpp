@@ -681,7 +681,16 @@ namespace OwcaScript::Internal {
             auto z = code_pos.decode_jump();
             auto entry_point = code_pos;
             code_pos = z;
-
+            auto count = code_pos.decode<std::uint32_t>();
+            std::vector<RuntimeFunctionScript::TryWithBlockInfo> try_with_blocks;
+            try_with_blocks.resize(count);
+            for(auto &block : try_with_blocks) {
+                block.begin = code_pos.decode_jump();
+                block.end = code_pos.decode_jump();
+                block.jump = code_pos.decode_jump();
+                block.next = code_pos.decode<std::uint32_t>();
+            }
+            
             RuntimeFunctionScript *f;
             if (is_generator) {
                 f = current_vm().allocate<RuntimeFunctionScriptGenerator>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name_index, name, full_name, is_method, entry_point);
@@ -689,6 +698,7 @@ namespace OwcaScript::Internal {
             else {
                 f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name_index, name, full_name, is_method, entry_point);
             }
+            f->try_with_blocks = std::move(try_with_blocks);
             fnc = f;
             f->identifier_names = std::move(identifier_names);
             f->values_from_parents = std::move(values_from_parents);

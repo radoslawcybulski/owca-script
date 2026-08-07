@@ -149,11 +149,9 @@ namespace OwcaScript {
             ReturnCloseIterator,
             ReturnValue,
             Throw,
-            TryInit,
-            TryCompleted,
-            TryBlockCompleted,
             TryCatchType,
             TryCatchTypeCompleted,
+
             WithInit,
             WithCompleted,Yield,
             Jump,
@@ -229,11 +227,6 @@ namespace OwcaScript {
             case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";
             case ExecuteOp::Throw: return "Throw";
-            case ExecuteOp::TryInit: return "TryInit";
-            case ExecuteOp::TryCompleted: return "TryCompleted";
-            case ExecuteOp::TryBlockCompleted: return "TryBlockCompleted";
-            case ExecuteOp::TryCatchType: return "TryCatchType";
-            case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
             case ExecuteOp::WithInit: return "WithInit";
             case ExecuteOp::WithCompleted: return "WithCompleted";
             case ExecuteOp::Yield: return "Yield";

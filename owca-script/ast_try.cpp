@@ -5,41 +5,32 @@
 
 namespace OwcaScript::Internal {
 	void AstTry::emit(EmitInfo& ei) {
-        assert(false);
-        // assert(ei.stack.empty());
-        // ei.states.push();
-        // auto start = ei.code_writer.position();
-        // ei.code_writer.append(line, ExecuteOp::TryInit);
-        // auto body_start = ei.code_writer.append_jump_placeholder(line);
-        // auto body_end = ei.code_writer.append_jump_placeholder(line);
-        // std::vector<ExecuteBufferWriter::JumpPlaceholder> fallback_jumps;
-        // for(auto &c : catches_) {
-        //     for(auto &q : std::get<2>(c)) {
-        //         q->emit(ei);
-        //     }
-        //     ei.stack.pop(std::get<2>(c).size());
-        //     auto &line = std::get<3>(c)->line;
-        //     ei.code_writer.append(line, ExecuteOp::TryCatchType);
-        //     ei.code_writer.append(line, (std::uint32_t)std::get<2>(c).size());
-        //     ei.code_writer.append(line, std::get<1>(c));
-        //     auto skip = ei.code_writer.append_jump_placeholder(line);
-        //     std::get<3>(c)->emit(ei);
-        //     assert(ei.stack.empty());
-        //     ei.code_writer.append(line, ExecuteOp::TryBlockCompleted);
-        //     fallback_jumps.push_back(ei.code_writer.append_jump_placeholder(line));
-        //     ei.code_writer.update_jump_placeholder(skip, ei.code_writer.position());
-        // }
-        // ei.code_writer.append(line, ExecuteOp::TryCatchTypeCompleted);
-        // ei.code_writer.update_jump_placeholder(body_start, ei.code_writer.position());
-        // assert(ei.stack.empty());
-        // body_->emit(ei);
-        // assert(ei.stack.empty());
-        // ei.code_writer.update_jump_placeholder(body_end, ei.code_writer.position());
-        // for(auto &j : fallback_jumps) {
-        //     ei.code_writer.update_jump_placeholder(j, ei.code_writer.position());
-        // }
-        // ei.code_writer.append(line, ExecuteOp::TryCompleted);
-        // ei.states.pop();
+        auto try_with_index = ei.per_function.add_try_with_block();
+        ei.per_function.try_with_all_blocks[try_with_index].begin = ei.code_writer.position();
+        body_->emit(ei);
+        ei.per_function.try_with_all_blocks[try_with_index].end = ei.code_writer.position();
+        ei.per_function.pop_try_with_block(try_with_index);
+
+        ei.per_function.deferred_actions.push_back([=, this, &ei]() {
+            ei.per_function.try_with_all_blocks[try_with_index].jump = ei.code_writer.position();
+
+            for(auto & [name, var_index, exprs, stat] : catches_) {
+                std::vector<TempInfo> arg_temps;
+                for(auto &q : exprs) {
+                    arg_temps.push_back(q->emit(ei));
+                }
+                auto &line = stat->line;
+                ei.code_writer.append(line, ExecuteOp::TryCatchType);
+                ei.code_writer.append(line, (std::uint32_t)exprs.size());
+                ei.code_writer.append(line, var_index);
+                for(auto &t : arg_temps) {
+                    ei.code_writer.append(line, t.index);
+                }
+            }
+            if (ei.per_function.try_with_all_blocks[try_with_index].next == 0xffffffff) {
+                ei.code_writer.append(line, ExecuteOp::TryCatchTypeCompleted);
+            }
+        });
 	}
 
 	void AstTry::visit(AstVisitor& vis) { vis.apply(*this); }

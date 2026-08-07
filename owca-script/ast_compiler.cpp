@@ -1101,7 +1101,7 @@ namespace OwcaScript::Internal {
 		auto line = consume("try");
 		auto body = compile_block();
 
-		std::vector<std::tuple<std::string_view, unsigned int, std::vector<std::unique_ptr<AstExpr>>, std::unique_ptr<AstStat>>> catches;
+		std::vector<std::tuple<std::string_view, VariableIndex, std::vector<std::unique_ptr<AstExpr>>, std::unique_ptr<AstStat>>> catches;
 
 		while(catches.empty() || preview().second == "catch") {
 			consume("catch");
@@ -1123,7 +1123,7 @@ namespace OwcaScript::Internal {
 			}
 			consume(")");
 			auto body2 = compile_block();
-			catches.push_back({ identifier, std::numeric_limits<unsigned int>::max(), std::move(types), std::move(body2) });
+			catches.push_back({ identifier, VariableIndex{}, std::move(types), std::move(body2) });
 		}
 		return std::make_unique<AstTry>(line, std::move(body), std::move(catches));
 	}
@@ -1360,20 +1360,20 @@ namespace OwcaScript::Internal {
 				assert(it != identifiers.end());
 				return it->second;
 			}
-			unsigned int ensure_writable_identifier(AstCompiler *comp, Line line, std::string_view name) {
-				auto pp = lookup_identifier(name);
-				assert(pp);
-				if (!pp->writeable) {
-				    if (pp->index.kind() == VariableIndexKind::Global) {
-						comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is in global scope and is non-modifiable here. Note it might still change the value from the global scope.", name));
-					}
-				    else {
-				        comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack.", name));
-					}
-				}
-				assert(pp->index.kind() == VariableIndexKind::Local);
-				return pp->index.index();
-			}
+			// unsigned int ensure_writable_identifier(AstCompiler *comp, Line line, std::string_view name) {
+			// 	auto pp = lookup_identifier(name);
+			// 	assert(pp);
+			// 	if (!pp->writeable) {
+			// 	    if (pp->index.kind() == VariableIndexKind::Global) {
+			// 			comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is in global scope and is non-modifiable here. Note it might still change the value from the global scope.", name));
+			// 		}
+			// 	    else {
+			// 	        comp->add_error(OwcaErrorKind::VariableIsConstant, comp->filename_, line, std::format("variable `{}` is constant - it has been copied from parent function's stack.", name));
+			// 		}
+			// 	}
+			// 	assert(pp->index.kind() == VariableIndexKind::Local);
+			// 	return pp->index.index();
+			// }
 			bool is_global() const {
 				return parent == nullptr;
 			}
@@ -1399,18 +1399,19 @@ namespace OwcaScript::Internal {
 			o.visit_children(*this);
 		}
 		void apply(AstWith &o) override {
-			if (first_run) {
-				if (!o.identifier().empty()) {
-					current_stack->define_identifier(o.identifier());
-				}
-			}
-			else {
-				if (!o.identifier().empty()) {
-					auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.identifier());
-					o.update_ident_index(index);
-				}
-			}
-			apply(static_cast<AstStat&>(o));
+			assert(false);
+			// if (first_run) {
+			// 	if (!o.identifier().empty()) {
+			// 		current_stack->define_identifier(o.identifier());
+			// 	}
+			// }
+			// else {
+			// 	if (!o.identifier().empty()) {
+			// 		auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.identifier());
+			// 		o.update_ident_index(index);
+			// 	}
+			// }
+			// apply(static_cast<AstStat&>(o));
 		}
 		void apply(AstTry &o) override {
 			if (first_run) {
@@ -1424,8 +1425,13 @@ namespace OwcaScript::Internal {
 				for(auto i = 0u; i < o.catch_count(); ++i) {
 					auto ident = o.catch_identifier(i);
 					if (!ident.empty()) {
-						auto index = current_stack->ensure_writable_identifier(compiler, o.catch_line(i), ident);
-						o.update_catch_index(i, index);
+						auto index_pp = current_stack->lookup_identifier(ident);
+						if (!index_pp) {
+							add_error(OwcaErrorKind::UndefinedIdentifier, o.line, std::format("variable `{}` has not been written", ident));
+						}
+						else {
+							o.update_catch_index(i, index_pp->index);
+						}
 					}
 				}
 			}
@@ -1564,6 +1570,7 @@ namespace OwcaScript::Internal {
 			r->emit(ei);
 		}
 		ei.code_writer.append(ei.code_writer.current_line(), Internal::ExecuteOp::Return);
+		ei.per_function.finalize();
 		ei.code_writer.update_placeholder(code_size, (std::int32_t)(ei.code_writer.position() - start_code));
 
 		assert(error_messages_.empty());

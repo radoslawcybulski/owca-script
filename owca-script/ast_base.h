@@ -28,11 +28,37 @@ namespace OwcaScript {
 				std::vector<BreakLoopPositions> break_loops;
 				AstCompiler &compiler;
 
+				struct TryWithBlockOnError {
+					std::uint32_t begin, end, jump;
+					std::uint32_t next;
+				};
+				
 				struct PerFunctionInfo {
 					std::vector<std::uint32_t> temporaries;
+					std::vector<TryWithBlockOnError> try_with_all_blocks;
+					std::vector<std::uint32_t> try_with_stack;
+					std::vector<std::function<void()>> deferred_actions;
 					std::uint32_t max_temporaries = 0;
 					std::uint32_t local_variables = 0;
 					bool generator = false;
+
+					std::uint32_t add_try_with_block() {
+						auto index = (std::uint32_t)try_with_all_blocks.size();
+						try_with_all_blocks.push_back(TryWithBlockOnError{});
+						try_with_all_blocks.back().next = try_with_stack.empty() ? (std::uint32_t)0xffffffff : try_with_stack.back();
+						try_with_stack.push_back(index);
+						return index;
+					}
+					void pop_try_with_block(std::uint32_t index) {
+						assert(!try_with_stack.empty());
+						assert(try_with_stack.back() == index);
+						try_with_stack.pop_back();
+					}
+					void finalize() {
+						for(auto &action : deferred_actions) {
+							action();
+						}
+					}
 				};
 
 				PerFunctionInfo per_function;

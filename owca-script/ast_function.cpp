@@ -48,14 +48,25 @@ namespace OwcaScript::Internal {
 			std::swap(per_function_our, ei.per_function);
 			assert(body_);
 			body_->emit(ei);
-			std::swap(per_function_our, ei.per_function);
-			if (per_function_our.max_temporaries > 0xFFFF) {
+			if (ei.per_function.max_temporaries > 0xffff) {
 				throw CompilationError{ line.line, "too many temporaries in function " + std::string{ full_name_ } };
 			}
-			ei.code_writer.update_placeholder(value_count, (std::uint16_t)per_function_our.max_temporaries);
+			ei.code_writer.update_placeholder(value_count, (std::uint16_t)ei.per_function.max_temporaries);
 
 			ei.code_writer.append(ei.code_writer.current_line(), generator_ == Generator::Yes ? Internal::ExecuteOp::ReturnCloseIterator : Internal::ExecuteOp::Return);
+			ei.per_function.finalize();
+
 			ei.code_writer.update_jump_placeholder(next, (std::int32_t)ei.code_writer.position());
+			
+			ei.code_writer.append(ei.code_writer.current_line(), (std::uint32_t)ei.per_function.try_with_all_blocks.size());
+			for(auto &block : ei.per_function.try_with_all_blocks) {
+				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.begin);
+				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.end);
+				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.jump);
+				ei.code_writer.append(ei.code_writer.current_line(), block.next);
+			}
+
+			std::swap(per_function_our, ei.per_function);
 		}
 		return std::move(*target);
 	}
