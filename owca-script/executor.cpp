@@ -728,7 +728,6 @@ namespace OwcaScript::Internal {
 restart:
         try {
             for(;;) {
-                //std::cout << "Running opcode at position " << reader.position() << std::endl;
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 auto line = code_object.get_line_by_position(code_pos);
 #endif
@@ -739,7 +738,7 @@ restart:
                 // last_time = now;
                 // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1) <<
+                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1 + stacktrace_current->runtime_function->code.code_offset()) <<
                     " stack " << std::setw(2) << (stacktrace_current - stacktrace_vector.data()) <<
                     " opcode " << std::setw(30) << to_string(opcode);
                 if (exception_being_thrown) std::cout << " (exception in progress)";

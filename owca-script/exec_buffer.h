@@ -393,7 +393,7 @@ namespace OwcaScript {
             std::vector<LineEntry> lines;
             std::vector<std::pair<std::string, std::uint32_t>> identifiers;
 
-            template <typename T> std::uint32_t prepare(Line line, const T *data, size_t sz, DataKind kind, std::source_location sl) {
+            template <typename T> std::uint32_t prepare(Line line, const T *data, size_t sz, DataKind kind, std::source_location sl, ExecuteOp execute_op = {}) {
                 auto size = sizeof(T) * sz;
                 auto current_size = buffer.size();
                 auto padding = 0u;
@@ -401,7 +401,7 @@ namespace OwcaScript {
                 data_kinds[current_size + padding] = kind;
 #ifdef OWCA_SCRIPT_EXEC_LOG
                 if (kind == DataKind::Op) {
-                    std::cout << sl.file_name() << ":" << sl.line() << " Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (current_size + padding) << " oper " << to_string((ExecuteOp)buffer[current_size + padding]) << std::endl;
+                    std::cout << sl.file_name() << ":" << sl.line() << " Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (current_size + padding) << " oper " << to_string(execute_op) << std::endl;
                 }
                 else {
                     std::cout << sl.file_name() << ":" << sl.line() << " Writing data of kind " << to_string(kind) << " at line " << line.line << " position " << (current_size + padding) << std::endl;
@@ -414,9 +414,9 @@ namespace OwcaScript {
                 auto pos = prepare(line, data, sz, DataKind::Blob, sl);
                 std::memcpy(buffer.data() + pos, data, sz);
             }
-            template <typename T> void append_impl(Line line, T value, DataKind kind, std::source_location sl) {
+            template <typename T> void append_impl(Line line, T value, DataKind kind, std::source_location sl, ExecuteOp execute_op = {}) {
                 handle_line(line);
-                auto pos = prepare(line, &value, 1, kind, sl);
+                auto pos = prepare(line, &value, 1, kind, sl, execute_op);
                 std::memcpy(buffer.data() + pos, &value, sizeof(T));
             }
             void handle_line(Line line) {
@@ -465,7 +465,7 @@ namespace OwcaScript {
                 update_jump_placeholder(jump_pos, target_pos);
             }
             template <typename T> void append(Line line, T value, std::source_location sl = std::source_location::current()) requires(std::is_enum_v<T>) {
-                append_impl(line, value, std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum, sl);
+                append_impl(line, value, std::is_same_v<T, ExecuteOp> ? DataKind::Op : DataKind::Enum, sl, std::is_same_v<T, ExecuteOp> ? value : ExecuteOp{});
             }
             template <typename T> void append(Line line, T value, std::source_location sl = std::source_location::current()) requires(std::is_integral_v<T> && !std::is_enum_v<T>) {
                 DataKind kind;
