@@ -26,7 +26,7 @@
 #include <utility>
 
 #ifdef DEBUG
-//#define OWCA_SCRIPT_EXEC_LOG
+#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 //#define MEASURE
@@ -396,19 +396,19 @@ namespace OwcaScript::Internal {
 
     void Executor::process_thrown_exception(CodePosition *code_pos, OwcaException exception)
     {
-        assert(false);
-//         while(HAS_STATE()) {
-//             if (auto state = TRY_STATE(TryState)) {
-//                 *code_pos = state->catches_pos;
-//                 exception_being_thrown = exception;
-// #ifdef OWCA_SCRIPT_EXEC_LOG
-//                 std::cout << __FILE__ << ":" << __LINE__ << ": setting code position (" << (void*)code_pos << ") to " << (void*)code_pos->value() << std::endl;
-// #endif
-//                 return;
-//             }
-//             POP_STATE();
-//         }
-//         throw exception;
+        exception_being_thrown = exception;
+        auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
+        current_try_with_block_when_thrown = nullptr;
+        for(auto i = sf->try_with_blocks.size(); i > 0; --i) {
+            auto &cb = sf->try_with_blocks[i - 1];
+            if (code_pos->value() > cb.begin.value() && code_pos->value() <= cb.end.value()) {
+                current_try_with_block_when_thrown = &cb;
+                break;
+            }
+        }
+        if (!current_try_with_block_when_thrown) throw exception;
+
+        *code_pos = current_try_with_block_when_thrown->jump;
     }
 
 	std::tuple<Number, Number, Number> Executor::parse_key(OwcaValue v, OwcaValue key, Number size) {
@@ -682,7 +682,7 @@ namespace OwcaScript::Internal {
             auto entry_point = code_pos;
             code_pos = z;
             auto count = code_pos.decode<std::uint32_t>();
-            std::vector<RuntimeFunctionScript::TryWithBlockInfo> try_with_blocks;
+            std::vector<TryWithBlockInfo> try_with_blocks;
             try_with_blocks.resize(count);
             for(auto &block : try_with_blocks) {
                 block.begin = code_pos.decode_jump();
@@ -1202,83 +1202,54 @@ restart:
                     auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     return { val, code_pos };
                     }
+                case ExecuteOp::TryCatchCompleted:
+                    current_try_with_block_when_thrown = nullptr;
+                    exception_being_thrown.reset();
+                    exception_being_handled.reset();
+                    [[fallthrough]];
                 case ExecuteOp::Jump: {
                     auto dest = code_pos.decode_jump();
                     code_pos = dest;
                     break; }
-                // case ExecuteOp::Throw: {
-                //     auto exception = PEEK_VALUE(1);
-                //     POP_VALUES(1);
-                //     throw exception.as_exception();
-                //     }
-                // case ExecuteOp::TryInit: {
-                //     PUSH_STATE(TryState{temporary_ptr});
-                //     auto &state = STATE(TryState);
-                //     state.begin_position = code_pos.decode_jump();
-                //     state.end_position = code_pos.decode_jump();
-                //     state.catches_pos = code_pos;
-                //     code_pos = state.begin_position;
-                //     state.temporary_ptr = temporary_ptr;
-                //     state.original_exception_being_handled = exception_being_handled;
-                //     break; }
-                // case ExecuteOp::TryCompleted: {
-                //     if (auto state = TRY_STATE(TryState)) {
-                //         assert(exception_being_handled == state->original_exception_being_handled);
-                //     }
-                //     else if (auto state = TRY_STATE(CatchState)) {
-                //         assert(exception_being_handled == state->original_exception_being_handled);
-                //     }
-                //     else {
-                //         assert(false);
-                //     }
-                //     POP_STATE();
-                //     break; }
-                // case ExecuteOp::TryCatchType: {
-                //     auto values = code_pos.decode<std::uint32_t>();
-                //     auto ident = code_pos.decode<std::uint32_t>();
-                //     auto skip_jump = code_pos.decode_jump();
+                case ExecuteOp::Throw: {
+                    auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                    auto exc = val.as_exception_maybe();
+                    if (!exc) {
+                        throw_wrong_type(val.type(), "Exception");
+                    }
+                    throw *exc;
+                    }
+                case ExecuteOp::TryCatchType: {
+                    auto block_pos = code_pos.decode_jump();
+                    auto sz = code_pos.decode<std::uint32_t>();
+                    auto dest_var = code_pos.decode<VariableIndex>();
+                    std::vector<OwcaClass> types;
+                    types.reserve(sz);
 
-                //     auto exc_types = PEEK_VALUES(values, values);
-                //     POP_VALUES(values);
-                //     assert(exception_being_thrown);
+                    for(auto i = 0u; i < sz; ++i) {
+                        auto type = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                        types.push_back(type.as_class());
+                    }
 
-                //     bool found = false;
-                //     for(auto e : exc_types) {
-                //         auto exc_type = e.as_class();
-                //         if (exception_being_thrown->type().has_base_class(exc_type)) {
-                //             found = true;
-                //             break;
-                //         }
-                //     }
-                //     if (found) {
-                //         if (ident != std::numeric_limits<std::uint32_t>::max()) {
-                //             LOCAL_VAR(ident) = *exception_being_thrown;
-                //         }
-                //         auto &state = STATE(TryState);
-                //         auto original_exception_being_handled = state.original_exception_being_handled;
-                //         POP_STATE();
-                //         PUSH_STATE(CatchState{});
-                //         auto &state2 = STATE(CatchState);
-                //         state2.exception_being_handled = exception_being_handled = exception_being_thrown;
-                //         state2.original_exception_being_handled = original_exception_being_handled;
-                //     }
-                //     else {
-                //         code_pos = skip_jump;
-                //     }
-                //     break; }
-                // case ExecuteOp::TryCatchTypeCompleted: {
-                //     auto &state = STATE(TryState);
-                //     POP_STATE();
-                //     throw *exception_being_thrown;
-                //     }
-                // case ExecuteOp::TryBlockCompleted: {
-                //     auto &state = STATE(CatchState);
-                //     assert(exception_being_thrown);
-                //     assert(exception_being_handled);
-                //     exception_being_thrown = std::nullopt;
-                //     exception_being_handled = std::nullopt;
-                //     code_pos = code_pos.decode_jump();
-                //     break; }
+                    auto j = 0u;
+                    for(; j < sz; ++j) {
+                        auto &type = types[j];
+                        if (exception_being_thrown->type().has_base_class(type)) {
+                            if (dest_var) {
+                                identifier_ptrs[dest_var] = *exception_being_thrown;
+                            }
+                            code_pos = block_pos;
+                            break;
+                        }
+                    }
+                    break; }
+                case ExecuteOp::TryCatchTypeCompleted: {
+                    auto next = current_try_with_block_when_thrown->next;
+                    if (next == 0xffffffff) goto rethrow;
+                    current_try_with_block_when_thrown = &sf->try_with_blocks[next];
+                    code_pos = current_try_with_block_when_thrown->jump;
+                    }                    
+
                 // case ExecuteOp::WithInit: {
                 //     PUSH_STATE(WithState{});
                 //     auto &state = STATE(WithState);
@@ -1310,6 +1281,8 @@ restart:
             process_thrown_exception(&code_pos, oe);
             goto restart;
         }
+    rethrow:
+        throw *exception_being_thrown;
     }
     // void Executor::complete_all(TemporariesPtr temporary_ptr) {
     //     auto sc = stacktrace_current;

@@ -9,7 +9,7 @@
 #include <source_location>
 
 #ifdef DEBUG
-// #define OWCA_SCRIPT_EXEC_LOG
+#define OWCA_SCRIPT_EXEC_LOG
 #endif
 
 namespace OwcaScript {
@@ -151,6 +151,7 @@ namespace OwcaScript {
             Throw,
             TryCatchType,
             TryCatchTypeCompleted,
+            TryCatchCompleted,
 
             WithInit,
             WithCompleted,Yield,
@@ -227,6 +228,9 @@ namespace OwcaScript {
             case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";
             case ExecuteOp::Throw: return "Throw";
+            case ExecuteOp::TryCatchType: return "TryCatchType";
+            case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
+            case ExecuteOp::TryCatchCompleted: return "TryCatchCompleted";
             case ExecuteOp::WithInit: return "WithInit";
             case ExecuteOp::WithCompleted: return "WithCompleted";
             case ExecuteOp::Yield: return "Yield";

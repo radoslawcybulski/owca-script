@@ -43,6 +43,7 @@ namespace OwcaScript {
                 std::uint32_t string_constants_count;
                 std::uint32_t globals_count;
                 std::uint32_t max_values_count;
+                std::uint32_t code_offset;
                 std::shared_ptr<NativeCodeProvider> native_code_provider;
                 GenerationGC gc;
             };
@@ -58,6 +59,7 @@ namespace OwcaScript {
             std::uint32_t string_constants_count() const { return code_->string_constants_count; }
             std::uint32_t globals_count() const { return code_->globals_count; }
             std::uint32_t max_values_count() const { return code_->max_values_count; }
+            auto code_offset() const { return code_->code_offset; }
             auto constants() { return code_->constants_vector.data(); }
             const auto &identifier_to_global_index() const { return code_->identifier_to_global_index; }
 

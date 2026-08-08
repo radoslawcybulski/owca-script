@@ -42,6 +42,7 @@ namespace OwcaScript {
 
         auto code_size = code_pos.decode<std::uint32_t>();
         const auto start_code = code_pos.value() - code_buffer.code().data();
+        code_->code_offset = (std::uint32_t)start_code;
         code_->code.resize(code_size);
         std::memcpy(code_->code.data(), code_pos.value(), code_size);
         code_pos += code_size;

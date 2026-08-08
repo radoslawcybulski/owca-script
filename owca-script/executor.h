@@ -23,6 +23,7 @@ namespace OwcaScript {
         class VM;
 		class Executor;
 		class CodePosition;
+		struct TryWithBlockInfo;
 
         struct LocalsPtr {
             OwcaValue *local_values_ptr;
@@ -172,6 +173,7 @@ namespace OwcaScript {
 			std::vector<OwcaValue> values_vector;
 			std::unordered_map<std::string_view, OwcaNamespace> namespaces;
 			std::optional<OwcaException> exception_being_thrown;
+			TryWithBlockInfo *current_try_with_block_when_thrown = nullptr;
 			std::optional<OwcaException> exception_being_handled;
 			LocalsPtr current_unused_locals_ptr;
 

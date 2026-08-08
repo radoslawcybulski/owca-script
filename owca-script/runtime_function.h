@@ -41,15 +41,15 @@ namespace OwcaScript {
 				code(std::move(code)), owning_namespace(owning_namespace), name(name), name_index(name_index), full_name(full_name), is_method(is_method), is_generator(is_generator) {}
 		};
 
+		struct TryWithBlockInfo {
+			CodePosition begin;
+			CodePosition end;
+			CodePosition jump;
+			std::uint32_t next;
+		};
 		struct RuntimeFunctionScript : public RuntimeFunction {
 		    void gc_mark(GenerationGC generation_gc) const override;
 
-			struct TryWithBlockInfo {
-				CodePosition begin;
-				CodePosition end;
-				CodePosition jump;
-				std::uint32_t next;
-			};
 			std::vector<OwcaValue> values_from_parents;
 			std::vector<std::string_view> identifier_names;
 			std::vector<TryWithBlockInfo> try_with_blocks;
