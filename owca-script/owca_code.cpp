@@ -78,6 +78,16 @@ namespace OwcaScript {
         code_->filename = code_buffer.filename();
         code_->lines = code_buffer.lines();
         code_->native_code_provider = std::move(native_code_provider);
+
+        size_t begin = 0;
+        while(begin < code_->lines.size() && code_->lines[begin].code_pos < start_code) {
+            ++begin;
+        }
+        size_t i = 0u;
+        for(; begin + i < code_->lines.size() && code_->lines[begin + i].code_pos < start_code + code_size; ++i) {
+            code_->lines[i] = { (std::uint32_t)(code_->lines[begin + i].code_pos - start_code), code_->lines[begin + i].line };
+        }
+        code_->lines.resize(i);
     }
     Internal::Line Internal::OwcaCode::get_line_by_position(Internal::CodePosition pos) const
     {
