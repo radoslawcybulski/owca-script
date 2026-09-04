@@ -33,9 +33,12 @@ function r(a) {
             return (int)val.member("r").call(mode).as_int();
         }
         catch(OwcaException oe) {
+            auto o = oe.frame(0);
+            std::cout << "OwcaException: " << o.filename << ":" << o.line << ": " << oe.message() << std::endl;
             return -1;
         }
         catch(std::exception &e) {
+            std::cout << "std::exception: " << e.what() << std::endl;
             return -2;
         }
         catch(...) {

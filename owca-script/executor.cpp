@@ -1223,6 +1223,13 @@ restart:
                     auto block_pos = code_pos.decode_jump();
                     auto sz = code_pos.decode<std::uint32_t>();
                     auto dest_var = code_pos.decode<VariableIndex>();
+                    if (sz == 0) {
+                        if (dest_var) {
+                            identifier_ptrs[dest_var] = *exception_being_thrown;
+                        }
+                        code_pos = block_pos;
+                        break;
+                    }
                     std::vector<OwcaClass> types;
                     types.reserve(sz);
 
