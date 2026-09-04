@@ -12,7 +12,7 @@ TEST_F(FunctionTest, bound_value)
 	auto code = vm.compile("test.os", R"(
 function r() { 
 	class A {
-		function __init__(self, v) {
+		function $init(self, v) {
 			self.v = v;
 		}
 		
@@ -36,7 +36,7 @@ TEST_F(FunctionTest, bind)
 	auto code = vm.compile("test.os", R"(
 function r() {
 	class A {
-		function __init__(self, v) {
+		function $init(self, v) {
 			self.v = v;
 		}
 		

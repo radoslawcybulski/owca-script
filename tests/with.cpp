@@ -21,24 +21,24 @@
 
 // queue = [];
 // class W {
-//     function __init__(self, v) {
+//     function $init(self, v) {
 //         self.v = v + 4;
 //         queue.push_back('A');
 //         queue.push_back(self.v);
 //     }
 // }
 // class Q {
-//     function __init__(self, v) {
+//     function $init(self, v) {
 //         self.v = v;
 //         queue.push_back('B');
 //         queue.push_back(self.v);
 //     }
-//     function __enter__(self) {
+//     function $enter(self) {
 //         queue.push_back('C');
 //         queue.push_back(self.v);
 //         return W(self.v);
 //     }
-//     function __exit__(self) {
+//     function $exit(self) {
 //         queue.push_back('D');
 //         queue.push_back(self.v);
 //     }
@@ -68,24 +68,24 @@
 
 // queue = [];
 // class W {
-//     function __init__(self, v) {
+//     function $init(self, v) {
 //         self.v = v + 4;
 //         queue.push_back('A');
 //         queue.push_back(self.v);
 //     }
 // }
 // class Q {
-//     function __init__(self, v) {
+//     function $init(self, v) {
 //         self.v = v;
 //         queue.push_back('B');
 //         queue.push_back(self.v);
 //     }
-//     function __enter__(self) {
+//     function $enter(self) {
 //         queue.push_back('C');
 //         queue.push_back(self.v);
 //         return W(self.v);
 //     }
-//     function __exit__(self) {
+//     function $exit(self) {
 //         queue.push_back('D');
 //         queue.push_back(self.v);
 //     }

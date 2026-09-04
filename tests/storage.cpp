@@ -12,7 +12,7 @@ class StorageTest : public SimpleTest {
 //     OwcaVM vm2;
 // 	auto code = vm.compile("test.os", R"(
 // class A {
-// 	function __init__(self, v) {
+// 	function $init(self, v) {
 // 		self.v = v;
 // 	}
 	

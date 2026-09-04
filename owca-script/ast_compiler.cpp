@@ -61,6 +61,9 @@ namespace OwcaScript::Internal {
 	static bool is_alpha_or_underscore(char c) {
 		return is_alpha(c) || c == '_';
 	}
+	static bool is_first_letter_of_identifier(char c) {
+		return is_alpha_or_underscore(c) || c == '$';
+	}
 	static bool is_alpha_or_digit(char c) {
 		return is_alpha(c) || is_digit(c);
 	}
@@ -154,7 +157,7 @@ namespace OwcaScript::Internal {
 		auto c = content[content_offset];
 		auto line = content_line;
 		auto text = [&]() {
-			if (is_alpha_or_underscore(c)) return preview_ident();
+			if (is_first_letter_of_identifier(c)) return preview_ident();
 			if (is_digit(c)) return preview_number();
 			if (c == '"' || c == '\'') return preview_string();
 			if (c == '`') {
@@ -231,7 +234,7 @@ namespace OwcaScript::Internal {
 	bool AstCompiler::is_identifier(std::string_view txt) const
 	{
 		assert(!txt.empty());
-		if (!is_alpha_or_underscore(txt[0])) return false;
+		if (!is_first_letter_of_identifier(txt[0])) return false;
 		for(auto i = 1u; i < txt.size(); ++i) {
 			if (!is_alpha_or_underscore_or_digit(txt[i])) return false;
 		}
@@ -415,9 +418,10 @@ namespace OwcaScript::Internal {
 		if (tok == "true") return std::make_unique<AstExprConstant>(line, true);
 		if (tok == "false") return std::make_unique<AstExprConstant>(line, false);
 		if (tok == "nul") return std::make_unique<AstExprConstant>(line, OwcaEmpty{});
+		if (tok == "$line") return std::make_unique<AstExprConstant>(line, (Number)content_line.line);
 		if (is_digit(tok[0]) || tok[0] == '.') return compile_parse_constant_number(line, tok);
 
-		if (is_alpha_or_underscore(tok[0])) {
+		if (is_first_letter_of_identifier(tok[0])) {
 			if (is_keyword(tok)) {
 				add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("unexpected keyword `{}`", tok));
 			}
@@ -527,7 +531,7 @@ namespace OwcaScript::Internal {
 			else if (tok == ".") {
 				auto line = consume().first;
 				auto [line2, tok] = consume();
-				if (is_alpha_or_underscore(tok[0])) {
+				if (is_first_letter_of_identifier(tok[0])) {
 					if (is_keyword(tok)) {
 						add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier, got keyword `{}`", tok));
 					}

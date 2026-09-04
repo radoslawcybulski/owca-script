@@ -101,7 +101,7 @@ TEST_F(SimpleTest, class_)
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {
-	function __init__(self, a, b, c) {
+	function $init(self, a, b, c) {
 		self.value = a + b + c;
 	}
 }
@@ -138,7 +138,7 @@ TEST_F(SimpleTest, native_class)
 	};
 	auto code = compile(__LINE__, vm, "test.os", R"(
 class native A {
-	function __init__(self, a, b, c) {
+	function $init(self, a, b, c) {
 		self.value = a + b + c;
 	}
 }
@@ -196,7 +196,7 @@ TEST_F(SimpleTest, native_class_with_funcs)
 		};
 		auto code = compile(__LINE__, vm, "test.os", R"(
 	class native A {
-		function __init__(self, a, b, c) {
+		function $init(self, a, b, c) {
 			self.set_value(a + b + c);
 		}
 		function native set_value(self, v);
@@ -269,7 +269,7 @@ TEST_F(SimpleTest, native_class_with_vars)
 		unsigned int reads = 0, writes = 0;
 		auto code = compile(__LINE__, vm, "test.os", R"(
 	class native A {
-		function __init__(self, a, b, c) {
+		function $init(self, a, b, c) {
 			self.value = a + b + c;
 		}
 		var value;
@@ -473,7 +473,7 @@ TEST_F(SimpleTest, call)
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {
-	function __init__(self, v) {
+	function $init(self, v) {
 		self.v = v;
 	}
 	function r(self, a) {

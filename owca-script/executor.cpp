@@ -1255,7 +1255,7 @@ restart:
                 //     auto &state = STATE(WithState);
                 //     auto &obj = PEEK_VALUE(1);
                 //     state.context = obj;
-                //     obj = current_vm().member(obj, "__enter__");
+                //     obj = current_vm().member(obj, "$enter");
                 //     obj = execute_call_from_values(temporary_ptr, 1);
                 //     state.entered = true;
                 //     auto index = code_pos.decode<std::uint32_t>();
@@ -1296,7 +1296,7 @@ restart:
     // void Executor::complete(WithState state, TemporariesPtr temporary_ptr) {
     //     if (state.entered) {
     //         state.entered = false;
-    //         auto mbm = current_vm().member(state.context, "__exit__");
+    //         auto mbm = current_vm().member(state.context, "$exit");
     //         PUSH_VALUE(mbm);
     //         execute_call_from_values(temporary_ptr, 1);
     //         POP_VALUES(1);
@@ -1494,7 +1494,7 @@ restart:
 		auto ii_ptr = cls->values.find(current_vm().get_ii_init());
 		if (!ii_ptr) {
 			if (arg_count > 1) {
-				throw_cant_call(std::format("type {} has no __init__ function defined - expected constructor's call with no parameters, instead got {} parameters", cls->full_name, arg_count - 1));
+				throw_cant_call(std::format("type {} has no $init function defined - expected constructor's call with no parameters, instead got {} parameters", cls->full_name, arg_count - 1));
 			}
             return obj;
 		}
@@ -1506,7 +1506,7 @@ restart:
             }
             return retval;
         }
-        throw_cant_call(std::format("type {} has __init__ variable, not a function", std::get<Class*>(*ii_ptr)->full_name));
+        throw_cant_call(std::format("type {} has $init variable, not a function", std::get<Class*>(*ii_ptr)->full_name));
 	}
     OwcaValue Executor::execute_call_from_values(unsigned int argument_count) {
         auto func = current_unused_locals_ptr[0];

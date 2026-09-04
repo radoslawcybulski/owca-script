@@ -156,7 +156,7 @@ function update_state(name, is_bid, val, count) {
 
 function run() {
     class Random {
-        function __init__(self) {
+        function $init(self) {
             self.state = 0;
         }
         function next(self) {

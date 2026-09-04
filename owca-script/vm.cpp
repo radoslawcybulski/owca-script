@@ -24,8 +24,8 @@
 
 namespace OwcaScript::Internal {
 	VM::VM() {
-		ii_init = get_identifier_index("__init__");
-		ii_iter = get_identifier_index("__iter__");
+		ii_init = get_identifier_index("$init");
+		ii_iter = get_identifier_index("$iter");
 
 		set_current_vm(this);
 		executor = std::make_unique<Executor>();
@@ -514,7 +514,7 @@ namespace OwcaScript::Internal {
 		}
 
 		std::optional<Function> native_function(std::string_view full_name, std::span<const std::string_view> param_names) const override {
-			if (full_name == "Range.__init__") {
+			if (full_name == "Range.$init") {
 				if (param_names.size() == 2) return adapt(range_init1);
 				if (param_names.size() == 3) return adapt(range_init2);
 				if (param_names.size() == 4) return adapt(range_init3);
@@ -525,13 +525,13 @@ namespace OwcaScript::Internal {
 			if (full_name == "Range.size") return adapt(range_size);
 			if (full_name == "Iterator.completed") return adapt(iterator_completed);
 			if (full_name == "Iterator.next") return adapt(iterator_next);
-			if (full_name == "Bool.__init__") return adapt(bool_init);
-			if (full_name == "Float.__init__") return adapt(float_init);
-			if (full_name == "String.__init__") return adapt(string_init);
+			if (full_name == "Bool.$init") return adapt(bool_init);
+			if (full_name == "Float.$init") return adapt(float_init);
+			if (full_name == "String.$init") return adapt(string_init);
 			if (full_name == "String.size") return adapt(string_size);
 			if (full_name == "Function.bound_value") return adapt(function_bound_value);
 			if (full_name == "Function.bind") return adapt(function_bind);
-			if (full_name == "Map.__init__") return adapt(map_init);
+			if (full_name == "Map.$init") return adapt(map_init);
 			if (full_name == "Map.size") return adapt(map_size);
 			if (full_name == "Map.has_key") return adapt(map_has_key);
 			if (full_name == "Map.pop") return adapt(map_pop);
@@ -539,7 +539,7 @@ namespace OwcaScript::Internal {
 			if (full_name == "Map.pop_or_default" && param_names.size() == 3) return adapt(map_pop_or_default_3);
 			if (full_name == "Map.get_or_default") return adapt(map_get_or_default);
 			if (full_name == "Map.set_default") return adapt(map_set_default);
-			if (full_name == "Set.__init__") return adapt(set_init);
+			if (full_name == "Set.$init") return adapt(set_init);
 			if (full_name == "Set.size") return adapt(set_size);
 			if (full_name == "Set.add") return adapt(set_add);
 			if (full_name == "Set.remove") return adapt(set_remove);
@@ -548,20 +548,20 @@ namespace OwcaScript::Internal {
 			if (full_name == "Set.difference_with") return adapt(set_difference_with);
 			if (full_name == "Class.name") return adapt(class_name);
 			if (full_name == "Class.full_name") return adapt(class_full_name);
-			if (full_name == "Array.__init__") return adapt(array_init);
+			if (full_name == "Array.$init") return adapt(array_init);
 			if (full_name == "Array.size") return adapt(array_size);
 			if (full_name == "Array.sort") return adapt(array_sort);
 			if (full_name == "Array.push_back") return adapt(array_push_back);
 			if (full_name == "Array.push_front") return adapt(array_push_front);
 			if (full_name == "Array.pop_back") return adapt(array_pop_back);
 			if (full_name == "Array.pop_front") return adapt(array_pop_front);
-			if (full_name == "Tuple.__init__") return adapt(tuple_init);
+			if (full_name == "Tuple.$init") return adapt(tuple_init);
 			if (full_name == "Tuple.size") return adapt(tuple_size);
 			if (full_name == "Tuple.sort") return adapt(tuple_sort);
 			if (full_name == "hash") return adapt(hash);
 			if (full_name == "print") return adapt(print);
 			if (full_name == "time") return adapt(time);
-			if (full_name == "Exception.__init__") return adapt(exception_init);
+			if (full_name == "Exception.$init") return adapt(exception_init);
 			if (full_name == "Exception.count") return adapt(exception_count);
 			if (full_name == "Exception.message") return adapt(exception_message);
 			if (full_name == "Exception.line") return adapt(exception_line);
@@ -570,15 +570,15 @@ namespace OwcaScript::Internal {
 			return std::nullopt;
 		}
 		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::span<const std::string_view> param_names) const override {
-			if (full_name == "Range.__iter__") return adapt(range_iter);
-			if (full_name == "String.__iter__") return adapt(string_iter);
-			if (full_name == "Map.__iter__") return adapt(map_iter);
+			if (full_name == "Range.$iter") return adapt(range_iter);
+			if (full_name == "String.$iter") return adapt(string_iter);
+			if (full_name == "Map.$iter") return adapt(map_iter);
 			if (full_name == "Map.items") return adapt(map_items);
 			if (full_name == "Map.keys") return adapt(map_keys);
 			if (full_name == "Map.values") return adapt(map_values);
-			if (full_name == "Set.__iter__") return adapt(set_iter);
-			if (full_name == "Array.__iter__") return adapt(array_iter);
-			if (full_name == "Tuple.__iter__") return adapt(tuple_iter);
+			if (full_name == "Set.$iter") return adapt(set_iter);
+			if (full_name == "Array.$iter") return adapt(array_iter);
+			if (full_name == "Tuple.$iter") return adapt(tuple_iter);
 			return std::nullopt;
 		}
 		std::shared_ptr<NativeClassInterface> native_class(std::string_view full_name) const override {
@@ -598,34 +598,34 @@ class Iterator {
 	function native next(self);
 }
 class Range {
-	function native __init__(self, upper);
-	function native __init__(self, lower, upper);
-	function native __init__(self, lower, upper, step);
+	function native $init(self, upper);
+	function native $init(self, lower, upper);
+	function native $init(self, lower, upper, step);
 	function native lower(self);
 	function native upper(self);
 	function native step(self);
 	function native size(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 }
 class Bool {
-	function native __init__(self, value);
+	function native $init(self, value);
 }
 class Float {
-	function native __init__(self, value);
+	function native $init(self, value);
 }
 class String {
-	function native __init__(self, value);
+	function native $init(self, value);
 	function native size(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 }
 class Function {
 	function native bind(self, value);
 	function native bound_value(self);
 }
 class Map {
-	function native __init__(self, value);
+	function native $init(self, value);
 	function native size(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 	function native has_key(self, key);
 	function native pop(self, key);
 	function native pop_or_default(self, key);
@@ -637,37 +637,37 @@ class Map {
 	function native generator values(self);
 }
 class Set {
-	function native __init__(self, value);
+	function native $init(self, value);
 	function native union_with(self, other);
 	function native intersection_with(self, other);
 	function native difference_with(self, other);
 	function native add(self, value);
 	function native remove(self, value);
 	function native size(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 }
 class Class {
 	function native name(self);
 	function native full_name(self);
 }
 class Array {
-	function native __init__(self, value);
+	function native $init(self, value);
 	function native size(self);
 	function native sort(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 	function native push_back(self, v);
 	function native push_front(self, v);
 	function native pop_back(self);
 	function native pop_front(self);
 }
 class Tuple {
-	function native __init__(self, value);
+	function native $init(self, value);
 	function native size(self);
 	function native sort(self);
-	function native generator __iter__(self);
+	function native generator $iter(self);
 }
 class native Exception {
-	function native __init__(self, message);
+	function native $init(self, message);
 	function native count(self);
 	function native message(self);
 	function native line(self, index);
@@ -1438,7 +1438,7 @@ function native time();
 
 	OwcaIterator VM::create_iterator(OwcaValue r)
 	{
-		auto func = try_member(r, "__iter__");
+		auto func = try_member(r, "$iter");
 		if (!func)
 			throw_not_iterable(r.type());
 		auto val = execute_call(*func, {});
