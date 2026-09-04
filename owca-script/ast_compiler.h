@@ -30,8 +30,21 @@ namespace OwcaScript {
 			unsigned int loop_control_depth = 0;
 			VM &vm;
 
+			bool in_catch_block = false;
 			bool continue_ = true;
 			bool allow_range = true;
+			struct InCatchBlockSet {
+				bool& in_catch_block;
+				bool old_value;
+
+				InCatchBlockSet(bool& in_catch_block, bool new_val) : in_catch_block(in_catch_block) {
+					old_value = in_catch_block;
+					in_catch_block = new_val;
+				}
+				~InCatchBlockSet() {
+					in_catch_block = old_value;
+				}
+			};
 			struct AllowRangeSet {
 				bool& allow_range;
 				bool old_value;

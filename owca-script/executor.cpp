@@ -22,6 +22,7 @@
 #include "exception.h"
 #include "namespace.h"
 #include <chrono>
+#include <iomanip>
 #include <string_view>
 #include <utility>
 
@@ -394,22 +395,20 @@ namespace OwcaScript::Internal {
 #endif
     }
 
-    void Executor::process_thrown_exception(CodePosition *code_pos, OwcaException exception)
-    {
-        exception_being_thrown = exception;
-        auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
-        current_try_with_block_when_thrown = nullptr;
-        for(auto i = sf->try_with_blocks.size(); i > 0; --i) {
-            auto &cb = sf->try_with_blocks[i - 1];
-            if (code_pos->value() > cb.begin.value() && code_pos->value() <= cb.end.value()) {
-                current_try_with_block_when_thrown = &cb;
-                break;
-            }
-        }
-        if (!current_try_with_block_when_thrown) throw exception;
-
-        *code_pos = current_try_with_block_when_thrown->jump;
-    }
+    // Executor::ProcessThrownExceptionResult Executor::process_thrown_exception(CodePosition *code_pos)
+    // {
+    //     auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
+    //     auto &exception_in_progress = exceptions_in_progress.back();
+    //     for(auto i = sf->try_with_blocks.size(); i > 0; --i) {
+    //         auto &cb = sf->try_with_blocks[i - 1];
+    //         if (code_pos->value() > cb.begin.value() && code_pos->value() <= cb.end.value()) {
+    //             exception_in_progress.current_try_with_block_when_thrown = &cb;
+    //             *code_pos = cb.jump;
+    //             return ProcessThrownExceptionResult::ContinueWithOpcodes;
+    //         }
+    //     }
+    //     return ProcessThrownExceptionResult::ThrowToCaller;
+    // }
 
 	std::tuple<Number, Number, Number> Executor::parse_key(OwcaValue v, OwcaValue key, Number size) {
 		return key.visit(
@@ -681,15 +680,6 @@ namespace OwcaScript::Internal {
             auto z = code_pos.decode_jump();
             auto entry_point = code_pos;
             code_pos = z;
-            auto count = code_pos.decode<std::uint32_t>();
-            std::vector<TryWithBlockInfo> try_with_blocks;
-            try_with_blocks.resize(count);
-            for(auto &block : try_with_blocks) {
-                block.begin = code_pos.decode_jump();
-                block.end = code_pos.decode_jump();
-                block.jump = code_pos.decode_jump();
-                block.next = code_pos.decode<std::uint32_t>();
-            }
             
             RuntimeFunctionScript *f;
             if (is_generator) {
@@ -698,7 +688,6 @@ namespace OwcaScript::Internal {
             else {
                 f = current_vm().allocate<RuntimeFunctionScriptFunction>(0, code_object, stacktrace_current->runtime_function->owning_namespace, identifier_ptrs.get_globals_pointer(), name_index, name, full_name, is_method, entry_point);
             }
-            f->try_with_blocks = std::move(try_with_blocks);
             fnc = f;
             f->identifier_names = std::move(identifier_names);
             f->values_from_parents = std::move(values_from_parents);
@@ -710,7 +699,7 @@ namespace OwcaScript::Internal {
         return OwcaFunctions{ rfs };
     }
 
-    std::tuple<OwcaValue, CodePosition> Executor::run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos)
+    std::tuple<OwcaValue, CodePosition, Executor::RunOpcodesResult> Executor::run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos, CodePosition begin_code_pos, CodePosition end_code_pos)
     {
         auto sf = static_cast<RuntimeFunctionScript*>(stacktrace_current->runtime_function);
         IdentifierPtrs identifier_ptrs{
@@ -722,6 +711,12 @@ namespace OwcaScript::Internal {
 
         auto * const stacktrace_current_copy = stacktrace_current;
 #ifdef OWCA_SCRIPT_EXEC_LOG
+        static unsigned int runtime_depth = 0;
+        struct DepthIncreaser {
+            DepthIncreaser() { ++runtime_depth; }
+            ~DepthIncreaser() { --runtime_depth; }
+        };
+        DepthIncreaser depth_increaser;
         auto &code_object = stacktrace_current->runtime_function->code;
 #endif
 
@@ -738,11 +733,28 @@ restart:
                 // last_time = now;
                 // std::cout << std::setw(10) << (std::chrono::duration_cast<std::chrono::nanoseconds>(df).count()) << " ns ";
 #ifdef OWCA_SCRIPT_EXEC_LOG
-                std::cout << "Running opcode at line " << std::setw(4) << line.line << " position " << std::setw(5) << (code_pos.value() - stacktrace_current->runtime_function->code.code().data() - 1 + stacktrace_current->runtime_function->code.code_offset()) <<
-                    " stack " << std::setw(2) << (stacktrace_current - stacktrace_vector.data()) <<
-                    " opcode " << std::setw(30) << to_string(opcode);
-                if (exception_being_thrown) std::cout << " (exception in progress)";
-                if (exception_being_handled) std::cout << " (exception being handled)";
+                static unsigned int opcode_counter = 0;
+                ++opcode_counter;
+                std::cout << std::setw(5) << opcode_counter
+                    << ":" << std::setw(5) << code_object.code_position_index(code_pos)
+                    << ":" << std::setw(3) << line.line
+                    // << ":" << std::setw(2) << runtime_depth
+                    // << ":" << std::setw(2) << (stacktrace_current - stacktrace_vector.data())
+                    ;
+                for(auto i = 0u; i < runtime_depth; ++i) {
+                    std::cout << "    ";
+                }
+                std::cout << " opcode ";
+                auto t = to_string(opcode);
+                std::cout << t;
+                if (t.size() < 35)
+                    std::cout << std::setw(35 - t.size()) << " ";
+                if (code_object.code_position_begin() != begin_code_pos) {
+                    std::cout << " (begin " << code_object.code_position_index(begin_code_pos) << ")";
+                }
+                if (code_object.code_position_end() != end_code_pos) {
+                    std::cout << " (end " << code_object.code_position_index(end_code_pos) << ")";
+                }
                 std::cout << std::endl;
 #endif
 
@@ -836,6 +848,7 @@ restart:
         else {                                                              \
             target = false;                                                 \
             code_pos = jump_dest;                                           \
+            assert(code_pos >= begin_code_pos && code_pos <= end_code_pos); \
         }                                                                   \
     } while(0)
 
@@ -957,6 +970,7 @@ restart:
                     if (IS_TRUE(condition)) {
                         target = true;
                         code_pos = jump_dest;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     }
                     break; }
                 case ExecuteOp::ExprRetFalseAndJumpIfFalse: {
@@ -966,6 +980,7 @@ restart:
                     if (!IS_TRUE(condition)) {
                         target = false;
                         code_pos = jump_dest;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     }
                     break; }
                 case ExecuteOp::ExprToString: {
@@ -1148,11 +1163,13 @@ restart:
 
                     if (iter.completed()) [[unlikely]] {
                         code_pos = end_position;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                         break;
                     }
                     auto val = continue_iterator(iter);
                     if (!val) [[unlikely]] {
                         code_pos = end_position;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                         break;
                     }
                     target = *val;
@@ -1160,6 +1177,7 @@ restart:
                 case ExecuteOp::Function: {
                     auto &target = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     target = create_function(code_pos, identifier_ptrs);
+                    assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     break; }
                 case ExecuteOp::If: {
                     auto condition = identifier_ptrs[code_pos.decode<VariableIndex>()];
@@ -1167,6 +1185,7 @@ restart:
                     auto else_position = code_pos.decode_jump();
                     if (!val) {
                         code_pos = else_position;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysFalse: {
@@ -1175,6 +1194,7 @@ restart:
                     auto else_position = code_pos.decode_jump();
                     if (!val){
                         code_pos = else_position;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     }
                     break; }
                 case ExecuteOp::IfAlmostAlwaysTrue: {
@@ -1183,71 +1203,115 @@ restart:
                     auto else_position = code_pos.decode_jump();
                     if (!val){
                         code_pos = else_position;
+                        assert(code_pos >= begin_code_pos && code_pos <= end_code_pos);
                     }
                     break; }
                 case ExecuteOp::ReturnCloseIterator: {
                     //complete_all(temporary_ptr);
-                    return { OwcaCompleted{}, code_pos };
+                    return { OwcaCompleted{}, code_pos, RunOpcodesResult::Return };
                     }
                 case ExecuteOp::Return: {
                     //complete_all(temporary_ptr);
-                    return { OwcaEmpty{}, code_pos };
+                    return { OwcaEmpty{}, code_pos, RunOpcodesResult::Return };
                     }
                 case ExecuteOp::ReturnValue: {
                     auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
                     //complete_all(temporary_ptr);
-                    return { val, code_pos };
+                    return { val, code_pos, RunOpcodesResult::Return };
                     }
                 case ExecuteOp::Yield: {
                     auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
-                    return { val, code_pos };
+                    return { val, code_pos, RunOpcodesResult::Return };
                     }
-                case ExecuteOp::TryCatchCompleted:
-                    current_try_with_block_when_thrown = nullptr;
-                    exception_being_thrown.reset();
-                    exception_being_handled.reset();
-                    [[fallthrough]];
                 case ExecuteOp::Jump: {
                     auto dest = code_pos.decode_jump();
+                    if (dest < begin_code_pos || dest > end_code_pos) {
+                        return { OwcaEmpty{}, dest, RunOpcodesResult::Continue };
+                    }
                     code_pos = dest;
                     break; }
                 case ExecuteOp::Throw: {
-                    auto val = identifier_ptrs[code_pos.decode<VariableIndex>()];
-                    auto exc = val.as_exception_maybe();
-                    if (!exc) {
-                        throw_wrong_type(val.type(), "Exception");
+                    auto index = code_pos.decode<VariableIndex>();
+                    if (!index) {
+                        assert(exception_in_progress);
                     }
-                    throw *exc;
-                    }
-                case ExecuteOp::TryCatchType: {
-                    auto block_pos = code_pos.decode_jump();
-                    auto sz = code_pos.decode<std::uint32_t>();
-                    auto dest_var = code_pos.decode<VariableIndex>();
-                    std::vector<OwcaClass> types;
-                    types.reserve(sz);
-
-                    for(auto i = 0u; i < sz; ++i) {
-                        auto type = identifier_ptrs[code_pos.decode<VariableIndex>()];
-                        types.push_back(type.as_class());
-                    }
-
-                    auto j = 0u;
-                    for(; j < sz; ++j) {
-                        auto &type = types[j];
-                        if (exception_being_thrown->type().has_base_class(type)) {
-                            if (dest_var) {
-                                identifier_ptrs[dest_var] = *exception_being_thrown;
-                            }
-                            code_pos = block_pos;
-                            break;
+                    else {
+                        auto val = identifier_ptrs[index];
+                        auto exc = val.as_exception_maybe();
+                        if (!exc) {
+                            throw_wrong_type(val.type(), "Exception");
+                        }
+                        else {
+                            exception_in_progress = exc;
                         }
                     }
+                    return { OwcaEmpty{}, code_pos, RunOpcodesResult::Throw };
+                    }
+                case ExecuteOp::Try: { // beginning of try block
+                    auto catch_pos = code_pos.decode_jump();
+                    auto end_try = code_pos.decode_jump();
+                    auto old_exception = exception_in_progress;
+                    auto [ val, cp, result ] = run_opcodes(locals_ptr, code_pos, code_pos, end_try);
+                    if (result == RunOpcodesResult::Return) {
+                        exception_in_progress = old_exception;
+                        return { val, cp, result };
+                    }
+                    if (result == RunOpcodesResult::Continue) {
+                        exception_in_progress = old_exception;
+                        if (cp < begin_code_pos || cp > end_code_pos) {
+                            return { val, code_pos, RunOpcodesResult::Continue };
+                        }
+                        code_pos = cp;
+                        break;
+                    }
+                    assert(result == RunOpcodesResult::Throw);
+                    auto [ val2, cp2, result2 ] = run_opcodes(locals_ptr, catch_pos, catch_pos, end_try);
+                    if (result2 != RunOpcodesResult::Throw) {
+                        exception_in_progress = old_exception;
+                    }
+                    return { val2, cp2, result2 };
+                    }
+                case ExecuteOp::TryCatchType: { // beginning of catch block
+                    auto block_pos_end = code_pos.decode_jump();
+                    auto sz = code_pos.decode<std::uint32_t>();
+                    auto dest_var = code_pos.decode<VariableIndex>();
+                    bool handle = false;
+                    if (sz == 0) {
+                        handle = true;
+                    }
+                    else {
+                        for(auto i = 0u; i < sz; ++i) {
+                            auto type = identifier_ptrs[code_pos.decode<VariableIndex>()];
+                            auto cls = type.as_class();
+                            if (exception_in_progress->type().has_base_class(cls)) {
+                                handle = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (handle) {
+                        if (dest_var) {
+                            assert(exception_in_progress);
+                            identifier_ptrs[dest_var] = *exception_in_progress;
+                        }
+                        auto [ val, cp, result ] = run_opcodes(locals_ptr, code_pos, code_pos, block_pos_end);
+                        if (result == RunOpcodesResult::Continue) {
+                            if (cp < begin_code_pos || cp > end_code_pos) {
+                                return { OwcaEmpty{}, cp, RunOpcodesResult::Continue };
+                            }
+                            code_pos = cp;
+                            break;
+                        }
+                        return { val, cp, result };
+                    }
+                    code_pos = block_pos_end;
                     break; }
-                case ExecuteOp::TryCatchTypeCompleted: {
-                    auto next = current_try_with_block_when_thrown->next;
-                    if (next == 0xffffffff) goto rethrow;
-                    current_try_with_block_when_thrown = &sf->try_with_blocks[next];
-                    code_pos = current_try_with_block_when_thrown->jump;
+                case ExecuteOp::TryCatchCompleted: { // end of catch block
+                    auto dest = code_pos.decode_jump();
+                    return { OwcaEmpty{}, dest, RunOpcodesResult::Continue };
+                    }
+                case ExecuteOp::TryCatchTypeCompleted: { // end of all catch blocks for the current try block
+                    return { {}, code_pos, RunOpcodesResult::Throw };
                     }                    
 
                 // case ExecuteOp::WithInit: {
@@ -1278,11 +1342,9 @@ restart:
             }
         }
         catch(OwcaException oe) {
-            process_thrown_exception(&code_pos, oe);
-            goto restart;
+            exception_in_progress = oe;
+            return { OwcaValue{}, code_pos, RunOpcodesResult::Throw };
         }
-    rethrow:
-        throw *exception_being_thrown;
     }
     // void Executor::complete_all(TemporariesPtr temporary_ptr) {
     //     auto sc = stacktrace_current;
@@ -1431,8 +1493,14 @@ restart:
         //assert(function->copy_from_parents.size() == function->values_from_parents.size());
 
         auto est = StackTraceState{ *this, function, function->entry_point };
-        auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, function->entry_point);
-        return retval;
+        auto &oc = function->code;
+        auto [ retval, new_code_pos, result ] = run_opcodes(locals_ptr, function->entry_point, oc.code_position_begin(), oc.code_position_end());
+        if (result == RunOpcodesResult::Return) {
+            return retval;
+        }
+        assert(result == RunOpcodesResult::Throw);
+        assert(exception_in_progress);
+        throw *exception_in_progress;
     }
     Generator Executor::run_script_generator(Iterator *iter_object, RuntimeFunctionScriptGenerator *function, std::vector<OwcaValue> values_vec, CodePosition code_pos)
     {
@@ -1443,7 +1511,12 @@ restart:
                 auto est = StackTraceState{ *this, function, code_pos };
                 auto tpk = Executor::TopPtrsKeeper{ *this, function->max_values };
                 auto sc = stacktrace_current;
-                auto [ retval, new_code_pos ] = run_opcodes(locals_ptr, code_pos);
+                auto [ retval, new_code_pos, result ] = run_opcodes(locals_ptr, code_pos, function->code.code_position_begin(), function->code.code_position_end());
+                if (result == RunOpcodesResult::Throw) {
+                    assert(exception_in_progress);
+                    throw *exception_in_progress;
+                }
+                assert(result == RunOpcodesResult::Return);
                 assert(sc == stacktrace_current);
                 val = retval;
                 code_pos = new_code_pos;
@@ -1553,23 +1626,24 @@ restart:
 #endif
         auto oc = Internal::OwcaCode{ current_vm(), oc_buffer, std::move(native_code_provider) };
         auto ns = current_vm().create_namespace(std::move(oc));
+        auto &occ = ns.internal_value()->code;
         namespaces.insert({ ns.internal_value()->code.filename(), ns});
         if (namespaces.size() > 1) {
             auto ns_it = namespaces.at(current_vm().builtin_filename);
-            for(auto it : ns_it.internal_value()->code.identifier_to_global_index()) {
-                auto val = ns_it.internal_value()->globals[it.second];
-                ns.try_member(it.first, val);
+            for(auto it2 : ns_it.internal_value()->code.identifier_to_global_index()) {
+                auto val = ns_it.internal_value()->globals[it2.second];
+                ns.try_member(it2.first, val);
             }
         }
 
         auto globals_ptr = GlobalsPtr{ ns.internal_value()->globals.data() };
-        auto tpk = TopPtrsKeeper{ *this, ns.internal_value()->code.max_values_count() };
+        auto tpk = TopPtrsKeeper{ *this, occ.max_values_count() };
         auto locals_ptr = tpk.current_unused_locals_ptr;
 
         auto mcb_index = current_vm().get_identifier_index("main-code-block");
-        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, ns.internal_value()->code, ns, globals_ptr, mcb_index, std::string_view("main-code-block"), std::string_view("main-code-block"), false, ns.internal_value()->code.code_position());
+        auto function = current_vm().allocate<RuntimeFunctionScriptFunction>(0, occ, ns, globals_ptr, mcb_index, std::string_view("main-code-block"), std::string_view("main-code-block"), false, occ.code_position());
         auto est = StackTraceState{ *this, function, function->entry_point };
-        run_opcodes(locals_ptr, ns.internal_value()->code.code_position());
+        run_opcodes(locals_ptr, occ.code_position(), occ.code_position_begin(), occ.code_position_end());
         return ns;
     }
 
@@ -1833,11 +1907,8 @@ restart:
         for(auto sc = e.stacktrace_vector.data() + 1; sc <= e.stacktrace_current; ++sc) {
             gc_mark_value(ggc, sc->runtime_function);
         }
-        if (e.exception_being_thrown) {
-            gc_mark_value(ggc, *e.exception_being_thrown);
-        }
-        if (e.exception_being_handled) {
-            gc_mark_value(ggc, *e.exception_being_handled);
+        if (e.exception_in_progress) {
+            gc_mark_value(ggc, *e.exception_in_progress);
         }
     }
 }

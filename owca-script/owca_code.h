@@ -59,11 +59,14 @@ namespace OwcaScript {
             std::uint32_t string_constants_count() const { return code_->string_constants_count; }
             std::uint32_t globals_count() const { return code_->globals_count; }
             std::uint32_t max_values_count() const { return code_->max_values_count; }
+            std::uint32_t code_position_index(Internal::CodePosition pos) const;
             auto code_offset() const { return code_->code_offset; }
             auto constants() { return code_->constants_vector.data(); }
             const auto &identifier_to_global_index() const { return code_->identifier_to_global_index; }
 
             Internal::CodePosition code_position() const;
+            Internal::CodePosition code_position_begin() const;
+            Internal::CodePosition code_position_end() const;
     		Internal::Line first_line() const;
             Internal::Line get_line_by_position(Internal::CodePosition pos) const;
 

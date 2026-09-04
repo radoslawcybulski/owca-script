@@ -149,10 +149,10 @@ namespace OwcaScript {
             ReturnCloseIterator,
             ReturnValue,
             Throw,
+            Try,
             TryCatchType,
             TryCatchTypeCompleted,
             TryCatchCompleted,
-
             WithInit,
             WithCompleted,Yield,
             Jump,
@@ -228,6 +228,7 @@ namespace OwcaScript {
             case ExecuteOp::ReturnCloseIterator: return "ReturnCloseIterator";
             case ExecuteOp::ReturnValue: return "ReturnValue";
             case ExecuteOp::Throw: return "Throw";
+            case ExecuteOp::Try: return "Try";
             case ExecuteOp::TryCatchType: return "TryCatchType";
             case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
             case ExecuteOp::TryCatchCompleted: return "TryCatchCompleted";
@@ -386,6 +387,24 @@ namespace OwcaScript {
             CodePosition operator -= (std::int32_t offset) {
                 pos -= offset;
                 return *this;
+            }
+            bool operator == (const CodePosition &other) const {
+                return pos == other.pos;
+            }
+            bool operator != (const CodePosition &other) const {
+                return pos != other.pos;
+            }
+            bool operator <= (const CodePosition &other) const {
+                return pos <= other.pos;
+            }
+            bool operator >= (const CodePosition &other) const {
+                return pos >= other.pos;
+            }
+            bool operator < (const CodePosition &other) const {
+                return pos < other.pos;
+            }
+            bool operator > (const CodePosition &other) const {
+                return pos > other.pos;
             }
         };
 

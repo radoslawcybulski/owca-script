@@ -115,6 +115,24 @@ namespace OwcaScript {
         return Internal::CodePosition{ code().data() };
 #endif
     }
+    Internal::CodePosition Internal::OwcaCode::code_position_begin() const {
+#ifdef DEBUG
+        return Internal::CodePosition{ code().data(), data_kinds() };
+#else
+        return Internal::CodePosition{ code().data() };
+#endif
+    }
+    Internal::CodePosition Internal::OwcaCode::code_position_end() const {
+#ifdef DEBUG
+        return Internal::CodePosition{ code().data() + code().size(), data_kinds() };
+#else
+        return Internal::CodePosition{ code().data() + code().size() };
+#endif
+    }
+
+    std::uint32_t Internal::OwcaCode::code_position_index(CodePosition pos) const {
+        return pos.value() - code().data() - 1 + code_offset();
+    }
 
     void Internal::gc_mark_value(GenerationGC gc, const Internal::OwcaCode &code) {
         if (gc != code.code_->gc) {

@@ -23,7 +23,6 @@ namespace OwcaScript {
         class VM;
 		class Executor;
 		class CodePosition;
-		struct TryWithBlockInfo;
 
         struct LocalsPtr {
             OwcaValue *local_values_ptr;
@@ -133,17 +132,6 @@ namespace OwcaScript {
         // };
         struct Operators2 {
 			std::array<OwcaValue (*)(OwcaValue, OwcaValue), 10> math_opers;
-			//std::array<bool (*)(OwcaValue, OwcaValue), 3> compare_opers;
-			// OwcaValue (*add)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*sub)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*mul)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*div)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*mod)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*bin_or)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*bin_and)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*bin_xor)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*bin_lshift)(OwcaValue left, OwcaValue right);
-			// OwcaValue (*bin_rshift)(OwcaValue left, OwcaValue right);
 			bool (*less)(OwcaValue left, OwcaValue right);
 			bool (*eq)(OwcaValue left, OwcaValue right);
 			bool (*is)(OwcaValue left, OwcaValue right);
@@ -172,9 +160,7 @@ namespace OwcaScript {
 			Frame *stacktrace_current;
 			std::vector<OwcaValue> values_vector;
 			std::unordered_map<std::string_view, OwcaNamespace> namespaces;
-			std::optional<OwcaException> exception_being_thrown;
-			TryWithBlockInfo *current_try_with_block_when_thrown = nullptr;
-			std::optional<OwcaException> exception_being_handled;
+			std::optional<OwcaException> exception_in_progress;
 			LocalsPtr current_unused_locals_ptr;
 
 		public:
@@ -187,8 +173,6 @@ namespace OwcaScript {
                 }
 				~TopPtrsKeeper() {
 					e.current_unused_locals_ptr = current_unused_locals_ptr;
-					e.exception_being_thrown.reset();
-					e.exception_being_handled.reset();
 				}
 			};
 
@@ -210,7 +194,12 @@ namespace OwcaScript {
 				}
 			};
 		private:
-			std::tuple<OwcaValue, CodePosition> run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos);
+			enum class RunOpcodesResult {
+				Return,
+				Continue,
+				Throw,
+			};
+			std::tuple<OwcaValue, CodePosition, RunOpcodesResult> run_opcodes(const LocalsPtr locals_ptr, CodePosition code_pos, CodePosition begin_code_pos, CodePosition end_code_pos);
 			OwcaValue set_identifier_function(OwcaValue target, OwcaValue value);
 			OwcaValue index_read(OwcaValue self, OwcaValue key);
 			OwcaValue index_write(OwcaValue self, OwcaValue key, OwcaValue value);
@@ -221,7 +210,12 @@ namespace OwcaScript {
 			std::optional<OwcaValue> continue_iterator(OwcaIterator oi);
 
 			OwcaValue create_function(CodePosition &code_pos, const IdentifierPtrs &identifier_ptrs);
-			void process_thrown_exception(CodePosition *pos, OwcaException exc);
+			enum class ProcessThrownExceptionResult {
+				ContinueWithOpcodes,
+				ThrowToCaller,
+			};
+			ProcessThrownExceptionResult process_thrown_exception(CodePosition *pos);
+			void new_exception_thrown(OwcaException exc);
 
 			std::tuple<Number, Number, Number> parse_key(OwcaValue v, OwcaValue key, Number size);
 			size_t verify_key(Number v, size_t size, OwcaValue orig_key, std::string_view name);

@@ -6,13 +6,13 @@
 
 namespace OwcaScript::Internal {
 	void AstThrow::emit(EmitInfo& ei) {
-		auto res = value_->emit(ei);
+		auto res = value_ ? value_->emit(ei).index : VariableIndex{};
 		ei.code_writer.append(line, ExecuteOp::Throw);
-		ei.code_writer.append(line, res.index);
+		ei.code_writer.append(line, res);
 	}
 
 	void AstThrow::visit(AstVisitor& vis) { vis.apply(*this); }
 	void AstThrow::visit_children(AstVisitor& vis) {
-        value_->visit(vis);
+        if (value_) value_->visit(vis);
 	}
 }

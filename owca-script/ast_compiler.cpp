@@ -375,9 +375,6 @@ namespace OwcaScript::Internal {
 	}
 
 	std::unique_ptr<AstExpr> AstCompiler::compile_interpreted_string_value(std::string_view tok) {
-		if (tok.size() > 1 && tok.ends_with('`')) {
-			return std::make_unique<AstExprConstant>(Line{ content_line.line }, std::string{ tok.substr(1, tok.size() - 2) });
-		}
 		std::vector<std::unique_ptr<AstExpr>> parts;
 		std::vector<std::uint32_t> sizes;
 		std::string strings;
@@ -1103,6 +1100,7 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstStat> AstCompiler::compile_try()
 	{
 		auto line = consume("try");
+		InCatchBlockSet in_catch_block_set(in_catch_block, false);
 		auto body = compile_block();
 
 		std::vector<std::tuple<std::string_view, VariableIndex, std::vector<std::unique_ptr<AstExpr>>, std::unique_ptr<AstStat>>> catches;
@@ -1124,6 +1122,7 @@ namespace OwcaScript::Internal {
 				}
 			}
 			consume(")");
+			InCatchBlockSet in_catch_block_set(in_catch_block, true);
 			auto body2 = compile_block();
 			catches.push_back({ identifier, VariableIndex{}, std::move(types), std::move(body2) });
 		}
@@ -1133,7 +1132,10 @@ namespace OwcaScript::Internal {
 	std::unique_ptr<AstStat> AstCompiler::compile_throw()
 	{
 		auto line = consume("throw");
-		auto val = compile_expression_no_assign();
+		std::unique_ptr<AstExpr> val;
+		if (!in_catch_block || preview().second != ";") {
+			val = compile_expression_no_assign();
+		}
 		consume(";");
 		return std::make_unique<AstThrow>(line, std::move(val));
 	}

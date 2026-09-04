@@ -58,14 +58,6 @@ namespace OwcaScript::Internal {
 
 			ei.code_writer.update_jump_placeholder(next, (std::int32_t)ei.code_writer.position());
 			
-			ei.code_writer.append(ei.code_writer.current_line(), (std::uint32_t)ei.per_function.try_with_all_blocks.size());
-			for(auto &block : ei.per_function.try_with_all_blocks) {
-				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.begin);
-				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.end);
-				ei.code_writer.append_jump_position(ei.code_writer.current_line(), block.jump);
-				ei.code_writer.append(ei.code_writer.current_line(), block.next);
-			}
-
 			std::swap(per_function_our, ei.per_function);
 		}
 		return std::move(*target);
