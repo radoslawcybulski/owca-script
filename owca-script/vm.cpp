@@ -501,7 +501,10 @@ namespace OwcaScript::Internal {
 				Internal::current_vm().throw_cant_call(std::format("frame index {} is out of range (0..{})", ind, self.count() - 1));
 			return current_vm().create_string_from_view(self.frame(ind).function);
 		}
-
+		static OwcaValue exception_inner_exception(OwcaException self) {
+			if (!self.inner_exception()) return {};
+			return *self.inner_exception();
+		}
 		static OwcaValue hash(OwcaValue, OwcaValue val) {
 			return Internal::current_vm().calculate_hash(val);
 		}
@@ -567,6 +570,8 @@ namespace OwcaScript::Internal {
 			if (full_name == "Exception.line") return adapt(exception_line);
 			if (full_name == "Exception.filename") return adapt(exception_filename);
 			if (full_name == "Exception.function") return adapt(exception_function);
+			if (full_name == "Exception.function") return adapt(exception_function);
+			if (full_name == "Exception.inner_exception") return adapt(exception_inner_exception);
 			return std::nullopt;
 		}
 		std::optional<GeneratorFunction> native_generator(std::string_view full_name, std::span<const std::string_view> param_names) const override {
@@ -673,6 +678,7 @@ class native Exception {
 	function native line(self, index);
 	function native filename(self, index);
 	function native function(self, index);
+	function native inner_exception(self);
 }
 class MathException(Exception) {}
 class InvalidOperationException(Exception) {}

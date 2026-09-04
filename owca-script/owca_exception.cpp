@@ -18,6 +18,9 @@ namespace OwcaScript {
     size_t OwcaException::count() const {
         return object->frames.size();
     }
+    std::optional<OwcaException> OwcaException::inner_exception() const {
+        return object->parent_exception;
+    }
     OwcaException::Frame OwcaException::frame(unsigned int index) const {
         assert(index < object->frames.size());
 

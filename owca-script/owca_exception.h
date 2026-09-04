@@ -23,6 +23,7 @@ namespace OwcaScript {
 		std::string to_string() const;
 		size_t count() const;
 		OwcaClass type() const;
+		std::optional<OwcaException> inner_exception() const;
 		struct Frame {
 			std::string_view filename;
 			std::string_view function;
