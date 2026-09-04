@@ -1110,20 +1110,18 @@ namespace OwcaScript::Internal {
 		while(catches.empty() || preview().second == "catch") {
 			consume("catch");
 			consume("(");
-			std::string_view identifier;
-			if (preview_is_loop_identifier()) {
-				auto [ line, txt ] = consume();
-				if (!is_identifier(txt)) add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("expected identifier, got `{}`", txt));
-				identifier = txt;
-				consume(":");
-			}
+			auto [ line, identifier ] = consume();
+			if (!is_identifier(identifier)) add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line, std::format("expected identifier for catch block exception variable, got `{}`", identifier));
 			std::vector<std::unique_ptr<AstExpr>> types;
-			while(true) {
-				if (!types.empty()) {
-					if (preview().second != "|") break;
-					consume("|");
+			if (preview().second == ":") {
+				consume(":");
+				while(true) {
+					if (!types.empty()) {
+						if (preview().second != "|") break;
+						consume("|");
+					}
+					types.push_back(compile_expression_no_assign());
 				}
-				types.push_back(compile_expression_no_assign());
 			}
 			consume(")");
 			auto body2 = compile_block();
