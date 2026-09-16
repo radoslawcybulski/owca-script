@@ -1228,6 +1228,7 @@ restart:
                             identifier_ptrs[dest_var] = *exception_being_thrown;
                         }
                         code_pos = block_pos;
+                        exception_being_handled = exception_being_thrown;
                         break;
                     }
                     std::vector<OwcaClass> types;
@@ -1246,6 +1247,7 @@ restart:
                                 identifier_ptrs[dest_var] = *exception_being_thrown;
                             }
                             code_pos = block_pos;
+                            exception_being_handled = exception_being_thrown;
                             break;
                         }
                     }

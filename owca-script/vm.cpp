@@ -470,6 +470,8 @@ namespace OwcaScript::Internal {
 		}
 		static OwcaValue exception_init(OwcaException self, OwcaString msg) {
 			Internal::current_vm().initialize_exception_object(*self.internal_value());
+			auto ee = Internal::current_vm().get_executor().exception_being_handled;
+			self.internal_value()->parent_exception = Internal::current_vm().get_executor().exception_being_handled;
 			self.internal_value()->message = std::string{ msg.text() };
 			return {};
 		}
