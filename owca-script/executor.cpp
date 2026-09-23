@@ -1269,7 +1269,15 @@ restart:
                     }
                     assert(result == RunOpcodesResult::Throw);
                     auto [ val2, cp2, result2 ] = run_opcodes(locals_ptr, catch_pos, catch_pos, end_try);
-                    if (result2 != RunOpcodesResult::Throw) {
+                    if (result2 == RunOpcodesResult::Continue) {
+                        exception_in_progress = old_exception;
+                        if (cp2 < begin_code_pos || cp2 > end_code_pos) {
+                            return { val2, code_pos, RunOpcodesResult::Continue };
+                        }
+                        code_pos = cp2;
+                        break;
+                    }
+                    if (result2 == RunOpcodesResult::Return) {
                         exception_in_progress = old_exception;
                     }
                     return { val2, cp2, result2 };

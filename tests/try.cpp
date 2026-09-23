@@ -213,3 +213,51 @@ function r(a) {
 	ASSERT_EQ(val, 1);
 }
 
+TEST_F(TryTest, try_break)
+{
+    auto val = run(0, __LINE__, R"(
+exceptions = [];
+function get_message(e) {
+    msg = '';
+    while(e) {
+        if (msg) msg += ";";
+        msg += e.message();
+        e = e.inner_exception();
+    }
+    return msg;
+}
+
+function r(a) {
+    try {
+        while(true) {
+            try {
+                throw Exception("q");
+            }
+            catch(e) {
+                exceptions.push_back(get_message(e));
+                break;
+            }
+        }
+        throw Exception("w");
+    }
+    catch(e) {
+        exceptions.push_back(get_message(e));
+        return 0;
+    }
+    if (exceptions != [
+        'q',
+        'w',
+    ]) {
+        index = 0;
+        for(v = exceptions) {
+            index += 1;
+            print(`{index}: {v}`);
+        }
+        return $line;
+    }
+   return 0;
+}
+)");
+	ASSERT_EQ(val, 0);
+}
+
