@@ -25,6 +25,7 @@ namespace OwcaScript::Internal {
 			case CompareKind::Less: ei.code_writer.append(line, ExecuteOp::ExprCompareLess); break;
 			case CompareKind::More: ei.code_writer.append(line, ExecuteOp::ExprCompareMore); break;
 			case CompareKind::Is: ei.code_writer.append(line, ExecuteOp::ExprCompareIs); break;
+			case CompareKind::IsNot: ei.code_writer.append(line, ExecuteOp::ExprCompareIsNot); break;
 			case CompareKind::_Count: assert(false);
 			}
 			ei.code_writer.append(line, target->index);

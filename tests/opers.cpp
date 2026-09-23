@@ -72,3 +72,10 @@ TEST_F(OpersTest, self_index_bin_and) { ASSERT_EQ(compile_and_run_r(__LINE__, "f
 TEST_F(OpersTest, self_index_bin_xor) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = [ 11 ]; a[0] ^= 34; return a[0]; }"), 11 ^ 34); }
 TEST_F(OpersTest, self_index_bin_lshift) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = [ 11 ]; a[0] <<= 3; return a[0]; }"), 11 << 3); }
 TEST_F(OpersTest, self_index_bin_rshift) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = [ 41 ]; a[0] >>= 3; return a[0]; }"), 41 >> 3); }
+
+TEST_F(OpersTest, is) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = 1; if (a is 1) return 1; return 0; }"), 1); }
+TEST_F(OpersTest, is_2) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = 2; if (a is 1) return 1; return 0; }"), 0); }
+TEST_F(OpersTest, is_3) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { class A {} a = A(); if (a is nul) return 1; return 0; }"), 0); }
+TEST_F(OpersTest, is_not) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = 1; if (a is not 1) return 1; return 0; }"), 0); }
+TEST_F(OpersTest, is_not_2) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { a = 2; if (a is not 1) return 1; return 0; }"), 1); }
+TEST_F(OpersTest, is_not_3) { ASSERT_EQ(compile_and_run_r(__LINE__, "function r() { class A {} a = A(); if (a is not nul) return 1; return 0; }"), 1); }

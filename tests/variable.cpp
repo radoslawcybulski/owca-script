@@ -3,7 +3,28 @@
 using namespace OwcaScript;
 
 class VariableTest : public SimpleTest {
-
+public:
+    static int run(int mode, unsigned int code_line, std::string code_str)
+    {
+        OwcaVM vm;
+        auto code = vm.compile("test.os", code_str, code_line);
+        try {
+            auto val = vm.execute(code);
+            return (int)val.member("r").call(mode).as_int();
+        }
+        catch(OwcaException oe) {
+            auto o = oe.frame(0);
+            std::cout << "OwcaException: " << o.filename << ":" << o.line << ": " << oe.message() << std::endl;
+            return -1;
+        }
+        catch(std::exception &e) {
+            std::cout << "std::exception: " << e.what() << std::endl;
+            return -2;
+        }
+        catch(...) {
+            return -3;
+        }
+    }
 };
 
 namespace {
@@ -37,6 +58,7 @@ namespace {
         }
     };
 }
+
 TEST_F(VariableTest, simple1)
 {
 	OwcaVM vm;
@@ -55,4 +77,112 @@ function r() {
     ASSERT_EQ(counter, 1);
     vm.run_gc();
     ASSERT_EQ(counter, 1001);
+}
+
+TEST_F(VariableTest, simple2)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+tmp = 1;
+function f() {
+    tmp = 2;
+}
+function r(a) {
+    f();
+    if (tmp == 1) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
+}
+
+TEST_F(VariableTest, simple3)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+function r(a) {
+    tmp = 1;
+    function f1() {
+        tmp = 2;
+    }
+    function f2() {
+        return tmp;
+    }
+    f1();
+    if (f2() == 1) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
+}
+
+TEST_F(VariableTest, simple4)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+function r(a) {
+    tmp = 1;
+    function f1() {
+        tmp = 2;
+    }
+    f1();
+    function f2() {
+        return tmp;
+    }
+    if (f2() == 1) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
+}
+
+TEST_F(VariableTest, simple5)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+function r(a) {
+    tmp = 1;
+    function f1() {
+        tmp = 2;
+    }
+    tmp = 2;
+    function f2() {
+        return tmp;
+    }
+    if (f2() == 2) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
+}
+
+TEST_F(VariableTest, simple6)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+tmp = [ 1 ];
+function f() {
+    tmp[0] = 2;
+}
+function r(a) {
+    f();
+    if (tmp[0] == 2) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
+}
+
+TEST_F(VariableTest, simple7)
+{
+    auto val = run(1, __LINE__ + 1, R"(
+function r(a) {
+    tmp = [ 1 ];
+    function f1() {
+        tmp[0] = 2;
+    }
+    function f2() {
+        return tmp[0];
+    }
+    f1();
+    if (f2() == 2) return 1;
+    return 0;
+}
+)");
+	ASSERT_EQ(val, 1);
 }

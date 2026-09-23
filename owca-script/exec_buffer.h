@@ -79,6 +79,7 @@ namespace OwcaScript {
             ExprCompareLess,
             ExprCompareMore,
             ExprCompareIs,
+            ExprCompareIsNot,
             ExprConstantStringInterpolated,
             ExprIdentifierFunctionWrite,
             ExprMemberRead,
@@ -168,6 +169,7 @@ namespace OwcaScript {
             case ExecuteOp::ExprCompareLess: return "ExprCompareLess";
             case ExecuteOp::ExprCompareMore: return "ExprCompareMore";
             case ExecuteOp::ExprCompareIs: return "ExprCompareIs";
+            case ExecuteOp::ExprCompareIsNot: return "ExprCompareIsNot";
             case ExecuteOp::ExprConstantStringInterpolated: return "ExprConstantStringInterpolated";
             case ExecuteOp::ExprIdentifierFunctionWrite: return "ExprIdentifierFunctionWrite";
             case ExecuteOp::ExprMemberRead: return "ExprMemberRead";

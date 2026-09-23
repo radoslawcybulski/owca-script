@@ -654,6 +654,12 @@ namespace OwcaScript::Internal {
 			if (!kind) break;
 
 			auto [line, tok2] = consume();
+			if (kind == CompareKind::Is) {
+				if (preview().second == "not") {
+					auto [line, tok3] = consume();
+					kind = CompareKind::IsNot;
+				}
+			}
 			auto right = compile_expr_bitwise();
 			nexts.push_back({ *kind, line, std::move(right) });
 		}

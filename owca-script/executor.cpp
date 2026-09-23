@@ -878,6 +878,9 @@ restart:
                 case ExecuteOp::ExprCompareIs: {
                     CMP2_RUN(is, 0, res);
                     break; }
+                case ExecuteOp::ExprCompareIsNot: {
+                    CMP2_RUN(is, 0, !res);
+                    break; }
                 case ExecuteOp::ExprConstantStringInterpolated: {
                     auto target = code_pos.decode<VariableIndex>();
                     auto strings = code_pos.decode<std::string_view>();
@@ -1747,6 +1750,7 @@ restart:
 		const char *oper;
 		switch(kind) {
 		case CompareKind::Is: oper = "is"; break;
+        case CompareKind::IsNot: oper = "is not"; break;
 		case CompareKind::Eq: oper = "=="; break;
 		case CompareKind::NotEq: oper = "!="; break;
 		case CompareKind::LessEq: oper = "<=>"; break;
@@ -1891,6 +1895,7 @@ restart:
         case CompareKind::More: return execute_compare_less(right, left);
         case CompareKind::LessEq: return !execute_compare_less(right, left);
         case CompareKind::Is: return execute_compare_is(left, right);
+        case CompareKind::IsNot: return !execute_compare_is(left, right);
         case CompareKind::_Count: break;
         }
         assert(false);

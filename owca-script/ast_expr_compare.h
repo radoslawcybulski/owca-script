@@ -14,6 +14,7 @@ namespace OwcaScript {
 			Eq,
 			NotEq,
 			Is,
+			IsNot,
 			_Count
 		};
 		class AstExprCompare : public AstExpr {
