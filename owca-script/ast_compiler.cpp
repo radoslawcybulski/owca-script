@@ -411,6 +411,7 @@ namespace OwcaScript::Internal {
 	}
 	std::unique_ptr<AstExpr> AstCompiler::compile_expr_value()
 	{
+		if (preview().second == "function") return compile_function_raw(true);
 		auto [line, tok] = consume();
 		if (tok == "true") return std::make_unique<AstExprConstant>(line, true);
 		if (tok == "false") return std::make_unique<AstExprConstant>(line, false);
@@ -882,11 +883,17 @@ namespace OwcaScript::Internal {
 		return c;
 	}
 
-	std::unique_ptr<AstFunction> AstCompiler::compile_function_raw()
+	std::unique_ptr<AstFunction> AstCompiler::compile_function_raw(bool lambda)
 	{
 		auto function_updater = FunctionUpdater{ *this };
 		auto line = consume("function");
-		auto [line2, func_name] = consume();
+		auto [line2, func_name] = preview();
+		if (lambda) {
+			func_name = "<lambda>";
+		}
+		else {
+			consume();
+		}
 		bool use_native = false, is_generator = false;
 
 		while(preview().second != "(") {
@@ -907,7 +914,7 @@ namespace OwcaScript::Internal {
 				is_generator = true;
 			}
 		}
-		if (!is_identifier(func_name)) {
+		if (!lambda && !is_identifier(func_name)) {
 			add_error_and_throw(OwcaErrorKind::ExpectedIdentifier, filename_, line2, std::format("expected identifier for function name, got `{}`", func_name));
 		}
 		std::vector<std::string_view> param_names;
@@ -1409,19 +1416,19 @@ namespace OwcaScript::Internal {
 			o.visit_children(*this);
 		}
 		void apply(AstWith &o) override {
-			assert(false);
-			// if (first_run) {
-			// 	if (!o.identifier().empty()) {
-			// 		current_stack->define_identifier(o.identifier());
-			// 	}
-			// }
-			// else {
-			// 	if (!o.identifier().empty()) {
-			// 		auto index = current_stack->ensure_writable_identifier(compiler, o.line, o.identifier());
-			// 		o.update_ident_index(index);
-			// 	}
-			// }
-			// apply(static_cast<AstStat&>(o));
+			if (first_run) {
+				if (!o.identifier().empty()) {
+					current_stack->define_identifier(o.identifier());
+				}
+			}
+			else {
+				auto index_pp = current_stack->lookup_identifier(o.identifier());
+				if (!index_pp) {
+					add_error(OwcaErrorKind::UndefinedIdentifier, o.line, std::format("variable `{}` has not been written", o.identifier()));
+				}
+				o.update_identifier_index(index_pp->index);
+			}
+			apply(static_cast<AstStat&>(o));
 		}
 		void apply(AstTry &o) override {
 			if (first_run) {

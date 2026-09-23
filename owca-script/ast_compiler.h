@@ -144,7 +144,7 @@ namespace OwcaScript {
 			std::unique_ptr<AstExpr> compile_expression();
 			std::unique_ptr<AstStat> compile_expression_as_stat();
 			std::unique_ptr<AstStat> compile_block();
-			std::unique_ptr<AstFunction> compile_function_raw();
+			std::unique_ptr<AstFunction> compile_function_raw(bool lambda = false);
 			std::unique_ptr<AstClass> compile_class_raw();
 			std::unique_ptr<AstStat> compile_function();
 			std::unique_ptr<AstStat> compile_class();

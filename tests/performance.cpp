@@ -8,7 +8,7 @@ class PerformanceTest : public SimpleTest {
 };
 
 TEST_F(PerformanceTest, DISABLED_simple_1)
-{ // 2.07
+{ // 1.9
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 s = 0;
@@ -26,7 +26,7 @@ print(`Final result: {s} expected (46592) {s == 46592}`);
 }
 
 TEST_F(PerformanceTest, DISABLED_simple_2)
-{ // 21.08 // 100000000
+{ // 15.97 // 100000000
 	OwcaVM vm;
 	auto code = compile(__LINE__, vm, "test.os", R"(
 class A {
@@ -86,7 +86,7 @@ s = 0;
 a = A();
 start = time();
 i = 0;
-while (i < 100000) {
+while (i < 100000000) {
     s = a.foo5((s * 11035 + 12345) & 0xffff);
     i = i + 1;
 }
@@ -119,7 +119,7 @@ function foo5(s) {
 s = 0;
 start = time();
 i = 0;
-while (i < 100000) {
+while (i < 100000000) {
     foo5(0);
     i = i + 1;
 }

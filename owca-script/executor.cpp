@@ -1325,25 +1325,39 @@ restart:
                     return { {}, code_pos, RunOpcodesResult::Throw };
                     }                    
 
-                // case ExecuteOp::WithInit: {
-                //     PUSH_STATE(WithState{});
-                //     auto &state = STATE(WithState);
-                //     auto &obj = PEEK_VALUE(1);
-                //     state.context = obj;
-                //     obj = current_vm().member(obj, "$enter");
-                //     obj = execute_call_from_values(temporary_ptr, 1);
-                //     state.entered = true;
-                //     auto index = code_pos.decode<std::uint32_t>();
-                //     if (index != std::numeric_limits<std::uint32_t>::max()) {
-                //         LOCAL_VAR(index) = obj;
-                //     }
-                //     POP_VALUES(1);
-                //     break; }
-                // case ExecuteOp::WithCompleted: {
-                //     auto &state = STATE(WithState);
-                //     complete(state, temporary_ptr);
-                //     POP_STATE();
-                //     break; }
+                case ExecuteOp::With: {
+                    auto src_var = code_pos.decode<VariableIndex>();
+                    auto dest_var = code_pos.decode<VariableIndex>();
+                    auto block_pos_end = code_pos.decode_jump();
+                    auto value = identifier_ptrs[src_var];
+                    bool call_exit = false;
+
+                    if (value.kind() != OwcaValueKind::Functions) {
+                        current_unused_locals_ptr[0] = current_vm().member(value, "$enter");
+                        auto val = execute_function_call_from_values(1);
+                        if (dest_var) {
+                            identifier_ptrs[dest_var] = val;
+                        }
+                        call_exit = true;
+                    }
+
+                    auto [ val, cp, result ] = run_opcodes(locals_ptr, code_pos, code_pos, block_pos_end);
+                    if (call_exit) {
+                        current_unused_locals_ptr[0] = current_vm().member(value, "$exit");
+                    }
+                    else {
+                        current_unused_locals_ptr[0] = value;
+                    }
+                    execute_function_call_from_values(1);
+                    if (result == RunOpcodesResult::Continue) {
+                        if (cp < begin_code_pos || cp > end_code_pos) {
+                            return { OwcaEmpty{}, cp, RunOpcodesResult::Continue };
+                        }
+                        code_pos = cp;
+                        break;
+                    }
+                    return { val, cp, result };
+                    }
                 default:
                     assert(false);
                 }

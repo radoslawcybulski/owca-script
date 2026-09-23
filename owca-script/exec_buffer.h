@@ -154,8 +154,8 @@ namespace OwcaScript {
             TryCatchType,
             TryCatchTypeCompleted,
             TryCatchCompleted,
-            WithInit,
-            WithCompleted,Yield,
+            With,
+            Yield,
             Jump,
             _Count
         };
@@ -234,8 +234,7 @@ namespace OwcaScript {
             case ExecuteOp::TryCatchType: return "TryCatchType";
             case ExecuteOp::TryCatchTypeCompleted: return "TryCatchTypeCompleted";
             case ExecuteOp::TryCatchCompleted: return "TryCatchCompleted";
-            case ExecuteOp::WithInit: return "WithInit";
-            case ExecuteOp::WithCompleted: return "WithCompleted";
+            case ExecuteOp::With: return "With";
             case ExecuteOp::Yield: return "Yield";
             case ExecuteOp::Jump: return "Jump";
             default: return "Unknown";

@@ -1,115 +1,139 @@
-// #include "test.h"
+#include "test.h"
 
-// using namespace OwcaScript;
+using namespace OwcaScript;
 
-// class WithTest : public SimpleTest {
+class WithTest : public SimpleTest {
+public:
+    static std::string run_with(unsigned int first_line, std::string code_text)
+    {
+        OwcaVM vm;
+        auto code = vm.compile("test.os", std::move(code_text), first_line);
+        auto val = vm.execute(code);
+        return std::string{ val.member("r").call().as_string().text() };
+    }
+};
 
-// };
+TEST_F(WithTest, simple)
+{
+    auto val = run_with(__LINE__, R"(
+queue = [];
+class W {
+    function $init(self, v) {
+        self.v = v + 4;
+        queue.push_back('A');
+        queue.push_back(self.v);
+    }
+}
+class Q {
+    function $init(self, v) {
+        self.v = v;
+        queue.push_back('B');
+        queue.push_back(self.v);
+    }
+    function $enter(self) {
+        queue.push_back('C');
+        queue.push_back(self.v);
+        return W(self.v);
+    }
+    function $exit(self) {
+        queue.push_back('D');
+        queue.push_back(self.v);
+    }
+}
 
-// static auto run_with(std::string code_text, OwcaValue add_val)
-// {
-//     OwcaVM vm;
-//     std::vector<std::string> tmp{ { "a" } };
-//     auto code = vm.compile("test.os", std::move(code_text), tmp);
-//     auto map_data = std::vector<std::pair<std::string, OwcaValue>>{ { { "a", add_val } } };
-//     auto val = vm.execute(code, vm.create_map(map_data));
-//     return std::string{ val.as_string(vm).text() };
-// }
-// TEST_F(WithTest, simple)
-// {
-//     auto val = run_with(R"(
+function r() {
+    with(q = Q(1)) {
+        queue.push_back('E');
+        queue.push_back(q.v);
+        with(w = Q(2)) {
+            queue.push_back('F');
+            queue.push_back(w.v);
+        }
+    }
 
-// queue = [];
-// class W {
-//     function $init(self, v) {
-//         self.v = v + 4;
-//         queue.push_back('A');
-//         queue.push_back(self.v);
-//     }
-// }
-// class Q {
-//     function $init(self, v) {
-//         self.v = v;
-//         queue.push_back('B');
-//         queue.push_back(self.v);
-//     }
-//     function $enter(self) {
-//         queue.push_back('C');
-//         queue.push_back(self.v);
-//         return W(self.v);
-//     }
-//     function $exit(self) {
-//         queue.push_back('D');
-//         queue.push_back(self.v);
-//     }
-// }
+    s = '';
+    for(q = queue) {
+        s = s + String(q);
+    }
+    return s;
+}
+	)");
+    ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
+}
 
-// with(q = Q(1)) {
-//     queue.push_back('E');
-//     queue.push_back(q.v);
-//     with(w = Q(2)) {
-//         queue.push_back('F');
-//         queue.push_back(w.v);
-//     }
-// }
+TEST_F(WithTest, with_exc)
+{
+    auto val = run_with(__LINE__, R"(
 
-// s = '';
-// for(q = queue) {
-//     s = s + String(q);
-// }
-// return s;
-// 	)", 0);
-//     ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
-// }
+queue = [];
+class W {
+    function $init(self, v) {
+        self.v = v + 4;
+        queue.push_back('A');
+        queue.push_back(self.v);
+    }
+}
+class Q {
+    function $init(self, v) {
+        self.v = v;
+        queue.push_back('B');
+        queue.push_back(self.v);
+    }
+    function $enter(self) {
+        queue.push_back('C');
+        queue.push_back(self.v);
+        return W(self.v);
+    }
+    function $exit(self) {
+        queue.push_back('D');
+        queue.push_back(self.v);
+    }
+}
 
-// TEST_F(WithTest, with_exc)
-// {
-//     auto val = run_with(R"(
+function r() {
+    try {
+        with(q = Q(1)) {
+            queue.push_back('E');
+            queue.push_back(q.v);
+            with(w = Q(2)) {
+                queue.push_back('F');
+                queue.push_back(w.v);
+                throw Exception("err");
+            }
+        }
+        return 'no exception';
+    }
+    catch(Exception) {}
 
-// queue = [];
-// class W {
-//     function $init(self, v) {
-//         self.v = v + 4;
-//         queue.push_back('A');
-//         queue.push_back(self.v);
-//     }
-// }
-// class Q {
-//     function $init(self, v) {
-//         self.v = v;
-//         queue.push_back('B');
-//         queue.push_back(self.v);
-//     }
-//     function $enter(self) {
-//         queue.push_back('C');
-//         queue.push_back(self.v);
-//         return W(self.v);
-//     }
-//     function $exit(self) {
-//         queue.push_back('D');
-//         queue.push_back(self.v);
-//     }
-// }
+    s = '';
+    for(q = queue) {
+        s = s + String(q);
+    }
+    return s;
+}
+	)");
+    ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
+}
 
-// try {
-//     with(q = Q(1)) {
-//         queue.push_back('E');
-//         queue.push_back(q.v);
-//         with(w = Q(2)) {
-//             queue.push_back('F');
-//             queue.push_back(w.v);
-//             throw Exception("err");
-//         }
-//     }
-//     return 'no exception';
-// }
-// catch(Exception) {}
+TEST_F(WithTest, with_lambda)
+{
+    auto val = run_with(__LINE__, R"(
+queue = [];
 
-// s = '';
-// for(q = queue) {
-//     s = s + String(q);
-// }
-// return s;
-// 	)", 0);
-//     ASSERT_EQ(val, std::string_view{ "B1C1A5E5B2C2A6F6D2D1" });
-// }
+function r() {
+    with(function () { queue.push_back('A'); }) {
+        queue.push_back('B');
+        with(function () { queue.push_back('C'); }) {
+            queue.push_back('D');
+        }
+    }
+
+    s = '';
+    for(q = queue) {
+        s = s + String(q);
+    }
+    return s;
+}
+	)");
+    ASSERT_EQ(val, std::string_view{ "BDCA" });
+}

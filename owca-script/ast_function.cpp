@@ -11,8 +11,9 @@
 
 namespace OwcaScript::Internal {
 	AstBase::TempInfo AstFunction::emit(EmitInfo& ei, std::optional<TempInfo> target) {
-		assert(!target);
-		target = ei.allocate_temporary();
+		if (!target) {
+			target = ei.allocate_temporary();
+		}
 
 		const bool is_method = param_count_ > 0 && identifier_names_[0] == "self";
 
